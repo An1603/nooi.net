@@ -180,6 +180,59 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* ── AI Agent Chrome Gradient ── */
+@utility text-gradient-ai {
+  background: linear-gradient(
+    135deg,
+    #C8943E 0%,
+    #4aad6a 20%,
+    #3A6B8C 40%,
+    #7B68AE 60%,
+    #D4782A 80%,
+    #C8943E 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 4s ease-in-out infinite;
+}
+
+@utility text-gradient-neon {
+  background: linear-gradient(
+    135deg,
+    #4aad6a 0%,
+    #3A6B8C 30%,
+    #7B68AE 60%,
+    #4aad6a 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+@utility text-gradient-fire {
+  background: linear-gradient(
+    135deg,
+    #D4782A 0%,
+    #C8943E 30%,
+    #E8B84B 60%,
+    #D4782A 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
 @utility glass-hover {
   &:hover {
     background: rgba(255, 255, 255, 0.08);

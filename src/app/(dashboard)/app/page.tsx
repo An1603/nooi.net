@@ -36,7 +36,7 @@ export default async function DashboardHome() {
       {/* Welcome */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Xin chào, <span className="text-gradient-gold">{name}</span>
+          Xin chào, <span className="text-gradient-ai">{name}</span>
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Đây là tổng quan không gian làm việc của bạn trên NOOI.

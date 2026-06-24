@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { LogoFull } from '@/components/brand/Logo';
 import { TechBackground } from '@/components/effects/TechBackground';
-import { CodeRain } from '@/components/effects/CodeRain';
 import { AnimatedGradient } from '@/components/effects/AnimatedGradient';
 import {
   Sparkles,
@@ -166,10 +165,10 @@ function HeroSection() {
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 animate-slide-up opacity-0"
           style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
           Kết nối{' '}
-          <span className="text-gradient-gold">tri thức</span>
+          <span className="text-gradient-ai">tri thức</span>
           <br />
           Chuyển mình{' '}
-          <span className="text-gradient-accent">cùng AI</span>
+          <span className="text-gradient-ai">cùng AI</span>
         </h1>
 
         {/* Subtitle */}
@@ -295,7 +294,6 @@ function FeaturesSection() {
 
   return (
     <section id="features" className="relative py-24 px-5 overflow-hidden">
-      <CodeRain />
       <div className="max-w-6xl mx-auto" ref={ref}>
         {/* Section header */}
         <div className={`text-center mb-16 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
@@ -306,7 +304,7 @@ function FeaturesSection() {
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Mọi thứ bạn cần trong{' '}
-            <span className="text-gradient-gold">một nền tảng</span>
+            <span className="text-gradient-fire">một nền tảng</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Từ ý tưởng đến sản phẩm — nooi.net cung cấp đầy đủ công cụ
@@ -378,7 +376,7 @@ function TechSection() {
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Vận hành bởi{' '}
-            <span className="text-gradient-accent">AI tiên tiến</span>
+            <span className="text-gradient-neon">AI tiên tiến</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Kiến trúc hiện đại, tối ưu cho mọi quy mô — từ cá nhân đến doanh nghiệp.

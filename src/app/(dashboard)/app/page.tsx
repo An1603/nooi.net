@@ -6,11 +6,29 @@ export default async function DashboardHome() {
   const email = user?.email ?? "Người dùng";
   const name = user?.user_metadata?.full_name ?? email.split("@")[0];
 
+  const [{ count: projectCount }, { count: videoCount }, { count: docCount }] =
+    await Promise.all([
+      supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user?.id),
+      supabase
+        .from("videos")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user?.id),
+      supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user?.id),
+    ]);
+
+  const archivedCount = 0;
+
   const stats = [
-    { label: "Dự án", value: "—", icon: "📁" },
-    { label: "Video", value: "—", icon: "🎬" },
-    { label: "Tài liệu", value: "—", icon: "📄" },
-    { label: "Lưu trữ", value: "—", icon: "💾" },
+    { label: "Dự án", value: String(projectCount ?? 0), icon: "📁" },
+    { label: "Video", value: String(videoCount ?? 0), icon: "🎬" },
+    { label: "Tài liệu", value: String(docCount ?? 0), icon: "📄" },
+    { label: "Lưu trữ", value: String(archivedCount), icon: "💾" },
   ];
 
   return (
@@ -48,19 +66,22 @@ export default async function DashboardHome() {
               title: "Tạo dự án mới",
               desc: "Bắt đầu một dự án sản xuất nội dung với AI",
               href: "/app/projects/new",
-              color: "from-amber-500/10 to-amber-500/5 border-amber-500/20 hover:border-amber-500/30",
+              color:
+                "from-amber-500/10 to-amber-500/5 border-amber-500/20 hover:border-amber-500/30",
             },
             {
               title: "Upload video",
               desc: "Đưa video lên nền tảng và quản lý thư viện",
-              href: "/app/videos/upload",
-              color: "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/30",
+              href: "/app/videos/new",
+              color:
+                "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/30",
             },
             {
               title: "Khám phá tài liệu",
               desc: "Truy cập kho tài liệu và hướng dẫn học tập",
               href: "/app/library",
-              color: "from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:border-blue-500/30",
+              color:
+                "from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:border-blue-500/30",
             },
           ].map((card, i) => (
             <a
@@ -82,7 +103,7 @@ export default async function DashboardHome() {
         <h2 className="text-lg font-semibold mb-4">Hoạt động gần đây</h2>
         <div className="p-8 rounded-xl border border-border bg-card text-center">
           <p className="text-muted-foreground text-sm">
-            Chưa có hoạt động nào. Hãy bắt đầu bằng cách tạo dự án đầu tiên!
+            Hoạt động gần đây của bạn sẽ xuất hiện tại đây.
           </p>
         </div>
       </div>

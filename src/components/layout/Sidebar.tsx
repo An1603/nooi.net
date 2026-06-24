@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -11,7 +12,8 @@ import {
   BookOpen,
   Settings,
   LogOut,
-  ChevronRight,
+  Menu,
+  X,
 } from 'lucide-react';
 
 const NAV = [
@@ -23,16 +25,28 @@ const NAV = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <aside className="w-64 min-h-screen border-r border-border bg-card flex flex-col">
+  const isActive = (href: string) =>
+    pathname === href || (href !== '/app' && pathname.startsWith(href + '/'));
+
+  const linkClass = (href: string) =>
+    cn(
+      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+      isActive(href)
+        ? 'bg-primary/10 text-primary border-l-2 border-primary pl-2.5'
+        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent pl-2.5'
+    );
+
+  const sidebarContent = (
+    <>
       {/* Brand */}
-      <div className="px-4 pt-4 pb-6 border-b border-border">
-        <Link href="/" className="flex items-center gap-2 no-underline">
-          <Logo variant="circular" className="!w-7 !h-7" />
-          <div>
-            <span className="text-base font-bold tracking-tight text-foreground">NOOI</span>
-            <span className="text-[10px] text-muted-foreground block leading-tight -mt-0.5">
+      <div className="px-3 pt-3 pb-4 border-b border-border">
+        <Link href="/" className="flex items-center gap-2 no-underline" onClick={() => setMobileOpen(false)}>
+          <Logo variant="circular" className="!w-6 !h-6 shrink-0" />
+          <div className="min-w-0">
+            <span className="text-sm font-bold tracking-tight text-foreground">NOOI</span>
+            <span className="text-[10px] text-muted-foreground block leading-tight">
               Kết nối chuyển mình.
             </span>
           </div>
@@ -40,50 +54,74 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-2 py-3 space-y-0.5">
         {NAV.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-                active
-                  ? 'bg-primary/10 text-primary border border-primary/15'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent',
-              )}
+              onClick={() => setMobileOpen(false)}
+              className={linkClass(item.href)}
             >
-              <Icon size={18} className={active ? 'text-primary' : ''} />
-              <span>{item.label}</span>
-              {active && (
-                <ChevronRight size={14} className="ml-auto text-primary" />
-              )}
+              <Icon size={18} className="shrink-0" />
+              <span className="truncate">{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-4 border-t border-border space-y-1">
+      <div className="px-2 py-3 border-t border-border space-y-0.5">
         <Link
           href="/app/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+          onClick={() => setMobileOpen(false)}
+          className={linkClass('/app/settings')}
         >
-          <Settings size={18} />
+          <Settings size={18} className="shrink-0" />
           <span>Cài đặt</span>
         </Link>
         <form action="/auth/logout" method="POST">
           <button
             type="submit"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all border-l-2 border-transparent"
           >
-            <LogOut size={18} />
+            <LogOut size={18} className="shrink-0" />
             <span>Đăng xuất</span>
           </button>
         </form>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile hamburger */}
+      <button
+        onClick={() => setMobileOpen(!mobileOpen)}
+        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground"
+        aria-label="Toggle menu"
+      >
+        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-52 shrink-0 min-h-screen border-r border-border bg-card flex-col">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="md:hidden fixed inset-y-0 left-0 z-50 w-60 bg-card border-r border-border flex flex-col shadow-2xl animate-slide-up">
+            {sidebarContent}
+          </aside>
+        </>
+      )}
+    </>
   );
 }

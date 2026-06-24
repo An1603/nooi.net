@@ -44,15 +44,15 @@ export default async function DashboardHome() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {stats.map((s, i) => (
           <div
             key={i}
-            className="p-5 rounded-xl border border-border bg-card hover:bg-card/80 transition-colors"
+            className="p-4 rounded-xl border border-border bg-card hover:bg-card/80 transition-colors"
           >
-            <span className="text-xl mb-2 block">{s.icon}</span>
-            <div className="text-2xl font-bold">{s.value}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">{s.label}</div>
+            <span className="text-lg mb-1.5 block">{s.icon}</span>
+            <div className="text-xl font-bold">{s.value}</div>
+            <div className="text-xs text-muted-foreground mt-0.5 truncate">{s.label}</div>
           </div>
         ))}
       </div>

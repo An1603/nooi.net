@@ -1,0 +1,275 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* =======================================================
+   NOI.NET — Brand Design System
+   Inspired by the NOI logo: earthy hexagons, modern AI
+   ======================================================= */
+
+@theme {
+  /* Core backgrounds */
+  --color-background: #0a0a0a;
+  --color-foreground: #ededed;
+  --color-primary: #C8943E;        /* Gold accent */
+  --color-primary-foreground: #0a0a0a;
+  --color-secondary: #5C7A3A;      /* Olive green from logo */
+  --color-secondary-foreground: #ededed;
+  --color-muted: #1a1a1a;
+  --color-muted-foreground: #9ca3af;
+  --color-accent: #4aad6a;         /* Green neon */
+  --color-accent-foreground: #0a0a0a;
+  --color-destructive: #ef4444;
+  --color-border: rgba(255,255,255,0.08);
+  --color-input: rgba(255,255,255,0.12);
+  --color-ring: #4aad6a;
+  --color-card: #111111;
+  --color-card-foreground: #ededed;
+
+  /* NOI brand accent colors */
+  --color-n-brown: #3E2723;
+  --color-n-rust: #8B4513;
+  --color-n-gold: #8B6914;
+  --color-n-olive: #5C7A3A;
+  --color-n-orange: #D4782A;
+  --color-n-blue: #3A6B8C;
+  --color-n-lightblue: #6BA3C9;
+  --color-n-purple: #7B68AE;
+  --color-n-darkgreen: #2D5A2D;
+  --color-n-teal: #4A8B7A;
+
+  /* Surface tokens */
+  --color-surface-elevated: #1a1a1a;
+  --color-surface-overlay: rgba(0,0,0,0.7);
+  --color-glass: rgba(255,255,255,0.04);
+  --color-glass-border: rgba(255,255,255,0.08);
+  --color-glass-hover: rgba(255,255,255,0.08);
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+/* Dark-only theme (enforced by <html class="dark">) */
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card: #111111;
+  --card-foreground: #ededed;
+  --popover: #111111;
+  --popover-foreground: #ededed;
+  --primary: #C8943E;
+  --primary-foreground: #0a0a0a;
+  --secondary: #5C7A3A;
+  --secondary-foreground: #ededed;
+  --muted: #1a1a1a;
+  --muted-foreground: #9ca3af;
+  --accent: #4aad6a;
+  --accent-foreground: #0a0a0a;
+  --destructive: #ef4444;
+  --border: rgba(255,255,255,0.08);
+  --input: rgba(255,255,255,0.12);
+  --ring: #4aad6a;
+  --radius: 0.625rem;
+  --chart-1: #C8943E;
+  --chart-2: #5C7A3A;
+  --chart-3: #3A6B8C;
+  --chart-4: #7B68AE;
+  --chart-5: #4aad6a;
+  --sidebar: #111111;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #C8943E;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #1a1a1a;
+  --sidebar-accent-foreground: #ededed;
+  --sidebar-border: rgba(255,255,255,0.08);
+  --sidebar-ring: #4aad6a;
+}
+
+@theme inline {
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* =======================================================
+   Base Styles
+   ======================================================= */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+}
+
+/* =======================================================
+   Custom Utilities
+   ======================================================= */
+@utility text-gradient-gold {
+  background: linear-gradient(135deg, #C8943E 0%, #E8B84B 50%, #C8943E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@utility text-gradient-accent {
+  background: linear-gradient(135deg, #4aad6a 0%, #5cc97a 50%, #3a9a5a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@utility glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@utility glass-hover {
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+@utility glow-gold {
+  box-shadow: 0 0 20px rgba(200, 148, 62, 0.15),
+              0 0 60px rgba(200, 148, 62, 0.06);
+}
+
+@utility glow-green {
+  box-shadow: 0 0 20px rgba(74, 173, 106, 0.15),
+              0 0 60px rgba(74, 173, 106, 0.06);
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* =======================================================
+   Animations
+   ======================================================= */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(1deg); }
+  66% { transform: translateY(5px) rotate(-1deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hexagon-drift {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.15; }
+  100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+}
+
+@utility animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@utility animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@utility animate-slide-up {
+  animation: slide-up 0.6s ease-out forwards;
+}
+
+/* Staggered animation delays */
+@utility animate-stagger-1 { animation-delay: 0.1s; }
+@utility animate-stagger-2 { animation-delay: 0.2s; }
+@utility animate-stagger-3 { animation-delay: 0.3s; }
+@utility animate-stagger-4 { animation-delay: 0.4s; }
+@utility animate-stagger-5 { animation-delay: 0.5s; }
+
+/* =======================================================
+   Scrollbar for webkit
+   ======================================================= */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Selection */
+::selection {
+  background: rgba(74, 173, 106, 0.3);
+  color: #ffffff;
+}

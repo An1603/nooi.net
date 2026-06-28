@@ -103,13 +103,14 @@ export default async function AdminLayout({
           <span className="text-[10px] text-primary font-medium uppercase tracking-wider">
             {adminUser.role === "super_admin" ? "Super Admin" : "Admin"}
           </span>
-          <a
-            href="/auth/logout"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 mt-2 transition-colors"
-          >
-            <LogOut className="size-3" />
-            Đăng xuất
-          </a>
+          <form action="/auth/logout" method="POST">
+            <button type="submit"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 mt-2 transition-colors"
+            >
+              <LogOut className="size-3" />
+              Đăng xuất
+            </button>
+          </form>
         </div>
       </aside>
 

@@ -12,27 +12,32 @@ export async function middleware(request: NextRequest) {
 
   /* ── Admin subdomain guard ── */
   if (host === ADMIN_HOST) {
-    // Allow auth-related routes without admin check (for OAuth callback, etc.)
-    const isAuthRoute = ["/auth/callback", "/auth/confirm", "/auth/reset", "/auth/update-password"].some(
-      (route) => pathname === route || pathname.startsWith(route + "/") || pathname.startsWith(route + "?")
+    // Allow auth-related routes without admin check
+    const isAuthRoute = ["/auth/callback", "/auth/confirm"].some(
+      (route) => pathname === route || pathname.startsWith(route + "/")
     );
-    if (isAuthRoute) {
-      return supabaseResponse;
+    if (isAuthRoute) return supabaseResponse;
+
+    // Admin login page — redirect /login to /admin/login
+    if (pathname === "/login") {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
-    // Redirect /login and /signup to main site
-    if (pathname === "/login" || pathname === "/signup") {
-      return NextResponse.redirect(new URL(pathname, "https://nooi.net"));
+    // Logout on admin → redirect to admin login
+    if (pathname === "/auth/logout") {
+      return supabaseResponse; // Let the route handler do its job, then middleware will catch below
     }
 
-    // Not logged in (or cookie domain mismatch) → refresh domain then retry
+    // Not logged in → show admin login
     if (!user) {
-      const refreshUrl = new URL("/auth/refresh-domain", "https://nooi.net");
-      refreshUrl.searchParams.set("redirect", pathname || "/admin");
-      return NextResponse.redirect(refreshUrl);
+      if (pathname === "/admin/login") return supabaseResponse;
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
-    // Check admin role via admin_users table
+    // Non-admin user trying to access admin → clear session and show login
+    if (pathname === "/admin/login") return supabaseResponse;
+
+    // Check admin role
     const { data: adminUser } = await supabase
       .from("admin_users")
       .select("role")
@@ -40,14 +45,15 @@ export async function middleware(request: NextRequest) {
       .maybeSingle();
 
     if (!adminUser) {
-      return new NextResponse(
-        `<html><body style="background:#0a0a0a;color:#f87171;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h1 style="font-size:3rem;margin:0">403</h1><p>Bạn không có quyền truy cập trang quản trị.</p><a href="https://nooi.net/app" style="color:#c8943e">Về trang chủ</a></div></body></html>`,
-        { status: 403, headers: { "Content-Type": "text/html; charset=utf-8" } }
-      );
+      // Not an admin — sign out and show login
+      const resp = NextResponse.redirect(new URL("/admin/login", request.url));
+      // Clear auth cookies
+      resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.0", "", { maxAge: 0, path: "/" });
+      resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.1", "", { maxAge: 0, path: "/" });
+      return resp;
     }
 
-    // Admin confirmed → allow
-    // Rewrite root to /admin
+    // Admin confirmed — allow
     if (pathname === "/") {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
@@ -56,17 +62,14 @@ export async function middleware(request: NextRequest) {
   }
 
   /* ── Main site guard ── */
-  // Block /admin routes on main site
   if (pathname.startsWith("/admin")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // Allow public routes without auth
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
     return supabaseResponse;
   }
 
-  // Protect dashboard routes
   if (!user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);

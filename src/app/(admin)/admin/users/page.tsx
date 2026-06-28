@@ -162,10 +162,12 @@ export default function AdminUsersPage() {
               </tr></thead>
               <tbody className="divide-y divide-border/10">
                 {filtered.map(u => <tr key={u.id} className="hover:bg-white/[0.01]">
-                  <td className="px-4 py-3"><div className="flex items-center gap-2.5">
+                  <td className="px-4 py-3">
+                    <Link href={`/admin/users/${u.id}`} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
                     <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{(u.full_name||"U")[0].toUpperCase()}</div>
-                    <div className="min-w-0"><p className="text-sm font-medium truncate">{u.full_name||"Chưa đặt tên"}</p><p className="text-[10px] text-muted-foreground truncate">{u.email??u.id.slice(0,8)+"..."}</p></div>
-                  </div></td>
+                    <div className="min-w-0"><p className="text-sm font-medium truncate hover:text-primary transition-colors">{u.full_name||"Chưa đặt tên"}</p><p className="text-[10px] text-muted-foreground truncate">{u.email??u.id.slice(0,8)+"..."}</p></div>
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 hidden sm:table-cell"><div className="flex gap-1 flex-wrap">
                     {u.has_numerology&&<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">TS</span>}
                     {u.has_tuvi&&<span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">TV</span>}

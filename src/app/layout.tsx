@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { useEffect } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
+import { Suspense } from "react";
+import { ToastProvider } from "@/components/ToastProvider";
+import { VerifiedToastNotifier } from "@/components/VerifiedToastNotifier";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,26 +45,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  // Show toast when email verification is successful
-  useEffect(() => {
-    if (searchParams.get("verified") === "true") {
-      toast.success("Email đã được xác minh thành công! Bạn có thể tiếp tục sử dụng tài khoản.");
-      // Remove the query parameter to prevent showing the toast again on refresh
-      const params = new URLSearchParams(searchParams);
-      params.delete("verified");
-      const newUrl = `${pathname}${params.toString() ? `?${params}` : ""}`;
-      window.history.replaceState({}, "", newUrl);
-    }
-  }, [pathname, searchParams]);
-
   return (
-    <html lang="en">
+    <html lang="vi" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <div id="toast-debug" className="hidden">toast marker</div>
         {children}
-        <Toaster />
+        <ToastProvider />
       </body>
     </html>
   );

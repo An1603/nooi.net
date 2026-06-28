@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { LogoFull } from '@/components/brand/Logo';
 import { TechBackground } from '@/components/effects/TechBackground';
-import { AnimatedGradient } from '@/components/effects/AnimatedGradient';
 import {
   Sparkles,
   Brain,
@@ -139,7 +138,6 @@ function TiltCard({ children, className = '' }: { children: React.ReactNode; cla
 function HeroSection() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-5 pt-24 pb-20 overflow-hidden">
-      <AnimatedGradient />
       <GradientOrbs />
       <FloatingHexagons />
       <TechBackground />
@@ -365,7 +363,6 @@ function TechSection() {
 
   return (
     <section id="tech" className="relative py-24 px-5 overflow-hidden">
-      <AnimatedGradient />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent" />
 
       <div className="max-w-6xl mx-auto relative z-10" ref={ref}>

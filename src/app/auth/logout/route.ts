@@ -6,5 +6,6 @@ export async function POST() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  return NextResponse.redirect(new URL("/", process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net"));
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net";
+  return NextResponse.redirect(new URL("/", siteUrl));
 }

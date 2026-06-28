@@ -1,8 +1,23 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export default async function DashboardHome() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  // Check onboarding: user needs both a profile AND numerology_report
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_completed, numerology_report, full_name, date_of_birth")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  // Redirect to setup if no profile, onboarding not completed, or no report
+  if (!profile || !profile.onboarding_completed || !profile.numerology_report || !profile.full_name || !profile.date_of_birth) {
+    redirect("/app/setup");
+  }
+
   const email = user?.email ?? "Người dùng";
   const name = user?.user_metadata?.full_name ?? email.split("@")[0];
 
@@ -77,11 +92,11 @@ export default async function DashboardHome() {
                 "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/30",
             },
             {
-              title: "Khám phá tài liệu",
-              desc: "Truy cập kho tài liệu và hướng dẫn học tập",
-              href: "/app/library",
+              title: "Bản đồ thần số học",
+              desc: "Khám phá ý nghĩa các chỉ số của bạn",
+              href: "/app/numerology",
               color:
-                "from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:border-blue-500/30",
+                "from-violet-500/10 to-violet-500/5 border-violet-500/20 hover:border-violet-500/30",
             },
           ].map((card, i) => (
             <a

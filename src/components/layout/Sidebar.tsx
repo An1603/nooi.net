@@ -14,6 +14,9 @@ import {
   LogOut,
   Menu,
   X,
+  Sparkles,
+  Sun,
+  Globe,
 } from 'lucide-react';
 
 const NAV = [
@@ -21,6 +24,9 @@ const NAV = [
   { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
   { label: 'Video', href: '/app/videos', icon: Video },
   { label: 'Thư viện', href: '/app/library', icon: BookOpen },
+  { label: 'Thần số học', href: '/app/numerology', icon: Sparkles },
+  { label: 'Tử Vi', href: '/app/tuvi', icon: Sun },
+  { label: 'Chiêm tinh', href: '/app/astrology', icon: Globe },
 ];
 
 export function Sidebar() {

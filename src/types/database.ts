@@ -3,6 +3,59 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          full_name: string;
+          date_of_birth: string | null;
+          numerology_report: Json | null;
+          tuvi_report: Json | null;
+          chiem_tinh_report: Json | null;
+          gioi_tinh: "nam" | "nu";
+          gio_sinh: number;
+          noi_sinh: string;
+          vi_do: number;
+          kinh_do: number;
+          onboarding_completed: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          full_name?: string;
+          date_of_birth?: string | null;
+          numerology_report?: Json | null;
+          tuvi_report?: Json | null;
+          chiem_tinh_report?: Json | null;
+          gioi_tinh?: "nam" | "nu";
+          gio_sinh?: number;
+          noi_sinh?: string;
+          vi_do?: number;
+          kinh_do?: number;
+          onboarding_completed?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          full_name?: string;
+          date_of_birth?: string | null;
+          numerology_report?: Json | null;
+          tuvi_report?: Json | null;
+          chiem_tinh_report?: Json | null;
+          gioi_tinh?: "nam" | "nu";
+          gio_sinh?: number;
+          noi_sinh?: string;
+          vi_do?: number;
+          kinh_do?: number;
+          onboarding_completed?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       projects: {
         Row: {
           id: string;

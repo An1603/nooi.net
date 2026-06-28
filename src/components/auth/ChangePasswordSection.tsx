@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, Loader2, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Lock, Loader2, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {

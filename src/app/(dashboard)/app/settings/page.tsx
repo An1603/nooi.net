@@ -1,9 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { SettingsForm } from "./SettingsForm";
+import { AccountLinkingSection } from "@/components/auth/AccountLinking";
+import { ChangePasswordSection } from "@/components/auth/ChangePasswordSection";
+import { SetPasswordSection } from "@/components/auth/SetPasswordSection";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  // Fetch profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   const email = user?.email ?? "Không có";
+
+  // Check if user has email/password identity
+  const identities: { provider: string }[] = (user?.identities ?? []) as { provider: string }[];
+  const hasEmailIdentity = identities.some((i) => i.provider === "email");
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -15,42 +33,36 @@ export default async function SettingsPage() {
       </div>
 
       {/* Profile Section */}
+      <SettingsForm
+        user={{
+          email,
+          id: user.id,
+          createdAt: user.created_at,
+        }}
+        profile={profile ? {
+          full_name: profile.full_name,
+          date_of_birth: profile.date_of_birth,
+          gio_sinh: profile.gio_sinh,
+          gioi_tinh: profile.gioi_tinh,
+          noi_sinh: profile.noi_sinh,
+          vi_do: profile.vi_do,
+          kinh_do: profile.kinh_do,
+          numerology_report: profile.numerology_report !== null,
+          tuvi_report: profile.tuvi_report !== null,
+          chiem_tinh_report: profile.chiem_tinh_report !== null,
+        } : null}
+      />
+
+      {/* Account Linking Section */}
       <div className="rounded-xl border border-border bg-card mb-6">
         <div className="px-5 py-4 border-b border-border">
-          <h2 className="text-base font-semibold">Hồ sơ cá nhân</h2>
+          <h2 className="text-base font-semibold">Liên kết tài khoản</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Thông tin cơ bản về tài khoản của bạn.
+            Gộp các phương thức đăng nhập vào cùng một tài khoản NOOI.
           </p>
         </div>
-        <div className="px-5 py-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Email</label>
-              <p className="text-sm font-medium">{email}</p>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Tên hiển thị</label>
-              <p className="text-sm font-medium">
-                {user?.user_metadata?.full_name ?? email.split("@")[0]}
-              </p>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">ID người dùng</label>
-              <p className="text-xs font-mono text-muted-foreground truncate">{user?.id}</p>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Ngày tạo</label>
-              <p className="text-sm">
-                {user?.created_at
-                  ? new Date(user.created_at).toLocaleDateString("vi-VN", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
-                  : "—"}
-              </p>
-            </div>
-          </div>
+        <div className="px-5 py-4">
+          <AccountLinkingSection />
         </div>
       </div>
 
@@ -90,19 +102,19 @@ export default async function SettingsPage() {
             Quản lý mật khẩu và bảo mật tài khoản.
           </p>
         </div>
-        <div className="px-5 py-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Đổi mật khẩu</p>
-              <p className="text-xs text-muted-foreground">
-                Cập nhật mật khẩu tài khoản của bạn
-              </p>
-            </div>
-            <button className="text-sm text-primary hover:underline" disabled>
-              Sắp có
-            </button>
-          </div>
-          <div className="flex items-center justify-between">
+        <div className="px-5 py-4 space-y-4">
+          {/* Đổi mật khẩu — chỉ hiện cho email/password users */}
+          {hasEmailIdentity ? (
+            <ChangePasswordSection userEmail={email} />
+          ) : (
+            /* Đặt mật khẩu — cho OAuth-only users (Google/GitHub) */
+            <SetPasswordSection />
+          )}
+
+          {/* Separator */}
+          <div className="border-t border-border/50" />
+
+          <div className="flex items-center justify-between opacity-60">
             <div>
               <p className="text-sm font-medium">Xác thực 2 lớp</p>
               <p className="text-xs text-muted-foreground">

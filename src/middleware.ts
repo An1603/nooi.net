@@ -18,24 +18,16 @@ export async function middleware(request: NextRequest) {
     );
     if (isAuthRoute) return supabaseResponse;
 
-    // Admin login page — redirect /login to /admin/login
+    // Admin login page — allow without auth, redirect /login to it
     if (pathname === "/login") {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
+      return NextResponse.redirect(new URL("/admin-login", request.url));
     }
-
-    // Logout on admin → redirect to admin login
-    if (pathname === "/auth/logout") {
-      return supabaseResponse; // Let the route handler do its job, then middleware will catch below
-    }
+    if (pathname === "/admin-login") return supabaseResponse;
 
     // Not logged in → show admin login
     if (!user) {
-      if (pathname === "/admin/login") return supabaseResponse;
-      return NextResponse.redirect(new URL("/admin/login", request.url));
+      return NextResponse.redirect(new URL("/admin-login", request.url));
     }
-
-    // Non-admin user trying to access admin → clear session and show login
-    if (pathname === "/admin/login") return supabaseResponse;
 
     // Check admin role
     const { data: adminUser } = await supabase
@@ -45,9 +37,7 @@ export async function middleware(request: NextRequest) {
       .maybeSingle();
 
     if (!adminUser) {
-      // Not an admin — sign out and show login
-      const resp = NextResponse.redirect(new URL("/admin/login", request.url));
-      // Clear auth cookies
+      const resp = NextResponse.redirect(new URL("/admin-login", request.url));
       resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.0", "", { maxAge: 0, path: "/" });
       resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.1", "", { maxAge: 0, path: "/" });
       return resp;
@@ -63,6 +53,9 @@ export async function middleware(request: NextRequest) {
 
   /* ── Main site guard ── */
   if (pathname.startsWith("/admin")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+  if (pathname.startsWith("/admin-login")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

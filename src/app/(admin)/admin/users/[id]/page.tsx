@@ -2,7 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, Calendar, Clock, MapPin, Star, Sparkles, Moon, RefreshCw, TrendingUp, Mail, Shield, ChevronDown } from "lucide-react";
+import { ArrowLeft, User, Calendar, Clock, MapPin, Star, Sparkles, Moon, RefreshCw, TrendingUp, ChevronDown } from "lucide-react";
+import { LocalTime } from "@/components/LocalTime";
 
 export const dynamic = "force-dynamic";
 
@@ -37,9 +38,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
   // Identities (login methods)
   const identities: any[] = authUser?.identities ?? [];
   const providers = identities.map((i: any) => i.provider ?? "unknown");
-  const emailConfirmed = authUser?.email_confirmed_at ? new Date(authUser.email_confirmed_at) : null;
-  const createdAt = authUser?.created_at ? new Date(authUser.created_at) : (profile.created_at ? new Date(profile.created_at) : null);
-  const lastSignIn = authUser?.last_sign_in_at ? new Date(authUser.last_sign_in_at) : null;
+  const emailConfirmed = authUser?.email_confirmed_at ? true : false;
 
   return (
     <div className="p-6 space-y-5 max-w-5xl">
@@ -66,8 +65,8 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div><span className="text-muted-foreground">Email</span><p className="font-medium mt-0.5">{authUser?.email ?? adminUser?.email ?? profile.full_name ?? "—"}</p></div>
           <div><span className="text-muted-foreground">User ID</span><p className="font-medium mt-0.5 font-mono text-[10px]">{id.slice(0, 12)}...</p></div>
-          <div><span className="text-muted-foreground">Đăng ký</span><p className="font-medium mt-0.5">{createdAt ? fmtDate(createdAt) : "—"}</p></div>
-          <div><span className="text-muted-foreground">Đăng nhập cuối</span><p className="font-medium mt-0.5">{lastSignIn ? fmtDate(lastSignIn) : "—"}</p></div>
+          <div><span className="text-muted-foreground">Đăng ký</span><p className="font-medium mt-0.5"><LocalTime iso={authUser?.created_at} /></p></div>
+          <div><span className="text-muted-foreground">Đăng nhập cuối</span><p className="font-medium mt-0.5"><LocalTime iso={authUser?.last_sign_in_at} /></p></div>
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-border/30">
           <div className="flex items-center gap-1.5">
@@ -80,7 +79,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-muted-foreground">Email xác thực:</span>
             {emailConfirmed
-              ? <span className="text-[10px] text-emerald-400 font-medium">✅ {fmtDate(emailConfirmed)}</span>
+              ? <span className="text-[10px] text-emerald-400 font-medium">✅ <LocalTime iso={authUser?.email_confirmed_at} /></span>
               : <span className="text-[10px] text-amber-400">⚠️ Chưa xác thực</span>}
           </div>
         </div>
@@ -234,5 +233,3 @@ function Badge({ label, value, color }: { label: string; value: string; color: s
 function ABig({ label, val, icon, color }: { label: string; val: string; icon: string; color: string }) {
   return <div className="rounded-lg border border-border/20 bg-white/[0.02] p-3 text-center"><p className="text-lg mb-0.5">{icon}</p><p className={`text-sm font-bold ${color}`}>{val||"—"}</p><p className="text-[10px] text-muted-foreground">{label}</p></div>;
 }
-
-function fmtDate(d: Date) { return d.toLocaleDateString("vi-VN", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }); }

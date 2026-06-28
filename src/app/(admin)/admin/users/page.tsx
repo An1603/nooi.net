@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { LocalTime } from "@/components/LocalTime";
 
 const GIO_LIST = [
   { value: 23, label: "Tý (23:00-00:59)" }, { value: 1, label: "Sửu (01:00-02:59)" },
@@ -158,6 +159,7 @@ export default function AdminUsersPage() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">User</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden sm:table-cell">Modules</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden md:table-cell">Role</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Tham gia</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Hành động</th>
               </tr></thead>
               <tbody className="divide-y divide-border/10">
@@ -176,6 +178,9 @@ export default function AdminUsersPage() {
                   </div></td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     {u.role==="super_admin"||u.role==="admin"?<span className="inline-flex items-center gap-1 text-xs text-primary font-medium"><Shield className="size-3"/>{u.role==="super_admin"?"Super Admin":"Admin"}</span>:<span className="text-xs text-muted-foreground">User</span>}
+                  </td>
+                  <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">
+                    <LocalTime iso={u.created_at} format="short" />
                   </td>
                   <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">
                     <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400 transition-colors" title="Sửa"><Pencil className="size-3.5"/></button>

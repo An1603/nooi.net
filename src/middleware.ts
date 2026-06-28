@@ -12,11 +12,17 @@ export async function middleware(request: NextRequest) {
 
   /* ── Admin subdomain guard ── */
   if (host === ADMIN_HOST) {
-    // Not logged in → redirect to login
+    // Allow auth routes without admin check (login, callback, etc.)
+    const isAuthRoute = publicRoutes.some((route) =>
+      pathname === route || pathname.startsWith(route + "/") || pathname.startsWith(route + "?")
+    );
+    if (isAuthRoute) {
+      return supabaseResponse;
+    }
+
+    // Not logged in → redirect to login on main site
     if (!user) {
-      const loginUrl = new URL("/login", `https://${ADMIN_HOST}`);
-      loginUrl.searchParams.set("redirect", "/admin");
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(new URL("/login", `https://nooi.net`));
     }
 
     // Check admin role via admin_users table
@@ -28,12 +34,12 @@ export async function middleware(request: NextRequest) {
 
     if (!adminUser) {
       return new NextResponse(
-        `<html><body style="background:#0a0a0a;color:#f87171;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h1 style="font-size:3rem;margin:0">403</h1><p>Bạn không có quyền truy cập trang quản trị.</p><a href="/app" style="color:#c8943e">Về trang chủ</a></div></body></html>`,
+        `<html><body style="background:#0a0a0a;color:#f87171;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><div style="text-align:center"><h1 style="font-size:3rem;margin:0">403</h1><p>Bạn không có quyền truy cập trang quản trị.</p><a href="https://nooi.net/app" style="color:#c8943e">Về trang chủ</a></div></body></html>`,
         { status: 403, headers: { "Content-Type": "text/html; charset=utf-8" } }
       );
     }
 
-    // Admin confirmed → allow (routes under /admin)
+    // Admin confirmed → allow
     // Rewrite root to /admin
     if (pathname === "/") {
       return NextResponse.redirect(new URL("/admin", request.url));

@@ -12,12 +12,17 @@ export async function middleware(request: NextRequest) {
 
   /* ── Admin subdomain guard ── */
   if (host === ADMIN_HOST) {
-    // Allow auth routes without admin check (login, callback, etc.)
-    const isAuthRoute = publicRoutes.some((route) =>
-      pathname === route || pathname.startsWith(route + "/") || pathname.startsWith(route + "?")
+    // Allow auth-related routes without admin check (for OAuth callback, etc.)
+    const isAuthRoute = ["/auth/callback", "/auth/confirm", "/auth/reset", "/auth/update-password"].some(
+      (route) => pathname === route || pathname.startsWith(route + "/") || pathname.startsWith(route + "?")
     );
     if (isAuthRoute) {
       return supabaseResponse;
+    }
+
+    // Redirect /login and /signup to main site
+    if (pathname === "/login" || pathname === "/signup") {
+      return NextResponse.redirect(new URL(pathname, "https://nooi.net"));
     }
 
     // Not logged in → redirect to login on main site

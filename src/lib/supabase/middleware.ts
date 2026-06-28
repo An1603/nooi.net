@@ -9,20 +9,31 @@ export const updateSession = async (request: NextRequest) => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              domain: process.env.NODE_ENV === "production" ? ".nooi.net" : undefined,
+              maxAge: 60 * 60 * 24 * 365, // 1 year — keep session alive
+              sameSite: "lax",
+              secure: process.env.NODE_ENV === "production",
+              httpOnly: true,
+              path: "/",
+            })
           );
         },
       },
     }
   );
 
+  // IMPORTANT: getUser() refreshes the session automatically
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -2,14 +2,14 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2, Wand2 } from "lucide-react";
+import { Mail, Lock, Loader2, Wand2, ArrowLeft } from "lucide-react";
 
 type AuthTab = "signin" | "signup";
-type AuthError = { message: string } | null;
 
 function extractErrorMessage(error: unknown): string {
   if (!error) return "";
@@ -17,6 +17,34 @@ function extractErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === "object" && error !== null) {
     const obj = error as Record<string, unknown>;
+    
+    // Handle Supabase Auth error format
+    if (obj.status && obj.message) {
+      const status = obj.status;
+      const msg = obj.message?.toLowerCase() || "";
+      
+      // Common Supabase Auth errors
+      if (msg.includes("user already registered")) {
+        return "Email này đã được đăng ký. Vui lòng đăng nhập.";
+      }
+      if (msg.includes("invalid login credentials") || msg.includes("invalid email or password")) {
+        return "Sai email hoặc mật khẩu. Vui lòng thử lại.";
+      }
+      if (msg.includes("email not confirmed")) {
+        return "Email chưa được xác nhận. Vui lòng kiểm tra hộp thư của bạn.";
+      }
+      if (msg.includes("too many requests")) {
+        return "Quá nhiều yêu cầu. Vui lòng chờ một chút trước khi thử lại.";
+      }
+      if (msg.includes("invalid email")) {
+        return "Email không hợp lệ.";
+      }
+      
+      // If we have a specific message, return it
+      if (typeof obj.message === "string") return obj.message;
+    }
+    
+    // Fallback to original extraction logic
     if (typeof obj.message === "string") return obj.message;
     if (typeof obj.error_description === "string") return obj.error_description;
     if (typeof obj.error === "string") return obj.error;
@@ -39,32 +67,28 @@ export function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<AuthError>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
-
-  const clearError = useCallback(() => setError(null), []);
 
   const handleTabSwitch = useCallback((newTab: AuthTab) => {
     setTab(newTab);
-    setError(null);
     setMagicLinkSent(false);
   }, []);
 
   const validateForm = (): boolean => {
     if (!email.trim()) {
-      setError({ message: "Vui lòng nhập email." });
+      toast.error("Vui lòng nhập email.");
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError({ message: "Email không hợp lệ." });
+      toast.error("Email không hợp lệ.");
       return false;
     }
     if (tab === "signup" && password.length < 6) {
-      setError({ message: "Mật khẩu phải có ít nhất 6 ký tự." });
+      toast.error("Mật khẩu phải có ít nhất 6 ký tự.");
       return false;
     }
     if (tab === "signin" && !password) {
-      setError({ message: "Vui lòng nhập mật khẩu." });
+      toast.error("Vui lòng nhập mật khẩu.");
       return false;
     }
     return true;
@@ -72,7 +96,6 @@ export function AuthForm() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearError();
     if (!validateForm()) return;
 
     setLoading(true);
@@ -90,21 +113,21 @@ export function AuthForm() {
 
         if (signUpError) throw signUpError;
 
-        if (data?.user?.identities?.length === 0) {
-          setError({
-            message: "Email này đã được đăng ký. Vui lòng đăng nhập.",
-          });
-          return;
+        // Handle case where user might already exist (though this should typically trigger an error)
+        if (data?.user) {
+          // If user exists but no session, they need to confirm email
+          if (!data.session) {
+            toast.success("📧 Kiểm tra email để xác nhận tài khoản (cả thư mục Spam) trước khi đăng nhập.");
+            return;
+          }
+          
+          // If we have a session, sign in successful
+          toast.success("Tài khoản đã được tạo thành công!");
+          router.push("/app");
+        } else {
+          // No user data returned - this shouldn't happen normally but handle gracefully
+          toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
         }
-
-        if (data?.user && !data.session) {
-          setError({
-            message: "Kiểm tra email để xác nhận tài khoản trước khi đăng nhập.",
-          });
-          return;
-        }
-
-        router.push("/app");
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: emailTrimmed,
@@ -112,17 +135,17 @@ export function AuthForm() {
         });
 
         if (signInError) throw signInError;
+        toast.success("Đăng nhập thành công!");
         router.push("/app");
       }
     } catch (err) {
-      setError({ message: extractErrorMessage(err) });
+      toast.error(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
   const handleSocialLogin = async (provider: "google" | "github") => {
-    clearError();
     setLoading(true);
     try {
       const { error: oAuthError } = await supabase.auth.signInWithOAuth({
@@ -131,17 +154,25 @@ export function AuthForm() {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-      if (oAuthError) throw oAuthError;
+      if (oAuthError) {
+        // Check for common Supabase OAuth errors
+        const msg = oAuthError.message || "";
+        if (msg.includes("provider is not enabled") || msg.includes("Unsupported provider")) {
+          throw new Error(`🔒 ${provider === "google" ? "Google" : "GitHub"} chưa được bật trên hệ thống. Vui lòng liên hệ quản trị viên để kích hoạt.`);
+        }
+        throw oAuthError;
+      }
+      toast.success(`Đăng nhập thành công bằng ${provider === "google" ? "Google" : "GitHub"}!`);
     } catch (err) {
-      setError({ message: extractErrorMessage(err) });
+      toast.error(extractErrorMessage(err));
+    } finally {
       setLoading(false);
     }
   };
 
   const handleMagicLink = async () => {
-    clearError();
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError({ message: "Vui lòng nhập email hợp lệ trước." });
+      toast.error("Vui lòng nhập email hợp lệ trước.");
       return;
     }
 
@@ -155,8 +186,10 @@ export function AuthForm() {
       });
       if (magicLinkError) throw magicLinkError;
       setMagicLinkSent(true);
+      setPassword(""); // Clear password field for security
+      toast.success("Link ma thuật đã được gửi! Kiểm tra email (cả thư mục spam).");
     } catch (err) {
-      setError({ message: extractErrorMessage(err) });
+      toast.error("Gửi email thất bại.");
     } finally {
       setLoading(false);
     }
@@ -181,8 +214,8 @@ export function AuthForm() {
           className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
             tab === "signin"
               ? "bg-background text-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+              : "text-muted-foreground hover:text-foreground"`
+          }}
         >
           Đăng nhập
         </button>
@@ -192,22 +225,12 @@ export function AuthForm() {
           className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
             tab === "signup"
               ? "bg-background text-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+              : "text-muted-foreground hover:text-foreground"`
+          }}
         >
           Đăng ký
         </button>
       </div>
-
-      {/* Error message */}
-      {error && (
-        <div
-          role="alert"
-          className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-        >
-          {error.message}
-        </div>
-      )}
 
       {/* Magic link success */}
       {magicLinkSent && (
@@ -230,10 +253,7 @@ export function AuthForm() {
               type="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                clearError();
-              }}
+              onChange={(e) => setEmail(e.target.value)}
               className="pl-8"
               autoComplete="email"
               required
@@ -243,7 +263,17 @@ export function AuthForm() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="auth-password">Mật khẩu</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="auth-password">Mật khẩu</Label>
+            {tab === "signin" && (
+              <Link
+                href="/auth/reset"
+                className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
+              >
+                Quên mật khẩu?
+              </Link>
+            )}
+          </div>
           <div className="relative">
             <Lock className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -255,10 +285,7 @@ export function AuthForm() {
                   : "Mật khẩu của bạn"
               }
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                clearError();
-              }}
+              onChange={(e) => setPassword(e.target.value)}
               className="pl-8"
               autoComplete={tab === "signup" ? "new-password" : "current-password"}
               required

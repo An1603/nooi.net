@@ -25,9 +25,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(pathname, "https://nooi.net"));
     }
 
-    // Not logged in → redirect to login on main site
+    // Not logged in (or cookie domain mismatch) → refresh domain then retry
     if (!user) {
-      return NextResponse.redirect(new URL("/login", `https://nooi.net`));
+      const refreshUrl = new URL("/auth/refresh-domain", "https://nooi.net");
+      refreshUrl.searchParams.set("redirect", pathname || "/admin");
+      return NextResponse.redirect(refreshUrl);
     }
 
     // Check admin role via admin_users table

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { cookieOptions } from "@/lib/supabase/cookies";
 
 export const updateSession = async (request: NextRequest) => {
   let supabaseResponse = NextResponse.next({ request });
@@ -18,22 +19,20 @@ export const updateSession = async (request: NextRequest) => {
           );
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, {
+            supabaseResponse.cookies.set(name, value, cookieOptions({
               ...options,
-              domain: process.env.NODE_ENV === "production" ? ".nooi.net" : undefined,
-              maxAge: 60 * 60 * 24 * 365, // 1 year — keep session alive
+              maxAge: 60 * 60 * 24 * 365,
               sameSite: "lax",
               secure: process.env.NODE_ENV === "production",
               httpOnly: true,
               path: "/",
-            })
+            }))
           );
         },
       },
     }
   );
 
-  // IMPORTANT: getUser() refreshes the session automatically
   const {
     data: { user },
   } = await supabase.auth.getUser();

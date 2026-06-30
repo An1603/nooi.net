@@ -933,14 +933,35 @@ export function AstrologyPageClient({ profile }: Props) {
     }
   })();
 
-  const [result] = useState<AstrologyResult | null>(storedReport);
+  const [result, setResult] = useState<AstrologyResult | null>(storedReport);
   const [calculating, setCalculating] = useState(false);
 
-  // If stored report is corrupted, clear it and show setup
+  // Auto-calculate if user has all info but no report yet
+  const hasBasicInfo = !!(profile.date_of_birth && profile.gio_sinh != null && profile.noi_sinh);
+
   useEffect(() => {
-    if (!storedReport && profile.chiem_tinh_report) {
+    if (!storedReport && hasBasicInfo && !calculating && !result) {
+      setCalculating(true);
       const supabase = createClient();
-      supabase.from("profiles").update({ chiem_tinh_report: null }).eq("user_id", profile.user_id);
+      import("@/lib/astrology").then(async ({ calculateAstrology }) => {
+        try {
+          const coords = findCoords(profile.noi_sinh);
+          const r = await calculateAstrology({
+            fullName: profile.full_name,
+            ngaySinh: profile.date_of_birth!,
+            gioSinh: profile.gio_sinh!,
+            noiSinh: profile.noi_sinh,
+            gioiTinh: profile.gioi_tinh,
+            viDo: coords.lat,
+            kinhDo: coords.lng,
+          });
+          setResult(r);
+          await supabase.from("profiles").update({ chiem_tinh_report: r as unknown as Record<string, unknown> }).eq("user_id", profile.user_id);
+        } catch (e) {
+          // continue to form
+        }
+        setCalculating(false);
+      });
     }
   }, []);
 

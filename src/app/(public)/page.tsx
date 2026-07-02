@@ -89,27 +89,30 @@ function FloatingHexagons() {
 function GradientOrbs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      {/* Mesh gradient layer — warm/cool fluid blend */}
+      {/* Deep vibrant mesh gradient — like the reference images */}
       <div
-        className="absolute inset-0 opacity-70"
+        className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse 80% 60% at 10% 20%, rgba(236,72,153,0.35) 0%, transparent 60%),
-            radial-gradient(ellipse 70% 50% at 90% 10%, rgba(251,191,36,0.3) 0%, transparent 50%),
-            radial-gradient(ellipse 60% 70% at 80% 80%, rgba(59,130,246,0.25) 0%, transparent 50%),
-            radial-gradient(ellipse 50% 60% at 20% 80%, rgba(139,92,246,0.3) 0%, transparent 50%),
-            radial-gradient(ellipse 90% 40% at 50% 50%, rgba(244,114,182,0.15) 0%, transparent 60%),
-            radial-gradient(ellipse 60% 80% at 50% 30%, rgba(6,182,212,0.15) 0%, transparent 50%),
-            radial-gradient(ellipse 40% 50% at 70% 50%, rgba(251,146,60,0.2) 0%, transparent 40%)
+            radial-gradient(ellipse 90% 70% at 5% 15%, rgba(220,38,127,0.5) 0%, transparent 55%),
+            radial-gradient(ellipse 80% 60% at 95% 10%, rgba(251,146,60,0.45) 0%, transparent 50%),
+            radial-gradient(ellipse 70% 80% at 85% 85%, rgba(37,99,235,0.4) 0%, transparent 50%),
+            radial-gradient(ellipse 60% 70% at 15% 85%, rgba(124,58,237,0.45) 0%, transparent 50%),
+            radial-gradient(ellipse 100% 50% at 50% 50%, rgba(244,114,182,0.2) 0%, transparent 60%),
+            radial-gradient(ellipse 70% 90% at 50% 20%, rgba(34,211,238,0.2) 0%, transparent 55%),
+            radial-gradient(ellipse 50% 60% at 75% 50%, rgba(251,146,60,0.25) 0%, transparent 45%)
           `,
         }}
       />
-      {/* Floating shimmer orbs */}
-      <div className="absolute top-[15%] left-[5%] w-72 h-72 rounded-full bg-gradient-to-br from-pink-400/20 to-fuchsia-500/5 blur-[120px] animate-float" />
-      <div className="absolute top-[5%] right-[10%] w-80 h-80 rounded-full bg-gradient-to-br from-amber-300/20 to-orange-400/10 blur-[140px] animate-float" style={{ animationDelay: '-3s' }} />
-      <div className="absolute bottom-[20%] right-[5%] w-96 h-96 rounded-full bg-gradient-to-br from-blue-400/15 to-cyan-300/5 blur-[160px] animate-float" style={{ animationDelay: '-6s' }} />
-      <div className="absolute bottom-[10%] left-[15%] w-64 h-64 rounded-full bg-gradient-to-br from-violet-400/20 to-purple-500/10 blur-[110px] animate-float" style={{ animationDelay: '-2s' }} />
-      <div className="absolute top-[40%] left-[35%] w-80 h-80 rounded-full bg-gradient-to-br from-rose-300/10 to-pink-400/5 blur-[130px] animate-float" style={{ animationDelay: '-5s' }} />
+      {/* Floating blurred orbs for depth */}
+      <div className="absolute top-[12%] left-[3%] w-96 h-96 rounded-full bg-gradient-to-br from-fuchsia-500/25 to-pink-600/10 blur-[150px] animate-float" />
+      <div className="absolute top-[2%] right-[8%] w-[28rem] h-[28rem] rounded-full bg-gradient-to-br from-amber-500/25 to-orange-600/15 blur-[170px] animate-float" style={{ animationDelay: '-3s' }} />
+      <div className="absolute bottom-[15%] right-[3%] w-[30rem] h-[30rem] rounded-full bg-gradient-to-br from-blue-600/20 to-cyan-500/10 blur-[180px] animate-float" style={{ animationDelay: '-6s' }} />
+      <div className="absolute bottom-[8%] left-[10%] w-80 h-80 rounded-full bg-gradient-to-br from-violet-600/25 to-purple-700/15 blur-[140px] animate-float" style={{ animationDelay: '-2s' }} />
+      <div className="absolute top-[35%] left-[30%] w-[26rem] h-[26rem] rounded-full bg-gradient-to-br from-pink-500/15 to-rose-400/10 blur-[160px] animate-float" style={{ animationDelay: '-5s' }} />
+      {/* Subtle light streaks */}
+      <div className="absolute top-[20%] right-[5%] w-40 h-1 bg-gradient-to-r from-transparent via-amber-300/30 to-transparent blur-sm rotate-45 animate-float" style={{ animationDelay: '-1s' }} />
+      <div className="absolute top-[30%] right-[12%] w-32 h-0.5 bg-gradient-to-r from-transparent via-pink-300/20 to-transparent blur-sm -rotate-12 animate-float" style={{ animationDelay: '-4s' }} />
     </div>
   );
 }
@@ -169,7 +172,7 @@ function HeroSection() {
         </div>
 
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 text-xs mb-6 animate-slide-up opacity-0 backdrop-blur-sm"
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/25 bg-amber-500/8 text-amber-400 text-xs mb-6 animate-slide-up opacity-0 backdrop-blur-sm"
           style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <Sparkles size={14} />
@@ -312,7 +315,7 @@ function FeaturesSection() {
       <div className="max-w-6xl mx-auto" ref={ref}>
         {/* Section header */}
         <div className={`text-center mb-16 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-xs mb-4 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/25 bg-purple-500/8 text-purple-400 text-xs mb-4 backdrop-blur-sm">
             <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
             <Sparkles size={12} />
             Tính năng nổi bật
@@ -477,9 +480,9 @@ function CTASection() {
   return (
     <section id="about" className="relative py-24 px-5">
       <div className="max-w-4xl mx-auto text-center" ref={ref}>
-        <div className={`relative p-8 md:p-12 rounded-3xl bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 border border-pink-200/50 overflow-hidden transition-all duration-700 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+        <div className={`relative p-8 md:p-12 rounded-3xl bg-gradient-to-br from-fuchsia-950/50 via-purple-950/40 to-blue-950/50 border border-fuchsia-500/15 overflow-hidden transition-all duration-700 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
           {/* Animated gradient border */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-pink-300/30 via-purple-300/30 to-blue-300/30 animate-pulse-glow" style={{ padding: '1px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-fuchsia-500/20 via-purple-500/20 to-blue-500/20 animate-pulse-glow" style={{ padding: '1px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
 
           {/* Decorative hexagons */}
           <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.04]">

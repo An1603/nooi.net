@@ -46,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi">
+    <html lang="vi" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <div id="toast-debug" className="hidden">toast marker</div>
         {children}

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Plus, Trash2, Eye, Shield, Loader2, Search, X, Mail, Lock, User, Pencil,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -60,6 +61,25 @@ export default function AdminUsersPage() {
   // Delete
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Generate reports
+  const [genUserId, setGenUserId] = useState<string | null>(null);
+  const [genning, setGenning] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!genUserId) return;
+    setGenning(true);
+    try {
+      const res = await fetch(`/api/admin/users/${genUserId}/generate-reports`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Tạo thất bại");
+      toast.success(`✅ Đã tạo: ${data.generated?.join(", ") || "3 báo cáo"}`);
+      setGenUserId(null);
+      loadUsers();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Tạo thất bại");
+    } finally { setGenning(false); }
+  };
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -183,6 +203,9 @@ export default function AdminUsersPage() {
                     <LocalTime iso={u.created_at} format="short" />
                   </td>
                   <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">
+                    {u.date_of_birth && (
+                      <button onClick={() => setGenUserId(u.id)} className="p-1.5 rounded-lg hover:bg-amber-500/10 text-muted-foreground hover:text-amber-400 transition-colors" title="Tạo báo cáo (TS, TV, CT)"><Sparkles className="size-3.5"/></button>
+                    )}
                     <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400 transition-colors" title="Sửa"><Pencil className="size-3.5"/></button>
                     <Link href={`/admin/users/${u.id}`} className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors" title="Xem chi tiết"><Eye className="size-3.5"/></Link>
                     <button onClick={() => setDeleteId(u.id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors" title="Xoá"><Trash2 className="size-3.5"/></button>
@@ -238,6 +261,15 @@ export default function AdminUsersPage() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={()=>setDeleteId(null)} className="flex-1 h-9 text-sm">Huỷ</Button>
           <Button onClick={handleDelete} disabled={deleting} className="flex-1 h-9 bg-red-600 hover:bg-red-700 text-white text-sm">{deleting?<><Loader2 className="size-3.5 animate-spin mr-1"/>Đang xoá...</>:"Xoá"}</Button>
+        </div>
+      </Modal>}
+
+      {/* Generate reports modal */}
+      {genUserId&&<Modal onClose={()=>setGenUserId(null)} title="Tạo báo cáo cho user này?">
+        <p className="text-xs text-muted-foreground mb-4">Sẽ tạo đồng thời Thần số học, Tử Vi và Chiêm tinh dựa trên thông tin ngày/giờ sinh hiện có.</p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={()=>setGenUserId(null)} className="flex-1 h-9 text-sm">Huỷ</Button>
+          <Button onClick={handleGenerate} disabled={genning} className="flex-1 h-9 bg-amber-600 hover:bg-amber-700 text-white text-sm">{genning?<><Loader2 className="size-3.5 animate-spin mr-1"/>Đang tạo...</>:"Tạo 3 báo cáo"}</Button>
         </div>
       </Modal>}
     </div>

@@ -89,30 +89,31 @@ function FloatingHexagons() {
 function GradientOrbs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      {/* Deep vibrant mesh gradient — like the reference images */}
+      {/* Rich vibrant mesh — no pure black spots */}
       <div
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse 90% 70% at 5% 15%, rgba(220,38,127,0.5) 0%, transparent 55%),
-            radial-gradient(ellipse 80% 60% at 95% 10%, rgba(251,146,60,0.45) 0%, transparent 50%),
-            radial-gradient(ellipse 70% 80% at 85% 85%, rgba(37,99,235,0.4) 0%, transparent 50%),
-            radial-gradient(ellipse 60% 70% at 15% 85%, rgba(124,58,237,0.45) 0%, transparent 50%),
-            radial-gradient(ellipse 100% 50% at 50% 50%, rgba(244,114,182,0.2) 0%, transparent 60%),
-            radial-gradient(ellipse 70% 90% at 50% 20%, rgba(34,211,238,0.2) 0%, transparent 55%),
-            radial-gradient(ellipse 50% 60% at 75% 50%, rgba(251,146,60,0.25) 0%, transparent 45%)
+            radial-gradient(ellipse 100% 80% at 0% 10%, rgba(220,38,127,0.6) 0%, transparent 50%),
+            radial-gradient(ellipse 90% 70% at 100% 5%, rgba(251,146,60,0.55) 0%, transparent 50%),
+            radial-gradient(ellipse 80% 90% at 90% 90%, rgba(37,99,235,0.5) 0%, transparent 50%),
+            radial-gradient(ellipse 70% 80% at 10% 90%, rgba(124,58,237,0.55) 0%, transparent 50%),
+            radial-gradient(ellipse 120% 60% at 50% 50%, rgba(244,114,182,0.3) 0%, transparent 55%),
+            radial-gradient(ellipse 80% 100% at 20% 30%, rgba(34,211,238,0.25) 0%, transparent 55%),
+            radial-gradient(ellipse 60% 70% at 80% 40%, rgba(251,146,60,0.35) 0%, transparent 45%),
+            radial-gradient(ellipse 100% 80% at 50% 100%, rgba(236,72,153,0.2) 0%, transparent 50%)
           `,
         }}
       />
-      {/* Floating blurred orbs for depth */}
-      <div className="absolute top-[12%] left-[3%] w-96 h-96 rounded-full bg-gradient-to-br from-fuchsia-500/25 to-pink-600/10 blur-[150px] animate-float" />
-      <div className="absolute top-[2%] right-[8%] w-[28rem] h-[28rem] rounded-full bg-gradient-to-br from-amber-500/25 to-orange-600/15 blur-[170px] animate-float" style={{ animationDelay: '-3s' }} />
-      <div className="absolute bottom-[15%] right-[3%] w-[30rem] h-[30rem] rounded-full bg-gradient-to-br from-blue-600/20 to-cyan-500/10 blur-[180px] animate-float" style={{ animationDelay: '-6s' }} />
-      <div className="absolute bottom-[8%] left-[10%] w-80 h-80 rounded-full bg-gradient-to-br from-violet-600/25 to-purple-700/15 blur-[140px] animate-float" style={{ animationDelay: '-2s' }} />
-      <div className="absolute top-[35%] left-[30%] w-[26rem] h-[26rem] rounded-full bg-gradient-to-br from-pink-500/15 to-rose-400/10 blur-[160px] animate-float" style={{ animationDelay: '-5s' }} />
-      {/* Subtle light streaks */}
-      <div className="absolute top-[20%] right-[5%] w-40 h-1 bg-gradient-to-r from-transparent via-amber-300/30 to-transparent blur-sm rotate-45 animate-float" style={{ animationDelay: '-1s' }} />
-      <div className="absolute top-[30%] right-[12%] w-32 h-0.5 bg-gradient-to-r from-transparent via-pink-300/20 to-transparent blur-sm -rotate-12 animate-float" style={{ animationDelay: '-4s' }} />
+      {/* Floating orbs for depth */}
+      <div className="absolute top-[10%] left-[2%] w-[26rem] h-[26rem] rounded-full bg-gradient-to-br from-fuchsia-500/30 to-pink-600/15 blur-[160px] animate-float" />
+      <div className="absolute top-[1%] right-[5%] w-[30rem] h-[30rem] rounded-full bg-gradient-to-br from-amber-500/30 to-orange-600/20 blur-[180px] animate-float" style={{ animationDelay: '-3s' }} />
+      <div className="absolute bottom-[10%] right-[2%] w-[32rem] h-[32rem] rounded-full bg-gradient-to-br from-blue-600/25 to-cyan-500/15 blur-[190px] animate-float" style={{ animationDelay: '-6s' }} />
+      <div className="absolute bottom-[5%] left-[8%] w-[22rem] h-[22rem] rounded-full bg-gradient-to-br from-violet-600/30 to-purple-700/20 blur-[150px] animate-float" style={{ animationDelay: '-2s' }} />
+      <div className="absolute top-[30%] left-[25%] w-[28rem] h-[28rem] rounded-full bg-gradient-to-br from-pink-500/20 to-rose-400/15 blur-[170px] animate-float" style={{ animationDelay: '-5s' }} />
+      {/* Light streaks */}
+      <div className="absolute top-[15%] right-[8%] w-48 h-1 bg-gradient-to-r from-transparent via-amber-300/25 to-transparent blur-sm rotate-45 animate-float" style={{ animationDelay: '-1s' }} />
+      <div className="absolute top-[25%] right-[15%] w-36 h-0.5 bg-gradient-to-r from-transparent via-pink-300/15 to-transparent blur-sm -rotate-12 animate-float" style={{ animationDelay: '-4s' }} />
     </div>
   );
 }

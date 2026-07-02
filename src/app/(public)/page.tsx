@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import NextImage from 'next/image';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import { LogoFull } from '@/components/brand/Logo';
 import { TechBackground } from '@/components/effects/TechBackground';
 import {
@@ -158,6 +159,17 @@ function TiltCard({ children, className = '' }: { children: React.ReactNode; cla
    Hero Section
    ─────────────────────────────────────────────── */
 function HeroSection() {
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setLoggedIn(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-5 pt-24 pb-20 overflow-hidden">
       <GradientOrbs />
@@ -206,19 +218,33 @@ function HeroSection() {
           và cộng tác với các tác tử thông minh.
         </p>
 
-        {/* CTA */}
+        {/* CTA — conditional based on auth */}
         <div className="flex flex-col sm:flex-row gap-4 animate-slide-up opacity-0"
           style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
-          <Link
-            href="/signup"
-            className="group relative inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-medium text-base overflow-hidden transition-all hover:brightness-110 hover:shadow-[0_0_40px_rgba(200,148,62,0.25)]"
-          >
-            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            <span className="relative z-10 flex items-center gap-2">
-              Bắt đầu miễn phí
-              <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </span>
-          </Link>
+          {loggedIn ? (
+            <Link
+              href="/app"
+              className="group relative inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-medium text-base overflow-hidden transition-all hover:brightness-110 hover:shadow-[0_0_40px_rgba(200,148,62,0.25)]"
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <span className="relative z-10 flex items-center gap-2">
+                <LayoutDashboard size={16} />
+                Về Dashboard
+                <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/signup"
+              className="group relative inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-medium text-base overflow-hidden transition-all hover:brightness-110 hover:shadow-[0_0_40px_rgba(200,148,62,0.25)]"
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <span className="relative z-10 flex items-center gap-2">
+                Bắt đầu miễn phí
+                <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </span>
+            </Link>
+          )}
           <Link
             href="#features"
             className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-border text-foreground font-medium text-base hover:bg-glass hover:border-muted-foreground/30 transition-all"

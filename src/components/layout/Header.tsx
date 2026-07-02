@@ -14,10 +14,10 @@ const NAV_ITEMS = [
   { label: 'Liên hệ', href: '#contact' },
 ];
 
-export function Header() {
+export function Header({ initialSession = false }: { initialSession?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [session, setSession] = useState<boolean | null>(null);
+  const [session, setSession] = useState<boolean | null>(initialSession ? true : null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {

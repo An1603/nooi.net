@@ -29,7 +29,6 @@ export const updateSession = async (request: NextRequest) => {
               maxAge: 60 * 60 * 24 * 365,
               sameSite: "lax",
               secure: process.env.NODE_ENV === "production",
-              httpOnly: true,
               path: "/",
             }))
           );
@@ -51,7 +50,6 @@ export const updateSession = async (request: NextRequest) => {
         maxAge: 60 * 60 * 24 * 365,
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
         path: "/",
       }));
     }

@@ -21,6 +21,7 @@ import {
   Layers,
   BarChart3,
   Hexagon,
+  LayoutDashboard,
 } from 'lucide-react';
 
 /* ───────────────────────────────────────────────

@@ -43,24 +43,17 @@ export function LogoHorizontal({
   className?: string;
   theme?: 'light' | 'dark';
 }) {
-  // Logo_h_w: có chữ NOOI đậm, hợp nền sáng
-  // Logo_h_tr: icon infinity, hợp nền tối (cần xử lý)
-  // Trên nền tối, dùng logo_h_w và CSS filter invert để hiển thị
-  const src = '/logo-h-w.png';
-
   return (
-    <Link href="/" className={cn('flex items-center no-underline', className)}>
+    <Link href="/" className={cn('flex items-center gap-2 no-underline', className)}>
       <Image
-        src={src}
+        src="/logo-nooi.svg"
         alt="NOOI"
-        width={150}
-        height={50}
-        className={cn(
-          'w-auto h-auto',
-          theme === 'dark' && 'brightness-0 invert'
-        )}
+        width={36}
+        height={36}
+        className="shrink-0"
         priority
       />
+      <span className="text-lg font-bold tracking-tight text-foreground">NOOI</span>
     </Link>
   );
 }

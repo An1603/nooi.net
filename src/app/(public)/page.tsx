@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import NextImage from 'next/image';
 import Link from 'next/link';
 import { LogoFull } from '@/components/brand/Logo';
 import { TechBackground } from '@/components/effects/TechBackground';
@@ -167,8 +168,14 @@ function HeroSection() {
         {/* Logo */}
         <div className="mb-8 animate-slide-up opacity-0" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
           <div className="relative">
-            <div className="absolute -inset-4 rounded-full bg-primary/10 blur-2xl animate-pulse-glow" />
-            <LogoFull />
+            <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-pink-500/15 via-purple-500/10 to-blue-500/15 blur-2xl animate-pulse-glow" />
+            <NextImage
+              src="/logo-nooi.svg"
+              alt="NOOI"
+              width={120}
+              height={120}
+              priority
+            />
           </div>
         </div>
 

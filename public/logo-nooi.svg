@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Left ring (pale/light) -->
+  <path d="M60 10C38 10 20 28 20 50C20 62 26 72 35 79C33 75 32 70 32 65C32 48 46 34 63 34C64 34 65 34 66 34C64 28 62 22 60 10Z" fill="#E8E4E0" />
+  <path d="M60 10C82 10 100 28 100 50C100 62 94 72 85 79C87 75 88 70 88 65C88 48 74 34 57 34C56 34 55 34 54 34C56 28 58 22 60 10Z" fill="#C0BCB8" />
+
+  <!-- Right ring (medium grey) -->
+  <path d="M60 110C82 110 100 92 100 70C100 58 94 48 85 41C87 45 88 50 88 55C88 72 74 86 57 86C56 86 55 86 54 86C56 92 58 98 60 110Z" fill="#A0A0A0" />
+  <path d="M60 110C38 110 20 92 20 70C20 58 26 48 35 41C33 45 32 50 32 55C32 72 46 86 63 86C64 86 65 86 66 86C64 92 62 98 60 110Z" fill="#B8B5B0" />
+
+  <!-- Center intersection - dark triangle -->
+  <path d="M50 56L60 48L70 56L60 64Z" fill="#3A3A3A" />
+  <path d="M48 60L54 52L60 58L54 66Z" fill="#D0CCC8" />
+  <path d="M72 60L66 52L60 58L66 66Z" fill="#888888" />
+</svg>

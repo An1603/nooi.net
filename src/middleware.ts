@@ -60,6 +60,10 @@ export async function middleware(request: NextRequest) {
   }
 
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
+    // Nếu đã login mà vào login/signup → redirect về dashboard
+    if ((pathname === "/login" || pathname === "/signup") && user) {
+      return NextResponse.redirect(new URL("/app", request.url));
+    }
     return supabaseResponse;
   }
 

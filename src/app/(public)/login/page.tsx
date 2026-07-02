@@ -1,6 +1,23 @@
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/AuthForm";
 
-export default function LoginPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function LoginPage() {
+  // Nếu đã đăng nhập → redirect về dashboard
+  try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} } }
+    );
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) redirect("/app");
+  } catch {}
+
   return (
     <div className="relative min-h-[100dvh] flex items-center justify-center bg-background p-4 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />

@@ -17,7 +17,7 @@ const NAV_ITEMS = [
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [session, setSession] = useState(false);
+  const [session, setSession] = useState<boolean | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,13 +27,21 @@ export function Header() {
   }, []);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getSession();
+    const supabase = createClient();
+
+    // Đọc session ngay lập tức
+    supabase.auth.getSession().then(({ data }) => {
       setSession(!!data.session);
       setUserEmail(data.session?.user?.email ?? null);
-    };
-    checkAuth();
+    });
+
+    // Lắng nghe thay đổi auth (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(!!session);
+      setUserEmail(session?.user?.email ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const displayName = userEmail?.split('@')[0] ?? '';
@@ -66,7 +74,9 @@ export function Header() {
 
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
-          {session ? (
+          {session === null ? (
+            <div className="w-20 h-8 animate-pulse rounded-md bg-muted" />
+          ) : session ? (
             <>
               <span className="text-xs text-muted-foreground truncate max-w-[120px]">
                 {displayName}
@@ -131,7 +141,9 @@ export function Header() {
               </Link>
             ))}
             <hr className="border-border" />
-            {session ? (
+            {session === null ? (
+              <div className="w-20 h-6 animate-pulse rounded bg-muted" />
+            ) : session ? (
               <>
                 <Link
                   href="/app"

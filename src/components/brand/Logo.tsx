@@ -46,14 +46,13 @@ export function LogoHorizontal({
   return (
     <Link href="/" className={cn('flex items-center gap-2 no-underline', className)}>
       <Image
-        src="/logo-nooi.svg"
+        src="/logo-icon-original.png"
         alt="NOOI"
-        width={36}
-        height={36}
-        className="shrink-0"
+        width={96}
+        height={32}
+        className="h-8 w-auto"
         priority
       />
-      <span className="text-lg font-bold tracking-tight text-foreground">NOOI</span>
     </Link>
   );
 }

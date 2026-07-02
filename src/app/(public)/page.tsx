@@ -170,10 +170,11 @@ function HeroSection() {
           <div className="relative">
             <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-pink-500/15 via-purple-500/10 to-blue-500/15 blur-2xl animate-pulse-glow" />
             <NextImage
-              src="/logo-nooi.svg"
+              src="/logo-icon-original.png"
               alt="NOOI"
-              width={120}
-              height={120}
+              width={200}
+              height={70}
+              className="h-20 w-auto"
               priority
             />
           </div>

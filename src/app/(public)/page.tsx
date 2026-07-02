@@ -89,10 +89,11 @@ function FloatingHexagons() {
 function GradientOrbs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/8 rounded-full blur-[150px] animate-pulse-glow" />
-      <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-accent/6 rounded-full blur-[130px] animate-pulse-glow" style={{ animationDelay: '2s' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-n-purple/4 rounded-full blur-[180px] animate-pulse-glow" style={{ animationDelay: '4s' }} />
-      <div className="absolute top-0 right-1/4 w-64 h-64 bg-n-teal/5 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-gradient-to-br from-pink-400/30 to-rose-300/10 rounded-full blur-[150px] animate-pulse-glow" />
+      <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-gradient-to-br from-purple-400/30 to-violet-300/10 rounded-full blur-[130px] animate-pulse-glow" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-blue-400/20 via-cyan-300/10 to-transparent rounded-full blur-[200px] animate-pulse-glow" style={{ animationDelay: '4s' }} />
+      <div className="absolute top-0 right-1/4 w-64 h-64 bg-gradient-to-br from-emerald-400/25 to-teal-300/10 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: '1s' }} />
+      <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-gradient-to-br from-amber-400/25 to-orange-300/10 rounded-full blur-[140px] animate-pulse-glow" style={{ animationDelay: '3s' }} />
     </div>
   );
 }
@@ -152,9 +153,9 @@ function HeroSection() {
         </div>
 
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/8 text-primary text-xs mb-6 animate-slide-up opacity-0 backdrop-blur-sm"
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 text-xs mb-6 animate-slide-up opacity-0 backdrop-blur-sm"
           style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-          <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <Sparkles size={14} />
           Nền tảng AI thế hệ mới
         </div>
@@ -163,10 +164,10 @@ function HeroSection() {
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 animate-slide-up opacity-0"
           style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
           Kết nối{' '}
-          <span className="text-gradient-ai">tri thức</span>
+          <span className="text-gradient-aurora inline-block">tri thức</span>
           <br />
           Chuyển mình{' '}
-          <span className="text-gradient-ai">cùng AI</span>
+          <span className="text-gradient-aurora inline-block">cùng AI</span>
         </h1>
 
         {/* Subtitle */}
@@ -295,14 +296,14 @@ function FeaturesSection() {
       <div className="max-w-6xl mx-auto" ref={ref}>
         {/* Section header */}
         <div className={`text-center mb-16 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/15 bg-primary/5 text-primary text-xs mb-4 backdrop-blur-sm">
-            <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-xs mb-4 backdrop-blur-sm">
+            <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
             <Sparkles size={12} />
             Tính năng nổi bật
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Mọi thứ bạn cần trong{' '}
-            <span className="text-gradient-fire">một nền tảng</span>
+            <span className="text-gradient-sunset">một nền tảng</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Từ ý tưởng đến sản phẩm — nooi.net cung cấp đầy đủ công cụ
@@ -373,7 +374,7 @@ function TechSection() {
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Vận hành bởi{' '}
-            <span className="text-gradient-neon">AI tiên tiến</span>
+            <span className="text-gradient-ocean">AI tiên tiến</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Kiến trúc hiện đại, tối ưu cho mọi quy mô — từ cá nhân đến doanh nghiệp.
@@ -460,19 +461,19 @@ function CTASection() {
   return (
     <section id="about" className="relative py-24 px-5">
       <div className="max-w-4xl mx-auto text-center" ref={ref}>
-        <div className={`relative p-8 md:p-12 rounded-3xl border border-primary/15 bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden transition-all duration-700 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+        <div className={`relative p-8 md:p-12 rounded-3xl bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 border border-pink-200/50 overflow-hidden transition-all duration-700 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
           {/* Animated gradient border */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20 animate-pulse-glow" style={{ padding: '1px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-pink-300/30 via-purple-300/30 to-blue-300/30 animate-pulse-glow" style={{ padding: '1px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
 
           {/* Decorative hexagons */}
-          <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.03]">
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.04]">
             <svg viewBox="0 0 100 100" className="w-full h-full">
-              <path d="M50 0L93.3 25V75L50 100L6.7 75V25Z" fill="currentColor" className="text-primary" />
+              <path d="M50 0L93.3 25V75L50 100L6.7 75V25Z" fill="currentColor" className="text-purple-400" />
             </svg>
           </div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 opacity-[0.03]">
+          <div className="absolute bottom-0 left-0 w-24 h-24 opacity-[0.04]">
             <svg viewBox="0 0 100 100" className="w-full h-full">
-              <path d="M50 0L93.3 25V75L50 100L6.7 75V25Z" fill="currentColor" className="text-accent" />
+              <path d="M50 0L93.3 25V75L50 100L6.7 75V25Z" fill="currentColor" className="text-pink-400" />
             </svg>
           </div>
 
@@ -481,7 +482,7 @@ function CTASection() {
               Sẵn sàng{' '}
               <span className="text-gradient-gold">kết nối</span>{' '}
               và{' '}
-              <span className="text-gradient-accent">chuyển mình</span>?
+              <span className="text-gradient-ocean">chuyển mình</span>?
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto mb-8">
               Tham gia cùng hàng ngàn người dùng đang tận dụng sức mạnh AI

@@ -5,47 +5,45 @@
 @custom-variant dark (&:is(.dark *));
 
 /* =======================================================
-   NOI.NET — Brand Design System
-   Inspired by the NOI logo: earthy hexagons, modern AI
+   NOOI — Bright & Vibrant Design System v2
+   Inspired by: sunrise gradients, living nature, energy
    ======================================================= */
 
 @theme {
-  /* Core backgrounds */
-  --color-background: #0a0a0a;
-  --color-foreground: #ededed;
-  --color-primary: #C8943E;        /* Gold accent */
-  --color-primary-foreground: #0a0a0a;
-  --color-secondary: #5C7A3A;      /* Olive green from logo */
-  --color-secondary-foreground: #ededed;
-  --color-muted: #1a1a1a;
-  --color-muted-foreground: #9ca3af;
-  --color-accent: #4aad6a;         /* Green neon */
-  --color-accent-foreground: #0a0a0a;
+  /* Core backgrounds — warm & bright */
+  --color-background: #fefcf7;
+  --color-foreground: #1c1c1e;
+  --color-primary: #C8943E;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #4aad6a;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #f5f3ee;
+  --color-muted-foreground: #6b7280;
+  --color-accent: #7c3aed;
+  --color-accent-foreground: #ffffff;
   --color-destructive: #ef4444;
-  --color-border: rgba(255,255,255,0.08);
-  --color-input: rgba(255,255,255,0.12);
-  --color-ring: #4aad6a;
-  --color-card: #111111;
-  --color-card-foreground: #ededed;
+  --color-border: rgba(0,0,0,0.08);
+  --color-input: rgba(0,0,0,0.06);
+  --color-ring: #c8943e;
+  --color-card: #ffffff;
+  --color-card-foreground: #1c1c1e;
 
-  /* NOI brand accent colors */
-  --color-n-brown: #3E2723;
-  --color-n-rust: #8B4513;
-  --color-n-gold: #8B6914;
-  --color-n-olive: #5C7A3A;
-  --color-n-orange: #D4782A;
-  --color-n-blue: #3A6B8C;
-  --color-n-lightblue: #6BA3C9;
-  --color-n-purple: #7B68AE;
-  --color-n-darkgreen: #2D5A2D;
-  --color-n-teal: #4A8B7A;
+  /* Brand accent colors — vibrant palette */
+  --color-n-gold: #C8943E;
+  --color-n-green: #4aad6a;
+  --color-n-purple: #7c3aed;
+  --color-n-coral: #f472b6;
+  --color-n-teal: #06b6d4;
+  --color-n-orange: #f59e0b;
+  --color-n-rose: #fb7185;
+  --color-n-blue: #3b82f6;
 
   /* Surface tokens */
-  --color-surface-elevated: #1a1a1a;
-  --color-surface-overlay: rgba(0,0,0,0.7);
-  --color-glass: rgba(255,255,255,0.04);
-  --color-glass-border: rgba(255,255,255,0.08);
-  --color-glass-hover: rgba(255,255,255,0.08);
+  --color-surface-elevated: #ffffff;
+  --color-surface-overlay: rgba(255,255,255,0.9);
+  --color-glass: rgba(255,255,255,0.7);
+  --color-glass-border: rgba(0,0,0,0.06);
+  --color-glass-hover: rgba(255,255,255,0.9);
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -60,40 +58,40 @@
   --radius-3xl: 2rem;
 }
 
-/* Dark-only theme (enforced by <html class="dark">) */
+/* ── Light mode (default) ── */
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #111111;
-  --card-foreground: #ededed;
-  --popover: #111111;
-  --popover-foreground: #ededed;
+  --background: #fefcf7;
+  --foreground: #1c1c1e;
+  --card: #ffffff;
+  --card-foreground: #1c1c1e;
+  --popover: #ffffff;
+  --popover-foreground: #1c1c1e;
   --primary: #C8943E;
-  --primary-foreground: #0a0a0a;
-  --secondary: #5C7A3A;
-  --secondary-foreground: #ededed;
-  --muted: #1a1a1a;
-  --muted-foreground: #9ca3af;
-  --accent: #4aad6a;
-  --accent-foreground: #0a0a0a;
+  --primary-foreground: #ffffff;
+  --secondary: #4aad6a;
+  --secondary-foreground: #ffffff;
+  --muted: #f5f3ee;
+  --muted-foreground: #6b7280;
+  --accent: #7c3aed;
+  --accent-foreground: #ffffff;
   --destructive: #ef4444;
-  --border: rgba(255,255,255,0.08);
-  --input: rgba(255,255,255,0.12);
-  --ring: #4aad6a;
+  --border: rgba(0,0,0,0.08);
+  --input: rgba(0,0,0,0.06);
+  --ring: #c8943e;
   --radius: 0.625rem;
   --chart-1: #C8943E;
-  --chart-2: #5C7A3A;
-  --chart-3: #3A6B8C;
-  --chart-4: #7B68AE;
-  --chart-5: #4aad6a;
-  --sidebar: #111111;
-  --sidebar-foreground: #ededed;
+  --chart-2: #4aad6a;
+  --chart-3: #7c3aed;
+  --chart-4: #f472b6;
+  --chart-5: #06b6d4;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1c1c1e;
   --sidebar-primary: #C8943E;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #ededed;
-  --sidebar-border: rgba(255,255,255,0.08);
-  --sidebar-ring: #4aad6a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f3ee;
+  --sidebar-accent-foreground: #1c1c1e;
+  --sidebar-border: rgba(0,0,0,0.08);
+  --sidebar-ring: #C8943E;
 }
 
 @theme inline {
@@ -157,39 +155,48 @@
 }
 
 /* =======================================================
-   Custom Utilities
+   Premium Gradients — Vibrant Multi-Color
    ======================================================= */
 @utility text-gradient-gold {
-  background: linear-gradient(135deg, #C8943E 0%, #E8B84B 50%, #C8943E 100%);
+  background: linear-gradient(135deg, #C8943E 0%, #f59e0b 50%, #C8943E 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 @utility text-gradient-accent {
-  background: linear-gradient(135deg, #4aad6a 0%, #5cc97a 50%, #3a9a5a 100%);
+  background: linear-gradient(135deg, #4aad6a 0%, #06b6d4 50%, #3b82f6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-@utility glass {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* ── AI Agent Chrome Gradient ── */
-@utility text-gradient-ai {
+@utility text-gradient-aurora {
   background: linear-gradient(
     135deg,
-    #C8943E 0%,
-    #4aad6a 20%,
-    #3A6B8C 40%,
-    #7B68AE 60%,
-    #D4782A 80%,
-    #C8943E 100%
+    #f472b6 0%,
+    #7c3aed 20%,
+    #3b82f6 40%,
+    #06b6d4 60%,
+    #4aad6a 80%,
+    #f59e0b 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 5s ease-in-out infinite;
+}
+
+@utility text-gradient-sunset {
+  background: linear-gradient(
+    135deg,
+    #f472b6 0%,
+    #fb7185 20%,
+    #f59e0b 40%,
+    #C8943E 60%,
+    #f472b6 80%,
+    #7c3aed 100%
   );
   background-size: 300% 300%;
   -webkit-background-clip: text;
@@ -198,13 +205,13 @@
   animation: gradient-shift 4s ease-in-out infinite;
 }
 
-@utility text-gradient-neon {
+@utility text-gradient-ocean {
   background: linear-gradient(
     135deg,
-    #4aad6a 0%,
-    #3A6B8C 30%,
-    #7B68AE 60%,
-    #4aad6a 100%
+    #06b6d4 0%,
+    #3b82f6 30%,
+    #7c3aed 60%,
+    #f472b6 100%
   );
   background-size: 200% 200%;
   -webkit-background-clip: text;
@@ -213,13 +220,13 @@
   animation: gradient-shift 3s ease-in-out infinite;
 }
 
-@utility text-gradient-fire {
+@utility text-gradient-forest {
   background: linear-gradient(
     135deg,
-    #D4782A 0%,
-    #C8943E 30%,
-    #E8B84B 60%,
-    #D4782A 100%
+    #4aad6a 0%,
+    #06b6d4 30%,
+    #f59e0b 60%,
+    #C8943E 100%
   );
   background-size: 200% 200%;
   -webkit-background-clip: text;
@@ -233,29 +240,44 @@
   50% { background-position: 100% 50%; }
 }
 
+/* =======================================================
+   Glass & Surface Utilities
+   ======================================================= */
+@utility glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
 @utility glass-hover {
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.1);
   }
+}
+
+@utility card-shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+}
+
+@utility card-shadow-hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
 }
 
 @utility glow-gold {
-  box-shadow: 0 0 20px rgba(200, 148, 62, 0.15),
-              0 0 60px rgba(200, 148, 62, 0.06);
+  box-shadow: 0 0 20px rgba(200, 148, 62, 0.2), 0 0 60px rgba(200, 148, 62, 0.08);
 }
 
-@utility glow-green {
-  box-shadow: 0 0 20px rgba(74, 173, 106, 0.15),
-              0 0 60px rgba(74, 173, 106, 0.06);
+@utility glow-purple {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.2), 0 0 60px rgba(124, 58, 237, 0.08);
 }
 
-@utility no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
+@utility glow-multicolor {
+  box-shadow:
+    0 0 30px rgba(244, 114, 182, 0.15),
+    0 0 60px rgba(124, 58, 237, 0.1),
+    0 0 90px rgba(6, 182, 212, 0.05);
 }
 
 /* =======================================================
@@ -268,8 +290,8 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
 }
 
 @keyframes slide-up {
@@ -279,9 +301,20 @@
 
 @keyframes hexagon-drift {
   0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.15; }
-  90% { opacity: 0.15; }
+  10% { opacity: 0.08; }
+  90% { opacity: 0.08; }
   100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+}
+
+@keyframes aurora-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(300%) skewX(-15deg); }
 }
 
 @utility animate-float {
@@ -296,15 +329,16 @@
   animation: slide-up 0.6s ease-out forwards;
 }
 
-/* Staggered animation delays */
-@utility animate-stagger-1 { animation-delay: 0.1s; }
-@utility animate-stagger-2 { animation-delay: 0.2s; }
-@utility animate-stagger-3 { animation-delay: 0.3s; }
-@utility animate-stagger-4 { animation-delay: 0.4s; }
-@utility animate-stagger-5 { animation-delay: 0.5s; }
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
 
 /* =======================================================
-   Scrollbar for webkit
+   Scrollbar
    ======================================================= */
 ::-webkit-scrollbar {
   width: 6px;
@@ -314,15 +348,15 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.08);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.15);
 }
 
 /* Selection */
 ::selection {
-  background: rgba(74, 173, 106, 0.3);
-  color: #ffffff;
+  background: rgba(200, 148, 62, 0.2);
+  color: #1c1c1e;
 }

@@ -8,17 +8,6 @@ export async function POST(
   const { id } = await params;
   const supabase = createAdminClient();
 
-  // Auth check: must be admin
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: adminUser } = await supabase
-    .from("admin_users")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!adminUser) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
   // Get target user's profile
   const { data: profile } = await supabase
     .from("profiles")
@@ -61,7 +50,7 @@ export async function POST(
 
   // 3. Chiêm tinh
   try {
-    const coords = { lat: 21.0285, lng: 105.8542 }; // default Hanoi
+    const coords = { lat: 21.0285, lng: 105.8542 };
     const { calculateAstrology } = await import("@/lib/astrology");
     const astroResult = await calculateAstrology({
       fullName: full_name || "Unknown",

@@ -5,7 +5,7 @@
  * ephemeral tokens. Supports real-time bidirectional audio streaming
  * with barge-in (interrupt), voice configuration, and transcriptions.
  *
- * Protocol: wss://generativelanguage.googleapis.com/ws/...v1alpha.GenerativeService.BidiGenerateContent
+ * Protocol: wss://generativelanguage.googleapis.com/ws/...v1beta.GenerativeService.BidiGenerateContentConstrained
  */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export class GeminiLiveClient {
 
     const url =
       `wss://generativelanguage.googleapis.com/ws/` +
-      `google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`
+      `google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained`
       + `?access_token=${this.token}`;
 
     this.ws = new WebSocket(url);

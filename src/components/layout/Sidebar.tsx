@@ -17,6 +17,7 @@ import {
   Sparkles,
   Sun,
   Globe,
+  Headphones,
 } from 'lucide-react';
 
 const NAV = [
@@ -27,6 +28,7 @@ const NAV = [
   { label: 'Thần số học', href: '/app/numerology', icon: Sparkles },
   { label: 'Tử Vi', href: '/app/tuvi', icon: Sun },
   { label: 'Chiêm tinh', href: '/app/astrology', icon: Globe },
+  { label: 'Trợ lý giọng nói', href: '/app/voice', icon: Headphones },
 ];
 
 export function Sidebar() {

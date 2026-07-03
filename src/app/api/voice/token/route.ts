@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
+import { GoogleGenAI } from "@google/genai";
 
 /**
  * POST /api/voice/token
  *
- * Generates an ephemeral token for Gemini Live API using the server-side
- * GEMINI_API_KEY. The ephemeral token is short-lived (1 min to start a session,
- * 30 min per session) and is used by the browser to open a direct WebSocket
- * connection to Gemini, avoiding exposing the real API key to the client.
+ * Generates an ephemeral token for Gemini Live API using the official
+ * @google/genai SDK. The ephemeral token is short-lived and allows the
+ * browser to open a direct WebSocket connection to Gemini's Live API
+ * without exposing the real API key to the client.
  *
- * Ephemeral token API:
- *   POST https://generativelanguage.googleapis.com/v1alpha/authTokens:create
- *   Headers: x-goog-api-key: <real_key>, Content-Type: application/json
+ * Response:
+ *   { token: string }
+ *   - token: the ephemeral token string (token.name from Google API)
+ *            e.g. "AKLz...", used directly in WebSocket URL
  */
 export async function POST() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -23,33 +25,33 @@ export async function POST() {
   }
 
   try {
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1alpha/authTokens:create",
-      {
-        method: "POST",
-        headers: {
-          "x-goog-api-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      }
-    );
+    const client = new GoogleGenAI({ apiKey });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[voice/token] Google API error:", response.status, errorText);
+    const expireTime = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 min
+    const newSessionExpireTime = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 min to start
+
+    const token = await client.authTokens.create({
+      config: {
+        uses: 1,
+        expireTime,
+        newSessionExpireTime,
+      },
+    });
+
+    // token.name is the actual ephemeral token string
+    if (!token.name) {
+      console.error("[voice/token] No token.name in response:", JSON.stringify(token));
       return NextResponse.json(
-        { error: `Token service error: ${response.status}` },
-        { status: response.status }
+        { error: "Token generation returned empty token" },
+        { status: 500 }
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json({ token: token.name });
   } catch (err) {
-    console.error("[voice/token] Fetch failed:", err);
+    console.error("[voice/token] Failed:", err);
     return NextResponse.json(
-      { error: "Failed to generate ephemeral token" },
+      { error: `Token error: ${(err as Error).message}` },
       { status: 500 }
     );
   }

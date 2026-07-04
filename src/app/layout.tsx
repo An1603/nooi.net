@@ -16,20 +16,23 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NOOI",
   description:
-    "Nền tảng sản xuất nội dung AI toàn diện. Xây dựng dự án, quản lý video, truy cập tài liệu học tập và cộng tác với các tác tử thông minh.",
+    "Kết nối chuyển mình — thân khỏe, tâm mình. Hệ sinh thái giáo dục trải nghiệm, chuyển hóa thân tâm với kho tri thức multimedia, mentor chuyên gia kèm cặp và trợ lý AI đồng hành.",
   keywords: [
-    "AI platform",
-    "video production",
-    "AI agents",
     "NOOI",
     "kết nối chuyển mình",
-    "nền tảng AI",
-    "học tập AI",
+    "thân khỏe tâm mình",
+    "chuyển hóa thân tâm",
+    "thiền định",
+    "khí công",
+    "healing tourism",
+    "an nhiên tự tại",
+    "mentor thân tâm",
+    "trợ lý AI giọng nói",
   ],
   openGraph: {
     title: "NOOI",
     description:
-      "Nền tảng sản xuất nội dung AI — kết nối tri thức, chuyển mình cùng công nghệ.",
+      "Kết nối chuyển mình — thân khỏe, tâm mình. Hệ sinh thái giáo dục trải nghiệm và chuyển hóa thân tâm.",
     type: "website",
     locale: "vi_VN",
   },

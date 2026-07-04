@@ -14,13 +14,13 @@ import {
   Network,
   ArrowUpRight,
   ChevronRight,
-  Shield,
-  Zap,
-  Globe,
-  Bot,
-  Layers,
-  BarChart3,
-  Hexagon,
+  Heart,
+  Users,
+  Compass,
+  MessageCircle,
+  Sun,
+  Star,
+  Leaf,
   LayoutDashboard,
 } from 'lucide-react';
 
@@ -92,7 +92,7 @@ function FloatingHexagons() {
 function GradientOrbs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      {/* Rich vibrant mesh — no pure black spots */}
+      {/* Rich vibrant mesh — serene vibes */}
       <div
         className="absolute inset-0"
         style={{
@@ -194,29 +194,31 @@ function HeroSection() {
         </div>
 
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/25 bg-amber-500/8 text-amber-400 text-xs mb-6 animate-slide-up opacity-0 backdrop-blur-sm"
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/8 text-emerald-400 text-xs mb-6 animate-slide-up opacity-0 backdrop-blur-sm"
           style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <Sparkles size={14} />
-          Nền tảng AI thế hệ mới
+          Hành trình an nhiên
         </div>
 
         {/* Headline */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6 animate-slide-up opacity-0"
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-4 animate-slide-up opacity-0"
           style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
           Kết nối{' '}
-          <span className="text-gradient-aurora inline-block">tri thức</span>
-          <br />
-          Chuyển mình{' '}
-          <span className="text-gradient-aurora inline-block">cùng AI</span>
+          <span className="text-gradient-aurora inline-block">chuyển mình</span>
         </h1>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight mb-6 animate-slide-up opacity-0"
+          style={{ animationDelay: '0.35s', animationFillMode: 'forwards' }}>
+          Thân khỏe —{' '}
+          <span className="text-gradient-gold inline-block">Tâm mình</span>
+        </h2>
 
         {/* Subtitle */}
         <p className="text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed mb-10 animate-slide-up opacity-0"
           style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
-          nooi.net là nền tảng sản xuất nội dung AI toàn diện —
-          xây dựng dự án, quản lý video, truy cập tài liệu học tập
-          và cộng tác với các tác tử thông minh.
+          Kho trí tuệ bằng multimedia với các mentor, chuyên gia thân tâm
+          kèm cặp, đồng hành cùng bạn trên hành trình{' '}
+          <strong className="text-foreground">an nhiên, tự tại</strong>.
         </p>
 
         {/* CTA — conditional based on auth */}
@@ -230,7 +232,7 @@ function HeroSection() {
               <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
               <span className="relative z-10 flex items-center gap-2">
                 <LayoutDashboard size={16} />
-                Về Dashboard
+                Vào trang cá nhân
                 <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </span>
             </Link>
@@ -241,7 +243,7 @@ function HeroSection() {
             >
               <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
               <span className="relative z-10 flex items-center gap-2">
-                Bắt đầu miễn phí
+                Bắt đầu hành trình
                 <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </span>
             </Link>
@@ -259,10 +261,10 @@ function HeroSection() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 w-full max-w-2xl animate-slide-up opacity-0"
           style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
           {[
-            { label: 'Tác tử AI', value: '8+' },
-            { label: 'Định dạng', value: '12+' },
-            { label: 'Tích hợp', value: '20+' },
-            { label: 'Uptime', value: '99.9%' },
+            { label: 'Chuyên gia thân tâm', value: '20+' },
+            { label: 'Nội dung multimedia', value: '500+' },
+            { label: 'Giờ thực hành', value: '10,000+' },
+            { label: 'Học viên đồng hành', value: '5,000+' },
           ].map((s, i) => (
             <div key={i} className="text-center">
               <div className="text-2xl font-bold text-gradient-gold">{s.value}</div>
@@ -284,58 +286,58 @@ function HeroSection() {
 }
 
 /* ───────────────────────────────────────────────
-   Features Section
+   Features Section — NOOI real offerings
    ─────────────────────────────────────────────── */
 const FEATURES = [
   {
-    icon: Bot,
-    title: 'Tác tử AI thông minh',
-    desc: 'Các tác tử AI học hỏi từ quy trình làm việc của bạn, tự động hoá tác vụ và đề xuất cải tiến.',
+    icon: BookOpen,
+    title: 'Kho trí tuệ Multimedia',
+    desc: 'Video, audio, tài liệu phong phú về thiền định, khí công, yoga, dinh dưỡng học và tâm lý học ứng dụng — tất cả trong một kho tri thức sống động.',
     color: 'from-amber-500/20 to-amber-500/5',
     border: 'hover:border-amber-500/20',
     accent: 'text-amber-400',
     glow: 'rgba(245, 158, 11, 0.15)',
   },
   {
-    icon: Video,
-    title: 'Nền tảng Video',
-    desc: 'Up, quản lý, streaming video chất lượng cao với encoding tự động và CDN.',
-    color: 'from-emerald-500/20 to-emerald-500/5',
-    border: 'hover:border-emerald-500/20',
-    accent: 'text-emerald-400',
-    glow: 'rgba(74, 173, 106, 0.15)',
-  },
-  {
-    icon: BookOpen,
-    title: 'Trung tâm Học tập',
-    desc: 'Khoá học, tài liệu, hướng dẫn tương tác — tất cả trong một hệ sinh thái thống nhất.',
-    color: 'from-blue-500/20 to-blue-500/5',
-    border: 'hover:border-blue-500/20',
-    accent: 'text-blue-400',
-    glow: 'rgba(59, 130, 246, 0.15)',
-  },
-  {
-    icon: Network,
-    title: 'Cộng tác thông minh',
-    desc: 'Làm việc nhóm theo thời gian thực, chia sẻ dự án, và phối hợp với AI agent.',
-    color: 'from-violet-500/20 to-violet-500/5',
-    border: 'hover:border-violet-500/20',
-    accent: 'text-violet-400',
-    glow: 'rgba(139, 92, 246, 0.15)',
-  },
-  {
-    icon: Shield,
-    title: 'Bảo mật đa lớp',
-    desc: 'Mã hoá đầu cuối, RBAC, audit logs — kiểm soát toàn bộ dữ liệu của bạn.',
+    icon: Heart,
+    title: 'Chuyên gia kèm cặp',
+    desc: 'Đội ngũ mentor, chuyên gia thân tâm giàu kinh nghiệm đồng hành 1-1, thiết kế lộ trình cá nhân hóa — hỗ trợ bạn từng bước chuyển hóa.',
     color: 'from-rose-500/20 to-rose-500/5',
     border: 'hover:border-rose-500/20',
     accent: 'text-rose-400',
     glow: 'rgba(244, 63, 94, 0.15)',
   },
   {
-    icon: Zap,
-    title: 'Hiệu suất cao',
-    desc: 'Edge-ready, CDN toàn cầu, và tối ưu hoá tự động cho tốc độ tối đa.',
+    icon: Sun,
+    title: 'Chuyển hóa thân tâm',
+    desc: 'Các chương trình bài bản về thiền định, khí công dưỡng sinh, dinh dưỡng học chức năng và tâm lý học tích hợp — khoa học kết hợp thực hành.',
+    color: 'from-emerald-500/20 to-emerald-500/5',
+    border: 'hover:border-emerald-500/20',
+    accent: 'text-emerald-400',
+    glow: 'rgba(74, 173, 106, 0.15)',
+  },
+  {
+    icon: MessageCircle,
+    title: 'Trợ lý AI giọng nói',
+    desc: 'Trò chuyện thời gian thực với AI bằng giọng nói tự nhiên — giải đáp thắc mắc, nhắc nhở thực hành, đồng hành 24/7 mọi lúc mọi nơi.',
+    color: 'from-violet-500/20 to-violet-500/5',
+    border: 'hover:border-violet-500/20',
+    accent: 'text-violet-400',
+    glow: 'rgba(139, 92, 246, 0.15)',
+  },
+  {
+    icon: Compass,
+    title: 'Du lịch chữa lành',
+    desc: 'Healing tourism — những hành trình kết hợp thiên nhiên, thực hành thân tâm và sự hướng dẫn của chuyên gia để tái tạo năng lượng sống.',
+    color: 'from-blue-500/20 to-blue-500/5',
+    border: 'hover:border-blue-500/20',
+    accent: 'text-blue-400',
+    glow: 'rgba(59, 130, 246, 0.15)',
+  },
+  {
+    icon: Users,
+    title: 'Cộng đồng an nhiên',
+    desc: 'Kết nối với những người cùng chí hướng trên hành trình tự tại — chia sẻ, học hỏi và lan tỏa năng lượng tích cực mỗi ngày.',
     color: 'from-cyan-500/20 to-cyan-500/5',
     border: 'hover:border-cyan-500/20',
     accent: 'text-cyan-400',
@@ -351,18 +353,19 @@ function FeaturesSection() {
       <div className="max-w-6xl mx-auto" ref={ref}>
         {/* Section header */}
         <div className={`text-center mb-16 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/25 bg-purple-500/8 text-purple-400 text-xs mb-4 backdrop-blur-sm">
-            <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/8 text-emerald-400 text-xs mb-4 backdrop-blur-sm">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <Sparkles size={12} />
-            Tính năng nổi bật
+            NOOI là gì?
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Mọi thứ bạn cần trong{' '}
-            <span className="text-gradient-sunset">một nền tảng</span>
+            Hệ sinh thái{' '}
+            <span className="text-gradient-gold">thân tâm</span>{' '}
+            toàn diện
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Từ ý tưởng đến sản phẩm — nooi.net cung cấp đầy đủ công cụ
-            để bạn sáng tạo, quản lý và phát triển.
+            Từ kho tri thức multimedia đến mentor kèm cặp, trợ lý AI và cộng đồng đồng hành —
+            NOOI là người bạn trên hành trình an nhiên, tự tại của bạn.
           </p>
         </div>
 
@@ -405,34 +408,36 @@ function FeaturesSection() {
 }
 
 /* ───────────────────────────────────────────────
-   Technology / Architecture Section
+   How NOOI Works Section
    ─────────────────────────────────────────────── */
-const TECH_STACK = [
-  { icon: Brain, label: 'Multi-Agent AI', desc: 'Hệ thống 8 profile tác tử chuyên biệt' },
-  { icon: Layers, label: 'Microservices', desc: 'Kiến trúc phân tán, mở rộng linh hoạt' },
-  { icon: Globe, label: 'Edge Network', desc: 'CDN toàn cầu, phản hồi mili-giây' },
-  { icon: BarChart3, label: 'Analytics', desc: 'Theo dõi hiệu suất real-time' },
+const HOW_IT_WORKS = [
+  { icon: Brain, label: 'AI đa tác tử', desc: '8 tác tử AI chuyên biệt hỗ trợ nghiên cứu, nội dung, chăm sóc — vận hành âm thầm phía sau' },
+  { icon: Video, label: 'Kho multimedia', desc: 'Video bài giảng, audio thiền, tài liệu đọc — học mọi lúc, mọi nơi, trên mọi thiết bị' },
+  { icon: MessageCircle, label: 'Kết nối chuyên gia', desc: 'Chat, video call, theo dõi tiến trình — mentor luôn bên bạn trên từng bước đường' },
+  { icon: Star, label: 'Cá nhân hóa', desc: 'AI học hỏi từ bạn, gợi ý lộ trình phù hợp với thể trạng, tâm trạng và mục tiêu' },
 ];
 
-function TechSection() {
+function HowSection() {
   const { ref, visible } = useScrollReveal();
 
   return (
-    <section id="tech" className="relative py-24 px-5 overflow-hidden">
+    <section id="how" className="relative py-24 px-5 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent" />
 
       <div className="max-w-6xl mx-auto relative z-10" ref={ref}>
         <div className={`text-center mb-16 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/20 bg-accent/5 text-accent text-xs mb-4 backdrop-blur-sm">
-            <Zap size={12} />
-            Công nghệ
+            <Leaf size={12} />
+            Cách vận hành
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Vận hành bởi{' '}
-            <span className="text-gradient-ocean">AI tiên tiến</span>
+            Công nghệ &{' '}
+            <span className="text-gradient-ocean">con người</span>{' '}
+            đồng hành
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Kiến trúc hiện đại, tối ưu cho mọi quy mô — từ cá nhân đến doanh nghiệp.
+            NOOI kết hợp sức mạnh AI tiên tiến với sự tận tâm của đội ngũ chuyên gia —
+            tạo nên một hệ sinh thái học tập và chuyển hóa toàn diện.
           </p>
         </div>
 
@@ -444,17 +449,14 @@ function TechSection() {
               <div className="absolute -inset-6 rounded-full border border-primary/10 animate-pulse-glow" style={{ animationDelay: '0s' }} />
               <div className="absolute -inset-10 rounded-full border border-accent/5 animate-pulse-glow" style={{ animationDelay: '1s' }} />
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl shadow-primary/20 relative z-10">
-                <Brain size={32} className="text-primary-foreground" />
-              </div>
-              <div className="absolute inset-0 rounded-2xl animate-pulse-glow">
-                <Hexagon size={80} className="text-primary/10" />
+                <Sun size={32} className="text-primary-foreground" />
               </div>
             </div>
           </div>
 
-          {/* Tech cards */}
+          {/* How-it-works cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {TECH_STACK.map((t, i) => {
+            {HOW_IT_WORKS.map((t, i) => {
               const Icon = t.icon;
               return (
                 <TiltCard key={i}>
@@ -516,32 +518,30 @@ function CTASection() {
   return (
     <section id="about" className="relative py-24 px-5">
       <div className="max-w-4xl mx-auto text-center" ref={ref}>
-        <div className={`relative p-8 md:p-12 rounded-3xl bg-gradient-to-br from-fuchsia-950/50 via-purple-950/40 to-blue-950/50 border border-fuchsia-500/15 overflow-hidden transition-all duration-700 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+        <div className={`relative p-8 md:p-12 rounded-3xl bg-gradient-to-br from-emerald-950/50 via-teal-950/40 to-cyan-950/50 border border-emerald-500/15 overflow-hidden transition-all duration-700 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
           {/* Animated gradient border */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-fuchsia-500/20 via-purple-500/20 to-blue-500/20 animate-pulse-glow" style={{ padding: '1px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 animate-pulse-glow" style={{ padding: '1px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
 
           {/* Decorative hexagons */}
           <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.04]">
             <svg viewBox="0 0 100 100" className="w-full h-full">
-              <path d="M50 0L93.3 25V75L50 100L6.7 75V25Z" fill="currentColor" className="text-purple-400" />
+              <path d="M50 0L93.3 25V75L50 100L6.7 75V25Z" fill="currentColor" className="text-emerald-400" />
             </svg>
           </div>
           <div className="absolute bottom-0 left-0 w-24 h-24 opacity-[0.04]">
             <svg viewBox="0 0 100 100" className="w-full h-full">
-              <path d="M50 0L93.3 25V75L50 100L6.7 75V25Z" fill="currentColor" className="text-pink-400" />
+              <path d="M50 0L93.3 25V75L50 100L6.7 75V25Z" fill="currentColor" className="text-teal-400" />
             </svg>
           </div>
 
           <div className="relative z-10">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Sẵn sàng{' '}
-              <span className="text-gradient-gold">kết nối</span>{' '}
-              và{' '}
-              <span className="text-gradient-ocean">chuyển mình</span>?
+              Bắt đầu hành trình{' '}
+              <span className="text-gradient-gold">an nhiên</span>
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto mb-8">
-              Tham gia cùng hàng ngàn người dùng đang tận dụng sức mạnh AI
-              để sáng tạo và phát triển.
+              Tham gia cùng hàng ngàn người đang chuyển mình mỗi ngày —
+              thân khỏe, tâm mình, sống an nhiên tự tại.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
@@ -550,7 +550,7 @@ function CTASection() {
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                 <span className="relative z-10 flex items-center gap-2">
-                  Tạo tài khoản miễn phí
+                  Tham gia miễn phí
                   <ArrowUpRight size={16} />
                 </span>
               </Link>
@@ -582,15 +582,17 @@ function FooterSection() {
           <div className="col-span-2 md:col-span-1">
             <p className="text-sm font-semibold mb-3">NOOI</p>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
-              Nền tảng sản xuất nội dung AI — kết nối tri thức, chuyển mình cùng công nghệ.
+              Kết nối chuyển mình — thân khỏe, tâm mình.
+              Hệ sinh thái giáo dục trải nghiệm, chuyển hóa thân tâm
+              và healing-tourism, nơi AI và chuyên gia đồng hành cùng bạn.
             </p>
           </div>
 
-          {/* Product */}
+          {/* Khám phá */}
           <div>
-            <p className="text-sm font-semibold mb-3">Sản phẩm</p>
+            <p className="text-sm font-semibold mb-3">Khám phá</p>
             <ul className="space-y-2">
-              {['Tính năng', 'Bảng giá', 'Tích hợp', 'API'].map((l) => (
+              {['Kho tri thức', 'Chuyên gia', 'Chương trình', 'Cộng đồng'].map((l) => (
                 <li key={l}>
                   <Link href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                     {l}
@@ -600,11 +602,11 @@ function FooterSection() {
             </ul>
           </div>
 
-          {/* Company */}
+          {/* Hỗ trợ */}
           <div>
-            <p className="text-sm font-semibold mb-3">Công ty</p>
+            <p className="text-sm font-semibold mb-3">Hỗ trợ</p>
             <ul className="space-y-2">
-              {['Giới thiệu', 'Blog', 'Liên hệ', 'Tuyển dụng'].map((l) => (
+              {['Trợ giúp', 'Liên hệ', 'Câu hỏi thường gặp', 'Hướng dẫn'].map((l) => (
                 <li key={l}>
                   <Link href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                     {l}
@@ -614,7 +616,7 @@ function FooterSection() {
             </ul>
           </div>
 
-          {/* Legal */}
+          {/* Pháp lý */}
           <div>
             <p className="text-sm font-semibold mb-3">Pháp lý</p>
             <ul className="space-y-2">
@@ -631,10 +633,10 @@ function FooterSection() {
 
         <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
-            &copy; {year} NOOI — Kết nối chuyển mình.
+            &copy; {year} NOOI — Kết nối chuyển mình, thân khỏe — tâm mình.
           </p>
           <div className="flex items-center gap-4">
-            {['Twitter', 'GitHub', 'Discord'].map((s) => (
+            {['YouTube', 'TikTok', 'Facebook'].map((s) => (
               <Link
                 key={s}
                 href="#"
@@ -658,7 +660,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground">
       <HeroSection />
       <FeaturesSection />
-      <TechSection />
+      <HowSection />
       <CTASection />
       <FooterSection />
     </div>

@@ -58,7 +58,7 @@ export function VoiceAssistant({
   const hasConversation = transcript.length > 0 || response.length > 0;
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-4 sm:gap-6">
       {/* ── Status Header ── */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-2 mb-1">
@@ -75,9 +75,9 @@ export function VoiceAssistant({
                 "#22c55e",
             }}
           />
-          <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground">{title}</h2>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs sm:text-sm text-muted-foreground">
           {error ? (
             <span className="text-red-400">{error}</span>
           ) : (

@@ -32,17 +32,17 @@ Hướng dẫn:
 5. Giữ câu trả lời ngắn gọn, tự nhiên như đang nói chuyện trực tiếp`;
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
+    <div className="max-w-3xl mx-auto py-6 sm:py-8 px-3 sm:px-4">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Trợ lý giọng nói</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Trợ lý giọng nói</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           Trò chuyện trực tiếp với AI bằng giọng nói — Gemini Live
         </p>
       </div>
 
       {/* Voice Assistant Card */}
-      <div className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 md:p-8">
+      <div className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-4 sm:p-6 md:p-8">
         <VoiceAssistant
           title="NOOI Voice AI"
           systemInstruction={systemInstruction}

@@ -53,7 +53,7 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
   );
 
   return (
-    <div className="relative flex items-center justify-center w-72 h-72 mx-auto select-none">
+    <div className="relative flex items-center justify-center w-64 h-64 sm:w-72 sm:h-72 mx-auto select-none">
       {/* SVG Filters */}
       <svg className="absolute w-0 h-0" aria-hidden>
         <defs>
@@ -68,9 +68,9 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
       <div
         className="absolute rounded-full transition-all duration-1000"
         style={{
-          width: 320, height: 320,
+          width: 280, height: 280,
           background: `radial-gradient(circle at 50% 50%, ${theme.primary}20 0%, ${theme.secondary}08 40%, transparent 70%)`,
-          transform: `scale(${1 + displayLevel * 0.25})`,
+          transform: `scale(${1 + displayLevel * 0.2})`,
           opacity: isActive ? 0.9 : 0.2,
         }}
       />
@@ -81,6 +81,7 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
         const opacity = isActive && !micOff
           ? 0.3 + (displayLevel * h) / 30 * 0.7
           : 0.06;
+        const barTranslate = 65 + displayLevel * 15;
         return (
           <div
             key={angle}
@@ -94,7 +95,7 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
               left: "50%",
               top: "50%",
               transformOrigin: "50% 0",
-              transform: `translateX(-50%) translateY(-50%) rotate(${angle}deg) translateY(-${72 + displayLevel * 18}px)`,
+              transform: `translateX(-50%) translateY(-50%) rotate(${angle}deg) translateY(-${barTranslate}px)`,
               opacity,
               borderRadius: 4,
               transition: "height 0.08s ease-out, opacity 0.2s ease",
@@ -107,8 +108,8 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
       <div
         className="absolute rounded-full transition-all duration-200"
         style={{
-          width: `${130 + displayLevel * 40}px`,
-          height: `${130 + displayLevel * 40}px`,
+          width: `${110 + displayLevel * 30}px`,
+          height: `${110 + displayLevel * 30}px`,
           background: `radial-gradient(circle at 50% 50%, ${theme.primary}22 0%, ${theme.secondary}10 40%, transparent 65%)`,
           transform: `scale(${1 + displayLevel * 0.08})`,
         }}
@@ -118,8 +119,8 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
       <div
         className="absolute rounded-full transition-all duration-150"
         style={{
-          width: `${140 + displayLevel * 30}px`,
-          height: `${140 + displayLevel * 30}px`,
+          width: `${120 + displayLevel * 25}px`,
+          height: `${120 + displayLevel * 25}px`,
           border: `2px solid ${theme.primary}${isActive && !micOff ? "66" : "22"}`,
           opacity: isActive && !micOff ? 0.4 + displayLevel * 0.5 : 0.15,
           boxShadow: isActive && !micOff

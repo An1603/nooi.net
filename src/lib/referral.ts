@@ -62,13 +62,15 @@ export async function validateCustomRefCode(code: string, excludeUserId?: string
   if (!/^[A-Z0-9]{2,10}$/.test(trimmed))
     return "Mã chỉ gồm chữ hoa và số, từ 2-10 ký tự.";
 
-  const supabase = createClient();
-  const { data: existing } = await supabase.from("profiles").select("user_id").eq("ref_code", trimmed).maybeSingle();
-
-  if (existing && existing.user_id !== excludeUserId) {
-    return "Mã này đã có người sử dụng. Vui lòng chọn mã khác.";
+  try {
+    const params = new URLSearchParams({ code: trimmed });
+    if (excludeUserId) params.set("userId", excludeUserId);
+    const res = await fetch(`/api/ref-code/check?${params}`);
+    const data = await res.json();
+    return data.available ? null : (data.error || "Mã không khả dụng.");
+  } catch {
+    return "Không thể kiểm tra mã. Vui lòng thử lại.";
   }
-  return null; // valid
 }
 
 /**
@@ -224,43 +226,16 @@ export async function changeRefCode(
   if (!/^[A-Z0-9]{2,10}$/.test(trimmed))
     return { success: false, error: "Mã chỉ gồm chữ hoa và số, từ 2-10 ký tự." };
 
-  const supabase = createClient();
-
-  // Check change limit
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("ref_code_changes")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  const changesSoFar = (profile?.ref_code_changes as number) ?? 0;
-  if (changesSoFar >= 3) {
-    return { success: false, error: "Bạn đã đổi mã 3 lần, không thể đổi thêm." };
+  try {
+    const res = await fetch("/api/ref-code/change", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, newCode: trimmed }),
+    });
+    return await res.json();
+  } catch {
+    return { success: false, error: "Không thể đổi mã. Vui lòng thử lại." };
   }
-
-  // Check uniqueness (exclude self)
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("user_id")
-    .eq("ref_code", trimmed)
-    .neq("user_id", userId)
-    .maybeSingle();
-
-  if (existing) {
-    return { success: false, error: "Mã này đã có người sử dụng." };
-  }
-
-  // Update code + increment counter
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      ref_code: trimmed,
-      ref_code_changes: changesSoFar + 1,
-    })
-    .eq("user_id", userId);
-
-  if (error) return { success: false, error: error.message };
-  return { success: true };
 }
 
 /* ─── Cookie helpers (client-side only) ─── */

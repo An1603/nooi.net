@@ -210,7 +210,7 @@ function HeroSection() {
         <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight mb-6 animate-slide-up opacity-0"
           style={{ animationDelay: '0.35s', animationFillMode: 'forwards' }}>
           Thân khỏe —{' '}
-          <span className="text-gradient-gold inline-block">Tâm mình</span>
+          <span className="text-gradient-gold inline-block">Tâm minh</span>
         </h2>
 
         {/* Subtitle */}
@@ -541,7 +541,7 @@ function CTASection() {
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto mb-8">
               Tham gia cùng hàng ngàn người đang chuyển mình mỗi ngày —
-              thân khỏe, tâm mình, sống an nhiên tự tại.
+              thân khỏe, tâm minh, sống an nhiên tự tại.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
@@ -582,7 +582,7 @@ function FooterSection() {
           <div className="col-span-2 md:col-span-1">
             <p className="text-sm font-semibold mb-3">NOOI</p>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
-              Kết nối chuyển mình — thân khỏe, tâm mình.
+              Kết nối chuyển mình — thân khỏe, tâm minh.
               Hệ sinh thái giáo dục trải nghiệm, chuyển hóa thân tâm
               và healing-tourism, nơi AI và chuyên gia đồng hành cùng bạn.
             </p>
@@ -633,7 +633,7 @@ function FooterSection() {
 
         <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
-            &copy; {year} NOOI — Kết nối chuyển mình, thân khỏe — tâm mình.
+            &copy; {year} NOOI — Kết nối chuyển mình, thân khỏe — tâm minh.
           </p>
           <div className="flex items-center gap-4">
             {['YouTube', 'TikTok', 'Facebook'].map((s) => (

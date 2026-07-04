@@ -16,11 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NOOI",
   description:
-    "Kết nối chuyển mình — thân khỏe, tâm mình. Hệ sinh thái giáo dục trải nghiệm, chuyển hóa thân tâm với kho tri thức multimedia, mentor chuyên gia kèm cặp và trợ lý AI đồng hành.",
+    "Kết nối chuyển mình — thân khỏe, tâm minh. Hệ sinh thái giáo dục trải nghiệm, chuyển hóa thân tâm với kho tri thức multimedia, mentor chuyên gia kèm cặp và trợ lý AI đồng hành.",
   keywords: [
     "NOOI",
     "kết nối chuyển mình",
-    "thân khỏe tâm mình",
+    "thân khỏe tâm minh",
     "chuyển hóa thân tâm",
     "thiền định",
     "khí công",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "NOOI",
     description:
-      "Kết nối chuyển mình — thân khỏe, tâm mình. Hệ sinh thái giáo dục trải nghiệm và chuyển hóa thân tâm.",
+      "Kết nối chuyển mình — thân khỏe, tâm minh. Hệ sinh thái giáo dục trải nghiệm và chuyển hóa thân tâm.",
     type: "website",
     locale: "vi_VN",
   },

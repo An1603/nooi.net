@@ -7,8 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2, Wand2, ArrowLeft, Key, Sparkles } from "lucide-react";
+import { Mail, Lock, Loader2, Wand2, ArrowLeft, Key, Sparkles, Gift } from "lucide-react";
 import Link from "next/link";
+import { setReferredBy } from "@/lib/referral";
 
 /* ─── Types ─── */
 
@@ -17,6 +18,7 @@ type AuthMethod = "email" | "magiclink" | "google" | "github";
 
 interface Props {
   defaultTab: AuthTab;
+  refCode?: string;
 }
 
 /* ─── Helpers ─── */
@@ -62,7 +64,7 @@ const METHODS: { id: AuthMethod; icon: React.ReactNode; label: string; desc: str
 
 /* ─── Component ─── */
 
-export function AuthForm({ defaultTab }: Props) {
+export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -72,6 +74,8 @@ export function AuthForm({ defaultTab }: Props) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [refCode, setRefCode] = useState(initialRefCode || "");
+  const [showRefInput, setShowRefInput] = useState(false);
 
   /* ── Tab switch → URL change ── */
   const switchTab = useCallback((newTab: AuthTab) => {
@@ -132,6 +136,17 @@ export function AuthForm({ defaultTab }: Props) {
           options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
         if (signUpError) throw signUpError;
+
+        // If user was created and has a session, process referral code
+        const userId = data?.user?.id;
+        if (userId && refCode.trim()) {
+          // Wait briefly for the auto-created profile to exist
+          const result = await setReferredBy(userId, refCode.trim());
+          if (!result.success && result.error !== "Mã giới thiệu không hợp lệ.") {
+            console.warn("Referral claim failed:", result.error);
+          }
+        }
+
         if (data?.user && !data.session) {
           toast.success("📧 Kiểm tra email để xác nhận tài khoản (cả thư mục Spam) trước khi đăng nhập.");
           return;
@@ -293,6 +308,42 @@ export function AuthForm({ defaultTab }: Props) {
                 />
               </div>
             </div>
+
+            {!refCode.trim() && tab === "signup" && !showRefInput && (
+              <button
+                type="button"
+                onClick={() => setShowRefInput(true)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Gift className="size-3" />
+                Có mã giới thiệu?
+              </button>
+            )}
+
+            {!refCode.trim() && tab === "signup" && showRefInput && (
+              <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                <Label htmlFor="signup-ref" className="text-xs">Mã giới thiệu <span className="text-muted-foreground">(không bắt buộc)</span></Label>
+                <div className="relative">
+                  <Gift className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="signup-ref"
+                    type="text"
+                    placeholder="VD: AN8421"
+                    value={refCode}
+                    onChange={(e) => setRefCode(e.target.value.toUpperCase())}
+                    className="pl-9 h-10 text-sm font-mono"
+                    maxLength={10}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setShowRefInput(false); setRefCode(""); }}
+                  className="text-[10px] text-muted-foreground hover:text-foreground"
+                >
+                  Bỏ qua
+                </button>
+              </div>
+            )}
 
             <Button type="submit" className="w-full h-10 bg-primary text-primary-foreground hover:brightness-110 text-sm font-semibold" disabled={loading}>
               {loading ? <><Loader2 className="size-4 animate-spin mr-1.5" />{tab === "signin" ? "Đang đăng nhập..." : "Đang tạo tài khoản..."}</>

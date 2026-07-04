@@ -18,10 +18,12 @@ import {
   Sun,
   Globe,
   Headphones,
+  User,
 } from 'lucide-react';
 
 const NAV = [
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
+  { label: 'Hồ sơ', href: '/app/profile', icon: User },
   { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
   { label: 'Video', href: '/app/videos', icon: Video },
   { label: 'Thư viện', href: '/app/library', icon: BookOpen },

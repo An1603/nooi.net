@@ -18,6 +18,8 @@ export interface Database {
           vi_do: number;
           kinh_do: number;
           onboarding_completed: boolean;
+          ref_code: string | null;
+          referred_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -35,6 +37,8 @@ export interface Database {
           vi_do?: number;
           kinh_do?: number;
           onboarding_completed?: boolean;
+          ref_code?: string | null;
+          referred_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -52,6 +56,8 @@ export interface Database {
           vi_do?: number;
           kinh_do?: number;
           onboarding_completed?: boolean;
+          ref_code?: string | null;
+          referred_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };

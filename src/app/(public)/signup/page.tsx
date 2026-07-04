@@ -5,7 +5,10 @@ import { AuthForm } from "@/components/auth/AuthForm";
 
 export const dynamic = 'force-dynamic';
 
-export default async function SignupPage() {
+export default async function SignupPage(props: { searchParams?: Promise<{ ref?: string }> }) {
+  const searchParams = await props.searchParams;
+  const refCode = searchParams?.ref ?? "";
+
   // Nếu đã đăng nhập → redirect về dashboard
   try {
     const cookieStore = await cookies();
@@ -30,10 +33,15 @@ export default async function SignupPage() {
           <p className="text-sm text-muted-foreground mt-1">
             Tạo tài khoản NOOI và khám phá sức mạnh AI
           </p>
+          {refCode && (
+            <p className="text-xs text-primary mt-2">
+              🎁 Mã giới thiệu: <code className="font-mono font-bold">{refCode}</code>
+            </p>
+          )}
         </div>
 
         <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-5 sm:p-6 shadow-xl">
-          <AuthForm defaultTab="signup" />
+          <AuthForm defaultTab="signup" refCode={refCode} />
         </div>
       </div>
     </div>

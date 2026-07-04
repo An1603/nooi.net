@@ -18,11 +18,13 @@ CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 
 -- Admin users can read their own entry (used by middleware to verify admin status)
+DROP POLICY IF EXISTS "admin_select_own" ON admin_users;
 CREATE POLICY "admin_select_own" ON admin_users
   FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Only super_admin can insert/update/delete (handled via service_role in app)
+DROP POLICY IF EXISTS "admin_insert_super" ON admin_users;
 CREATE POLICY "admin_insert_super" ON admin_users
   FOR INSERT
   WITH CHECK (
@@ -32,6 +34,7 @@ CREATE POLICY "admin_insert_super" ON admin_users
     )
   );
 
+DROP POLICY IF EXISTS "admin_update_super" ON admin_users;
 CREATE POLICY "admin_update_super" ON admin_users
   FOR UPDATE
   USING (
@@ -41,6 +44,7 @@ CREATE POLICY "admin_update_super" ON admin_users
     )
   );
 
+DROP POLICY IF EXISTS "admin_delete_super" ON admin_users;
 CREATE POLICY "admin_delete_super" ON admin_users
   FOR DELETE
   USING (

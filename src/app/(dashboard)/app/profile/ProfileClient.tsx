@@ -257,15 +257,25 @@ export function ProfileClient({ user, profile }: Props) {
         </div>
 
         <div className="px-5 py-4 space-y-5">
-          {/* Referrer info (if has one) */}
-          {hasReferrer && referrer && (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-              <p className="text-xs text-muted-foreground">Được giới thiệu bởi</p>
-              <p className="text-sm font-medium mt-0.5">{referrer.full_name} ({referrer.ref_code})</p>
+          {/* Referrer info (if has one) — LOCKED, cannot change */}
+          {hasReferrer && (
+            <div className="space-y-3">
+              {referrer && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Được giới thiệu bởi</p>
+                  <p className="text-sm font-medium mt-0.5">{referrer.full_name} ({referrer.ref_code})</p>
+                </div>
+              )}
+              <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-4 py-2.5">
+                <p className="text-xs text-yellow-400/80 flex items-center gap-1.5">
+                  <span className="size-1.5 rounded-full bg-yellow-400 shrink-0" />
+                  Đã liên kết người giới thiệu — không thể thay đổi.
+                </p>
+              </div>
             </div>
           )}
 
-          {/* Claim referral code (if no referrer yet) */}
+          {/* Claim referral code (ONLY if no referrer yet) */}
           {!hasReferrer && !showClaimForm && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">Bạn chưa có người giới thiệu?</p>
@@ -280,6 +290,9 @@ export function ProfileClient({ user, profile }: Props) {
 
           {!hasReferrer && showClaimForm && (
             <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Lưu ý:</span> Chỉ được nhập <strong>một lần duy nhất</strong>. Không thể thay đổi sau khi xác nhận.
+              </p>
               <Label htmlFor="claim-ref" className="text-xs">Nhập mã giới thiệu</Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">

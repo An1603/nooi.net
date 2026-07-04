@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2, Wand2, ArrowLeft, Key, Sparkles, Gift } from "lucide-react";
 import Link from "next/link";
-import { setReferredBy } from "@/lib/referral";
+import { setReferredBy, saveRefCodeToCookie, getRefCodeFromCookie } from "@/lib/referral";
 
 /* ─── Types ─── */
 
@@ -76,6 +76,30 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [refCode, setRefCode] = useState(initialRefCode || "");
   const [showRefInput, setShowRefInput] = useState(false);
+
+  /* ── Cookie: save ref from URL, fallback to cookie ── */
+  useEffect(() => {
+    // If ref came from URL (query param), save to cookie
+    if (initialRefCode) {
+      saveRefCodeToCookie(initialRefCode);
+    }
+    // If no ref from URL but exists in cookie, use it
+    if (!initialRefCode) {
+      const cookieCode = getRefCodeFromCookie();
+      if (cookieCode) {
+        setRefCode(cookieCode);
+      }
+    }
+  }, [initialRefCode]);
+
+  /* ── Also save to cookie when user manually types a code ── */
+  const handleRefCodeChange = useCallback((value: string) => {
+    const upper = value.toUpperCase();
+    setRefCode(upper);
+    if (upper.trim()) {
+      saveRefCodeToCookie(upper);
+    }
+  }, []);
 
   /* ── Tab switch → URL change ── */
   const switchTab = useCallback((newTab: AuthTab) => {
@@ -330,7 +354,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
                     type="text"
                     placeholder="VD: AN8421"
                     value={refCode}
-                    onChange={(e) => setRefCode(e.target.value.toUpperCase())}
+                    onChange={(e) => handleRefCodeChange(e.target.value)}
                     className="pl-9 h-10 text-sm font-mono"
                     maxLength={10}
                   />

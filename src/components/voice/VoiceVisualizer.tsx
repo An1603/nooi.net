@@ -1,116 +1,70 @@
 "use client";
 
-import { useMemo, useRef, useEffect, useState } from "react";
-import type { VoiceStatus } from "./useVoiceAssistant";
+import { useMemo } from "react";
 
-// ─── Config ──────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface VoiceVisualizerProps {
-  status: VoiceStatus;
+  status: "init" | "ready" | "connecting" | "connected" | "listening" | "speaking" | "error";
   audioLevel: number;
   isSpeaking: boolean;
   onToggle: () => void;
   disabled?: boolean;
 }
 
+// ─── Theme ───────────────────────────────────────────────────────────────────
+
 const THEME = {
-  listening: { primary: "#ef4444", secondary: "#f97316", accent: "#dc2626" },
-  speaking:  { primary: "#a78bfa", secondary: "#c084fc", accent: "#7c3aed" },
-  ready:     { primary: "#C8943E", secondary: "#eab308", accent: "#d97706" },
-  connecting:{ primary: "#fbbf24", secondary: "#f59e0b", accent: "#f59e0b" },
+  listening: { primary: "#ef4444", secondary: "#f97316", glow: "rgba(239,68,68,0.3)", label: "Đang nghe..." },
+  speaking:  { primary: "#a78bfa", secondary: "#c084fc", glow: "rgba(167,139,250,0.3)", label: "Đang trả lời..." },
+  ready:     { primary: "#C8943E", secondary: "#eab308", glow: "rgba(200,148,62,0.2)", label: "Bấm để nói" },
+  connecting:{ primary: "#fbbf24", secondary: "#f59e0b", glow: "rgba(251,191,36,0.2)",  label: "Đang kết nối..." },
+  init:      { primary: "#C8943E", secondary: "#eab308", glow: "rgba(200,148,62,0.1)", label: "" },
+  error:     { primary: "#ef4444", secondary: "#ef4444", glow: "rgba(239,68,68,0.2)",  label: "Lỗi" },
+  connected: { primary: "#22c55e", secondary: "#4ade80", glow: "rgba(34,197,94,0.2)",  label: "Đã kết nối" },
 };
 
-const BAR_COUNT = 48;
-const BAR_ANGLES = Array.from({ length: BAR_COUNT }, (_, i) => (360 / BAR_COUNT) * i);
-const RING_COUNT = 5;
+// ─── Spectrum Bars ───────────────────────────────────────────────────────────
 
-// ─── Utility ─────────────────────────────────────────────────────────────────
+const BAR_COUNT = 36;
 
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
+function getBarHeights(level: number, active: boolean): number[] {
+  const now = Date.now();
+  return Array.from({ length: BAR_COUNT }, (_, i) => {
+    if (!active) return 2;
+    const freq = 1 - i / BAR_COUNT;          // bass → treble rolloff
+    const wave = Math.sin(now / 250 + i * 0.6) * 0.3 + 0.7;
+    return 2 + level * 28 * freq * wave;
+  });
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disabled }: VoiceVisualizerProps) {
-  const isActive = status === "listening" || status === "speaking";
+  const isActive = status === "listening" || status === "speaking" || status === "connected";
   const isBusy = status === "connecting" || status === "init";
-  const theme = status === "listening" ? THEME.listening
-    : status === "speaking" ? THEME.speaking
-    : status === "connecting" ? THEME.connecting
-    : THEME.ready;
+  const theme = THEME[status] ?? THEME.ready;
+  const displayLevel = Math.min(1, audioLevel * 1.2);
+  const micOff = status === "connected";
 
-  const [audioHistory, setAudioHistory] = useState<number[]>([]);
-  const audioLevelRef = useRef(audioLevel);
-  audioLevelRef.current = audioLevel;
-
-  // Smooth audio history buffer (for water-like lag/flow)
-  useEffect(() => {
-    if (!isActive) {
-      setAudioHistory([]);
-      return;
-    }
-    const interval = setInterval(() => {
-      setAudioHistory(prev => {
-        const next = [...prev, audioLevelRef.current];
-        return next.length > 20 ? next.slice(-20) : next;
-      });
-    }, 60);
-    return () => clearInterval(interval);
-  }, [isActive]);
-
-  const smoothLevel = audioHistory.length > 0
-    ? audioHistory.reduce((a, b) => a + b, 0) / audioHistory.length
-    : 0;
-
-  const displayLevel = isActive ? lerp(0.1, smoothLevel, 0.7) : 0;
-  const barHeights = useMemo(() => {
-    const t = Date.now() / 1000;
-    return BAR_ANGLES.map((_, i) => {
-      const freq = 1 - i / BAR_COUNT;
-      const wave1 = Math.sin(t * 3 + i * 0.3) * 0.4 + 0.6;
-      const wave2 = Math.sin(t * 2.1 + i * 0.15) * 0.3 + 0.7;
-      const base = isActive ? displayLevel * 36 * freq : 2;
-      return Math.max(2, Math.min(40, base * (wave1 * 0.6 + wave2 * 0.4)));
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayLevel, isActive, audioLevel]);
-
-  const ringScale = isActive ? 1 + displayLevel * 1.2 : 1;
+  const barHeights = useMemo(
+    () => getBarHeights(displayLevel, isActive && !micOff),
+    [displayLevel, isActive, micOff]
+  );
 
   return (
-    <div className="relative flex items-center justify-center w-80 h-80 mx-auto select-none">
-      {/* Hidden SVG for liquid filters */}
+    <div className="relative flex items-center justify-center w-72 h-72 mx-auto select-none">
+      {/* SVG Filters */}
       <svg className="absolute w-0 h-0" aria-hidden>
         <defs>
-          <filter id="liquid-goo">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
-            <feColorMatrix in="blur" mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" result="goo" />
-            <feBlend in="SourceGraphic" in2="goo" />
-          </filter>
-          <filter id="liquid-soft">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-            <feColorMatrix in="blur" mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" />
-          </filter>
-          <filter id="glow-strong">
-            <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-          <linearGradient id="grad-liquid" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={theme.primary} stopOpacity="0.6" />
-            <stop offset="50%" stopColor={theme.secondary} stopOpacity="0.4" />
-            <stop offset="100%" stopColor={theme.accent} stopOpacity="0.6" />
-          </linearGradient>
+          <radialGradient id="core-pulse" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={theme.primary} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={theme.primary} stopOpacity="0" />
+          </radialGradient>
         </defs>
       </svg>
 
-      {/* ═══════ 1. Outer Ambient Glow ═══════ */}
+      {/* ═══ 1. Outer ambient glow ═══ */}
       <div
         className="absolute rounded-full transition-all duration-1000"
         style={{
@@ -118,58 +72,14 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
           background: `radial-gradient(circle at 50% 50%, ${theme.primary}20 0%, ${theme.secondary}08 40%, transparent 70%)`,
           transform: `scale(${1 + displayLevel * 0.25})`,
           opacity: isActive ? 0.9 : 0.2,
-          filter: 'url(#glow-strong)',
         }}
       />
 
-      {/* ═══════ 2. Liquid Morphing Rings ═══════ */}
-      {isActive && Array.from({ length: RING_COUNT }).map((_, i) => {
-        const delay = i * 0.4;
-        const baseR = 60 + i * 22 + displayLevel * 20;
-        const speed = 4 + i * 1.2;
-        const wobble = 8 + displayLevel * 18;
-        const t = Date.now() / 1000;
-        const rx = baseR + Math.sin(t * speed + delay * 2) * wobble;
-        const ry = baseR + Math.cos(t * speed * 0.7 + delay * 1.5) * wobble;
-        return (
-          <div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: rx, height: ry,
-              border: `2px solid ${theme.primary}${Math.max(10, 40 - i * 7).toString(16)}`,
-              opacity: 0.15 + displayLevel * 0.4 - i * 0.05,
-              filter: 'url(#liquid-soft)',
-              transform: `translate(-50%, -50%)`,
-              left: '50%', top: '50%',
-              transition: 'width 0.15s ease-out, height 0.15s ease-out',
-            }}
-          />
-        );
-      })}
-
-      {/* ═══════ 3. Water Ripple Rings (pulsing) ═══════ */}
-      {isActive && [0, 0.25, 0.5, 0.75].map((d, i) => (
-        <div
-          key={`ripple-${i}`}
-          className="absolute rounded-full"
-          style={{
-            width: 90, height: 90,
-            border: `2px solid ${theme.primary}44`,
-            animation: `water-ripple 2.8s ease-out infinite`,
-            animationDelay: `${d}s`,
-            opacity: 0.2 + displayLevel * 0.4,
-            filter: 'url(#liquid-soft)',
-            transform: `scale(${1 + displayLevel * 0.5})`,
-          }}
-        />
-      ))}
-
-      {/* ═══════ 4. Fluid Spectrum Bars ═══════ */}
-      {BAR_ANGLES.map((angle, i) => {
-        const h = barHeights[i];
-        const opacity = isActive
-          ? 0.3 + (displayLevel * h) / 40 * 0.7
+      {/* ═══ 2. Spectrum analyzer bars ═══ */}
+      {barHeights.map((h, i) => {
+        const angle = (360 / BAR_COUNT) * i;
+        const opacity = isActive && !micOff
+          ? 0.3 + (displayLevel * h) / 30 * 0.7
           : 0.06;
         return (
           <div
@@ -178,164 +88,86 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
             style={{
               width: 2.5,
               height: h,
-              background: isActive
+              background: isActive && !micOff
                 ? `linear-gradient(to top, ${theme.primary}, ${theme.secondary})`
-                : 'rgba(255,255,255,0.05)',
-              left: '50%',
-              top: '50%',
-              transformOrigin: '50% 0',
+                : "rgba(255,255,255,0.05)",
+              left: "50%",
+              top: "50%",
+              transformOrigin: "50% 0",
               transform: `translateX(-50%) translateY(-50%) rotate(${angle}deg) translateY(-${72 + displayLevel * 18}px)`,
               opacity,
               borderRadius: 4,
-              transition: 'height 0.08s ease-out, opacity 0.2s ease',
-              filter: isActive ? 'url(#liquid-soft)' : 'none',
+              transition: "height 0.08s ease-out, opacity 0.2s ease",
             }}
           />
         );
       })}
 
-      {/* ═══════ 5. Flowing Liquid Core (SVG ring) ═══════ */}
-      <svg
-        className="absolute"
-        width="240"
-        height="240"
-        viewBox="0 0 240 240"
-        style={{ transform: `rotate(${Date.now() / 10000}rad)` }}
-      >
-        <defs>
-          <linearGradient id="core-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={theme.primary} stopOpacity={isActive ? 0.5 : 0.15}>
-              <animate attributeName="stopOpacity" values={isActive ? "0.5" : "0.15"} dur="1s" />
-            </stop>
-            <stop offset="100%" stopColor={theme.secondary} stopOpacity={isActive ? 0.3 : 0.08}>
-              <animate attributeName="stopOpacity" values={isActive ? "0.3" : "0.08"} dur="1s" />
-            </stop>
-          </linearGradient>
-        </defs>
-
-        {/* Outer liquid ring */}
-        <circle
-          cx="120" cy="120" r={80 + displayLevel * 12}
-          fill="none"
-          stroke="url(#core-grad)"
-          strokeWidth={2 + displayLevel * 3}
-          strokeLinecap="round"
-          filter="url(#liquid-soft)"
-          opacity={isActive ? 0.6 + displayLevel * 0.4 : 0.1}
-        >
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from="0 120 120"
-            to="360 120 120"
-            dur={`${8 - displayLevel * 3}s`}
-            repeatCount="indefinite"
-          />
-        </circle>
-
-        {/* Inner liquid ring (counter-rotate) */}
-        <circle
-          cx="120" cy="120" r={60 + displayLevel * 8}
-          fill="none"
-          stroke="url(#core-grad)"
-          strokeWidth={1.5 + displayLevel * 2}
-          strokeLinecap="round"
-          strokeDasharray={`${40 + displayLevel * 40} ${60}`}
-          filter="url(#liquid-soft)"
-          opacity={isActive ? 0.4 + displayLevel * 0.4 : 0.05}
-        >
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from="360 120 120"
-            to="0 120 120"
-            dur={`${6 - displayLevel * 2}s`}
-            repeatCount="indefinite"
-          />
-        </circle>
-      </svg>
-
-      {/* ═══════ 6. Inner Pulse Core ═══════ */}
+      {/* ═══ 3. Center pulse glow ═══ */}
       <div
-        className="absolute rounded-full transition-all duration-200 ease-out"
+        className="absolute rounded-full transition-all duration-200"
         style={{
-          width: `${160 + displayLevel * 60}px`,
-          height: `${160 + displayLevel * 60}px`,
-          border: `2.5px solid ${theme.primary}${isActive ? "99" : "22"}`,
-          opacity: isActive ? 0.4 + displayLevel * 0.6 : 0.1,
-          transform: `scale(${1 + displayLevel * 0.15})`,
-          boxShadow: isActive
-            ? `0 0 ${30 + displayLevel * 60}px ${theme.primary}44, inset 0 0 ${20 + displayLevel * 40}px ${theme.primary}22`
-            : '0 0 10px rgba(200,148,62,0.08)',
-          filter: 'url(#liquid-soft)',
+          width: `${130 + displayLevel * 40}px`,
+          height: `${130 + displayLevel * 40}px`,
+          background: `radial-gradient(circle at 50% 50%, ${theme.primary}22 0%, ${theme.secondary}10 40%, transparent 65%)`,
+          transform: `scale(${1 + displayLevel * 0.08})`,
         }}
       />
 
-      {/* ═══════ 7. Center Gradient Orb ═══════ */}
+      {/* ═══ 4. Inner pulsing ring ═══ */}
       <div
-        className="absolute rounded-full transition-all duration-500"
+        className="absolute rounded-full transition-all duration-150"
         style={{
-          width: 140, height: 140,
-          background: isActive
-            ? `radial-gradient(circle at 40% 35%, ${theme.primary}33 0%, ${theme.secondary}15 40%, ${theme.accent}08 70%, transparent 100%)`
-            : 'radial-gradient(circle, rgba(200,148,62,0.08) 0%, transparent 60%)',
-          filter: 'url(#liquid-goo)',
+          width: `${140 + displayLevel * 30}px`,
+          height: `${140 + displayLevel * 30}px`,
+          border: `2px solid ${theme.primary}${isActive && !micOff ? "66" : "22"}`,
+          opacity: isActive && !micOff ? 0.4 + displayLevel * 0.5 : 0.15,
+          boxShadow: isActive && !micOff
+            ? `0 0 ${20 + displayLevel * 40}px ${theme.glow}`
+            : "none",
+          transition: "width 0.15s ease-out, height 0.15s ease-out, box-shadow 0.3s ease",
         }}
-      >
-        {/* Animated inner glow */}
-        {isActive && (
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: `radial-gradient(circle at ${50 + Math.sin(Date.now() / 2000) * 20}% ${50 + Math.cos(Date.now() / 2500) * 20}%, ${theme.primary}44 0%, transparent 60%)`,
-              transition: 'background 0.3s ease',
-            }}
-          />
-        )}
-      </div>
+      />
 
-      {/* ═══════ 8. Mic Button ═══════ */}
+      {/* ═══ 5. Mic button ═══ */}
       <button
         onClick={onToggle}
         disabled={disabled || isBusy}
-        className="relative z-10 flex items-center justify-center w-20 h-20 rounded-full transition-all duration-300 cursor-pointer group"
+        className="relative z-10 flex items-center justify-center w-24 h-24 rounded-full transition-all duration-300 cursor-pointer group"
         style={{
           background: isActive
-            ? `radial-gradient(circle at 35% 30%, ${theme.primary}35, ${theme.primary}10 60%, ${theme.accent}08)`
-            : 'radial-gradient(circle at 35% 30%, rgba(200,148,62,0.12), rgba(200,148,62,0.04))',
-          border: `2.5px solid ${isActive ? theme.primary + '77' : 'rgba(200,148,62,0.25)'}`,
+            ? `radial-gradient(circle at 40% 35%, ${theme.primary}30, ${theme.primary}10)`
+            : "radial-gradient(circle at 40% 35%, rgba(200,148,62,0.15), rgba(200,148,62,0.05))",
+          border: `2px solid ${isActive ? theme.primary + "66" : "rgba(200,148,62,0.3)"}`,
           boxShadow: isActive
-            ? `0 0 ${40 + displayLevel * 60}px ${theme.primary}33, inset 0 0 ${30 + displayLevel * 40}px ${theme.primary}15`
-            : '0 0 15px rgba(200,148,62,0.08)',
+            ? `0 0 ${20 + displayLevel * 40}px ${theme.glow}, inset 0 0 ${15 + displayLevel * 25}px ${theme.primary}11`
+            : "0 0 10px rgba(200,148,62,0.1)",
         }}
-        aria-label={isActive ? 'Dừng' : 'Bắt đầu'}
+        aria-label={isActive ? "Dừng" : "Bắt đầu"}
       >
-        {/* Button inner liquid glow */}
+        {/* Button inner glow */}
         <div
-          className="absolute inset-1.5 rounded-full transition-all duration-300"
+          className="absolute inset-2 rounded-full transition-opacity duration-300"
           style={{
             background: isActive
-              ? `radial-gradient(circle at 50% 50%, ${theme.primary}50 0%, transparent 70%)`
-              : 'transparent',
+              ? `radial-gradient(circle at 50% 50%, ${theme.primary}40 0%, transparent 70%)`
+              : "transparent",
             opacity: displayLevel,
           }}
         />
 
-        {/* Icon */}
+        {/* Mic / Sound icon */}
         <svg
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.8"
+          strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="relative transition-all duration-200"
+          className="relative w-8 h-8 transition-all duration-200"
           style={{
-            width: 32 + displayLevel * 4,
-            height: 32 + displayLevel * 4,
-            color: isActive ? theme.primary : '#C8943E',
-            transform: `scale(${1 + displayLevel * 0.2})`,
-            filter: isActive ? 'drop-shadow(0 0 6px ' + theme.primary + '66)' : 'none',
+            color: isActive ? theme.primary : "#C8943E",
+            transform: isActive ? `scale(${1 + displayLevel * 0.12})` : "scale(1)",
           }}
         >
           {isSpeaking ? (
@@ -344,7 +176,6 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
               <path d="M6 8v8" />
               <path d="M10 6v12" />
               <path d="M14 4v16" />
-              <path d="M18 6v12" />
             </>
           ) : (
             <>
@@ -356,46 +187,41 @@ export function VoiceVisualizer({ status, audioLevel, isSpeaking, onToggle, disa
           )}
         </svg>
 
-        {/* Expanding ping ring */}
-        {isActive && (
+        {/* Ping border */}
+        {isActive && !micOff && (
           <span
-            className="absolute inset-0 rounded-full"
+            className="absolute inset-0 rounded-full animate-ping opacity-30"
             style={{
               border: `2px solid ${theme.primary}`,
-              animation: `water-ripple 1.8s ease-out infinite`,
-              opacity: 0.3 + displayLevel * 0.3,
+              animationDuration: `${1.5 - displayLevel * 0.5}s`,
             }}
           />
         )}
       </button>
 
-      {/* ═══════ 9. Liquid Particles ═══════ */}
-      {isActive && <LiquidParticles level={displayLevel} theme={theme} />}
+      {/* ═══ 6. Floating particles ═══ */}
+      {isActive && !micOff && <AudioParticles level={displayLevel} color={theme.primary} />}
     </div>
   );
 }
 
-// ─── Liquid Particles (water-like flowing dots) ─────────────────────────────
+// ─── Particles ───────────────────────────────────────────────────────────────
 
-function LiquidParticles({ level, theme }: { level: number; theme: typeof THEME.listening }) {
-  const particles = useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => {
-      const angle = (360 / 12) * i;
-      const dist = 90 + Math.random() * 50;
-      return {
-        id: i,
-        x: Math.cos((angle * Math.PI) / 180) * dist,
-        y: Math.sin((angle * Math.PI) / 180) * dist,
-        size: 2.5 + Math.random() * 4,
-        speed: 0.8 + Math.random() * 1.2,
-        pulse: Math.random() * Math.PI * 2,
-        drift: Math.random() * 50 - 25,
-      };
-    });
-  }, []);
+function AudioParticles({ level, color }: { level: number; color: string }) {
+  const particles = useMemo(() =>
+    Array.from({ length: 6 }, (_, i) => ({
+      id: i,
+      angle: (360 / 6) * i + Math.random() * 15,
+      dist: 85 + Math.random() * 40,
+      size: 2.5 + Math.random() * 3.5,
+      dur: 2 + Math.random() * 1.5,
+      delay: Math.random() * 1.5,
+    })), []);
+
+  if (level < 0.05) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none" style={{ filter: 'url(#liquid-soft)' }}>
+    <div className="absolute inset-0 pointer-events-none">
       {particles.map((p) => (
         <div
           key={p.id}
@@ -403,14 +229,14 @@ function LiquidParticles({ level, theme }: { level: number; theme: typeof THEME.
           style={{
             width: p.size,
             height: p.size,
-            background: level > 0.05 ? theme.primary : 'transparent',
+            background: color,
             opacity: level * (0.2 + Math.random() * 0.5),
-            left: '50%',
-            top: '50%',
-            transform: `translate(calc(-50% + ${p.x}px), calc(-50% + ${p.y}px))`,
-            boxShadow: `0 0 ${6 + level * 12}px ${theme.primary}88`,
-            animation: `water-particle ${2 + p.speed}s ease-in-out ${p.pulse}s infinite`,
-            transition: 'opacity 0.3s ease, background 0.3s ease',
+            left: "50%",
+            top: "50%",
+            transform: `translate(-50%, -50%) translate(${Math.cos((p.angle * Math.PI) / 180) * p.dist}px, ${Math.sin((p.angle * Math.PI) / 180) * p.dist}px)`,
+            animation: `particle-drift-${p.id % 3} ${p.dur}s ease-in-out ${p.delay}s infinite`,
+            boxShadow: `0 0 ${3 + level * 6}px ${color}`,
+            transition: "opacity 0.3s",
           }}
         />
       ))}

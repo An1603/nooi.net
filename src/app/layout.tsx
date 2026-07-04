@@ -1,9 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Suspense } from "react";
 import { ToastProvider } from "@/components/ToastProvider";
-import { VerifiedToastNotifier } from "@/components/VerifiedToastNotifier";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +35,22 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "NOOI",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  userScalable: false,
+  themeColor: "#C8943E",
 };
 
 export default function RootLayout({
@@ -47,8 +60,28 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <div id="toast-debug" className="hidden">toast marker</div>
+      <head>
+        {/* PWA — Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ("serviceWorker" in navigator) {
+                window.addEventListener("load", function () {
+                  navigator.serviceWorker.register("/sw.js").catch(function (err) {
+                    console.log("SW registration failed:", err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <div id="toast-debug" className="hidden">
+          toast marker
+        </div>
         {children}
         <ToastProvider />
       </body>

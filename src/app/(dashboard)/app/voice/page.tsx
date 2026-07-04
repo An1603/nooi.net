@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
+import { VoiceSelectorWrapper } from "./VoiceSelectorWrapper";
 
 export const dynamic = "force-dynamic";
 
@@ -9,14 +10,14 @@ export default async function VoicePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Get user profile for personalization
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name")
+    .select("full_name, voice_preference")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const userName = profile?.full_name || user.email?.split("@")[0] || "bạn";
+  const voicePref = (profile?.voice_preference as string) || "Puck";
 
   const systemInstruction = `Bạn là trợ lý AI của NOOI (phát âm là "NỐI") — nền tảng giáo dục trải nghiệm, chuyển hóa thân tâm, chữa lành, và du lịch chữa lành.
   
@@ -42,10 +43,16 @@ Hướng dẫn:
         </p>
       </div>
 
+      {/* Voice Selector */}
+      <div className="flex justify-end mb-3">
+        <VoiceSelectorWrapper userId={user.id} currentVoice={voicePref} />
+      </div>
+
       {/* Voice Assistant Card */}
       <div className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-4 sm:p-6 md:p-8">
         <VoiceAssistant
           title="NOOI Voice AI"
+          voice={voicePref as "Puck" | "Charon" | "Kore" | "Fenrir" | "Aoede"}
           systemInstruction={systemInstruction}
         />
       </div>
@@ -67,10 +74,10 @@ Hướng dẫn:
           </p>
         </div>
         <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-          <div className="text-lg mb-1">📱</div>
-          <h3 className="text-sm font-medium text-foreground mb-1">Dùng trên mobile</h3>
+          <div className="text-lg mb-1">🎙️</div>
+          <h3 className="text-sm font-medium text-foreground mb-1">Chọn giọng</h3>
           <p className="text-xs text-muted-foreground">
-            Hoạt động trên Chrome Android và Safari iOS (14.5+)
+            5 giọng nói khác nhau: Puck, Charon, Kore, Fenrir, Aoede
           </p>
         </div>
       </div>

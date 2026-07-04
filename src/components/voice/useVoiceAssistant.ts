@@ -24,17 +24,40 @@ export interface VoiceAssistantConfig {
 
 export function useVoiceAssistant(config?: VoiceAssistantConfig) {
   const [status, setStatus] = useState<VoiceStatus>("init");
-  const [transcript, setTranscript] = useState("");        // What user said
-  const [response, setResponse] = useState("");             // What AI said (text)
-  const [audioLevel, setAudioLevel] = useState(0);          // Mic level 0-1
+  const [transcript, setTranscript] = useState("");
+  const [response, setResponse] = useState("");
+  const [audioLevel, setAudioLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [support, setSupport] = useState<{ supported: boolean; missing: string[] } | null>(null);
   const [isMicMuted, setIsMicMuted] = useState(true);
+  const [voiceKey, setVoiceKey] = useState(0); // Increment to force reconnect
 
   const clientRef = useRef<GeminiLiveClient | null>(null);
   const captureRef = useRef<AudioCapture | null>(null);
   const playbackRef = useRef<AudioPlayback | null>(null);
   const statusRef = useRef<VoiceStatus>("init");
+  const voiceRef = useRef<string>(config?.voice || "Puck");
+
+  // Listen for voice changes from VoiceSelector
+  useEffect(() => {
+    voiceRef.current = config?.voice || "Puck";
+  }, [config?.voice]);
+
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      voiceRef.current = e.detail;
+      if (status === "listening" || status === "speaking" || status === "connected") {
+        clientRef.current?.disconnect();
+        captureRef.current?.stop();
+        playbackRef.current?.stop();
+        setStatus("ready");
+        setIsMicMuted(true);
+      }
+    };
+    window.addEventListener("nooi:voice-change", handler as EventListener);
+    return () => window.removeEventListener("nooi:voice-change", handler as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   const setSafeStatus = useCallback((s: VoiceStatus) => {
     statusRef.current = s;
@@ -84,7 +107,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
       // 2. Create Gemini Live client
       const client = new GeminiLiveClient({
         token,
-        voice: config?.voice || "Puck",
+        voice: (voiceRef.current || "Puck") as VoiceOption,
         systemInstruction: config?.systemInstruction || "",
         inputAudioTranscription: true,
         outputAudioTranscription: true,

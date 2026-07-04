@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { cookieOptions } from "@/lib/supabase/cookies";
 
@@ -32,7 +33,47 @@ export async function GET(request: NextRequest) {
     );
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return response;
+    if (!error) {
+      // After successful auth, try to apply referral code from cookie
+      const refCookie = request.cookies.get("nooi_ref");
+      if (refCookie?.value) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("referred_by")
+              .eq("user_id", user.id)
+              .maybeSingle();
+
+            if (profile && !profile.referred_by) {
+              // Look up ref code and set referred_by
+              const adminClient = createClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.SUPABASE_SERVICE_ROLE_KEY!
+              );
+              const { data: refUser } = await adminClient
+                .rpc("lookup_ref_code", { code: refCookie.value.toUpperCase() });
+
+              if (refUser && refUser !== user.id) {
+                await adminClient
+                  .from("profiles")
+                  .update({ referred_by: refUser })
+                  .eq("user_id", user.id)
+                  .is("referred_by", null);
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("Referral auto-claim failed in callback:", e);
+        }
+      }
+
+      // Clear the nooi_ref cookie
+      response.cookies.set("nooi_ref", "", { path: "/", maxAge: 0 });
+
+      return response;
+    }
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);

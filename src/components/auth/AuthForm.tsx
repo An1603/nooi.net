@@ -178,10 +178,20 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
         toast.success("Tài khoản đã được tạo thành công!");
         router.push("/app");
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: emailTrimmed, password,
         });
         if (signInError) throw signInError;
+
+        // Process referral code on login (if user has no referrer yet)
+        const loggedInUserId = signInData?.user?.id;
+        if (loggedInUserId && refCode.trim()) {
+          const result = await setReferredBy(loggedInUserId, refCode.trim());
+          if (!result.success && result.error !== "Mã giới thiệu không hợp lệ." && !result.error?.includes("đã có người giới thiệu")) {
+            console.warn("Referral claim on login failed:", result.error);
+          }
+        }
+
         toast.success("Đăng nhập thành công!");
         router.push("/app");
       }

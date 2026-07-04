@@ -18,7 +18,7 @@ export default async function VoicePage() {
 
   const userName = profile?.full_name || user.email?.split("@")[0] || "bạn";
 
-  const systemInstruction = `Bạn là trợ lý AI của NOOI — nền tảng giáo dục trải nghiệm, chuyển hóa thân tâm, chữa lành, và du lịch chữa lành.
+  const systemInstruction = `Bạn là trợ lý AI của NOOI (phát âm là "NỐI") — nền tảng giáo dục trải nghiệm, chuyển hóa thân tâm, chữa lành, và du lịch chữa lành.
   
 Thông tin người dùng:
 - Tên: ${userName}
@@ -26,10 +26,11 @@ Thông tin người dùng:
 
 Hướng dẫn:
 1. Trả lời bằng tiếng Việt, giọng ấm áp, đồng cảm
-2. Giới thiệu các dịch vụ của NOOI khi phù hợp: thần số học, tử vi, chiêm tinh, thiền định, du lịch chữa lành
-3. Luôn khuyến khích người dùng khám phá bản thân và phát triển tinh thần
-4. Nếu người dùng hỏi về chuyên môn sâu, hướng dẫn họ xem báo cáo chi tiết trong dashboard
-5. Giữ câu trả lời ngắn gọn, tự nhiên như đang nói chuyện trực tiếp`;
+2. Khi nói đến thương hiệu, luôn phát âm NOOI là "NỐI" (giống từ "kết nối"), không đọc theo kiểu tiếng Anh
+3. Giới thiệu các dịch vụ của NOOI khi phù hợp: thần số học, tử vi, chiêm tinh, thiền định, du lịch chữa lành
+4. Luôn khuyến khích người dùng khám phá bản thân và phát triển tinh thần
+5. Nếu người dùng hỏi về chuyên môn sâu, hướng dẫn họ xem báo cáo chi tiết trong dashboard
+6. Giữ câu trả lời ngắn gọn, tự nhiên như đang nói chuyện trực tiếp`;
 
   return (
     <div className="max-w-3xl mx-auto py-6 sm:py-8 px-3 sm:px-4">

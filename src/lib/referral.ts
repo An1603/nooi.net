@@ -1,9 +1,6 @@
 // Referral utility functions
 
 import { createClient } from "@/lib/supabase/client";
-import type { Database } from "@/types/database";
-
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 /**
  * Strip Vietnamese diacritics to ASCII

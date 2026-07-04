@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NOOI — Kết nối chuyển mình.",
+  title: "NOOI",
   description:
     "Nền tảng sản xuất nội dung AI toàn diện. Xây dựng dự án, quản lý video, truy cập tài liệu học tập và cộng tác với các tác tử thông minh.",
   keywords: [
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "học tập AI",
   ],
   openGraph: {
-    title: "NOOI — Kết nối chuyển mình.",
+    title: "NOOI",
     description:
       "Nền tảng sản xuất nội dung AI — kết nối tri thức, chuyển mình cùng công nghệ.",
     type: "website",

@@ -165,6 +165,29 @@ export function getReferralLink(refCode: string): string {
 }
 
 /**
+ * Look up a ref code and return the owner's info.
+ * Used for confirmation step before claiming.
+ */
+export async function getRefCodeOwnerInfo(code: string): Promise<{ full_name: string; ref_code: string; user_id: string } | null> {
+  const trimmed = code.trim().toUpperCase();
+  if (!trimmed) return null;
+
+  const supabase = createClient();
+  const { data: owner } = await supabase
+    .from("profiles")
+    .select("full_name, ref_code, user_id")
+    .eq("ref_code", trimmed)
+    .maybeSingle();
+
+  if (!owner) return null;
+  return {
+    full_name: owner.full_name || "Người dùng",
+    ref_code: owner.ref_code ?? trimmed,
+    user_id: owner.user_id,
+  };
+}
+
+/**
  * Get how many times the user has changed their ref code.
  * Uses profile.ref_code_changes (DB column, INT DEFAULT 0).
  */

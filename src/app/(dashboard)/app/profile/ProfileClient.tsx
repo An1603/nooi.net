@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LocalTime } from "@/components/LocalTime";
-import { getReferralLink, setReferredBy, getReferrer, getReferralStats, getReferralList, changeRefCode, getRefCodeChangesRemaining } from "@/lib/referral";
+import { getReferralLink, setReferredBy, getReferrer, getReferralStats, getReferralList, changeRefCode, getRefCodeChangesRemaining, getRefCodeOwnerInfo } from "@/lib/referral";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -109,6 +109,8 @@ export function ProfileClient({ user, profile }: Props) {
   const [claiming, setClaiming] = useState(false);
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [hasReferrer, setHasReferrer] = useState(!!profile.referred_by);
+  const [claimOwner, setClaimOwner] = useState<{ full_name: string; ref_code: string } | null>(null);
+  const [claimLookupStatus, setClaimLookupStatus] = useState<"idle" | "found" | "not_found">("idle");
 
   // Change ref code state
   const [changesRemaining, setChangesRemaining] = useState(3);
@@ -152,6 +154,14 @@ export function ProfileClient({ user, profile }: Props) {
   }, [user.id, profile.ref_code, supabase]);
 
   // Claim referral code
+  const handleClaimLookup = useCallback(async () => {
+    const code = claimCode.trim();
+    if (!code) { setClaimOwner(null); setClaimLookupStatus("idle"); return; }
+    const owner = await getRefCodeOwnerInfo(code);
+    if (owner) { setClaimOwner(owner); setClaimLookupStatus("found"); }
+    else setClaimLookupStatus("not_found");
+  }, [claimCode]);
+
   const handleClaim = useCallback(async () => {
     if (!claimCode.trim()) {
       toast.error("Vui lòng nhập mã giới thiệu.");
@@ -334,22 +344,42 @@ export function ProfileClient({ user, profile }: Props) {
                     id="claim-ref"
                     placeholder="VD: AN8421"
                     value={claimCode}
-                    onChange={(e) => setClaimCode(e.target.value.toUpperCase())}
+                    onChange={(e) => { setClaimCode(e.target.value.toUpperCase()); setClaimOwner(null); setClaimLookupStatus("idle"); }}
+                    onBlur={handleClaimLookup}
                     className="pl-9 h-10 text-sm font-mono"
                     maxLength={10}
                   />
                 </div>
                 <Button
                   onClick={handleClaim}
-                  disabled={claiming || !claimCode.trim()}
+                  disabled={claiming || !claimCode.trim() || claimLookupStatus !== "found"}
                   className="h-10"
                   size="sm"
                 >
                   {claiming ? "Đang xử lý..." : "Xác nhận"}
                 </Button>
               </div>
+
+              {/* Lookup result */}
+              {claimLookupStatus === "found" && claimOwner && (
+                <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/20 px-3 py-2">
+                  <span className="text-xs text-emerald-400">✅</span>
+                  <p className="text-xs text-emerald-400">
+                    Bạn sắp được giới thiệu bởi <strong>{claimOwner.full_name}</strong> ({claimOwner.ref_code})
+                  </p>
+                </div>
+              )}
+              {claimLookupStatus === "not_found" && (
+                <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/20 px-3 py-2">
+                  <span className="text-xs text-red-400">⚠️</span>
+                  <p className="text-xs text-red-400">
+                    Mã <strong>{claimCode}</strong> không tồn tại trong hệ thống.
+                  </p>
+                </div>
+              )}
+
               <button
-                onClick={() => { setShowClaimForm(false); setClaimCode(""); }}
+                onClick={() => { setShowClaimForm(false); setClaimCode(""); setClaimOwner(null); setClaimLookupStatus("idle"); }}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 Huỷ

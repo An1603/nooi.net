@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2, Wand2, ArrowLeft, Key, Sparkles, Gift } from "lucide-react";
 import Link from "next/link";
-import { setReferredBy, saveRefCodeToCookie, getRefCodeFromCookie } from "@/lib/referral";
+import { setReferredBy, saveRefCodeToCookie, getRefCodeFromCookie, getRefCodeOwnerInfo } from "@/lib/referral";
 
 /* ─── Types ─── */
 
@@ -76,18 +76,30 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [refCode, setRefCode] = useState(initialRefCode || "");
   const [showRefInput, setShowRefInput] = useState(false);
+  const [refOwner, setRefOwner] = useState<{ full_name: string; ref_code: string } | null>(null);
+  const [refLookupStatus, setRefLookupStatus] = useState<"idle" | "found" | "not_found">("idle");
 
   /* ── Cookie: save ref from URL, fallback to cookie ── */
   useEffect(() => {
-    // If ref came from URL (query param), save to cookie
     if (initialRefCode) {
       saveRefCodeToCookie(initialRefCode);
+      // Auto-lookup ref code from URL
+      (async () => {
+        const owner = await getRefCodeOwnerInfo(initialRefCode);
+        if (owner) { setRefOwner(owner); setRefLookupStatus("found"); }
+        else if (initialRefCode) setRefLookupStatus("not_found");
+      })();
     }
-    // If no ref from URL but exists in cookie, use it
     if (!initialRefCode) {
       const cookieCode = getRefCodeFromCookie();
       if (cookieCode) {
         setRefCode(cookieCode);
+        // Auto-lookup ref code from cookie
+        (async () => {
+          const owner = await getRefCodeOwnerInfo(cookieCode);
+          if (owner) { setRefOwner(owner); setRefLookupStatus("found"); }
+          else setRefLookupStatus("not_found");
+        })();
       }
     }
   }, [initialRefCode]);
@@ -96,10 +108,21 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
   const handleRefCodeChange = useCallback((value: string) => {
     const upper = value.toUpperCase();
     setRefCode(upper);
+    setRefOwner(null);
+    setRefLookupStatus("idle");
     if (upper.trim()) {
       saveRefCodeToCookie(upper);
     }
   }, []);
+
+  /* ── Lookup ref code and show owner info ── */
+  const handleRefCodeLookup = useCallback(async () => {
+    const code = refCode.trim();
+    if (!code) { setRefOwner(null); setRefLookupStatus("idle"); return; }
+    const owner = await getRefCodeOwnerInfo(code);
+    if (owner) { setRefOwner(owner); setRefLookupStatus("found"); }
+    else setRefLookupStatus("not_found");
+  }, [refCode]);
 
   /* ── Tab switch → URL change ── */
   const switchTab = useCallback((newTab: AuthTab) => {
@@ -374,13 +397,33 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
                     placeholder="VD: AN8421"
                     value={refCode}
                     onChange={(e) => handleRefCodeChange(e.target.value)}
+                    onBlur={handleRefCodeLookup}
                     className="pl-9 h-10 text-sm font-mono"
                     maxLength={10}
                   />
                 </div>
+
+                {/* Lookup result */}
+                {refLookupStatus === "found" && refOwner && (
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/20 px-3 py-2">
+                    <span className="text-xs text-emerald-400">✅</span>
+                    <p className="text-xs text-emerald-400">
+                      Giới thiệu bởi <strong>{refOwner.full_name}</strong> ({refOwner.ref_code})
+                    </p>
+                  </div>
+                )}
+                {refLookupStatus === "not_found" && (
+                  <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/20 px-3 py-2">
+                    <span className="text-xs text-red-400">⚠️</span>
+                    <p className="text-xs text-red-400">
+                      Mã <strong>{refCode}</strong> không tồn tại trong hệ thống.
+                    </p>
+                  </div>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => { setShowRefInput(false); setRefCode(""); }}
+                  onClick={() => { setShowRefInput(false); setRefCode(""); setRefOwner(null); setRefLookupStatus("idle"); }}
                   className="text-[10px] text-muted-foreground hover:text-foreground"
                 >
                   Bỏ qua

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LocalTime } from "@/components/LocalTime";
-import { getReferralLink, setReferredBy, getReferrer, getReferralStats, getReferralList, changeRefCode, getRefCodeChangesRemaining, getRefCodeOwnerInfo } from "@/lib/referral";
+import { getReferralLink, setReferredBy, getReferrer, getReferralStats, getReferralList, changeRefCode, getRefCodeChangesRemaining, getRefCodeOwnerInfo, validateCustomRefCode } from "@/lib/referral";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -117,6 +117,8 @@ export function ProfileClient({ user, profile }: Props) {
   const [showChangeForm, setShowChangeForm] = useState(false);
   const [newCode, setNewCode] = useState("");
   const [changing, setChanging] = useState(false);
+  const [newCodeStatus, setNewCodeStatus] = useState<"idle" | "validating" | "same" | "taken" | "valid" | "invalid_format">("idle");
+  const validateTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -152,6 +154,43 @@ export function ProfileClient({ user, profile }: Props) {
       setChangesRemaining(remaining);
     })();
   }, [user.id, profile.ref_code, supabase]);
+
+  // ── Real-time debounced validation for change ref code ──
+  useEffect(() => {
+    // Clear previous timer
+    if (validateTimer.current) clearTimeout(validateTimer.current);
+
+    const trimmed = newCode.trim().toUpperCase();
+
+    // Empty → idle
+    if (!trimmed) {
+      setNewCodeStatus("idle");
+      return;
+    }
+
+    // Same as current → no change
+    if (trimmed === refCode) {
+      setNewCodeStatus("same");
+      return;
+    }
+
+    // Format check
+    if (!/^[A-Z0-9]{2,10}$/.test(trimmed)) {
+      setNewCodeStatus("invalid_format");
+      return;
+    }
+
+    // Debounce DB check (500ms after last keystroke)
+    setNewCodeStatus("validating");
+    validateTimer.current = setTimeout(async () => {
+      const error = await validateCustomRefCode(trimmed, user.id);
+      setNewCodeStatus(error ? "taken" : "valid");
+    }, 500);
+
+    return () => {
+      if (validateTimer.current) clearTimeout(validateTimer.current);
+    };
+  }, [newCode, refCode, user.id]);
 
   // Claim referral code
   const handleClaimLookup = useCallback(async () => {
@@ -441,7 +480,7 @@ export function ProfileClient({ user, profile }: Props) {
           {refCode && showChangeForm && (
             <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
               <p className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">Lưu ý:</span> Còn <strong>{changesRemaining} lần</strong> đổi mã. Mã mới không được trùng với bất kỳ mã nào đang tồn tại.
+                <span className="font-medium text-foreground">Lưu ý:</span> Còn <strong>{changesRemaining} lần</strong> đổi mã.
               </p>
               <Label htmlFor="new-ref-code" className="text-xs">Mã giới thiệu mới</Label>
               <div className="flex gap-2">
@@ -450,22 +489,78 @@ export function ProfileClient({ user, profile }: Props) {
                     id="new-ref-code"
                     placeholder="VD: AN, AN1, BICH..."
                     value={newCode}
-                    onChange={(e) => setNewCode(e.target.value.toUpperCase())}
-                    className="h-10 text-sm font-mono"
+                    onChange={(e) => { setNewCode(e.target.value.toUpperCase()); setNewCodeStatus("idle"); }}
+                    className={`h-10 text-sm font-mono pr-10 ${
+                      newCodeStatus === "valid" ? "border-emerald-500/50 ring-1 ring-emerald-500/20" :
+                      newCodeStatus === "taken" || newCodeStatus === "same" ? "border-red-500/50 ring-1 ring-red-500/20" :
+                      ""
+                    }`}
                     maxLength={10}
                   />
+                  {/* Status icon inside input */}
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {newCodeStatus === "validating" && (
+                      <div className="size-4 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+                    )}
+                    {newCodeStatus === "valid" && (
+                      <svg className="size-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                      </svg>
+                    )}
+                    {newCodeStatus === "taken" && (
+                      <svg className="size-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                      </svg>
+                    )}
+                    {newCodeStatus === "same" && (
+                      <svg className="size-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                      </svg>
+                    )}
+                  </div>
                 </div>
                 <Button
                   onClick={handleChangeRefCode}
-                  disabled={changing || !newCode.trim()}
+                  disabled={changing || newCodeStatus !== "valid"}
                   className="h-10"
                   size="sm"
                 >
                   {changing ? "Đang xử lý..." : "Xác nhận"}
                 </Button>
               </div>
+
+              {/* Status message */}
+              {newCodeStatus === "same" && (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-950/20 px-3 py-2">
+                  <p className="text-xs text-amber-400">
+                    Mã mới giống với mã hiện tại — không có gì thay đổi.
+                  </p>
+                </div>
+              )}
+              {newCodeStatus === "taken" && (
+                <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/20 px-3 py-2">
+                  <p className="text-xs text-red-400">
+                    Mã <strong>{newCode}</strong> đã tồn tại. Vui lòng chọn mã khác.
+                  </p>
+                </div>
+              )}
+              {newCodeStatus === "invalid_format" && (
+                <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/20 px-3 py-2">
+                  <p className="text-xs text-red-400">
+                    Mã chỉ gồm chữ hoa và số, từ 2-10 ký tự.
+                  </p>
+                </div>
+              )}
+              {newCodeStatus === "valid" && (
+                <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/20 px-3 py-2">
+                  <p className="text-xs text-emerald-400">
+                    ✅ Mã <strong>{newCode}</strong> có thể sử dụng được.
+                  </p>
+                </div>
+              )}
+
               <button
-                onClick={() => { setShowChangeForm(false); setNewCode(""); }}
+                onClick={() => { setShowChangeForm(false); setNewCode(""); setNewCodeStatus("idle"); }}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 Huỷ

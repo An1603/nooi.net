@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LocalTime } from "@/components/LocalTime";
-import { getReferralLink, setReferredBy, getReferrer, getReferralStats, getReferralList } from "@/lib/referral";
+import { getReferralLink, setReferredBy, getReferrer, getReferralStats, getReferralList, changeRefCode, getRefCodeChangesRemaining } from "@/lib/referral";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -110,6 +110,12 @@ export function ProfileClient({ user, profile }: Props) {
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [hasReferrer, setHasReferrer] = useState(!!profile.referred_by);
 
+  // Change ref code state
+  const [changesRemaining, setChangesRemaining] = useState(3);
+  const [showChangeForm, setShowChangeForm] = useState(false);
+  const [newCode, setNewCode] = useState("");
+  const [changing, setChanging] = useState(false);
+
   useEffect(() => {
     (async () => {
       // Set ref code from profile (might be null if profile was created before migration)
@@ -138,6 +144,10 @@ export function ProfileClient({ user, profile }: Props) {
         const list = await getReferralList(user.id);
         setReferralList(list);
       }
+
+      // Remaining changes
+      const remaining = await getRefCodeChangesRemaining(user.id);
+      setChangesRemaining(remaining);
     })();
   }, [user.id, profile.ref_code, supabase]);
 
@@ -162,6 +172,29 @@ export function ProfileClient({ user, profile }: Props) {
     }
     setClaiming(false);
   }, [claimCode, user.id]);
+
+  // Change ref code
+  const handleChangeRefCode = useCallback(async () => {
+    const trimmed = newCode.trim().toUpperCase();
+    if (!trimmed) { toast.error("Vui lòng nhập mã mới."); return; }
+    if (!/^[A-Z0-9]{2,10}$/.test(trimmed)) {
+      toast.error("Mã chỉ gồm chữ hoa và số, từ 2-10 ký tự.");
+      return;
+    }
+    setChanging(true);
+    const result = await changeRefCode(user.id, trimmed);
+    if (result.success) {
+      toast.success("✅ Đã đổi mã giới thiệu thành công!");
+      setRefCode(trimmed);
+      setShowChangeForm(false);
+      setNewCode("");
+      const remaining = await getRefCodeChangesRemaining(user.id);
+      setChangesRemaining(remaining);
+    } else {
+      toast.error(result.error || "Không thể đổi mã.");
+    }
+    setChanging(false);
+  }, [newCode, user.id]);
 
   const referralLink = getReferralLink(refCode);
 
@@ -360,6 +393,53 @@ export function ProfileClient({ user, profile }: Props) {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ── Change ref code ── */}
+          {refCode && !showChangeForm && changesRemaining > 0 && (
+            <div className="flex items-center justify-end">
+              <button
+                onClick={() => setShowChangeForm(true)}
+                className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+              >
+                ✏️ Đổi mã ({changesRemaining} lần còn lại)
+              </button>
+            </div>
+          )}
+
+          {refCode && showChangeForm && (
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Lưu ý:</span> Còn <strong>{changesRemaining} lần</strong> đổi mã. Mã mới không được trùng với bất kỳ mã nào đang tồn tại.
+              </p>
+              <Label htmlFor="new-ref-code" className="text-xs">Mã giới thiệu mới</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="new-ref-code"
+                    placeholder="VD: AN, AN1, BICH..."
+                    value={newCode}
+                    onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+                    className="h-10 text-sm font-mono"
+                    maxLength={10}
+                  />
+                </div>
+                <Button
+                  onClick={handleChangeRefCode}
+                  disabled={changing || !newCode.trim()}
+                  className="h-10"
+                  size="sm"
+                >
+                  {changing ? "Đang xử lý..." : "Xác nhận"}
+                </Button>
+              </div>
+              <button
+                onClick={() => { setShowChangeForm(false); setNewCode(""); }}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Huỷ
+              </button>
             </div>
           )}
 

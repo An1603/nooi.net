@@ -247,10 +247,6 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
           <p className="text-xs text-primary">
             🎁 Mã giới thiệu: <code className="font-mono font-bold">{refCode}</code>
           </p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            Mã này sẽ được ghi nhận khi bạn tạo tài khoản.{' '}
-            <span className="text-primary">Dùng link khác để đổi mã.</span>
-          </p>
         </div>
       )}
 

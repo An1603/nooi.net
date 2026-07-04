@@ -241,6 +241,19 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
         </button>
       </div>
 
+      {/* ── Referral code banner (from URL or cookie) ── */}
+      {tab === "signup" && refCode.trim() && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-center">
+          <p className="text-xs text-primary">
+            🎁 Mã giới thiệu: <code className="font-mono font-bold">{refCode}</code>
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            Mã này sẽ được ghi nhận khi bạn tạo tài khoản.{' '}
+            <span className="text-primary">Dùng link khác để đổi mã.</span>
+          </p>
+        </div>
+      )}
+
       {/* ── Social redirecting state ── */}
       {isSocialRedirecting && (
         <div className="flex flex-col items-center gap-3 py-6 animate-in fade-in">

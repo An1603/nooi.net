@@ -33,11 +33,6 @@ export default async function SignupPage(props: { searchParams?: Promise<{ ref?:
           <p className="text-sm text-muted-foreground mt-1">
             Tạo tài khoản NOOI và khám phá sức mạnh AI
           </p>
-          {refCode && (
-            <p className="text-xs text-primary mt-2">
-              🎁 Mã giới thiệu: <code className="font-mono font-bold">{refCode}</code>
-            </p>
-          )}
         </div>
 
         <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-5 sm:p-6 shadow-xl">

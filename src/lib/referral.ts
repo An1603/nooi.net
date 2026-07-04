@@ -63,8 +63,7 @@ export async function validateCustomRefCode(code: string, excludeUserId?: string
     return "Mã chỉ gồm chữ hoa và số, từ 2-10 ký tự.";
 
   const supabase = createClient();
-  let query = supabase.from("profiles").select("user_id").eq("ref_code", trimmed).maybeSingle();
-  const { data: existing } = await query;
+  const { data: existing } = await supabase.from("profiles").select("user_id").eq("ref_code", trimmed).maybeSingle();
 
   if (existing && existing.user_id !== excludeUserId) {
     return "Mã này đã có người sử dụng. Vui lòng chọn mã khác.";

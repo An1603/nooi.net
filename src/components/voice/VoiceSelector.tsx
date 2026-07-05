@@ -1,30 +1,27 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Check, ChevronDown, Volume2, Loader2, Play, StopCircle } from "lucide-react";
+import { Check, ChevronDown, Volume2, Play, Pause } from "lucide-react";
 
 // ─── 10 Gemini Live Voices ────────────────────────────────────────────────────
 // Source: docs.cloud.google.com/gemini-enterprise-agent-platform/models/live-api/configure-language-voice
+// Preview files generated with edge-tts — each voice uses a different TTS voice.
 
 export const VOICE_OPTIONS = [
-  { id: "Puck",    label: "Puck",       desc: "Nam ấm áp, vui tươi",        emoji: "🎙️", previewPitch: 1.0, previewRate: 1.0 },
-  { id: "Charon",  label: "Charon",     desc: "Nam trầm ấm, tin cậy",       emoji: "🎙️", previewPitch: 0.7, previewRate: 0.85 },
-  { id: "Kore",    label: "Kore",       desc: "Nữ nhẹ nhàng, chắc chắn",     emoji: "🎤",  previewPitch: 1.3, previewRate: 0.9 },
-  { id: "Fenrir",  label: "Fenrir",     desc: "Nam hào hứng, năng lượng",    emoji: "🎙️", previewPitch: 1.1, previewRate: 1.1 },
-  { id: "Aoede",   label: "Aoede",      desc: "Nữ trong trẻo, mát lành",     emoji: "🎤",  previewPitch: 1.4, previewRate: 0.95 },
-  { id: "Zephyr",  label: "Zephyr",     desc: "Nam sáng sủa, tươi tắn",     emoji: "🎙️", previewPitch: 0.9, previewRate: 0.95 },
-  { id: "Leda",    label: "Leda",       desc: "Nữ trẻ trung, tươi mới",     emoji: "🎤",  previewPitch: 1.5, previewRate: 1.0 },
-  { id: "Orus",    label: "Orus",       desc: "Nam nam tính, mạnh mẽ",       emoji: "🎙️", previewPitch: 0.6, previewRate: 0.85 },
-  { id: "Callirrhoe", label: "Callirrhoe", desc: "Nữ thoải mái, tự nhiên",   emoji: "🎤",  previewPitch: 1.2, previewRate: 0.9 },
-  { id: "Sulafat", label: "Sulafat",    desc: "Nam ấm áp, tình cảm",        emoji: "🎙️", previewPitch: 0.8, previewRate: 0.85 },
+  { id: "Puck",       label: "Puck",       desc: "Nam ấm áp, vui tươi",               emoji: "🎙️" },
+  { id: "Charon",     label: "Charon",     desc: "Nam trầm ấm, tin cậy",              emoji: "🎙️" },
+  { id: "Kore",       label: "Kore",       desc: "Nữ nhẹ nhàng, chắc chắn",           emoji: "🎤"  },
+  { id: "Fenrir",     label: "Fenrir",     desc: "Nam hào hứng, năng lượng",          emoji: "🎙️" },
+  { id: "Aoede",      label: "Aoede",      desc: "Nữ trong trẻo, mát lành",           emoji: "🎤"  },
+  { id: "Zephyr",     label: "Zephyr",     desc: "Nam sáng sủa, tươi tắn",            emoji: "🎙️" },
+  { id: "Leda",       label: "Leda",       desc: "Nữ trẻ trung, tươi mới",            emoji: "🎤"  },
+  { id: "Orus",       label: "Orus",       desc: "Nam nam tính, mạnh mẽ",              emoji: "🎙️" },
+  { id: "Callirrhoe", label: "Callirrhoe", desc: "Nữ thoải mái, tự nhiên",            emoji: "🎤"  },
+  { id: "Sulafat",    label: "Sulafat",    desc: "Nam ấm áp, tình cảm",               emoji: "🎙️" },
 ] as const;
 
 export type VoiceId = (typeof VOICE_OPTIONS)[number]["id"];
-
-// ─── Preview Text ─────────────────────────────────────────────────────────────
-
-const PREVIEW_TEXT = "Xin chào, tôi là trợ lý giọng nói của NOOI. Rất vui được trò chuyện cùng bạn.";
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -39,10 +36,9 @@ interface VoiceSelectorProps {
 export function VoiceSelector({ userId, currentVoice, onVoiceChange }: VoiceSelectorProps) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [previewId, setPreviewId] = useState<VoiceId | null>(null);
-  const [previewBusy, setPreviewBusy] = useState(false);
+  const [playing, setPlaying] = useState<VoiceId | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const selected = VOICE_OPTIONS.find((v) => v.id === currentVoice) ?? VOICE_OPTIONS[0];
 
@@ -51,23 +47,22 @@ export function VoiceSelector({ userId, currentVoice, onVoiceChange }: VoiceSele
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false);
-        setPreviewId(null);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Cleanup speech synthesis on unmount
+  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      window.speechSynthesis?.cancel();
+      audioRef.current?.pause();
+      audioRef.current = null;
     };
   }, []);
 
   const handleSelect = async (voice: VoiceId) => {
     setOpen(false);
-    setPreviewId(null);
     if (voice === currentVoice) return;
 
     setSaving(true);
@@ -86,56 +81,42 @@ export function VoiceSelector({ userId, currentVoice, onVoiceChange }: VoiceSele
     }
   };
 
-  const speakPreview = useCallback((voice: VoiceId) => {
-    if (!window.speechSynthesis) return;
-
-    // If already playing this voice, stop it
-    if (previewId === voice) {
-      window.speechSynthesis.cancel();
-      setPreviewId(null);
-      currentUtteranceRef.current = null;
+  const handlePreview = (voice: VoiceId) => {
+    // If already playing this voice, stop
+    if (playing === voice) {
+      audioRef.current?.pause();
+      audioRef.current = null;
+      setPlaying(null);
       return;
     }
 
-    // Cancel any ongoing preview
-    window.speechSynthesis.cancel();
+    // Stop any current playback
+    audioRef.current?.pause();
 
-    const option = VOICE_OPTIONS.find(v => v.id === voice);
-    if (!option) return;
+    // Create and play new audio
+    const audio = new Audio(`/voice-previews/${voice.toLowerCase()}.mp3`);
+    audioRef.current = audio;
+    setPlaying(voice);
 
-    const utterance = new SpeechSynthesisUtterance(PREVIEW_TEXT);
-    utterance.lang = "vi-VN";
-    utterance.pitch = option.previewPitch;
-    utterance.rate = option.previewRate;
-
-    currentUtteranceRef.current = utterance;
-
-    setPreviewBusy(true);
-    setPreviewId(voice);
-
-    utterance.onend = () => {
-      setPreviewBusy(false);
-      setPreviewId(null);
-      currentUtteranceRef.current = null;
+    audio.onended = () => {
+      setPlaying(null);
+      audioRef.current = null;
     };
-    utterance.onerror = () => {
-      setPreviewBusy(false);
-      setPreviewId(null);
-      currentUtteranceRef.current = null;
+    audio.onerror = () => {
+      setPlaying(null);
+      audioRef.current = null;
     };
 
-    // Try to find a Vietnamese voice
-    const voices = window.speechSynthesis.getVoices();
-    const viVoice = voices.find(v => v.lang.startsWith("vi"));
-    if (viVoice) utterance.voice = viVoice;
-
-    window.speechSynthesis.speak(utterance);
-  }, [previewId]);
+    audio.play().catch(() => {
+      setPlaying(null);
+      audioRef.current = null;
+    });
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => { setOpen(!open); if (!open) setPreviewId(null); }}
+        onClick={() => setOpen(!open)}
         disabled={saving}
         className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/40 border border-border/60 text-sm text-muted-foreground hover:text-foreground hover:border-border transition-colors"
       >
@@ -152,11 +133,11 @@ export function VoiceSelector({ userId, currentVoice, onVoiceChange }: VoiceSele
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 mt-2 w-64 rounded-xl bg-card border border-border shadow-xl shadow-black/30 z-50 overflow-hidden animate-slide-up">
+        <div className="absolute right-0 mt-2 w-72 rounded-xl bg-card border border-border shadow-xl shadow-black/30 z-50 overflow-hidden animate-slide-up">
           <div className="p-1.5">
             {VOICE_OPTIONS.map((voice) => {
               const isSelected = voice.id === currentVoice;
-              const isPreviewing = previewId === voice.id;
+              const isPlaying = playing === voice.id;
               return (
                 <div
                   key={voice.id}
@@ -187,15 +168,17 @@ export function VoiceSelector({ userId, currentVoice, onVoiceChange }: VoiceSele
 
                   {/* Preview button */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); speakPreview(voice.id); }}
-                    className="shrink-0 mr-1 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                    title="Nghe thử giọng"
+                    onClick={(e) => { e.stopPropagation(); handlePreview(voice.id); }}
+                    className={`shrink-0 mr-1 p-2 rounded-lg transition-colors ${
+                      isPlaying
+                        ? "text-red-400 hover:text-red-300 bg-red-500/10"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                    title={isPlaying ? "Dừng" : "Nghe thử giọng"}
                     aria-label={`Nghe thử giọng ${voice.label}`}
                   >
-                    {isPreviewing && previewBusy ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                    ) : isPreviewing ? (
-                      <StopCircle className="w-3.5 h-3.5 text-red-400" />
+                    {isPlaying ? (
+                      <Pause className="w-3.5 h-3.5" />
                     ) : (
                       <Play className="w-3.5 h-3.5" />
                     )}

@@ -219,7 +219,8 @@ export class AudioPlayback {
   private pendingBuffer: Float32Array[] = [];
   private isPlaying = false;
   private scheduledEnd = 0;
-  private sourceNode: AudioBufferSourceNode | null = null;
+  /** Track ALL active source nodes so stop() can kill them all */
+  private activeSources: Set<AudioBufferSourceNode> = new Set();
 
   async playBase64PCM(base64: string): Promise<void> {
     if (!this.audioContext) {
@@ -261,7 +262,12 @@ export class AudioPlayback {
       const source = this.audioContext.createBufferSource();
       source.buffer = buffer;
       source.connect(this.gainNode!);
-      this.sourceNode = source;
+
+      // Track this source so we can stop it later
+      this.activeSources.add(source);
+      source.onended = () => {
+        this.activeSources.delete(source);
+      };
 
       const now = this.audioContext.currentTime;
       const startTime = Math.max(this.scheduledEnd, now);
@@ -273,12 +279,13 @@ export class AudioPlayback {
   }
 
   stop() {
-    if (this.sourceNode) {
+    // Stop ALL active source nodes, not just the last one
+    for (const source of this.activeSources) {
       try {
-        this.sourceNode.stop();
+        source.stop();
       } catch { /* already stopped */ }
-      this.sourceNode = null;
     }
+    this.activeSources.clear();
     this.pendingBuffer = [];
     this.isPlaying = false;
     this.scheduledEnd = 0;

@@ -15,7 +15,7 @@ export interface GeminiLiveConfig {
   token: string;
   /** Model ID (default: gemini-3.1-flash-live-preview) */
   model?: string;
-  /** Voice: Puck, Charon, Kore, Fenrir, Aoede */
+  /** Voice: 30+ options (see VoiceOption type) */
   voice?: string;
   /** System instruction */
   systemInstruction?: string;
@@ -27,7 +27,9 @@ export interface GeminiLiveConfig {
   temperature?: number;
 }
 
-export type VoiceOption = "Puck" | "Charon" | "Kore" | "Fenrir" | "Aoede";
+export type VoiceOption =
+  | "Puck" | "Charon" | "Kore" | "Fenrir" | "Aoede"
+  | "Zephyr" | "Leda" | "Orus" | "Callirrhoe" | "Sulafat";
 
 export type GeminiLiveEvent =
   | { type: "setup_complete" }

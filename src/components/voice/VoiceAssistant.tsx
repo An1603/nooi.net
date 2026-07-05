@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useVoiceAssistant, type VoiceStatus } from "./useVoiceAssistant";
+import type { VoiceOption } from "@/lib/voice/gemini-live";
 import { VoiceVisualizer } from "./VoiceVisualizer";
 import {
   Mic,
@@ -27,7 +28,7 @@ const STATUS_LABELS: Record<VoiceStatus, string> = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 interface VoiceAssistantProps {
-  voice?: "Puck" | "Charon" | "Kore" | "Fenrir" | "Aoede";
+  voice?: VoiceOption;
   systemInstruction?: string;
   title?: string;
 }

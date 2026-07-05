@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
 import { VoiceSelectorWrapper } from "./VoiceSelectorWrapper";
+import type { VoiceOption } from "@/lib/voice/gemini-live";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,7 @@ Hướng dẫn:
       <div className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-4 sm:p-6 md:p-8">
         <VoiceAssistant
           title="NOOI Voice AI"
-          voice={voicePref as "Puck" | "Charon" | "Kore" | "Fenrir" | "Aoede"}
+          voice={voicePref as VoiceOption}
           systemInstruction={systemInstruction}
         />
       </div>
@@ -77,7 +78,7 @@ Hướng dẫn:
           <div className="text-lg mb-1">🎙️</div>
           <h3 className="text-sm font-medium text-foreground mb-1">Chọn giọng</h3>
           <p className="text-xs text-muted-foreground">
-            5 giọng nói khác nhau: Puck, Charon, Kore, Fenrir, Aoede
+            10 giọng nói khác nhau, bấm ▶ để nghe thử trước khi chọn
           </p>
         </div>
       </div>

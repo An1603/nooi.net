@@ -11,15 +11,15 @@ function calculateLevel(xp: number) {
   }
   const nextThreshold = thresholds[Math.min(level, 6)];
   const progress = Math.min(100, Math.round(((xp - thresholds[level - 1]) / (nextThreshold - thresholds[level - 1])) * 100));
-  return { level, levelName: names[Math.min(level - 1, 6)], xp, progress, xpToNext: Math.max(0, nextThreshold - xp) };
+  return { level, levelName: names[Math.min(level - 1, 6)], n: xp, progress, nToNext: Math.max(0, nextThreshold - xp) };
 }
 
-describe("XP / Level System", () => {
+describe("N / Level System", () => {
   it("should be level 1 with 0 XP", () => {
     const result = calculateLevel(0);
     expect(result.level).toBe(1);
     expect(result.levelName).toBe("Người lạ");
-    expect(result.xpToNext).toBe(100);
+    expect(result.nToNext).toBe(100);
   });
 
   it("should be level 2 with 100 XP", () => {
@@ -56,7 +56,7 @@ describe("XP / Level System", () => {
     const result = calculateLevel(2500);
     expect(result.level).toBe(7);
     expect(result.levelName).toBe("Master Mentor");
-    expect(result.xpToNext).toBe(0);
+    expect(result.nToNext).toBe(0);
   });
 
   it("should calculate progress correctly", () => {

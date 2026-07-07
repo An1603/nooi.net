@@ -31,11 +31,11 @@ export async function GET() {
     const xpToNext = nextLevelXp[Math.min(level, 6)] - xp;
 
     return NextResponse.json({
-      xp,
+      n: xp,
       level,
       levelName: levelNames[Math.min(level - 1, 6)],
       journalCount,
-      xpToNext: Math.max(0, xpToNext),
+      nToNext: Math.max(0, xpToNext),
       progress: Math.min(100, Math.round((xp / nextLevelXp[Math.min(level - 1, 6)]) * 100)),
     });
   } catch (err) {

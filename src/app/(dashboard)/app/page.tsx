@@ -112,15 +112,15 @@ export default async function DashboardHome() {
             <p className="text-lg font-bold text-primary">{levelNames[Math.min(level - 1, 6)]}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Kinh nghiệm (XP)</p>
-            <p className="text-lg font-bold">{xp} XP</p>
+            <p className="text-xs text-muted-foreground">NOOI (N)</p>
+            <p className="text-lg font-bold">{xp} N</p>
           </div>
         </div>
         <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${xpProgress}%` }} />
         </div>
         <p className="text-[10px] text-muted-foreground mt-2">
-          {xp < 2500 ? `${xpProgress}% — còn ${nextThreshold - xp} XP để lên cấp tiếp theo` : "Tối đa"}
+          {xp < 2500 ? `${xpProgress}% — còn ${nextThreshold - xp} N để lên cấp tiếp theo` : "Tối đa"}
         </p>
       </div>
 

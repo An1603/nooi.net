@@ -104,6 +104,15 @@ export function ProfileClient({ user, profile }: Props) {
     { referee_id: string; full_name: string; created_at: string; has_onboarding: boolean }[]
   >([]);
 
+  // Level / N state
+  const [xp, setXp] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [journalCount, setJournalCount] = useState(0);
+  const [xpProgress, setXpProgress] = useState(0);
+  const [nextThreshold, setNextThreshold] = useState(100);
+  const levelNames = ["Người lạ", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+  const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2500];
+
   // Claim referral code state
   const [claimCode, setClaimCode] = useState("");
   const [claiming, setClaiming] = useState(false);
@@ -152,6 +161,26 @@ export function ProfileClient({ user, profile }: Props) {
       // Remaining changes
       const remaining = await getRefCodeChangesRemaining(user.id);
       setChangesRemaining(remaining);
+
+      // Load journal count for XP
+      const { data: journalData } = await supabase
+        .from("documents")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("file_type", "journal");
+      const count = journalData?.length ?? 0;
+      const totalXp = count * 10;
+      setJournalCount(count);
+      setXp(totalXp);
+
+      let lvl = 1;
+      for (let i = levelThresholds.length - 1; i >= 0; i--) {
+        if (totalXp >= levelThresholds[i]) { lvl = i + 1; break; }
+      }
+      setLevel(lvl);
+      const next = levelThresholds[Math.min(lvl, 6)];
+      setNextThreshold(next);
+      setXpProgress(Math.min(100, Math.round(((totalXp - levelThresholds[lvl - 1]) / (next - levelThresholds[lvl - 1])) * 100)));
     })();
   }, [user.id, profile.ref_code, supabase]);
 
@@ -327,6 +356,43 @@ export function ProfileClient({ user, profile }: Props) {
           >
             Chỉnh sửa thông tin <ChevronRight className="size-3" />
           </Link>
+        </div>
+      </div>
+
+      <SectionSeparator />
+
+      {/* ─── SECTION: Level & NOOI ─── */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <SectionHeader icon={<Sparkles className="size-5" />} title="Cấp độ & NOOI (N)" desc="Hành trình chuyển hóa của bạn" />
+        </div>
+        <div className="px-5 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Cấp độ hiện tại</p>
+              <p className="text-xl font-bold text-primary mt-0.5">{levelNames[Math.min(level - 1, 6)]}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Tổng NOOI (N)</p>
+              <p className="text-xl font-bold mt-0.5">{xp} N</p>
+            </div>
+          </div>
+          <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${xpProgress}%` }} />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {xp < 2500 ? `Tiến độ: ${xpProgress}% — còn ${nextThreshold - xp} N để lên cấp tiếp theo` : "🏆 Tối đa"}
+          </p>
+          <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border/50">
+            <div className="text-center p-3 rounded-lg bg-muted/20">
+              <p className="text-lg font-bold text-primary">{journalCount ?? 0}</p>
+              <p className="text-xs text-muted-foreground">Nhật ký</p>
+            </div>
+            <div className="text-center p-3 rounded-lg bg-muted/20">
+              <p className="text-lg font-bold text-primary">{(xp / 10) || 0}</p>
+              <p className="text-xs text-muted-foreground">Số ngày</p>
+            </div>
+          </div>
         </div>
       </div>
 

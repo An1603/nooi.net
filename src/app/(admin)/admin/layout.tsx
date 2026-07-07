@@ -15,13 +15,15 @@ import {
   FileText,
   Video,
   FolderOpen,
+  TrendingUp,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/admin/users", label: "Người dùng", icon: Users },
   { href: "/admin/live", label: "Lớp Live", icon: Activity },
-  { href: "/admin/learning", label: "Học tập", icon: BookOpen },
+  { href: "/admin/lessons", label: "Bài giảng", icon: BookOpen },
+  { href: "/admin/learning", label: "Tiến độ học", icon: TrendingUp },
   { href: "/admin/documents", label: "Tài liệu", icon: FileText },
   { href: "/admin/videos", label: "Video", icon: Video },
   { href: "/admin/projects", label: "Dự án", icon: FolderOpen },

@@ -144,6 +144,8 @@ export default function LessonPage() {
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizResult, setQuizResult] = useState(0);
+  const [quizLocked, setQuizLocked] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const startTime = useRef(Date.now());
   const savedRef = useRef(false);
 
@@ -164,8 +166,12 @@ export default function LessonPage() {
           if (p.quizAnswers) setQuizAnswers(p.quizAnswers);
           if (p.quizSubmitted) setQuizSubmitted(true);
           if (p.quizScore !== undefined) setQuizResult(p.quizScore);
+          // Mở khóa quiz nếu đã xem đủ video
+          if ((p.timeSpent || 0) >= lesson.durationSec * 0.7) setQuizLocked(false);
+          if (p.quizSubmitted) setQuizLocked(false);
         } catch {}
       }
+      // Nếu chưa có progress, lock quiz
     })();
   }, [lessonId, lesson]);
 
@@ -181,6 +187,7 @@ export default function LessonPage() {
       if (!user) return;
       const existing = progress.timeSpent || 0;
       const totalTime = existing + timeSpent;
+      if (totalTime >= lesson.durationSec * 0.7) setQuizLocked(false);
       const { pct, completed } = calcProgress({ timeSpent: totalTime, quizScore: quizResult, quizTotal: lesson.quiz.length });
       await supabase.from("documents").upsert({
         user_id: user.id, title: lessonId, file_type: "lesson_progress",
@@ -193,12 +200,36 @@ export default function LessonPage() {
   }, [lessonId, lesson, quizResult, quizAnswers, quizSubmitted, lesson?.quiz.length]);
 
   // ── Submit Quiz ──
-  function submitQuiz() {
+  async function submitQuiz() {
     let correct = 0;
     lesson.quiz.forEach((q, i) => { if (quizAnswers[i] === q.correct) correct++; });
     setQuizResult(correct);
     setQuizSubmitted(true);
     savedRef.current = false; // force re-save
+  }
+
+  // ── Retry Quiz (trừ N) ──
+  async function retryQuiz() {
+    const penalty = lesson.level * 5; // Level 1=5N, Level 2=10N...
+    if (!confirm(`Làm lại quiz sẽ mất ${penalty} N. Tiếp tục?`)) return;
+    setRetrying(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      // Trừ N bằng cách xóa 1 journal entry (nếu có)
+      const { data: journals } = await supabase.from("documents")
+        .select("id").eq("user_id", user.id).eq("file_type", "journal").limit(penalty / 10);
+      if (journals && journals.length > 0) {
+        const ids = journals.slice(0, Math.ceil(penalty / 10)).map((j) => j.id);
+        await supabase.from("documents").delete().in("id", ids);
+      }
+    } catch {}
+    setQuizAnswers([]);
+    setQuizSubmitted(false);
+    setQuizResult(0);
+    setRetrying(false);
+    savedRef.current = false;
   }
 
   if (!lesson) {
@@ -279,52 +310,62 @@ export default function LessonPage() {
           <h3 className="font-semibold">Kiểm tra kiến thức</h3>
           {quizSubmitted && (
             <span className="text-sm ml-auto">
-              Kết quả: {quizResult}/{lesson.quiz.length}
-              ({Math.round((quizResult / lesson.quiz.length) * 100)}%)
+              {quizResult}/{lesson.quiz.length} ({Math.round((quizResult / lesson.quiz.length) * 100)}%)
+            </span>
+          )}
+          {quizLocked && !quizSubmitted && (
+            <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+              🔒 Xem video trước
             </span>
           )}
         </div>
-        <div className="space-y-5">
-          {lesson.quiz.map((q, qi) => (
-            <div key={qi}>
-              <p className="text-sm font-medium mb-2">Câu {qi + 1}: {q.question}</p>
-              <div className="space-y-2">
-                {q.options.map((opt, oi) => {
-                  const selected = quizAnswers[qi] === oi;
-                  const isCorrect = quizSubmitted && oi === q.correct;
-                  const isWrong = quizSubmitted && selected && oi !== q.correct;
-                  return (
-                    <button
-                      key={oi}
-                      disabled={quizSubmitted}
-                      onClick={() => {
-                        const newA = [...quizAnswers]; newA[qi] = oi; setQuizAnswers(newA);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 rounded-lg text-sm border transition-colors ${
-                        quizSubmitted
-                          ? isCorrect ? "border-green-500/50 bg-green-500/10 text-green-400"
-                            : isWrong ? "border-red-500/50 bg-red-500/10 text-red-400"
-                            : "border-border/50 opacity-60"
-                          : selected
-                            ? "border-primary bg-primary/10"
-                            : "border-border hover:border-primary/30"
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
+
+        {quizLocked && !quizSubmitted ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <p className="text-sm">Xem hết video để mở khóa bài kiểm tra</p>
+            <p className="text-xs mt-1">Cần xem ít nhất 70% thời lượng</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {lesson.quiz.map((q, qi) => (
+              <div key={qi}>
+                <p className="text-sm font-medium mb-2">Câu {qi + 1}: {q.question}</p>
+                <div className="space-y-2">
+                  {q.options.map((opt, oi) => {
+                    const selected = quizAnswers[qi] === oi;
+                    const isCorrect = quizSubmitted && oi === q.correct;
+                    const isWrong = quizSubmitted && selected && oi !== q.correct;
+                    return (
+                      <button key={oi} disabled={quizSubmitted}
+                        onClick={() => { const newA = [...quizAnswers]; newA[qi] = oi; setQuizAnswers(newA); }}
+                        className={`w-full text-left px-4 py-2.5 rounded-lg text-sm border transition-colors ${
+                          quizSubmitted
+                            ? isCorrect ? "border-green-500/50 bg-green-500/10 text-green-400"
+                              : isWrong ? "border-red-500/50 bg-red-500/10 text-red-400"
+                              : "border-border/50 opacity-60"
+                            : selected ? "border-primary bg-primary/10" : "border-border hover:border-primary/30"
+                        }`}
+                      >{opt}</button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-        {!quizSubmitted && (
-          <button onClick={submitQuiz} disabled={quizAnswers.length < lesson.quiz.length}
-            className="mt-5 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 transition-colors disabled:opacity-50"
-          >
-            Nộp bài
-          </button>
+            ))}
+          </div>
         )}
+
+        <div className="flex gap-3 mt-5">
+          {!quizSubmitted && !quizLocked && (
+            <button onClick={submitQuiz} disabled={quizAnswers.length < lesson.quiz.length}
+              className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 transition-colors disabled:opacity-50"
+            >Nộp bài</button>
+          )}
+          {quizSubmitted && (
+            <button onClick={retryQuiz} disabled={retrying}
+              className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium hover:bg-muted/30 transition-colors"
+            >{retrying ? "Đang xử lý..." : `🔄 Làm lại (mất ${lesson.level * 5} N)`}</button>
+          )}
+        </div>
       </div>
 
       {/* Navigation */}

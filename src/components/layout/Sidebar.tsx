@@ -29,6 +29,7 @@ const NAV = [
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
   { label: 'Game học', href: '/app/game', icon: Sparkles },
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
+  { label: 'Lớp Live', href: '/app/live', icon: Video },
   { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
   { label: 'Thống kê', href: '/app/thong-ke', icon: BarChart3 },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },

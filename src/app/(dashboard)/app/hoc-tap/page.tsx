@@ -5,8 +5,6 @@ import Link from "next/link";
 import { BookOpen, Play, ChevronRight, Lock, CheckCircle, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-// ─── Dữ liệu khóa học từ Master Blueprint ──────────────────────────────────
-
 const LEVELS = [
   {
     id: 1, name: "Người mới", desc: "Bắt đầu hành trình chuyển hóa",
@@ -61,22 +59,20 @@ const LEVELS = [
     ],
     nRequired: 1500,
   },
-  {
-    id: 7, name: "Master Mentor", desc: "Làm chủ hành trình",
-    lessons: [],
-    nRequired: 2500,
-  },
+  { id: 7, name: "Master Mentor", desc: "Làm chủ hành trình", lessons: [], nRequired: 2500 },
 ];
 
 interface LessonProgress {
   lesson_id: string;
+  pct: number;
   completed: boolean;
 }
+
+const totalLessons = LEVELS.reduce((sum, l) => sum + l.lessons.length, 0);
 
 export default function LearningHub() {
   const [progress, setProgress] = useState<LessonProgress[]>([]);
   const [n, setN] = useState(0);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -84,34 +80,32 @@ export default function LearningHub() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-
-        // Lấy N từ journal count
-        const { count } = await supabase
-          .from("documents")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .eq("file_type", "journal");
+        const { count } = await supabase.from("documents")
+          .select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("file_type", "journal");
         setN((count ?? 0) * 10);
 
-        // Lấy tiến trình học
-        const { data } = await supabase
-          .from("documents")
-          .select("title, content")
-          .eq("user_id", user.id)
-          .eq("file_type", "lesson_progress");
+        const { data } = await supabase.from("documents")
+          .select("title, content").eq("user_id", user.id).eq("file_type", "lesson_progress");
         if (data) {
-          setProgress(data.map((d) => ({
-            lesson_id: d.title,
-            completed: d.content === "completed",
-          })));
+          setProgress(data.map((d) => {
+            try {
+              const c = JSON.parse(d.content);
+              return { lesson_id: d.title, pct: c.pct || 0, completed: c.completed || false };
+            } catch { return { lesson_id: d.title, pct: 0, completed: d.content === "completed" }; }
+          }));
         }
       } catch {}
-      setLoading(false);
     })();
   }, []);
 
+  const getLesson = (id: string) => {
+    const p = progress.find((p) => p.lesson_id === id);
+    return p || { pct: 0, completed: false };
+  };
+
+  const completedCount = progress.filter((p) => p.completed).length;
+  const overallPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
   const isUnlocked = (nRequired: number) => n >= nRequired;
-  const isCompleted = (lessonId: string) => progress.find((p) => p.lesson_id === lessonId)?.completed;
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
@@ -130,13 +124,13 @@ export default function LearningHub() {
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold">Tiến trình tổng thể</p>
-          <p className="text-xs text-muted-foreground">{n} N</p>
+          <p className="text-xs text-muted-foreground">{completedCount}/{totalLessons} bài · {overallPct}%</p>
         </div>
-        <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full" style={{ width: `${Math.min(100, (n / 2500) * 100)}%` }} />
+        <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${overallPct}%` }} />
         </div>
         <p className="text-[10px] text-muted-foreground mt-2">
-          {n < 2500 ? `${n}/2500 N để đạt Master Mentor` : "🏆 Tối đa"}
+          {n} N · {n < 2500 ? `${n}/2500 N để đạt Master Mentor` : "🏆 Tối đa"}
         </p>
       </div>
 
@@ -144,53 +138,43 @@ export default function LearningHub() {
       <div className="space-y-4">
         {LEVELS.map((level) => {
           const unlocked = isUnlocked(level.nRequired);
+          const levelDone = level.lessons.filter((l) => getLesson(l.id).completed).length;
+          const levelPct = level.lessons.length > 0 ? Math.round((levelDone / level.lessons.length) * 100) : 0;
           return (
-            <div
-              key={level.id}
-              className={`rounded-xl border ${
-                unlocked ? "border-border bg-card" : "border-border/50 bg-card/50 opacity-60"
-              } overflow-hidden`}
-            >
-              {/* Level header */}
+            <div key={level.id} className={`rounded-xl border ${unlocked ? "border-border bg-card" : "border-border/50 bg-card/50 opacity-60"} overflow-hidden`}>
               <div className="p-5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      unlocked ? "bg-primary/10 text-primary" : "bg-muted/30 text-muted-foreground"
-                    }`}>
-                      Level {level.id}
-                    </span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${unlocked ? "bg-primary/10 text-primary" : "bg-muted/30 text-muted-foreground"}`}>Level {level.id}</span>
                     {!unlocked && <Lock className="w-3 h-3 text-muted-foreground" />}
+                    {unlocked && level.lessons.length > 0 && (
+                      <span className="text-[10px] text-muted-foreground">{levelDone}/{level.lessons.length} ({levelPct}%)</span>
+                    )}
                   </div>
                   <h3 className="text-lg font-bold mt-2">{level.name}</h3>
                   <p className="text-xs text-muted-foreground">{level.desc}</p>
                 </div>
-                {!unlocked && (
-                  <p className="text-xs text-muted-foreground text-right">
-                    Cần {level.nRequired} N
-                  </p>
-                )}
+                {!unlocked && <p className="text-xs text-muted-foreground text-right">Cần {level.nRequired} N</p>}
               </div>
-
-              {/* Lessons */}
               {unlocked && level.lessons.length > 0 && (
                 <div className="border-t border-border/50 divide-y divide-border/30">
                   {level.lessons.map((lesson) => {
-                    const done = isCompleted(lesson.id);
+                    const p = getLesson(lesson.id);
                     return (
-                      <Link
-                        key={lesson.id}
-                        href={`/app/hoc-tap/${lesson.id}`}
-                        className="flex items-center gap-3 px-5 py-3 hover:bg-muted/20 transition-colors"
-                      >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          done ? "bg-green-500/10 text-green-400" : "bg-muted/30 text-muted-foreground"
-                        }`}>
-                          {done ? <CheckCircle className="w-4 h-4" /> : lesson.type === "video" ? <Play className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                      <Link key={lesson.id} href={`/app/hoc-tap/${lesson.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-muted/20 transition-colors">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${p.completed ? "bg-green-500/10 text-green-400" : "bg-muted/30 text-muted-foreground"}`}>
+                          {p.completed ? <CheckCircle className="w-4 h-4" /> : lesson.type === "video" ? <Play className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{lesson.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium truncate">{lesson.title}</p>
+                            {p.pct > 0 && <span className="text-[10px] text-muted-foreground shrink-0">{p.pct}%</span>}
+                          </div>
                           <p className="text-[10px] text-muted-foreground">{lesson.duration} · {lesson.type === "video" ? "Video" : "Thực hành"}</p>
+                        </div>
+                        {/* Mini progress bar */}
+                        <div className="w-12 h-1.5 bg-muted/30 rounded-full overflow-hidden shrink-0">
+                          <div className="h-full bg-primary/60 rounded-full" style={{ width: `${p.pct}%` }} />
                         </div>
                         <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                       </Link>

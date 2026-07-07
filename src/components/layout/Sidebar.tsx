@@ -15,8 +15,6 @@ import {
   Menu,
   X,
   Sparkles,
-  Sun,
-  Globe,
   Headphones,
   User,
   BookHeart,
@@ -27,25 +25,29 @@ import {
 } from 'lucide-react';
 
 const NAV = [
+  // Nhóm Dashboard
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
-  { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
-  { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },
-  { label: 'Game học', href: '/app/game', icon: Sparkles },
-  { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
-  { label: 'Bảng xếp hạng', href: '/app/bang-xep-hang', icon: Trophy },
-  { label: 'Lớp Live', href: '/app/live', icon: Video },
-  { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
   { label: 'Thống kê', href: '/app/thong-ke', icon: BarChart3 },
+  { label: 'Bảng xếp hạng', href: '/app/bang-xep-hang', icon: Trophy },
+
+  // Nhóm AI & Học tập
+  { label: 'AI Mentor', href: '/app/voice', icon: Headphones },
+  { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },
   { label: 'Thực hành', href: '/app/thuc-hanh', icon: Sparkles },
+
+  // Nhóm Khám phá
+  { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },
+  { label: 'Game học', href: '/app/game', icon: Sparkles },
+  { label: 'Lớp Live', href: '/app/live', icon: Video },
+  { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
+  { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
+
+  // Nhóm Cá nhân
   { label: 'Hồ sơ', href: '/app/profile', icon: User },
   { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
   { label: 'Video', href: '/app/videos', icon: Video },
   { label: 'Thư viện', href: '/app/library', icon: BookOpen },
-  { label: 'Thần số học', href: '/app/numerology', icon: Sparkles },
-  { label: 'Tử Vi', href: '/app/tuvi', icon: Sun },
-  { label: 'Chiêm tinh', href: '/app/astrology', icon: Globe },
-  { label: 'AI Mentor', href: '/app/voice', icon: Headphones },
 ];
 
 export function Sidebar() {

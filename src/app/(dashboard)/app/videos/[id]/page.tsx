@@ -66,18 +66,38 @@ export default async function VideoDetailPage({
       </Link>
 
       {/* Video player area */}
-      <div className="aspect-video rounded-xl bg-muted mb-6 flex items-center justify-center border border-border">
-        <div className="text-center">
-          <Video size={48} className="text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">
-            {video.url ? "Trình phát video sẽ hiển thị ở đây" : "Chưa có URL video"}
-          </p>
-          {video.url && (
-            <p className="text-xs text-muted-foreground mt-1 truncate max-w-md">
-              {video.url}
-            </p>
-          )}
-        </div>
+      <div className="aspect-video rounded-xl bg-muted mb-6 overflow-hidden border border-border">
+        {(() => {
+          const ytMatch = video.url?.match(
+            /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+          );
+          if (ytMatch) {
+            return (
+              <iframe
+                src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+                title={video.title}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            );
+          }
+          return (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center">
+                <Video size={48} className="text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  {video.url ? "URL không phải YouTube hợp lệ" : "Chưa có URL video"}
+                </p>
+                {video.url && (
+                  <p className="text-xs text-muted-foreground mt-1 truncate max-w-md">
+                    {video.url}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Header */}

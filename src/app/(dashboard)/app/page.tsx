@@ -95,6 +95,71 @@ export default async function DashboardHome() {
         </p>
       </div>
 
+      {/* AI Mentor suggestion */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
+            <Bot className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-semibold mb-1">NOOI AI Mentor</h2>
+            <p className="text-sm text-muted-foreground mb-3">
+              {(journalCount ?? 0) > 0
+                ? "Bạn đã ghi nhật ký. Hãy chia sẻ để AI Mentor phân tích và đồng hành cùng bạn."
+                : "Bắt đầu hành trình chuyển hóa — viết nhật ký đầu tiên và nhận phản hồi từ AI Mentor."}
+            </p>
+            <div className="flex gap-3">
+              <Link
+                href="/app/voice"
+                className="text-sm bg-primary px-4 py-2 rounded-lg text-primary-foreground hover:bg-primary/80 transition-colors"
+              >
+                🎧 Hỏi AI Mentor
+              </Link>
+              <Link
+                href="/app/journal"
+                className="text-sm border border-border px-4 py-2 rounded-lg hover:bg-muted/30 transition-colors"
+              >
+                📝 Viết nhật ký
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Bắt đầu nhanh</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+          {[
+            {
+              title: "📓 Nhật ký",
+              desc: "Ghi lại Thân-Tâm-Hành mỗi ngày",
+              href: "/app/journal",
+              color: "from-amber-500/10 to-amber-500/5 border-amber-500/20 hover:border-amber-500/30",
+            },
+            {
+              title: "🧘 Thiền",
+              desc: "Thực hành chánh niệm cùng hướng dẫn",
+              href: "/app/thuc-hanh",
+              color: "from-green-500/10 to-green-500/5 border-green-500/20 hover:border-green-500/30",
+            },
+            {
+              title: "🎮 Game",
+              desc: "Học qua trò chơi ghép thẻ chuyển hóa",
+              href: "/app/game",
+              color: "from-purple-500/10 to-purple-500/5 border-purple-500/20 hover:border-purple-500/30",
+            },
+          ].map((action) => (
+            <Link key={action.title} href={action.href}
+              className={`flex flex-col p-4 sm:p-5 rounded-xl border bg-gradient-to-br ${action.color} transition-all hover:scale-[1.02] active:scale-95 touch-target`}
+            >
+              <span className="text-lg mb-1">{action.title}</span>
+              <span className="text-xs text-muted-foreground">{action.desc}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
@@ -234,65 +299,6 @@ export default async function DashboardHome() {
               )}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* AI Mentor suggestion */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
-            <Bot className="w-5 h-5 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-base font-semibold mb-1">NOOI AI Mentor</h2>
-            <p className="text-sm text-muted-foreground mb-3">
-              {(journalCount ?? 0) > 0
-                ? "Bạn đã ghi nhật ký. Hãy chia sẻ để AI Mentor phân tích và đồng hành cùng bạn."
-                : "Bắt đầu hành trình chuyển hóa — viết nhật ký đầu tiên và nhận phản hồi từ AI Mentor."}
-            </p>
-            <div className="flex gap-3">
-              <Link
-                href="/app/journal"
-                className="text-sm bg-primary px-4 py-2 rounded-lg text-primary-foreground hover:bg-primary/80 transition-colors"
-              >
-                {(journalCount ?? 0) > 0 ? "📝 Viết nhật ký" : "📝 Bắt đầu"}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick actions */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Bắt đầu nhanh</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-          {[
-            {
-              title: "📓 Nhật ký",
-              desc: "Ghi lại Thân-Tâm-Hành mỗi ngày",
-              href: "/app/journal",
-              color: "from-amber-500/10 to-amber-500/5 border-amber-500/20 hover:border-amber-500/30",
-            },
-            {
-              title: "🧘 Thiền",
-              desc: "Thực hành chánh niệm cùng hướng dẫn",
-              href: "/app/thuc-hanh",
-              color: "from-green-500/10 to-green-500/5 border-green-500/20 hover:border-green-500/30",
-            },
-            {
-              title: "🎮 Game",
-              desc: "Học qua trò chơi ghép thẻ chuyển hóa",
-              href: "/app/game",
-              color: "from-purple-500/10 to-purple-500/5 border-purple-500/20 hover:border-purple-500/30",
-            },
-          ].map((action) => (
-            <Link key={action.title} href={action.href}
-              className={`flex flex-col p-4 sm:p-5 rounded-xl border bg-gradient-to-br ${action.color} transition-all hover:scale-[1.02] active:scale-95 touch-target`}
-            >
-              <span className="text-lg mb-1">{action.title}</span>
-              <span className="text-xs text-muted-foreground">{action.desc}</span>
-            </Link>
-          ))}
         </div>
       </div>
     </div>

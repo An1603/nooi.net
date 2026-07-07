@@ -17,6 +17,7 @@ import {
   Sun,
   Globe,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -317,11 +318,21 @@ export function ProfileClient({ user, profile }: Props) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Hồ sơ của tôi</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Thông tin cá nhân, mã giới thiệu và bản đồ số mệnh của bạn.
-        </p>
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Hồ sơ của tôi</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Thông tin cá nhân, mã giới thiệu và bản đồ số mệnh của bạn.
+          </p>
+        </div>
+        <form action="/auth/logout" method="POST">
+          <button type="submit"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/5 px-3 py-2 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Đăng xuất</span>
+          </button>
+        </form>
       </div>
 
       {/* ─── SECTION 1: Personal Info ─── */}

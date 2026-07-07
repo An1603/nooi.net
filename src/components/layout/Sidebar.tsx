@@ -38,7 +38,6 @@ const NAV = [
 
   // Nhóm Khám phá
   { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },
-  { label: 'Game học', href: '/app/game', icon: Sparkles },
   { label: 'Lớp Live', href: '/app/live', icon: Video },
   { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
@@ -48,6 +47,7 @@ const NAV = [
   { label: 'Video', href: '/app/videos', icon: Video },
   { label: 'Thư viện', href: '/app/library', icon: BookOpen },
   { label: 'Hồ sơ', href: '/app/profile', icon: User },
+  { label: 'Cài đặt', href: '/app/settings', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -105,26 +105,8 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-2 py-3 border-t border-border space-y-0.5">
-        <Link
-          href="/app/settings"
-          onClick={() => setMobileOpen(false)}
-          className={linkClass('/app/settings')}
-        >
-          <Settings size={18} className="shrink-0" />
-          <span>Cài đặt</span>
-        </Link>
-        <form action="/auth/logout" method="POST">
-          <button
-            type="submit"
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all border-l-2 border-transparent"
-          >
-            <LogOut size={18} className="shrink-0" />
-            <span>Đăng xuất</span>
-          </button>
-        </form>
-      </div>
+      {/* Footer spacer */}
+      <div className="px-2 py-3 border-t border-border" />
     </>
   );
 

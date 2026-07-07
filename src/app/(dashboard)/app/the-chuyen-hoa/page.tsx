@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Layers, Lock, Unlock, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 const LEVELS = [
   { id: 1, name: "Người mới", required: 0 },
@@ -141,14 +142,21 @@ export default function CardCollectionPage() {
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-          <Layers className="w-5 h-5 text-primary" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+            <Layers className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">64 Thẻ chuyển hóa</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Bộ sưu tập khái niệm từ 7 cấp độ, từ Người mới đến Master Mentor</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">64 Thẻ chuyển hóa</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Bộ sưu tập khái niệm từ 7 cấp độ, từ Người mới đến Master Mentor</p>
-        </div>
+        <Link href="/app/game"
+          className="hidden sm:inline-flex items-center gap-1.5 bg-primary px-4 py-2 rounded-lg text-sm text-primary-foreground hover:bg-primary/80 transition-colors"
+        >
+          🎮 Chơi game
+        </Link>
       </div>
 
       {/* Level tabs */}

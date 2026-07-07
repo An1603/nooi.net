@@ -1,7 +1,7 @@
 "use client";
 
-import { Bell } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import NotificationDropdown from "@/components/notification/NotificationDropdown";
 
 export default function Topbar() {
   function toggleSidebar() {
@@ -30,14 +30,8 @@ export default function Topbar() {
           <span className="hidden md:block text-xs text-muted-foreground" />
         </div>
 
-        {/* Right: notification bell — visible on all screens */}
-        <button
-          className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
-          aria-label="Thông báo"
-        >
-          <Bell className="w-5 h-5 text-muted-foreground" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-        </button>
+        {/* Right: notification bell */}
+        <NotificationDropdown />
       </div>
     </header>
   );

@@ -9,11 +9,11 @@ const LEVELS = [
   {
     id: 1, name: "Người mới", desc: "Bắt đầu hành trình chuyển hóa",
     lessons: [
-      { id: "1-1", title: "NOOI là gì?", type: "video", duration: "15:00" },
+      { id: "1-1", title: "NOOI là gì?", type: "video", duration: "15:00", free: true },
       { id: "1-2", title: "Vì sao NOOI ra đời?", type: "video", duration: "12:00" },
       { id: "1-3", title: "Bản đồ con người", type: "video", duration: "20:00" },
       { id: "1-4", title: "Bản đồ khổ đau", type: "video", duration: "18:00" },
-      { id: "1-5", title: "Bắt đầu thực hành", type: "practice", duration: "10:00" },
+      { id: "1-5", title: "Bắt đầu thực hành", type: "practice", duration: "10:00", free: true },
     ],
     nRequired: 0,
   },
@@ -107,6 +107,20 @@ export default function LearningHub() {
   const overallPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
   const isUnlocked = (nRequired: number) => n >= nRequired;
 
+  // Flat list of all lessons in order for prev-lesson check
+  const allLessons = LEVELS.flatMap((l) => l.lessons.map((lesson) => ({ ...lesson, levelNRequired: l.nRequired })));
+  const isLessonAccessible = (lessonId: string, nRequired: number) => {
+    if (n >= nRequired) {
+      const idx = allLessons.findIndex((l) => l.id === lessonId);
+      if (idx <= 0) return true; // first lesson or free
+      const prev = allLessons[idx - 1];
+      if (prev.free) return true;
+      const prevProgress = progress.find((p) => p.lesson_id === prev.id);
+      return prevProgress?.completed || false;
+    }
+    return false;
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       {/* Header */}
@@ -160,24 +174,39 @@ export default function LearningHub() {
                 <div className="border-t border-border/50 divide-y divide-border/30">
                   {level.lessons.map((lesson) => {
                     const p = getLesson(lesson.id);
+                    const accessible = isLessonAccessible(lesson.id, level.nRequired);
                     return (
-                      <Link key={lesson.id} href={`/app/hoc-tap/${lesson.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-muted/20 transition-colors">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${p.completed ? "bg-green-500/10 text-green-400" : "bg-muted/30 text-muted-foreground"}`}>
-                          {p.completed ? <CheckCircle className="w-4 h-4" /> : lesson.type === "video" ? <Play className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium truncate">{lesson.title}</p>
-                            {p.pct > 0 && <span className="text-[10px] text-muted-foreground shrink-0">{p.pct}%</span>}
+                      <div key={lesson.id} className={`${accessible ? "" : "opacity-50"}`}>
+                        {accessible ? (
+                          <Link href={`/app/hoc-tap/${lesson.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-muted/20 transition-colors">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${p.completed ? "bg-green-500/10 text-green-400" : "bg-muted/30 text-muted-foreground"}`}>
+                              {p.completed ? <CheckCircle className="w-4 h-4" /> : lesson.type === "video" ? <Play className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium truncate">{lesson.title}</p>
+                                {p.pct > 0 && <span className="text-[10px] text-muted-foreground shrink-0">{p.pct}%</span>}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground">{lesson.duration} · {lesson.type === "video" ? "Video" : "Thực hành"}</p>
+                            </div>
+                            <div className="w-12 h-1.5 bg-muted/30 rounded-full overflow-hidden shrink-0">
+                              <div className="h-full bg-primary/60 rounded-full" style={{ width: `${p.pct}%` }} />
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                          </Link>
+                        ) : (
+                          <div className="flex items-center gap-3 px-5 py-3 cursor-not-allowed">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-muted/30 text-muted-foreground">
+                              <Lock className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate text-muted-foreground">{lesson.title}</p>
+                              <p className="text-[10px] text-muted-foreground">Cần hoàn thành bài trước</p>
+                            </div>
+                            {lesson.free && <span className="text-[10px] text-primary">Free</span>}
                           </div>
-                          <p className="text-[10px] text-muted-foreground">{lesson.duration} · {lesson.type === "video" ? "Video" : "Thực hành"}</p>
-                        </div>
-                        {/* Mini progress bar */}
-                        <div className="w-12 h-1.5 bg-muted/30 rounded-full overflow-hidden shrink-0">
-                          <div className="h-full bg-primary/60 rounded-full" style={{ width: `${p.pct}%` }} />
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                      </Link>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

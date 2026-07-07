@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BookHeart, Bot, TrendingUp } from "lucide-react";
 import StreakBadgeWidget from "@/components/streak/StreakBadgeWidget";
+import QuestWidget from "@/components/quest/QuestWidget";
 
 async function getRecentJournals(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase
@@ -106,6 +107,8 @@ export default async function DashboardHome() {
       </div>
 
       <StreakBadgeWidget />
+
+      <QuestWidget />
 
       {/* Level / N card */}
       <div className="rounded-xl border border-primary/20 bg-card p-5">

@@ -22,6 +22,7 @@ import {
   BookHeart,
   Users,
   BarChart3,
+  Trophy,
 } from 'lucide-react';
 
 const NAV = [
@@ -29,6 +30,7 @@ const NAV = [
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
   { label: 'Game học', href: '/app/game', icon: Sparkles },
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
+  { label: 'Bảng xếp hạng', href: '/app/bang-xep-hang', icon: Trophy },
   { label: 'Lớp Live', href: '/app/live', icon: Video },
   { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
   { label: 'Thống kê', href: '/app/thong-ke', icon: BarChart3 },

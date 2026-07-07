@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Users, Plus, UserPlus, Shield, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import CommunityLeaderboard from "@/components/community/CommunityLeaderboard";
 
 interface Group {
   id: string; name: string; description: string; schedule: string; member_count: number;
@@ -209,6 +210,9 @@ export default function CommunityPage() {
           ))}
         </div>
       </div>
+
+      {/* Bảng xếp hạng */}
+      <CommunityLeaderboard />
     </div>
   );
 }

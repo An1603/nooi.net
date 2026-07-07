@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BookHeart, Bot, TrendingUp } from "lucide-react";
 import StreakBadgeWidget from "@/components/streak/StreakBadgeWidget";
 import QuestWidget from "@/components/quest/QuestWidget";
+import DashboardStats from "@/components/stats/DashboardStats";
 
 async function getRecentJournals(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase
@@ -300,6 +301,12 @@ export default async function DashboardHome() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Thống kê */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Thống kê</h2>
+        <DashboardStats />
       </div>
     </div>
   );

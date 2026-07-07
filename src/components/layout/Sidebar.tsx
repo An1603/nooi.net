@@ -27,8 +27,6 @@ import {
 const NAV = [
   // Nhóm Dashboard
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
-  { label: 'Thống kê', href: '/app/thong-ke', icon: BarChart3 },
-  { label: 'Bảng xếp hạng', href: '/app/bang-xep-hang', icon: Trophy },
 
   // Nhóm AI & Học tập
   { label: 'AI Mentor', href: '/app/voice', icon: Headphones },

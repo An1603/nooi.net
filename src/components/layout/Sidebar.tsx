@@ -33,9 +33,9 @@ const NAV = [
   // Nhóm AI & Học tập
   { label: 'AI Mentor', href: '/app/voice', icon: Headphones },
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
+  { label: 'Lớp Live', href: '/app/live', icon: Video },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },
   { label: 'Thực hành', href: '/app/thuc-hanh', icon: Sparkles },
-  { label: 'Lớp Live', href: '/app/live', icon: Video },
 
   // Nhóm Khám phá
   { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },

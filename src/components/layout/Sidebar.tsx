@@ -27,6 +27,7 @@ import {
 const NAV = [
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
+  { label: 'Game học', href: '/app/game', icon: Sparkles },
   { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
   { label: 'Thống kê', href: '/app/thong-ke', icon: BarChart3 },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },

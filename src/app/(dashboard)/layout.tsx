@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
 import AIMentorFloating from "@/components/ai/AIMentorFloating";
 
 export default async function DashboardLayout({
@@ -21,8 +22,12 @@ export default async function DashboardLayout({
       <Sidebar />
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 p-4 md:p-6 overflow-auto">
-        {children}
+      <main className="flex-1 min-w-0 flex flex-col">
+        {/* Mobile topbar */}
+        <Topbar />
+        <div className="flex-1 p-4 md:p-6 overflow-auto">
+          {children}
+        </div>
       </main>
 
       {/* Floating AI Mentor */}

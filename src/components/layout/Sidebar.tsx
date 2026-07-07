@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -44,15 +44,22 @@ const NAV = [
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
 
   // Nhóm Cá nhân
-  { label: 'Hồ sơ', href: '/app/profile', icon: User },
   { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
   { label: 'Video', href: '/app/videos', icon: Video },
   { label: 'Thư viện', href: '/app/library', icon: BookOpen },
+  { label: 'Hồ sơ', href: '/app/profile', icon: User },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Listen for toggle events from Topbar
+  useEffect(() => {
+    const handler = () => setMobileOpen((prev) => !prev);
+    window.addEventListener("sidebar:toggle", handler);
+    return () => window.removeEventListener("sidebar:toggle", handler);
+  }, []);
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/app' && pathname.startsWith(href + '/'));

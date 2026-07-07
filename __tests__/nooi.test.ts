@@ -121,3 +121,99 @@ describe("Journal Statistics", () => {
     expect(calculateLevel(xp).levelName).toBe("Người mới");
   });
 });
+
+// ─── Streak Calculation Tests ──────────────────────────────────────────────
+
+function calculateStreak(dates: string[]): number {
+  if (dates.length === 0) return 0;
+  const sorted = dates.sort().reverse();
+  let streak = 0;
+  const today = new Date(sorted[0]);
+  for (let i = 0; i < sorted.length; i++) {
+    const expected = new Date(today);
+    expected.setDate(expected.getDate() - i);
+    const expectedStr = expected.toISOString().split("T")[0];
+    if (sorted[i] === expectedStr) streak++;
+    else break;
+  }
+  return streak;
+}
+
+describe("Streak Calculation", () => {
+  it("should return 0 for empty dates", () => {
+    expect(calculateStreak([])).toBe(0);
+  });
+
+  it("should count 1 for today only", () => {
+    const today = new Date().toISOString().split("T")[0];
+    expect(calculateStreak([today])).toBe(1);
+  });
+
+  it("should count consecutive days", () => {
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
+    expect(calculateStreak([today, yesterday, twoDaysAgo])).toBe(3);
+  });
+
+  it("should break on gap", () => {
+    const today = new Date().toISOString().split("T")[0];
+    const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
+    expect(calculateStreak([today, twoDaysAgo])).toBe(1);
+  });
+
+  it("should handle unsorted dates", () => {
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    expect(calculateStreak([yesterday, today])).toBe(2);
+  });
+});
+
+// ─── Badge Logic Tests ─────────────────────────────────────────────────────
+
+const BADGE_DEFS = [
+  { id: "first_step", name: "Bước đầu tiên", icon: "🌱", require: 1 },
+  { id: "consistent_7", name: "Kiên trì 7 ngày", icon: "🔥", require: 7 },
+  { id: "one_month", name: "Một tháng chuyển hóa", icon: "⭐", require: 30 },
+  { id: "master", name: "Bậc thầy kiên trì", icon: "🏆", require: 100 },
+];
+
+function getEarnedBadges(streak: number, existingIds: string[]) {
+  return BADGE_DEFS.map((b) => ({
+    ...b,
+    earned: existingIds.includes(b.id) || streak >= b.require,
+    new: !existingIds.includes(b.id) && streak >= b.require,
+  }));
+}
+
+describe("Badge Logic", () => {
+  it("should award first_step badge at streak 1", () => {
+    const badges = getEarnedBadges(1, []);
+    expect(badges.find((b) => b.id === "first_step")?.earned).toBe(true);
+  });
+
+  it("should NOT award master badge at streak 50", () => {
+    const badges = getEarnedBadges(50, []);
+    expect(badges.find((b) => b.id === "master")?.earned).toBe(false);
+  });
+
+  it("should award master badge at streak 100", () => {
+    const badges = getEarnedBadges(100, []);
+    expect(badges.find((b) => b.id === "master")?.earned).toBe(true);
+  });
+
+  it("should mark badge as new", () => {
+    const badges = getEarnedBadges(7, []);
+    expect(badges.find((b) => b.id === "consistent_7")?.new).toBe(true);
+  });
+
+  it("should not mark existing badge as new", () => {
+    const badges = getEarnedBadges(7, ["consistent_7"]);
+    expect(badges.find((b) => b.id === "consistent_7")?.new).toBe(false);
+  });
+
+  it("should award all badges at streak 100", () => {
+    const badges = getEarnedBadges(100, []);
+    expect(badges.every((b) => b.earned)).toBe(true);
+  });
+});

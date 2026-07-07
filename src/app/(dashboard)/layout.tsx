@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
+import AIMentorFloating from "@/components/ai/AIMentorFloating";
 
 export default async function DashboardLayout({
   children,
@@ -23,6 +24,9 @@ export default async function DashboardLayout({
       <main className="flex-1 min-w-0 p-4 md:p-6 overflow-auto">
         {children}
       </main>
+
+      {/* Floating AI Mentor */}
+      <AIMentorFloating />
     </div>
   );
 }

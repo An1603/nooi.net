@@ -19,10 +19,13 @@ import {
   Globe,
   Headphones,
   User,
+  BookHeart,
 } from 'lucide-react';
 
 const NAV = [
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
+  { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },
+  { label: 'Thực hành', href: '/app/thuc-hanh', icon: Sparkles },
   { label: 'Hồ sơ', href: '/app/profile', icon: User },
   { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
   { label: 'Video', href: '/app/videos', icon: Video },
@@ -30,7 +33,7 @@ const NAV = [
   { label: 'Thần số học', href: '/app/numerology', icon: Sparkles },
   { label: 'Tử Vi', href: '/app/tuvi', icon: Sun },
   { label: 'Chiêm tinh', href: '/app/astrology', icon: Globe },
-  { label: 'Trợ lý giọng nói', href: '/app/voice', icon: Headphones },
+  { label: 'AI Mentor', href: '/app/voice', icon: Headphones },
 ];
 
 export function Sidebar() {

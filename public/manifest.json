@@ -1,7 +1,7 @@
 {
-  "name": "NOOI",
+  "name": "NOOI (NỐI) — Kết nối chuyển mình",
   "short_name": "NOOI",
-  "description": "Kết nối chuyển mình — Giáo dục trải nghiệm, chuyển hóa thân tâm",
+  "description": "Thân khỏe, Tâm minh — Hệ sinh thái chuyển hóa thân tâm với AI Mentor, nhật ký Thân-Tâm-Hành, thiền định và cộng đồng an nhiên.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -10,7 +10,7 @@
   "scope": "/",
   "lang": "vi-VN",
   "dir": "ltr",
-  "categories": ["education", "lifestyle", "health"],
+  "categories": ["education", "lifestyle", "health", "wellness"],
   "icons": [
     {
       "src": "/pwa/icon-192.png",

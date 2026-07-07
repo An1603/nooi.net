@@ -11,6 +11,7 @@ export default async function LibraryPage() {
     .from("documents")
     .select("*")
     .eq("user_id", user?.id)
+    .neq("file_type", "journal")
     .order("updated_at", { ascending: false });
 
   return (

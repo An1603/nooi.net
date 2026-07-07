@@ -4,14 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { LogoFull } from '@/components/brand/Logo';
 import { TechBackground } from '@/components/effects/TechBackground';
 import {
   Sparkles,
   Brain,
   Video,
   BookOpen,
-  Network,
   ArrowUpRight,
   ChevronRight,
   Heart,
@@ -51,11 +49,8 @@ function useScrollReveal(threshold = 0.15) {
 function FloatingHexagons() {
   const positions = [
     { t: '10%', l: '3%', s: 28, d: 0, o: 0.05 },
-    { t: '25%', r: '6%', s: 36, d: 2, o: 0.07 },
-    { t: '50%', l: '2%', s: 22, d: 5, o: 0.04 },
-    { t: '65%', r: '4%', s: 30, d: 8, o: 0.06 },
+    { t: '50%', r: '4%', s: 22, d: 5, o: 0.04 },
     { t: '80%', l: '8%', s: 18, d: 3, o: 0.04 },
-    { t: '15%', r: '20%', s: 14, d: 6, o: 0.05 },
   ];
 
   return (
@@ -92,31 +87,9 @@ function FloatingHexagons() {
 function GradientOrbs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      {/* Rich vibrant mesh — serene vibes */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(ellipse 100% 80% at 0% 10%, rgba(220,38,127,0.6) 0%, transparent 50%),
-            radial-gradient(ellipse 90% 70% at 100% 5%, rgba(251,146,60,0.55) 0%, transparent 50%),
-            radial-gradient(ellipse 80% 90% at 90% 90%, rgba(37,99,235,0.5) 0%, transparent 50%),
-            radial-gradient(ellipse 70% 80% at 10% 90%, rgba(124,58,237,0.55) 0%, transparent 50%),
-            radial-gradient(ellipse 120% 60% at 50% 50%, rgba(244,114,182,0.3) 0%, transparent 55%),
-            radial-gradient(ellipse 80% 100% at 20% 30%, rgba(34,211,238,0.25) 0%, transparent 55%),
-            radial-gradient(ellipse 60% 70% at 80% 40%, rgba(251,146,60,0.35) 0%, transparent 45%),
-            radial-gradient(ellipse 100% 80% at 50% 100%, rgba(236,72,153,0.2) 0%, transparent 50%)
-          `,
-        }}
-      />
-      {/* Floating orbs for depth */}
-      <div className="absolute top-[10%] left-[2%] w-[26rem] h-[26rem] rounded-full bg-gradient-to-br from-fuchsia-500/30 to-pink-600/15 blur-[160px] animate-float" />
-      <div className="absolute top-[1%] right-[5%] w-[30rem] h-[30rem] rounded-full bg-gradient-to-br from-amber-500/30 to-orange-600/20 blur-[180px] animate-float" style={{ animationDelay: '-3s' }} />
-      <div className="absolute bottom-[10%] right-[2%] w-[32rem] h-[32rem] rounded-full bg-gradient-to-br from-blue-600/25 to-cyan-500/15 blur-[190px] animate-float" style={{ animationDelay: '-6s' }} />
-      <div className="absolute bottom-[5%] left-[8%] w-[22rem] h-[22rem] rounded-full bg-gradient-to-br from-violet-600/30 to-purple-700/20 blur-[150px] animate-float" style={{ animationDelay: '-2s' }} />
-      <div className="absolute top-[30%] left-[25%] w-[28rem] h-[28rem] rounded-full bg-gradient-to-br from-pink-500/20 to-rose-400/15 blur-[170px] animate-float" style={{ animationDelay: '-5s' }} />
-      {/* Light streaks */}
-      <div className="absolute top-[15%] right-[8%] w-48 h-1 bg-gradient-to-r from-transparent via-amber-300/25 to-transparent blur-sm rotate-45 animate-float" style={{ animationDelay: '-1s' }} />
-      <div className="absolute top-[25%] right-[15%] w-36 h-0.5 bg-gradient-to-r from-transparent via-pink-300/15 to-transparent blur-sm -rotate-12 animate-float" style={{ animationDelay: '-4s' }} />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1a0a2e] via-[#2a1a3e] to-[#1a0a2e]" />
+      <div className="absolute top-[10%] left-[5%] w-[20rem] h-[20rem] rounded-full bg-gradient-to-br from-amber-500/20 to-pink-600/10 blur-[80px] animate-float" />
+      <div className="absolute bottom-[15%] right-[8%] w-[22rem] h-[22rem] rounded-full bg-gradient-to-br from-violet-600/20 to-purple-700/10 blur-[90px] animate-float" style={{ animationDelay: '-4s' }} />
     </div>
   );
 }
@@ -408,6 +381,98 @@ function FeaturesSection() {
 }
 
 /* ───────────────────────────────────────────────
+   4 Trụ cột — THẤY · HIỂU · SỐNG · LAN TỎA
+   ─────────────────────────────────────────────── */
+const PILLARS = [
+  {
+    step: "01", title: "THẤY", sub: "Nhìn rõ",
+    desc: "Quan sát bản thân và thực tại một cách trung thực, không phán xét. Nhận diện những khuôn mẫu tâm thức đang chi phối cuộc sống của bạn.",
+    color: "text-amber-400", border: "border-amber-500/20", bg: "from-amber-500/10",
+  },
+  {
+    step: "02", title: "HIỂU", sub: "Thấu triệt",
+    desc: "Hiểu rõ nguyên nhân gốc rễ của khổ đau và vận hành của tâm trí. Tri thức được chuyển hóa thành trí tuệ qua chiêm nghiệm và phản tư.",
+    color: "text-emerald-400", border: "border-emerald-500/20", bg: "from-emerald-500/10",
+  },
+  {
+    step: "03", title: "SỐNG", sub: "Thực hành",
+    desc: "Biến hiểu biết thành kỷ luật thực hành mỗi ngày. Thiền, nhật ký, quán chiếu — những công cụ chuyển hóa cụ thể cho đời sống hiện đại.",
+    color: "text-blue-400", border: "border-blue-500/20", bg: "from-blue-500/10",
+  },
+  {
+    step: "04", title: "LAN TỎA", sub: "Phụng sự",
+    desc: "Khi đã chuyển hóa, bạn tự nhiên trở thành nguồn cảm hứng và sự an trú cho những người xung quanh — lan tỏa không bằng lời nói, mà bằng sự hiện diện.",
+    color: "text-purple-400", border: "border-purple-500/20", bg: "from-purple-500/10",
+  },
+];
+
+function PillarsSection() {
+  const { ref, visible } = useScrollReveal(0.1);
+
+  return (
+    <section id="con-duong" className="relative py-24 px-5 overflow-hidden">
+      <div className="max-w-6xl mx-auto" ref={ref}>
+        <div className={`text-center mb-16 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs mb-4 backdrop-blur-sm">
+            <Compass size={12} />
+            Con đường chuyển hóa
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Hành trình{' '}
+            <span className="text-gradient-gold">4 bước</span>{' '}
+            an nhiên
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Từ tỉnh thức đến phụng sự — một lộ trình chuyển hóa toàn diện được thiết kế dựa trên
+            trí tuệ cổ xưa và tư duy hệ thống hiện đại.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {PILLARS.map((p, i) => (
+            <TiltCard key={i}>
+              <div
+                className={`relative p-6 rounded-2xl border ${p.border} bg-card/60 backdrop-blur-sm transition-all duration-500 hover:scale-[1.02]`}
+                style={{
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                  transition: `all 0.5s ease-out ${i * 120}ms`,
+                }}
+              >
+                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-b ${p.bg} to-transparent opacity-30`} />
+                <div className="relative z-10">
+                  <div className={`text-3xl font-bold ${p.color} mb-1`}>{p.step}</div>
+                  <h3 className="text-xl font-bold mb-1">
+                    {p.title}{' '}
+                    <span className="text-sm text-muted-foreground font-normal">— {p.sub}</span>
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed mt-3">{p.desc}</p>
+                  {i < PILLARS.length - 1 && (
+                    <div className="hidden lg:block absolute -right-4 top-1/2 -translate-y-1/2 text-muted-foreground/30">
+                      <ChevronRight size={24} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TiltCard>
+          ))}
+        </div>
+
+        <div className={`text-center mt-12 transition-all duration-700 delay-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-medium hover:brightness-110 transition-all"
+          >
+            Bắt đầu hành trình
+            <ArrowUpRight size={16} />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────────────────────────────────────────────
    How NOOI Works Section
    ─────────────────────────────────────────────── */
 const HOW_IT_WORKS = [
@@ -660,6 +725,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground">
       <HeroSection />
       <FeaturesSection />
+      <PillarsSection />
       <HowSection />
       <CTASection />
       <FooterSection />

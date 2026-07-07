@@ -7,17 +7,22 @@ import {
   Settings,
   Shield,
   LogOut,
-  BarChart3,
   Activity,
   UserPlus,
   Users2,
+  UserCheck,
+  Swords,
+  Briefcase,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/admin/users", label: "Người dùng", icon: Users },
-  { href: "/admin/activity", label: "Hoạt động", icon: Activity, disabled: true },
-  { href: "/admin/settings", label: "Cài đặt", icon: Settings, disabled: true },
+  { href: "/admin/roles", label: "Phân quyền", icon: Shield },
+  { href: "/admin/groups", label: "Nhóm", icon: Users2 },
+  { href: "/admin/activity", label: "Hoạt động", icon: Activity },
+  { href: "/admin/evaluate", label: "Đánh giá", icon: UserCheck },
+  { href: "/admin/settings", label: "Cài đặt", icon: Settings },
 ];
 
 export default async function AdminLayout({
@@ -29,7 +34,6 @@ export default async function AdminLayout({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/admin-login");
 
-  // Double-check admin role
   const { data: adminUser } = await supabase
     .from("admin_users")
     .select("role, email")
@@ -51,6 +55,8 @@ export default async function AdminLayout({
     );
   }
 
+  const isSuperAdmin = adminUser.role === "super_admin";
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex">
       {/* Sidebar */}
@@ -66,21 +72,9 @@ export default async function AdminLayout({
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            if (item.disabled) {
-              return (
-                <span
-                  key={item.href}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/40 cursor-not-allowed"
-                >
-                  <Icon className="size-4" />
-                  {item.label}
-                  <span className="ml-auto text-[10px] bg-muted/20 px-1.5 py-0.5 rounded">Sắp có</span>
-                </span>
-              );
-            }
             return (
               <Link
                 key={item.href}
@@ -100,9 +94,14 @@ export default async function AdminLayout({
             <span className="size-2 rounded-full bg-emerald-500 inline-block" />
             {user.email}
           </div>
-          <span className="text-[10px] text-primary font-medium uppercase tracking-wider">
-            {adminUser.role === "super_admin" ? "Super Admin" : "Admin"}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-primary font-medium uppercase tracking-wider">
+              {adminUser.role === "super_admin" ? "Super Admin" : adminUser.role === "admin" ? "Admin" : "Mod"}
+            </span>
+            {isSuperAdmin && (
+              <Link href="/admin/roles" className="text-[10px] text-primary hover:underline">Quản trị</Link>
+            )}
+          </div>
           <a
             href="/auth/logout"
             className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 mt-2 transition-colors"

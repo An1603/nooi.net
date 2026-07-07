@@ -24,6 +24,7 @@ import {
 
 const NAV = [
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
+  { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },
   { label: 'Thực hành', href: '/app/thuc-hanh', icon: Sparkles },
   { label: 'Hồ sơ', href: '/app/profile', icon: User },

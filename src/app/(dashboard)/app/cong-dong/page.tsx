@@ -1,31 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, MessageCircle, Plus, UserPlus, Clock } from "lucide-react";
+import { Users, Plus, UserPlus, Shield, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-interface Profile {
-  user_id: string;
-  full_name: string;
-  ref_code: string;
+interface Group {
+  id: string; name: string; description: string; schedule: string; member_count: number;
 }
 
-interface Group {
-  id: string;
-  name: string;
-  description: string;
-  schedule: string;
-  member_count: number;
+const LEVEL_NAMES = ["", "Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+
+function getLevel(userId: string, journalCounts: Record<string, number>) {
+  const n = (journalCounts[userId] || 0) * 10;
+  const t = [0, 100, 300, 600, 1000, 1500, 2500];
+  for (let i = t.length - 1; i >= 0; i--) if (n >= t[i]) return i + 1;
+  return 1;
 }
 
 export default function CommunityPage() {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [myGroupIds, setMyGroupIds] = useState<string[]>([]);
+  const [myLevel, setMyLevel] = useState(1);
+  const [allUsers, setAllUsers] = useState<{ user_id: string; name: string; level: number }[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: "", description: "", schedule: "" });
-  const [loading, setLoading] = useState(true);
+  const [addingTo, setAddingTo] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -35,38 +35,30 @@ export default function CommunityPage() {
         if (!user) return;
         setMyUserId(user.id);
 
-        // Lấy danh sách profiles (bạn học)
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("user_id, full_name, ref_code")
-          .neq("user_id", user.id)
-          .limit(20);
-        if (profs) setProfiles(profs);
+        // Lấy journal counts để tính level
+        const { data: journals } = await supabase.from("documents").select("user_id").eq("file_type", "journal");
+        const counts: Record<string, number> = {};
+        journals?.forEach((j) => { counts[j.user_id] = (counts[j.user_id] || 0) + 1; });
+        setMyLevel(getLevel(user.id, counts));
 
-        // Lấy danh sách groups
+        // Lấy danh sách users (trừ tôi)
+        const { data: profs } = await supabase.from("profiles").select("user_id, full_name").neq("user_id", user.id);
+        if (profs) setAllUsers(profs.map((p) => ({ user_id: p.user_id, name: p.full_name || "Người dùng", level: getLevel(p.user_id, counts) })));
+
+        // Lấy groups
         const { data: grps } = await supabase.from("groups_table").select("*").eq("is_active", true);
         if (grps) {
-          // Đếm thành viên
-          const withCounts = await Promise.all(
-            grps.map(async (g) => {
-              const { count } = await supabase
-                .from("group_members")
-                .select("id", { count: "exact", head: true })
-                .eq("group_id", g.id);
-              return { ...g, member_count: count ?? 0 };
-            })
-          );
+          const withCounts = await Promise.all(grps.map(async (g) => {
+            const { count } = await supabase.from("group_members").select("id", { count: "exact", head: true }).eq("group_id", g.id);
+            return { ...g, member_count: count ?? 0 };
+          }));
           setGroups(withCounts);
         }
 
-        // Lấy nhóm của tôi
-        const { data: myGroups } = await supabase
-          .from("group_members")
-          .select("group_id")
-          .eq("user_id", user.id);
+        // Nhóm của tôi
+        const { data: myGroups } = await supabase.from("group_members").select("group_id").eq("user_id", user.id);
         if (myGroups) setMyGroupIds(myGroups.map((g) => g.group_id));
       } catch {}
-      setLoading(false);
     })();
   }, []);
 
@@ -74,22 +66,9 @@ export default function CommunityPage() {
     if (!newGroup.name.trim()) return;
     try {
       const supabase = createClient();
-      const { data: grp } = await supabase
-        .from("groups_table")
-        .insert({
-          name: newGroup.name,
-          description: newGroup.description,
-          schedule: newGroup.schedule,
-          max_members: 20,
-        })
-        .select("id")
-        .single();
+      const { data: grp } = await supabase.from("groups_table").insert({ name: newGroup.name, description: newGroup.description, schedule: newGroup.schedule, max_members: 20 }).select("id").single();
       if (grp && myUserId) {
-        await supabase.from("group_members").insert({
-          group_id: grp.id,
-          user_id: myUserId,
-          role: "leader",
-        });
+        await supabase.from("group_members").insert({ group_id: grp.id, user_id: myUserId, role: "leader" });
       }
       setShowCreate(false);
       setNewGroup({ name: "", description: "", schedule: "" });
@@ -97,29 +76,30 @@ export default function CommunityPage() {
     } catch {}
   }
 
-  async function joinGroup(groupId: string) {
+  async function addMember(groupId: string, targetUserId: string) {
     if (!myUserId) return;
     try {
       const supabase = createClient();
-      await supabase.from("group_members").insert({
-        group_id: groupId,
-        user_id: myUserId,
-        role: "member",
-      });
+      const targetUser = allUsers.find((u) => u.user_id === targetUserId);
+      if (!targetUser || targetUser.level >= myLevel) return alert("Chỉ có thể thêm user có cấp độ thấp hơn bạn!");
+      await supabase.from("group_members").insert({ group_id: groupId, user_id: targetUserId, role: "member" });
       setMyGroupIds((prev) => [...prev, groupId]);
+      alert(`✅ Đã thêm ${targetUser.name} vào nhóm!`);
     } catch {}
   }
 
+  const canManage = myLevel >= 5; // Từ Người đồng hành trở lên
+  const eligibleUsers = allUsers.filter((u) => u.level < myLevel);
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
           <Users className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Cộng đồng</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Kết nối với những người cùng hành trình</p>
+          <h1 className="text-2xl font-bold tracking-tight">Cộng đồng tu học</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Cùng nhau thực hành và chuyển hóa</p>
         </div>
       </div>
 
@@ -127,23 +107,20 @@ export default function CommunityPage() {
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-sm">Nhóm của tôi</h2>
-          <button onClick={() => setShowCreate(!showCreate)} className="text-xs text-primary hover:underline flex items-center gap-1">
-            <Plus className="w-3 h-3" /> Tạo nhóm
-          </button>
+          {canManage && (
+            <button onClick={() => setShowCreate(!showCreate)} className="text-xs text-primary hover:underline flex items-center gap-1">
+              <Plus className="w-3 h-3" /> Tạo nhóm
+            </button>
+          )}
         </div>
-
-        {showCreate && (
+        {showCreate && canManage && (
           <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3 mb-4">
-            <input value={newGroup.name} onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
-              placeholder="Tên nhóm" className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm" />
-            <input value={newGroup.description} onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
-              placeholder="Mô tả" className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm" />
-            <input value={newGroup.schedule} onChange={(e) => setNewGroup({ ...newGroup, schedule: e.target.value })}
-              placeholder="Lịch (VD: T2, T5 20:00)" className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm" />
+            <input value={newGroup.name} onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })} placeholder="Tên nhóm" className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm" />
+            <input value={newGroup.description} onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })} placeholder="Mô tả" className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm" />
+            <input value={newGroup.schedule} onChange={(e) => setNewGroup({ ...newGroup, schedule: e.target.value })} placeholder="Lịch (VD: T2, T5 20:00)" className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm" />
             <button onClick={createGroup} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm">Tạo</button>
           </div>
         )}
-
         {groups.filter((g) => myGroupIds.includes(g.id)).length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">Bạn chưa tham gia nhóm nào.</p>
         )}
@@ -152,55 +129,85 @@ export default function CommunityPage() {
             <div key={g.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/10">
               <div>
                 <p className="text-sm font-medium">{g.name}</p>
-                <p className="text-[10px] text-muted-foreground flex items-center gap-2"><Users className="w-3 h-3" /> {g.member_count} thành viên</p>
+                <p className="text-[10px] text-muted-foreground"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên</p>
               </div>
-              <span className="text-[10px] text-muted-foreground">{g.schedule}</span>
+              {canManage && (
+                <div className="relative">
+                  <button onClick={() => setAddingTo(addingTo === g.id ? null : g.id)} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg flex items-center gap-1">
+                    <UserPlus className="w-3 h-3" /> Thêm
+                  </button>
+                  {addingTo === g.id && (
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-card border border-border rounded-xl shadow-2xl z-10 p-2 max-h-48 overflow-y-auto">
+                      <p className="text-[10px] text-muted-foreground px-2 py-1">Chọn user cấp thấp hơn để thêm:</p>
+                      {eligibleUsers.map((u) => (
+                        <button key={u.user_id} onClick={() => addMember(g.id, u.user_id)}
+                          className="w-full text-left flex items-center gap-2 p-2 rounded-lg hover:bg-muted/20 text-xs">
+                          <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold">{u.name.charAt(0)}</span>
+                          <span className="flex-1">{u.name}</span>
+                          <span className="text-muted-foreground">Lv.{u.level}</span>
+                        </button>
+                      ))}
+                      {eligibleUsers.length === 0 && <p className="text-xs text-muted-foreground p-2">Không có user nào có cấp thấp hơn.</p>}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Khám phá nhóm */}
+      {/* Khám phá nhóm (chỉ xem, không tự vào được) */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h2 className="font-semibold text-sm mb-4">Khám phá nhóm</h2>
+        <h2 className="font-semibold text-sm mb-4">Các nhóm tu học</h2>
         <div className="space-y-3">
           {groups.filter((g) => !myGroupIds.includes(g.id)).map((g) => (
-            <div key={g.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
-              <div className="flex-1">
-                <p className="text-sm font-medium">{g.name}</p>
-                <p className="text-xs text-muted-foreground">{g.description}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  <Users className="w-3 h-3 inline" /> {g.member_count} · {g.schedule}
-                </p>
-              </div>
-              <button onClick={() => joinGroup(g.id)} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/20">
-                <UserPlus className="w-3 h-3 inline mr-1" /> Tham gia
-              </button>
+            <div key={g.id} className="p-4 rounded-lg border border-border/50">
+              <p className="text-sm font-medium">{g.name}</p>
+              <p className="text-xs text-muted-foreground">{g.description}</p>
+              <p className="text-[10px] text-muted-foreground mt-1"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên · {g.schedule}</p>
+              {canManage && (
+                <div className="relative mt-2">
+                  <button onClick={() => setAddingTo(addingTo === g.id ? null : g.id)} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg flex items-center gap-1">
+                    <UserPlus className="w-3 h-3" /> Thêm thành viên
+                  </button>
+                  {addingTo === g.id && (
+                    <div className="absolute left-0 top-full mt-1 w-64 bg-card border border-border rounded-xl shadow-2xl z-10 p-2 max-h-48 overflow-y-auto">
+                      {eligibleUsers.map((u) => (
+                        <button key={u.user_id} onClick={() => addMember(g.id, u.user_id)}
+                          className="w-full text-left flex items-center gap-2 p-2 rounded-lg hover:bg-muted/20 text-xs">
+                          <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold">{u.name.charAt(0)}</span>
+                          <span className="flex-1">{u.name}</span>
+                          <span className="text-muted-foreground">Lv.{u.level}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
           {groups.filter((g) => !myGroupIds.includes(g.id)).length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">Chưa có nhóm nào.</p>
+            <p className="text-sm text-muted-foreground text-center py-4">Tất cả nhóm đã tham gia hoặc chưa có nhóm nào.</p>
           )}
         </div>
       </div>
 
       {/* Bạn học */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h2 className="font-semibold text-sm mb-4">Bạn học cùng hành trình</h2>
+        <h2 className="font-semibold text-sm mb-4">Cộng đồng tu học</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {profiles.slice(0, 9).map((p) => (
-            <div key={p.user_id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                {p.full_name?.charAt(0) || "?"}
-              </div>
+          {allUsers.slice(0, 12).map((u) => (
+            <div key={u.user_id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{u.name.charAt(0)}</div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium truncate">{p.full_name || "Người dùng"}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{p.ref_code || ""}</p>
+                <p className="text-xs font-medium truncate">{u.name}</p>
+                <p className="text-[10px] text-muted-foreground">Lv.{u.level} {LEVEL_NAMES[u.level]}</p>
               </div>
+              <Shield className={`w-3 h-3 ${u.level >= 5 ? "text-primary" : "text-muted-foreground/30"}`} />
             </div>
           ))}
         </div>
-        {profiles.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Chưa có bạn học nào.</p>}
       </div>
     </div>
   );

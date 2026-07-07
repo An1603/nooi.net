@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Plus, Trash2, Eye, Shield, Loader2, Search, X, Mail, Lock, User, Pencil,
-  Sparkles,
+  Sparkles, BarChart3, Hash, Users, Trophy, Layers,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -35,12 +35,39 @@ interface AdminUser {
   gio_sinh: number | null;
   gioi_tinh: string | null;
   noi_sinh: string | null;
+  journals: number;
+  n: number;
+  level: number;
+  level_name: string;
 }
+
+interface AdminStats {
+  total: number;
+  totalN: number;
+  byLevel: Record<string, number>;
+  levelNames: string[];
+}
+
+const LEVEL_COLORS: Record<number, string> = {
+  1: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+  2: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  3: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+  4: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  5: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+  6: "bg-red-500/10 text-red-400 border-red-500/20",
+  7: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+};
+
+const SUMMARY_ICONS: React.ElementType[] = [Users, Hash, Layers, BarChart3, Trophy];
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [levelFilter, setLevelFilter] = useState<number | null>(null);
+  const [minN, setMinN] = useState("");
+  const [maxN, setMaxN] = useState("");
 
   // Create
   const [showCreate, setShowCreate] = useState(false);
@@ -87,6 +114,7 @@ export default function AdminUsersPage() {
       const res = await fetch("/api/admin/users");
       const data = await res.json();
       setUsers(data.users ?? []);
+      setStats(data.stats ?? null);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, []);
 
@@ -94,7 +122,13 @@ export default function AdminUsersPage() {
 
   const filtered = users.filter(u => {
     const q = search.toLowerCase();
-    return (u.full_name??"").toLowerCase().includes(q) || (u.email??"").toLowerCase().includes(q) || u.id.toLowerCase().includes(q);
+    const matchesSearch = (u.full_name??"").toLowerCase().includes(q) || (u.email??"").toLowerCase().includes(q) || u.id.toLowerCase().includes(q);
+    if (!matchesSearch) return false;
+    if (levelFilter !== null && u.level !== levelFilter) return false;
+    const nVal = u.n;
+    if (minN !== "" && nVal < Number(minN)) return false;
+    if (maxN !== "" && nVal > Number(maxN)) return false;
+    return true;
   });
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -158,6 +192,16 @@ export default function AdminUsersPage() {
     finally { setDeleting(false); }
   };
 
+  const summaryCards = stats ? [
+    { label: "Tổng user", value: stats.total, icon: SUMMARY_ICONS[0] },
+    { label: "Tổng N", value: stats.totalN.toLocaleString(), icon: SUMMARY_ICONS[1] },
+    { label: "Level 1-3", value: (stats.byLevel["1"]||0)+(stats.byLevel["2"]||0)+(stats.byLevel["3"]||0), icon: SUMMARY_ICONS[2] },
+    { label: "Level 4-5", value: (stats.byLevel["4"]||0)+(stats.byLevel["5"]||0), icon: SUMMARY_ICONS[3] },
+    { label: "Level 6-7", value: (stats.byLevel["6"]||0)+(stats.byLevel["7"]||0), icon: SUMMARY_ICONS[4] },
+  ] : [];
+
+  const levelNames = stats?.levelNames ?? [];
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -165,10 +209,67 @@ export default function AdminUsersPage() {
         <Button onClick={() => setShowCreate(true)} className="bg-primary text-primary-foreground hover:brightness-110 text-sm gap-1.5 h-9"><Plus className="size-4"/> Thêm user</Button>
       </div>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/>
-        <Input placeholder="Tìm theo tên, email hoặc ID..." value={search} onChange={e=>setSearch(e.target.value)} className="pl-9 h-9 text-sm"/>
-        {search&&<button onClick={()=>setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X className="size-4"/></button>}
+      {/* Summary cards */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {summaryCards.map((card, i) => (
+            <div key={i} className="rounded-xl border border-border/50 bg-[#0d0d0d] p-4 flex items-center gap-3">
+              <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <card.icon className="size-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold tabular-nums">{card.value}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{card.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[180px] max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/>
+          <Input placeholder="Tìm theo tên, email hoặc ID..." value={search} onChange={e=>setSearch(e.target.value)} className="pl-9 h-9 text-sm"/>
+          {search&&<button onClick={()=>setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X className="size-4"/></button>}
+        </div>
+        <select
+          value={levelFilter ?? ""}
+          onChange={e => setLevelFilter(e.target.value === "" ? null : Number(e.target.value))}
+          className="h-9 rounded-lg border border-border bg-background px-2.5 text-sm min-w-[130px]"
+        >
+          <option value="">Tất cả level</option>
+          {levelNames.map((name, i) => (
+            <option key={i + 1} value={i + 1}>Level {i + 1}: {name}</option>
+          ))}
+        </select>
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            min={0}
+            placeholder="Min N"
+            value={minN}
+            onChange={e => setMinN(e.target.value)}
+            className="h-9 w-20 text-sm"
+          />
+          <span className="text-xs text-muted-foreground">–</span>
+          <Input
+            type="number"
+            min={0}
+            placeholder="Max N"
+            value={maxN}
+            onChange={e => setMaxN(e.target.value)}
+            className="h-9 w-20 text-sm"
+          />
+        </div>
+        {(levelFilter !== null || minN || maxN) && (
+          <button
+            onClick={() => { setLevelFilter(null); setMinN(""); setMaxN(""); }}
+            className="h-9 px-2.5 rounded-lg border border-border/50 text-xs text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
       </div>
 
       {loading ? <div className="flex items-center justify-center py-12"><Loader2 className="size-6 animate-spin text-muted-foreground"/></div> : (
@@ -178,8 +279,11 @@ export default function AdminUsersPage() {
               <thead><tr className="border-b border-border/30">
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">User</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden sm:table-cell">Modules</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden md:table-cell">Role</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Tham gia</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden md:table-cell">Level</th>
+                <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground hidden md:table-cell">N</th>
+                <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Journals</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Role</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden xl:table-cell">Tham gia</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Hành động</th>
               </tr></thead>
               <tbody className="divide-y divide-border/10">
@@ -197,9 +301,20 @@ export default function AdminUsersPage() {
                     {!u.has_numerology&&!u.has_tuvi&&!u.has_astrology&&<span className="text-[10px] text-muted-foreground">—</span>}
                   </div></td>
                   <td className="px-4 py-3 hidden md:table-cell">
+                    <span className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded-full border ${LEVEL_COLORS[u.level] || "bg-gray-500/10 text-gray-400 border-gray-500/20"}`}>
+                      L{u.level} {u.level_name}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell text-right">
+                    <span className="text-sm font-medium tabular-nums">{u.n}</span>
+                  </td>
+                  <td className="px-4 py-3 hidden lg:table-cell text-right">
+                    <span className="text-sm text-muted-foreground tabular-nums">{u.journals}</span>
+                  </td>
+                  <td className="px-4 py-3 hidden lg:table-cell">
                     {u.role==="super_admin"||u.role==="admin"?<span className="inline-flex items-center gap-1 text-xs text-primary font-medium"><Shield className="size-3"/>{u.role==="super_admin"?"Super Admin":"Admin"}</span>:<span className="text-xs text-muted-foreground">User</span>}
                   </td>
-                  <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">
+                  <td className="px-4 py-3 hidden xl:table-cell text-xs text-muted-foreground">
                     <LocalTime iso={u.created_at} format="short" />
                   </td>
                   <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">

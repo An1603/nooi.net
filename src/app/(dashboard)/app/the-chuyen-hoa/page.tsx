@@ -102,6 +102,16 @@ const ALL_CARDS = [
   { term: "Niết bàn", def: "Trạng thái tịch tịnh tuyệt đối, không còn khổ đau", icon: "🌌", level: 7 },
 ];
 
+const LEVEL_GRADIENTS: Record<number, { bg: string; glow: string }> = {
+  1: { bg: "from-violet-500/20 via-purple-500/10 to-fuchsia-500/20", glow: "shadow-violet-500/20" },
+  2: { bg: "from-blue-500/20 via-cyan-500/10 to-teal-500/20", glow: "shadow-blue-500/20" },
+  3: { bg: "from-emerald-500/20 via-green-500/10 to-teal-500/20", glow: "shadow-emerald-500/20" },
+  4: { bg: "from-yellow-500/20 via-amber-500/10 to-orange-500/20", glow: "shadow-amber-500/20" },
+  5: { bg: "from-pink-500/20 via-rose-500/10 to-red-500/20", glow: "shadow-pink-500/20" },
+  6: { bg: "from-indigo-500/20 via-purple-500/10 to-violet-500/20", glow: "shadow-indigo-500/20" },
+  7: { bg: "from-amber-500/20 via-yellow-500/10 to-orange-500/20", glow: "shadow-amber-500/20" },
+};
+
 export default function CardCollectionPage() {
   const [userN, setUserN] = useState(0);
   const [activeLevel, setActiveLevel] = useState(1);
@@ -164,23 +174,29 @@ export default function CardCollectionPage() {
       </div>
 
       {/* Cards grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {filteredCards.map((card) => {
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        {filteredCards.map((card, idx) => {
           const isUnlocked = card.level <= userLevel;
+          const grad = LEVEL_GRADIENTS[card.level] || LEVEL_GRADIENTS[1];
           return (
             <div key={card.term}
-              className={`rounded-xl border p-4 transition-all ${
+              className={`group relative rounded-xl border p-4 transition-all duration-300 animate-fade-in-up ${
                 isUnlocked
-                  ? "border-border bg-card hover:border-primary/30 hover:shadow-sm"
-                  : "border-border/30 bg-card/50 opacity-50"
+                  ? `bg-gradient-to-br ${grad.bg} border-border/60 hover:border-transparent hover:shadow-lg ${grad.glow} hover:-translate-y-1 hover:scale-[1.02]`
+                  : "bg-card/30 border-border/20 opacity-50"
               }`}
+              style={{ animationDelay: `${idx * 40}ms`, animationFillMode: "both" }}
             >
-              <div className="text-2xl mb-2">{card.icon}</div>
-              <p className="text-sm font-semibold">{card.term}</p>
+              {/* Glow effect on hover */}
+              {isUnlocked && (
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              )}
+              <div className="text-3xl mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">{card.icon}</div>
+              <p className="text-sm font-semibold group-hover:text-primary transition-colors">{card.term}</p>
               <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{card.def}</p>
               <div className="flex items-center gap-1 mt-2">
                 {isUnlocked ? (
-                  <span className="text-[10px] text-green-400">✓ Đã mở khóa</span>
+                  <span className="text-[10px] text-green-400/70">✓ Đã mở khóa</span>
                 ) : (
                   <span className="text-[10px] text-muted-foreground">🔒 Cần Lv.{card.level}</span>
                 )}

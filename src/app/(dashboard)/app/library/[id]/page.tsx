@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { ArrowLeft, Edit3, Calendar, FileText, FolderOpen, File, Music } from "lucide-react";
+import { Thumbnail } from "@/components/content/Thumbnail";
 import { notFound } from "next/navigation";
 
 function parseContent(content: string | null) {
@@ -40,6 +41,11 @@ function renderBody(body: string): React.ReactNode[] {
   });
 }
 
+function getYoutubeThumbnail(url: string): string | null {
+  const id = getYoutubeId(url);
+  return id ? `https://img.youtube.com/vi/${id}/maxresdefault.jpg` : null;
+}
+
 export default async function DocumentDetailPage({
   params,
 }: {
@@ -71,6 +77,9 @@ export default async function DocumentDetailPage({
     if (project) projectTitle = project.title;
   }
 
+  const parsed = parseContent(doc.content);
+  const ytThumb = parsed.url ? getYoutubeThumbnail(parsed.url) : null;
+
   return (
     <div className="max-w-4xl mx-auto">
       <Link
@@ -81,30 +90,59 @@ export default async function DocumentDetailPage({
         Thư viện
       </Link>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="shrink-0 w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
-              {doc.file_type ? (
-                <File size={20} className="text-secondary" />
-              ) : (
-                <FileText size={20} className="text-secondary" />
-              )}
+      {/* Hero Thumbnail */}
+      <div className="rounded-xl overflow-hidden mb-6">
+        {ytThumb ? (
+          <div className="relative aspect-video bg-muted">
+            <img
+              src={ytThumb}
+              alt={doc.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute bottom-4 left-4">
+              <h1 className="text-2xl font-bold text-white drop-shadow-lg">{doc.title}</h1>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">{doc.title}</h1>
           </div>
-          <div className="flex items-center gap-3 ml-[52px]">
-            {doc.file_type && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-secondary/10 text-secondary border-secondary/20 uppercase">
-                {doc.file_type}
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar size={12} />
-              Cập nhật: {new Date(doc.updated_at).toLocaleDateString("vi-VN")}
+        ) : parsed.url && doc.file_type === "image" ? (
+          <div className="relative aspect-video bg-muted">
+            <img
+              src={parsed.url}
+              alt={doc.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute bottom-4 left-4">
+              <h1 className="text-2xl font-bold text-white drop-shadow-lg">{doc.title}</h1>
+            </div>
+          </div>
+        ) : (
+          <div className="relative">
+            <Thumbnail
+              fileType={doc.file_type}
+              title={doc.title}
+              className="aspect-[2.1/1]"
+              showOverlay={true}
+            />
+            <div className="absolute bottom-4 left-4 right-4">
+              <h1 className="text-2xl font-bold text-white drop-shadow-lg">{doc.title}</h1>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Meta bar */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          {doc.file_type && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-secondary/10 text-secondary border-secondary/20 uppercase">
+              {doc.file_type}
             </span>
-          </div>
+          )}
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Calendar size={12} />
+            Cập nhật: {new Date(doc.updated_at).toLocaleDateString("vi-VN")}
+          </span>
         </div>
         <Link
           href={`/app/library/${id}/edit`}
@@ -119,7 +157,7 @@ export default async function DocumentDetailPage({
       <div className="p-6 rounded-xl border border-border bg-card mb-6">
         <h2 className="text-sm font-semibold text-muted-foreground mb-4">Nội dung</h2>
         {(() => {
-          const c = parseContent(doc.content);
+          const c = parsed;
           return (
             <>
               {c.category && (

@@ -88,7 +88,7 @@ export default async function DashboardHome() {
       {/* Welcome */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Xin chào, <span className="text-gradient-ai">{name}</span>
+          Hi!, <span className="text-gradient-ai">{name}</span>
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Đây là tổng quan không gian làm việc của bạn trên NOOI.
@@ -97,12 +97,19 @@ export default async function DashboardHome() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {stats.map((s, i) => (
-          <div key={i} className="p-4 rounded-xl border border-border bg-card hover:bg-card/80 transition-colors">
+        {[
+          { label: "Dự án", value: String(projectCount ?? 0), icon: "📁", href: "/app/projects" },
+          { label: "Video", value: String(videoCount ?? 0), icon: "🎬", href: "/app/videos" },
+          { label: "Tài liệu", value: String(docCount ?? 0), icon: "📄", href: "/app/library" },
+          { label: "Nhật ký", value: String(journalCount ?? 0), icon: "📓", href: "/app/journal" },
+        ].map((s) => (
+          <Link key={s.label} href={s.href}
+            className="p-4 rounded-xl border border-border bg-card hover:bg-card/80 hover:border-primary/30 transition-all touch-target block"
+          >
             <span className="text-lg mb-1.5 block">{s.icon}</span>
             <div className="text-xl font-bold">{s.value}</div>
             <div className="text-xs text-muted-foreground mt-0.5 truncate">{s.label}</div>
-          </div>
+          </Link>
         ))}
       </div>
 

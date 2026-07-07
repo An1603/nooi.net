@@ -18,6 +18,11 @@ function parseContent(content: string | null) {
   }
 }
 
+function getYoutubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 function renderBody(body: string): React.ReactNode[] {
   if (!body) return [];
   return body.split("\n").map((line, i) => {
@@ -120,19 +125,28 @@ export default async function DocumentDetailPage({
               )}
               {c.url && (
                 <div className="rounded-lg border border-border bg-muted/20 p-3 mb-4">
-                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                    {doc.file_type === "video" ? "🎬 Video" : "🎵 Audio"} · {c.duration}
-                  </p>
-                  <a href={c.url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline break-all">{c.url}</a>
+                  {doc.file_type === "video" && getYoutubeId(c.url) ? (
+                    <div className="aspect-video rounded-lg overflow-hidden">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${getYoutubeId(c.url)}`}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                        {doc.file_type === "video" ? "🎬 Video" : "🎵 Audio"} · {c.duration}
+                      </p>
+                      <a href={c.url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline break-all">{c.url}</a>
+                    </>
+                  )}
                 </div>
               )}
               {c.body ? (
                 <div className="text-sm leading-relaxed space-y-1">{renderBody(c.body)}</div>
-              ) : doc.content ? (
-                <div className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content}</div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">Chưa có nội dung.</p>
-              )}
+              ) : null}
             </>
           );
         })()}

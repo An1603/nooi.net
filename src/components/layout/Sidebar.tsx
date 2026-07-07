@@ -21,12 +21,14 @@ import {
   User,
   BookHeart,
   Users,
+  BarChart3,
 } from 'lucide-react';
 
 const NAV = [
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
   { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
+  { label: 'Thống kê', href: '/app/thong-ke', icon: BarChart3 },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },
   { label: 'Thực hành', href: '/app/thuc-hanh', icon: Sparkles },
   { label: 'Hồ sơ', href: '/app/profile', icon: User },

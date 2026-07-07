@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const publicRoutes = ["/", "/login", "/signup", "/auth/callback", "/auth/confirm", "/auth/reset", "/auth/update-password"];
+const publicRoutes = ["/", "/login", "/signup", "/auth/callback", "/auth/confirm", "/auth/reset", "/auth/update-password", "/api/migrate"];
 
 const ADMIN_HOST = "admin.nooi.net";
 

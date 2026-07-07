@@ -64,6 +64,16 @@ export default async function DashboardHome() {
     hasJournalToday(supabase, user.id),
   ]);
 
+  const xp = (journalCount ?? 0) * 10;
+  const levelNames = ["Người lạ", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+  const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2500];
+  let level = 1;
+  for (let i = levelThresholds.length - 1; i >= 0; i--) {
+    if (xp >= levelThresholds[i]) { level = i + 1; break; }
+  }
+  const nextThreshold = levelThresholds[Math.min(level, 6)];
+  const xpProgress = Math.min(100, Math.round(((xp - levelThresholds[level - 1]) / (nextThreshold - levelThresholds[level - 1])) * 100));
+
   const stats = [
     { label: "Dự án", value: String(projectCount ?? 0), icon: "📁" },
     { label: "Video", value: String(videoCount ?? 0), icon: "🎬" },
@@ -92,6 +102,26 @@ export default async function DashboardHome() {
             <div className="text-xs text-muted-foreground mt-0.5 truncate">{s.label}</div>
           </div>
         ))}
+      </div>
+
+      {/* Level / XP card */}
+      <div className="rounded-xl border border-primary/20 bg-card p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-xs text-muted-foreground">Cấp độ</p>
+            <p className="text-lg font-bold text-primary">{levelNames[Math.min(level - 1, 6)]}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">Kinh nghiệm (XP)</p>
+            <p className="text-lg font-bold">{xp} XP</p>
+          </div>
+        </div>
+        <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${xpProgress}%` }} />
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2">
+          {xp < 2500 ? `${xpProgress}% — còn ${nextThreshold - xp} XP để lên cấp tiếp theo` : "Tối đa"}
+        </p>
       </div>
 
       {/* Journal reminder */}

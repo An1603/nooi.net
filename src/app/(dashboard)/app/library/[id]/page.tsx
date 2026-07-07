@@ -152,15 +152,18 @@ export default async function DocumentDetailPage({
                       </audio>
                     </div>
                   ) : doc.file_type === "pdf" ? (
-                    /* PDF: iframe embed */
+                    /* PDF: embed viewer */
                     <div>
                       <p className="text-xs text-muted-foreground mb-2">📕 PDF · {c.pages || "?"} trang</p>
                       <a href={c.url} target="_blank" rel="noreferrer"
                         className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 rounded-lg text-sm text-primary-foreground mb-3"
                       >
-                        📕 Tải PDF
+                        📕 Mở PDF
                       </a>
-                      <iframe src={c.url} className="w-full h-96 rounded-lg border border-border" />
+                      <iframe
+                        src={`https://docs.google.com/viewer?url=${encodeURIComponent(c.url)}&embedded=true`}
+                        className="w-full h-96 rounded-lg border border-border"
+                      />
                     </div>
                   ) : (
                     /* Other: link */

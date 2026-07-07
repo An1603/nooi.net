@@ -142,7 +142,7 @@ export default function CardCollectionPage() {
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
             <Layers className="w-5 h-5 text-primary" />
@@ -153,7 +153,7 @@ export default function CardCollectionPage() {
           </div>
         </div>
         <Link href="/app/game"
-          className="hidden sm:inline-flex items-center gap-1.5 bg-primary px-4 py-2 rounded-lg text-sm text-primary-foreground hover:bg-primary/80 transition-colors"
+          className="inline-flex items-center justify-center gap-1.5 bg-primary px-4 py-2.5 rounded-lg text-sm text-primary-foreground hover:bg-primary/80 transition-colors sm:w-auto"
         >
           🎮 Chơi game
         </Link>

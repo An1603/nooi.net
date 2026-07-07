@@ -11,18 +11,26 @@ import {
   UserPlus,
   Users2,
   UserCheck,
-  Swords,
-  Briefcase,
+  BookOpen,
+  FileText,
+  Video,
+  FolderOpen,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/admin/users", label: "Người dùng", icon: Users },
+  { href: "/admin/live", label: "Lớp Live", icon: Activity },
+  { href: "/admin/learning", label: "Học tập", icon: BookOpen },
+  { href: "/admin/documents", label: "Tài liệu", icon: FileText },
+  { href: "/admin/videos", label: "Video", icon: Video },
+  { href: "/admin/projects", label: "Dự án", icon: FolderOpen },
+  { href: "/admin/mentors", label: "Mentor", icon: UserPlus },
   { href: "/admin/roles", label: "Phân quyền", icon: Shield },
   { href: "/admin/groups", label: "Nhóm", icon: Users2 },
   { href: "/admin/activity", label: "Hoạt động", icon: Activity },
   { href: "/admin/evaluate", label: "Đánh giá", icon: UserCheck },
-  { href: "/admin/settings", label: "Cài đặt", icon: Settings },
+  { href: "/admin/settings", label: "Cấu hình", icon: Settings },
 ];
 
 export default async function AdminLayout({

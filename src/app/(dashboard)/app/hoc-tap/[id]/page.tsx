@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle, Play, Sparkles, ChevronRight, Clock, Award } from "lucide-react";
+import { ArrowLeft, CheckCircle, Play, Sparkles, ChevronRight, Clock, Award, Bot } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import LessonComments from "@/components/comment/LessonComments";
 
 // ─── Dữ liệu bài học ───────────────────────────────────────────────────────
 
@@ -367,6 +368,9 @@ export default function LessonPage() {
           )}
         </div>
       </div>
+
+      {/* Comments */}
+      <LessonComments lessonId={lessonId} />
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-4 border-t border-border">

@@ -110,7 +110,7 @@ export function ProfileClient({ user, profile }: Props) {
   const [journalCount, setJournalCount] = useState(0);
   const [xpProgress, setXpProgress] = useState(0);
   const [nextThreshold, setNextThreshold] = useState(100);
-  const levelNames = ["Người lạ", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+  const levelNames = ["Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
   const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2500];
 
   // Claim referral code state

@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 
 function calculateLevel(xp: number) {
   const thresholds = [0, 100, 300, 600, 1000, 1500, 2500];
-  const names = ["Người lạ", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+  const names = ["Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
   let level = 1;
   for (let i = thresholds.length - 1; i >= 0; i--) {
     if (xp >= thresholds[i]) { level = i + 1; break; }
@@ -18,7 +18,7 @@ describe("N / Level System", () => {
   it("should be level 1 with 0 XP", () => {
     const result = calculateLevel(0);
     expect(result.level).toBe(1);
-    expect(result.levelName).toBe("Người lạ");
+    expect(result.levelName).toBe("Người mới");
     expect(result.nToNext).toBe(100);
   });
 
@@ -118,6 +118,6 @@ describe("Journal Statistics", () => {
     const journalCount = 0;
     const xp = journalCount * 10;
     expect(xp).toBe(0);
-    expect(calculateLevel(xp).levelName).toBe("Người lạ");
+    expect(calculateLevel(xp).levelName).toBe("Người mới");
   });
 });

@@ -26,7 +26,7 @@ export async function GET() {
     if (xp >= 1500) level = 6;
     if (xp >= 2500) level = 7;
 
-    const levelNames = ["Người lạ", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+    const levelNames = ["Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
     const nextLevelXp = [100, 300, 600, 1000, 1500, 2500, 99999];
     const xpToNext = nextLevelXp[Math.min(level, 6)] - xp;
 

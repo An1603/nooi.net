@@ -65,7 +65,7 @@ export default async function DashboardHome() {
   ]);
 
   const xp = (journalCount ?? 0) * 10;
-  const levelNames = ["Người lạ", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+  const levelNames = ["Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
   const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2500];
   let level = 1;
   for (let i = levelThresholds.length - 1; i >= 0; i--) {

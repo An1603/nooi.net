@@ -130,15 +130,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground"
-        aria-label="Toggle menu"
-      >
-        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-52 shrink-0 min-h-screen border-r border-border bg-card flex-col">
         {sidebarContent}

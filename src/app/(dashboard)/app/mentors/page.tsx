@@ -1,46 +1,72 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Users, Star, MessageCircle, ChevronRight, Search, UserPlus, CheckCircle, Clock, Sparkles } from "lucide-react";
+import { Users, Star, Search, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-// ─── Data mẫu ───────────────────────────────────────────────────────────────
-
-const SAMPLE_MENTORS = [
-  {
-    id: "m1", name: "Nguyễn Văn An", title: "Chuyên gia Thiền & Khí công",
-    specialties: ["Thiền Vipassana", "Khí công dưỡng sinh", "Chánh niệm"],
-    rating: 4.8, reviews: 20, experience: 5,
-    bio: "Tôi đồng hành cùng bạn trên hành trình tĩnh lặng giữa cuộc sống hiện đại.",
-    available: true,
-  },
-  {
-    id: "m2", name: "Trần Thị Bích", title: "Chuyên gia Tâm lý học",
-    specialties: ["Tâm lý học", "NLP", "Tham vấn"],
-    rating: 4.9, reviews: 35, experience: 8,
-    bio: "Giúp bạn thấu hiểu cảm xúc và xây dựng đời sống nội tâm vững mạnh.",
-    available: true,
-  },
-  {
-    id: "m3", name: "Lê Minh Cường", title: "Huấn luyện Thiền & Yoga",
-    specialties: ["Yoga", "Thiền", "Dinh dưỡng"],
-    rating: 4.7, reviews: 15, experience: 3,
-    bio: "Kết nối thân-tâm qua thực hành thể chất và tĩnh tâm.",
-    available: false,
-  },
-];
+interface Mentor {
+  id: string;
+  user_id: string;
+  title: string;
+  bio: string;
+  specialties: string[];
+  experience_years: number;
+  rating: number;
+  review_count: number;
+  is_active: boolean;
+  user_name?: string;
+}
 
 export default function MentorHub() {
   const [search, setSearch] = useState("");
-  const [myMentor, setMyMentor] = useState<typeof SAMPLE_MENTORS[0] | null>(null);
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [myMentor, setMyMentor] = useState<Mentor | null>(null);
   const [myGroup, setMyGroup] = useState<{ name: string; members: number; schedule: string } | null>(null);
-  const [pending, setPending] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = SAMPLE_MENTORS.filter((m) =>
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    m.specialties.some((s) => s.toLowerCase().includes(search.toLowerCase()))
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.from("mentors").select("*").eq("is_active", true);
+        if (data) {
+          // Fetch user names from profiles
+          const userIds = data.map((m) => m.user_id);
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("user_id, full_name")
+            .in("user_id", userIds);
+          const nameMap = Object.fromEntries((profiles || []).map((p) => [p.user_id, p.full_name]));
+          setMentors(data.map((m) => ({ ...m, user_name: nameMap[m.user_id] || "Mentor" })));
+        }
+      } catch {}
+      setLoading(false);
+    })();
+  }, []);
+
+  const filtered = mentors.filter((m) =>
+    m.user_name?.toLowerCase().includes(search.toLowerCase()) ||
+    m.title?.toLowerCase().includes(search.toLowerCase()) ||
+    m.specialties?.some((s) => s.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const handleConnect = async (mentor: Mentor) => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return alert("Vui lòng đăng nhập");
+      
+      const { error } = await supabase.from("mentor_relationships").insert({
+        mentor_id: mentor.id,
+        mentee_id: user.id,
+        status: "active",
+      });
+      if (error) return alert(error.message);
+      
+      setMyMentor(mentor);
+      setMyGroup({ name: `Nhóm "${mentor.user_name}"`, members: 12, schedule: "T2, T5 20:00" });
+    } catch {}
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
@@ -64,10 +90,10 @@ export default function MentorHub() {
         {myMentor ? (
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">
-              {myMentor.name.charAt(0)}
+              {myMentor.user_name?.charAt(0)}
             </div>
             <div className="flex-1">
-              <p className="font-medium">{myMentor.name}</p>
+              <p className="font-medium">{myMentor.user_name}</p>
               <p className="text-xs text-muted-foreground">{myMentor.title}</p>
             </div>
             <button className="text-xs bg-primary px-3 py-1.5 rounded-lg text-primary-foreground">📩 Nhắn tin</button>
@@ -115,39 +141,27 @@ export default function MentorHub() {
             <div key={mentor.id} className="rounded-xl border border-border bg-card p-5 hover:border-primary/20 transition-colors">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary shrink-0">
-                  {mentor.name.charAt(0)}
+                  {mentor.user_name?.charAt(0) || "M"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{mentor.name}</h3>
+                    <h3 className="font-semibold">{mentor.user_name || "Mentor"}</h3>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Star className="w-3 h-3 text-yellow-500" /> {mentor.rating} ({mentor.reviews})
+                      <Star className="w-3 h-3 text-yellow-500" /> {mentor.rating} ({mentor.review_count})
                     </span>
                   </div>
                   <p className="text-xs text-primary">{mentor.title}</p>
                   <p className="text-xs text-muted-foreground mt-2">{mentor.bio}</p>
                   <div className="flex flex-wrap gap-1.5 mt-3">
-                    {mentor.specialties.map((s) => (
+                    {mentor.specialties?.map((s) => (
                       <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground">{s}</span>
                     ))}
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground">{mentor.experience} năm KN</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground">{mentor.experience_years} năm KN</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    if (!mentor.available) return;
-                    setPending(true);
-                    setTimeout(() => {
-                      setMyMentor(mentor);
-                      setMyGroup({ name: `Nhóm "${mentor.name}"`, members: 12, schedule: "T2, T5 20:00" });
-                      setPending(false);
-                    }, 1000);
-                  }}
-                  disabled={!mentor.available || pending}
-                  className="shrink-0 text-sm bg-primary px-4 py-2 rounded-lg text-primary-foreground hover:bg-primary/80 transition-colors disabled:opacity-50"
-                >
-                  {pending ? "Đang gửi..." : mentor.available ? "Kết nối" : "Tạm đầy"}
-                </button>
+                <button onClick={() => handleConnect(mentor)}
+                  className="shrink-0 text-sm bg-primary px-4 py-2 rounded-lg text-primary-foreground hover:bg-primary/80 transition-colors"
+                >Kết nối</button>
               </div>
             </div>
           ))}

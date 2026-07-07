@@ -35,10 +35,10 @@ const NAV = [
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },
   { label: 'Thực hành', href: '/app/thuc-hanh', icon: Sparkles },
+  { label: 'Lớp Live', href: '/app/live', icon: Video },
 
   // Nhóm Khám phá
   { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },
-  { label: 'Lớp Live', href: '/app/live', icon: Video },
   { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
 

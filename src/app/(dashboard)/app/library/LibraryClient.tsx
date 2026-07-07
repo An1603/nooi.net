@@ -14,6 +14,8 @@ const TYPE_LABELS: Record<string, string> = {
   document: "📄 Bài viết",
   video: "🎬 Video",
   audio: "🎵 Audio",
+  image: "🖼️ Hình ảnh",
+  pdf: "📕 PDF",
   note: "📝 Ghi chú",
 };
 

@@ -14,10 +14,12 @@ const LESSONS: Record<string, {
   content: string; duration: string; durationSec: number;
   quiz: { question: string; options: string[]; correct: number }[];
   nextId?: string; prevId?: string;
+  youtubeId?: string;
 }> = {
   "1-1": {
     title: "NOOI là gì?", level: 1, levelName: "Người mới",
     duration: "15:00", durationSec: 900,
+    youtubeId: "dQw4w9WgXcQ",
     content: `## NOOI là gì?
     
 NOOI là hệ sinh thái giáo dục trải nghiệm và chuyển hóa thân tâm, nơi AI và chuyên gia đồng hành cùng bạn trên hành trình an nhiên, tự tại.
@@ -39,6 +41,7 @@ Kết nối con người với chính mình, với cộng đồng và với nh�
   "1-2": {
     title: "Vì sao NOOI ra đời?", level: 1, levelName: "Người mới",
     duration: "12:00", durationSec: 720,
+    youtubeId: "dQw4w9WgXcQ",
     content: `## Vì sao NOOI ra đời?
     
 ### Vấn đề của con người hiện đại
@@ -56,6 +59,7 @@ Trường học dạy cách **kiếm sống**, nhưng không dạy **cách sốn
   "1-3": {
     title: "Bản đồ con người", level: 1, levelName: "Người mới",
     duration: "20:00", durationSec: 1200,
+    youtubeId: "dQw4w9WgXcQ",
     content: `## Bản đồ con người
     
 **Tánh biết** → **Tâm** → **Nhận thức** → **Tư duy** → **Cảm xúc** → **Ý chí** → **Hành động** → **Thói quen** → **Tính cách** → **Nghiệp** → **Hoàn cảnh**
@@ -74,6 +78,7 @@ Trường học dạy cách **kiếm sống**, nhưng không dạy **cách sốn
   "1-4": {
     title: "Bản đồ khổ đau", level: 1, levelName: "Người mới",
     duration: "18:00", durationSec: 1080,
+    youtubeId: "dQw4w9WgXcQ",
     content: `## Bản đồ khổ đau
 
 ### Khổ đau là tín hiệu
@@ -92,6 +97,7 @@ Giống như **đèn báo trên xe hơi**.
   "1-5": {
     title: "Bắt đầu thực hành", level: 1, levelName: "Người mới",
     duration: "10:00", durationSec: 600,
+    youtubeId: "dQw4w9WgXcQ",
     content: `## Bắt đầu thực hành
 
 ### Micro-practice 60 giây
@@ -111,6 +117,7 @@ Giống như **đèn báo trên xe hơi**.
   "2-1": {
     title: "Quan sát thân-tâm", level: 2, levelName: "Người tìm kiếm",
     duration: "15:00", durationSec: 900,
+    youtubeId: "dQw4w9WgXcQ",
     content: `## Quan sát thân-tâm
 
 Quan sát là kỹ năng nền tảng của mọi sự chuyển hóa.
@@ -277,13 +284,25 @@ export default function LessonPage() {
         </div>
       </div>
 
-      {/* Video placeholder */}
-      <div className="rounded-xl bg-muted/30 border border-border aspect-video flex items-center justify-center">
-        <div className="text-center">
-          <Play className="w-12 h-12 text-primary/50 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Video bài giảng</p>
+      {/* Video */}
+      {lesson.youtubeId ? (
+        <div className="rounded-xl overflow-hidden border border-border aspect-video">
+          <iframe
+            src={`https://www.youtube.com/embed/${lesson.youtubeId}`}
+            title={lesson.title}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
         </div>
-      </div>
+      ) : (
+        <div className="rounded-xl bg-muted/30 border border-border aspect-video flex items-center justify-center">
+          <div className="text-center">
+            <Play className="w-12 h-12 text-primary/50 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Video đang cập nhật</p>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="rounded-xl border border-border bg-card p-6">

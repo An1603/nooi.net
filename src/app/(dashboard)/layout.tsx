@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import AIMentorFloating from "@/components/ai/AIMentorFloating";
+import TourOverlay from "@/components/onboarding/TourOverlay";
 
 export default async function DashboardLayout({
   children,
@@ -32,6 +33,9 @@ export default async function DashboardLayout({
 
       {/* Floating AI Mentor */}
       <AIMentorFloating />
+
+      {/* Tour onboarding */}
+      <TourOverlay />
     </div>
   );
 }

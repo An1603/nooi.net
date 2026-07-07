@@ -77,13 +77,6 @@ export default async function DashboardHome() {
   const nextThreshold = levelThresholds[Math.min(level, 6)];
   const xpProgress = Math.min(100, Math.round(((xp - levelThresholds[level - 1]) / (nextThreshold - levelThresholds[level - 1])) * 100));
 
-  const stats = [
-    { label: "Dự án", value: String(projectCount ?? 0), icon: "📁" },
-    { label: "Video", value: String(videoCount ?? 0), icon: "🎬" },
-    { label: "Tài liệu", value: String(docCount ?? 0), icon: "📄" },
-    { label: "Nhật ký", value: String(journalCount ?? 0), icon: "📓" },
-  ];
-
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Welcome */}

@@ -11,16 +11,11 @@ import {
   Video,
   BookOpen,
   Settings,
-  LogOut,
-  Menu,
-  X,
   Sparkles,
   Headphones,
   User,
   BookHeart,
   Users,
-  BarChart3,
-  Trophy,
   Layers,
 } from 'lucide-react';
 

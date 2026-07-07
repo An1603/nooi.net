@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { href: "/admin/documents", label: "Tài liệu", icon: FileText },
   { href: "/admin/videos", label: "Video", icon: Video },
   { href: "/admin/projects", label: "Dự án", icon: FolderOpen },
-  { href: "/admin/mentors", label: "Mentor", icon: UserPlus },
+  { href: "/admin/mentors", label: "Mentor (Lv6+)", icon: UserPlus },
   { href: "/admin/roles", label: "Phân quyền", icon: Shield },
   { href: "/admin/groups", label: "Nhóm", icon: Users2 },
   { href: "/admin/activity", label: "Hoạt động", icon: Activity },

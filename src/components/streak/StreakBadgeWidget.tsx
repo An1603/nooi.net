@@ -75,7 +75,7 @@ export default function StreakBadgeWidget() {
 
       {/* New badge notification */}
       {newBadge && (
-        <div className="fixed top-5 right-5 z-50 animate-in slide-in-from-top-2 duration-300 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 shadow-2xl backdrop-blur-md">
+        <div className="fixed top-20 right-4 z-50 animate-fade-in-up rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 shadow-2xl backdrop-blur-md max-w-[calc(100vw-32px)]">
           <div className="flex items-center gap-3">
             <span className="text-3xl">{newBadge.icon}</span>
             <div>

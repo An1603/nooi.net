@@ -258,7 +258,7 @@ export default async function DashboardHome() {
       {/* Quick actions */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Bắt đầu nhanh</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
           {[
             {
               title: "📓 Nhật ký",
@@ -267,25 +267,23 @@ export default async function DashboardHome() {
               color: "from-amber-500/10 to-amber-500/5 border-amber-500/20 hover:border-amber-500/30",
             },
             {
-              title: "⚡ Thực hành",
-              desc: "Bài tập 60 giây chuyển hóa",
+              title: "🧘 Thiền",
+              desc: "Thực hành chánh niệm cùng hướng dẫn",
               href: "/app/thuc-hanh",
-              color: "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/30",
+              color: "from-green-500/10 to-green-500/5 border-green-500/20 hover:border-green-500/30",
             },
             {
-              title: "🎙 Trợ lý giọng nói",
-              desc: "Trò chuyện với AI Mentor",
-              href: "/app/voice",
-              color: "from-violet-500/10 to-violet-500/5 border-violet-500/20 hover:border-violet-500/30",
+              title: "🎮 Game",
+              desc: "Học qua trò chơi ghép thẻ chuyển hóa",
+              href: "/app/game",
+              color: "from-purple-500/10 to-purple-500/5 border-purple-500/20 hover:border-purple-500/30",
             },
-          ].map((card, i) => (
-            <Link
-              key={i}
-              href={card.href}
-              className={`p-5 rounded-xl border bg-gradient-to-br ${card.color} transition-all group`}
+          ].map((action) => (
+            <Link key={action.title} href={action.href}
+              className={`flex flex-col p-4 sm:p-5 rounded-xl border bg-gradient-to-br ${action.color} transition-all hover:scale-[1.02] active:scale-95 touch-target`}
             >
-              <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">{card.title}</h3>
-              <p className="text-xs text-muted-foreground">{card.desc}</p>
+              <span className="text-lg mb-1">{action.title}</span>
+              <span className="text-xs text-muted-foreground">{action.desc}</span>
             </Link>
           ))}
         </div>

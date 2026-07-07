@@ -236,3 +236,11 @@
 .animate-fade-in-up {
   animation: fade-in-up 0.5s ease-out both;
 }
+
+/* ── Mobile improvements ── */
+@media (max-width: 640px) {
+  .touch-target { min-height: 44px; }
+  .touch-target-sm { min-height: 36px; }
+}
+.touch-target { min-height: 44px; }
+.touch-target-sm { min-height: 36px; }

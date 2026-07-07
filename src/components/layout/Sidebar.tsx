@@ -29,7 +29,6 @@ const NAV = [
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
 
   // Nhóm AI & Học tập
-  { label: 'AI Mentor', href: '/app/voice', icon: Headphones },
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
   { label: 'Lớp Live', href: '/app/live', icon: Video },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },
@@ -37,6 +36,7 @@ const NAV = [
 
   // Nhóm Khám phá
   { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },
+  { label: 'AI Mentor', href: '/app/voice', icon: Headphones },
   { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
 

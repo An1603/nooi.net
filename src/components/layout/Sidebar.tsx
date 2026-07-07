@@ -41,9 +41,9 @@ const NAV = [
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
 
   // Nhóm Cá nhân
-  { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
   { label: 'Video', href: '/app/videos', icon: Video },
   { label: 'Thư viện', href: '/app/library', icon: BookOpen },
+  { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
   { label: 'Hồ sơ', href: '/app/profile', icon: User },
   { label: 'Cài đặt', href: '/app/settings', icon: Settings },
 ];

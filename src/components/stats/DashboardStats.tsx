@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { Flame, BookHeart, Award, TrendingUp } from "lucide-react";
+import { LevelInfoModal } from "@/components/LevelInfoModal";
+import { LevelCard } from "@/components/LevelCard";
 
 interface WeekDay { date: string; label: string; active: boolean; }
 interface Week { label: string; count: number; }
+
+const LEVEL_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2500];
 
 export default function DashboardStats() {
   const [stats, setStats] = useState<{
@@ -25,6 +29,11 @@ export default function DashboardStats() {
   if (!stats) return null;
 
   const maxWeekCount = Math.max(...stats.weeks.map((w) => w.count), 1);
+  const nForNext = LEVEL_THRESHOLDS[Math.min(stats.level, 6)];
+  const nCurrent = LEVEL_THRESHOLDS[stats.level - 1];
+  const progressPercent = stats.totalN >= 2500
+    ? 100
+    : Math.min(100, Math.round(((stats.totalN - nCurrent) / (nForNext - nCurrent)) * 100));
 
   return (
     <div className="space-y-6">
@@ -45,12 +54,38 @@ export default function DashboardStats() {
           <p className="text-xl font-bold">{stats.totalN}</p>
           <p className="text-xs text-muted-foreground">N (NOOI)</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <TrendingUp className="w-5 h-5 text-primary mx-auto mb-1" />
-          <p className="text-xl font-bold">{stats.level}</p>
-          <p className="text-xs text-muted-foreground">{stats.levelName}</p>
-        </div>
+        <LevelInfoModal
+          currentN={stats.totalN}
+          currentLevel={stats.level}
+          currentLevelName={stats.levelName}
+          trigger={
+            <div className="rounded-xl border border-border bg-card p-4 text-center cursor-pointer hover:border-primary/30 hover:bg-card/80 transition-all">
+              <TrendingUp className="w-5 h-5 text-primary mx-auto mb-1" />
+              <p className="text-xl font-bold">{stats.level}</p>
+              <p className="text-xs text-muted-foreground">Cấp độ</p>
+              <p className="text-[10px] text-primary mt-0.5">{stats.levelName}</p>
+            </div>
+          }
+        />
       </div>
+
+      {/* Level Card chi tiết — giống thiết kế trong hình */}
+      <LevelInfoModal
+        currentN={stats.totalN}
+        currentLevel={stats.level}
+        currentLevelName={stats.levelName}
+        trigger={
+          <div className="cursor-pointer">
+            <LevelCard
+              level={stats.level}
+              levelName={stats.levelName}
+              n={stats.totalN}
+              nForNext={nForNext}
+              progressPercent={progressPercent}
+            />
+          </div>
+        }
+      />
 
       {/* Heatmap 7 ngày */}
       <div className="rounded-xl border border-border bg-card p-4">

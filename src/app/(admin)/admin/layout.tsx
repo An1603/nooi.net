@@ -19,17 +19,24 @@ import {
 } from "lucide-react";
 
 const NAV_ITEMS = [
+  // Dashboard
   { href: "/admin", label: "Tổng quan", icon: LayoutDashboard },
+
+  // Quản lý con người
   { href: "/admin/users", label: "Người dùng", icon: Users },
-  { href: "/admin/live", label: "Lớp Live", icon: Activity },
+  { href: "/admin/mentors", label: "Mentor (Lv6+)", icon: UserPlus },
+  { href: "/admin/groups", label: "Nhóm", icon: Users2 },
+  { href: "/admin/roles", label: "Phân quyền", icon: Shield },
+
+  // Quản lý nội dung
+  { href: "/admin/live", label: "Lớp Live", icon: Video },
   { href: "/admin/lessons", label: "Bài giảng", icon: BookOpen },
   { href: "/admin/learning", label: "Tiến độ học", icon: TrendingUp },
   { href: "/admin/documents", label: "Tài liệu", icon: FileText },
   { href: "/admin/videos", label: "Video", icon: Video },
   { href: "/admin/projects", label: "Dự án", icon: FolderOpen },
-  { href: "/admin/mentors", label: "Mentor (Lv6+)", icon: UserPlus },
-  { href: "/admin/roles", label: "Phân quyền", icon: Shield },
-  { href: "/admin/groups", label: "Nhóm", icon: Users2 },
+
+  // Theo dõi & Cấu hình
   { href: "/admin/activity", label: "Hoạt động", icon: Activity },
   { href: "/admin/evaluate", label: "Đánh giá", icon: UserCheck },
   { href: "/admin/settings", label: "Cấu hình", icon: Settings },

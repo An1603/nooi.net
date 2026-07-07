@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LocalTime } from "@/components/LocalTime";
+import { LevelInfoModal } from "@/components/LevelInfoModal";
+import { LevelCard } from "@/components/LevelCard";
 import { getReferralLink, setReferredBy, getReferrer, getReferralStats, getReferralList, changeRefCode, getRefCodeChangesRemaining, getRefCodeOwnerInfo, validateCustomRefCode } from "@/lib/referral";
 import type { Database } from "@/types/database";
 
@@ -378,22 +380,22 @@ export function ProfileClient({ user, profile }: Props) {
           <SectionHeader icon={<Sparkles className="size-5" />} title="Cấp độ & NOOI (N)" desc="Hành trình chuyển hóa của bạn" />
         </div>
         <div className="px-5 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-xs text-muted-foreground">Cấp độ hiện tại</p>
-              <p className="text-xl font-bold text-primary mt-0.5">{levelNames[Math.min(level - 1, 6)]}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Tổng NOOI (N)</p>
-              <p className="text-xl font-bold mt-0.5">{xp} N</p>
-            </div>
-          </div>
-          <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${xpProgress}%` }} />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {xp < 2500 ? `Tiến độ: ${xpProgress}% — còn ${nextThreshold - xp} N để lên cấp tiếp theo` : "🏆 Tối đa"}
-          </p>
+          <LevelInfoModal
+            currentN={xp}
+            currentLevel={level}
+            currentLevelName={levelNames[Math.min(level - 1, 6)]}
+            trigger={
+              <div className="cursor-pointer">
+                <LevelCard
+                  level={level}
+                  levelName={levelNames[Math.min(level - 1, 6)]}
+                  n={xp}
+                  nForNext={nextThreshold}
+                  progressPercent={xpProgress}
+                />
+              </div>
+            }
+          />
           <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border/50">
             <div className="text-center p-3 rounded-lg bg-muted/20">
               <p className="text-lg font-bold text-primary">{journalCount ?? 0}</p>

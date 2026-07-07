@@ -23,6 +23,8 @@ export default function LivePage() {
   const [form, setForm] = useState({ title: "", description: "", date: "", time: "", link: "", max_participants: 20 });
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [registeredIds, setRegisteredIds] = useState<string[]>([]);
+  const [userLevel, setUserLevel] = useState(1);
+  const isMentor = userLevel >= 6;
 
   useEffect(() => {
     (async () => {
@@ -31,6 +33,20 @@ export default function LivePage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         setMyUserId(user.id);
+
+        // Lấy level từ journal count
+        const { count } = await supabase
+          .from("documents")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("file_type", "journal");
+        const n = (count ?? 0) * 10;
+        const thresholds = [0, 100, 300, 600, 1000, 1500, 2500];
+        let lvl = 1;
+        for (let i = thresholds.length - 1; i >= 0; i--) {
+          if (n >= thresholds[i]) { lvl = i + 1; break; }
+        }
+        setUserLevel(lvl);
 
         // Lấy danh sách buổi học
         const { data } = await supabase
@@ -124,9 +140,11 @@ export default function LivePage() {
             <p className="text-muted-foreground text-sm mt-0.5">Học trực tiếp với mentor qua Zoom</p>
           </div>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="text-sm bg-primary px-4 py-2 rounded-lg text-primary-foreground flex items-center gap-1">
-          <Plus className="w-4 h-4" /> Tạo buổi học
-        </button>
+        {isMentor && (
+          <button onClick={() => setShowForm(!showForm)} className="text-sm bg-primary px-4 py-2 rounded-lg text-primary-foreground flex items-center gap-1">
+            <Plus className="w-4 h-4" /> Tạo buổi học
+          </button>
+        )}
       </div>
 
       {/* Create form */}

@@ -23,11 +23,13 @@ import {
   Users,
   BarChart3,
   Trophy,
+  Layers,
 } from 'lucide-react';
 
 const NAV = [
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
+  { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },
   { label: 'Game học', href: '/app/game', icon: Sparkles },
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
   { label: 'Bảng xếp hạng', href: '/app/bang-xep-hang', icon: Trophy },

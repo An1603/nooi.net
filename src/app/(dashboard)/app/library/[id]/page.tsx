@@ -4,7 +4,7 @@ import { ArrowLeft, Edit3, Calendar, FileText, FolderOpen, File, Music } from "l
 import { notFound } from "next/navigation";
 
 function parseContent(content: string | null) {
-  if (!content) return { body: "", category: "", url: "", duration: "" };
+  if (!content) return { body: "", category: "", url: "", duration: "", caption: "", pages: 0 };
   try {
     const p = JSON.parse(content);
     return {
@@ -12,9 +12,11 @@ function parseContent(content: string | null) {
       category: p.category || "",
       url: p.url || "",
       duration: p.duration || "",
+      caption: p.caption || "",
+      pages: p.pages || 0,
     };
   } catch {
-    return { body: content, category: "", url: "", duration: "" };
+    return { body: content, category: "", url: "", duration: "", caption: "", pages: 0 };
   }
 }
 
@@ -125,6 +127,7 @@ export default async function DocumentDetailPage({
               )}
               {c.url && (
                 <div className="rounded-lg border border-border bg-muted/20 p-3 mb-4">
+                  {/* Video: YouTube embed */}
                   {doc.file_type === "video" && getYoutubeId(c.url) ? (
                     <div className="aspect-video rounded-lg overflow-hidden">
                       <iframe
@@ -134,7 +137,33 @@ export default async function DocumentDetailPage({
                         allowFullScreen
                       />
                     </div>
+                  ) : doc.file_type === "image" ? (
+                    /* Image: full display */
+                    <div>
+                      <img src={c.url} alt={doc.title} className="w-full rounded-lg object-cover max-h-96" />
+                      {c.caption && <p className="text-xs text-muted-foreground mt-2 text-center">{c.caption}</p>}
+                    </div>
+                  ) : doc.file_type === "audio" ? (
+                    /* Audio: player */
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">🎵 Audio · {c.duration}</p>
+                      <audio controls className="w-full" src={c.url}>
+                        Trình duyệt của bạn không hỗ trợ audio.
+                      </audio>
+                    </div>
+                  ) : doc.file_type === "pdf" ? (
+                    /* PDF: iframe embed */
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">📕 PDF · {c.pages || "?"} trang</p>
+                      <a href={c.url} target="_blank" rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 rounded-lg text-sm text-primary-foreground mb-3"
+                      >
+                        📕 Tải PDF
+                      </a>
+                      <iframe src={c.url} className="w-full h-96 rounded-lg border border-border" />
+                    </div>
                   ) : (
+                    /* Other: link */
                     <>
                       <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                         {doc.file_type === "video" ? "🎬 Video" : "🎵 Audio"} · {c.duration}

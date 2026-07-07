@@ -12,9 +12,9 @@ export interface DocumentCardData {
 }
 
 function parseContent(content: string | null) {
-  if (!content) return { category: "", body: "", url: "", duration: "" };
-  try { const p = JSON.parse(content); return { category: p.category || "", body: p.body || "", url: p.url || "", duration: p.duration || "" }; }
-  catch { return { category: "", body: content, url: "", duration: "" }; }
+  if (!content) return { category: "", body: "", url: "", duration: "", pages: 0, caption: "" };
+  try { const p = JSON.parse(content); return { category: p.category || "", body: p.body || "", url: p.url || "", duration: p.duration || "", pages: p.pages || 0, caption: p.caption || "" }; }
+  catch { return { category: "", body: content, url: "", duration: "", pages: 0, caption: "" }; }
 }
 
 function getYoutubeId(url: string): string | null {
@@ -37,6 +37,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string; border
   video: { icon: <Play className="w-5 h-5" />, label: "Video", border: "border-l-red-500/50" },
   audio: { icon: <Music className="w-5 h-5" />, label: "Audio", border: "border-l-green-500/50" },
   image: { icon: <Image className="w-5 h-5" />, label: "Hình ảnh", border: "border-l-yellow-500/50" },
+  pdf: { icon: <FileText className="w-5 h-5" />, label: "PDF", border: "border-l-orange-500/50" },
   note: { icon: <FileText className="w-5 h-5" />, label: "Ghi chú", border: "border-l-purple-500/50" },
 };
 
@@ -75,6 +76,17 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
         </div>
       )}
 
+      {/* Image thumbnail */}
+      {!ytId && file_type === "image" && parsed.url && (
+        <div className="relative aspect-video bg-muted overflow-hidden">
+          <img
+            src={parsed.url}
+            alt={title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+          />
+        </div>
+      )}
+
       <div className="p-4">
         {/* Type badge */}
         <div className="flex items-center gap-2 mb-2">
@@ -104,6 +116,14 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
           <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
             <Music className="w-3 h-3" />
             <span className="flex-1 truncate">{parsed.duration || "Audio"}</span>
+          </div>
+        )}
+
+        {/* PDF badge */}
+        {file_type === "pdf" && (
+          <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground bg-orange-500/10 rounded-lg px-3 py-2">
+            <FileText className="w-3 h-3 text-orange-400" />
+            <span className="flex-1">PDF · {parsed.pages || "?"} trang</span>
           </div>
         )}
 

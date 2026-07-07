@@ -1,7 +1,37 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { ArrowLeft, Edit3, Calendar, FileText, FolderOpen, File } from "lucide-react";
+import { ArrowLeft, Edit3, Calendar, FileText, FolderOpen, File, Music } from "lucide-react";
 import { notFound } from "next/navigation";
+
+function parseContent(content: string | null) {
+  if (!content) return { body: "", category: "", url: "", duration: "" };
+  try {
+    const p = JSON.parse(content);
+    return {
+      body: p.body || "",
+      category: p.category || "",
+      url: p.url || "",
+      duration: p.duration || "",
+    };
+  } catch {
+    return { body: content, category: "", url: "", duration: "" };
+  }
+}
+
+function renderBody(body: string): React.ReactNode[] {
+  if (!body) return [];
+  return body.split("\n").map((line, i) => {
+    const trimmed = line.trim();
+    if (!trimmed) return <div key={i} className="h-2" />;
+    if (trimmed.startsWith("### ")) return <h3 key={i} className="font-bold text-primary mt-4 mb-2">{trimmed.slice(4)}</h3>;
+    if (trimmed.startsWith("## ")) return <h2 key={i} className="text-lg font-bold mt-5 mb-2">{trimmed.slice(3)}</h2>;
+    if (trimmed.startsWith("# ")) return <h1 key={i} className="text-xl font-bold mt-5 mb-3">{trimmed.slice(2)}</h1>;
+    if (trimmed.startsWith("- **")) return <p key={i} className="text-sm"><strong>{trimmed.replace(/^- \*\*|\*\*/g, "")}</strong></p>;
+    if (trimmed.startsWith("- ")) return <li key={i} className="text-sm ml-4 list-disc">{trimmed.slice(2)}</li>;
+    if (trimmed.match(/^\d+\. /)) return <li key={i} className="text-sm ml-4 list-decimal">{trimmed.replace(/^\d+\. /, "")}</li>;
+    return <p key={i} className="text-sm leading-relaxed">{trimmed}</p>;
+  });
+}
 
 export default async function DocumentDetailPage({
   params,
@@ -81,13 +111,31 @@ export default async function DocumentDetailPage({
       {/* Content */}
       <div className="p-6 rounded-xl border border-border bg-card mb-6">
         <h2 className="text-sm font-semibold text-muted-foreground mb-4">Nội dung</h2>
-        {doc.content ? (
-          <div className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content}</div>
-        ) : (
-          <p className="text-sm text-muted-foreground italic">
-            Chưa có nội dung. Nhấn &ldquo;Chỉnh sửa&rdquo; để thêm nội dung.
-          </p>
-        )}
+        {(() => {
+          const c = parseContent(doc.content);
+          return (
+            <>
+              {c.category && (
+                <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary mb-3">{c.category}</span>
+              )}
+              {c.url && (
+                <div className="rounded-lg border border-border bg-muted/20 p-3 mb-4">
+                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    {doc.file_type === "video" ? "🎬 Video" : "🎵 Audio"} · {c.duration}
+                  </p>
+                  <a href={c.url} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline break-all">{c.url}</a>
+                </div>
+              )}
+              {c.body ? (
+                <div className="text-sm leading-relaxed space-y-1">{renderBody(c.body)}</div>
+              ) : doc.content ? (
+                <div className="text-sm whitespace-pre-wrap leading-relaxed">{doc.content}</div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Chưa có nội dung.</p>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {/* File link */}

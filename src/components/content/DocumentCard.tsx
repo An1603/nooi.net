@@ -20,9 +20,23 @@ function getPreview(content: string | null): string | null {
   if (!content) return null;
   try {
     const p = JSON.parse(content);
-    if (p.body) return p.body.replace(/#/g, "").trim().slice(0, 80);
+    if (p.body) {
+      // Clean markdown: remove #, **, \n
+      return p.body
+        .replace(/^#+\s*/gm, "")
+        .replace(/\*\*/g, "")
+        .replace(/\n{2,}/g, " · ")
+        .replace(/\n/g, " ")
+        .trim()
+        .slice(0, 120);
+    }
     return null;
   } catch { return null; }
+}
+
+function getBodyText(content: string | null): string | null {
+  if (!content) return null;
+  try { const p = JSON.parse(content); return p.body || null; } catch { return content; }
 }
 
 interface DocumentCardProps {

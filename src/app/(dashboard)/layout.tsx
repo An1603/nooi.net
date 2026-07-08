@@ -6,6 +6,7 @@ import AIMentorFloating from "@/components/ai/AIMentorFloating";
 import TourOverlay from "@/components/onboarding/TourOverlay";
 import InstallPrompt from "@/components/InstallPrompt";
 import { RouteLoader } from "@/components/Loading";
+import SessionGuard from "@/components/SessionGuard";
 
 export default async function DashboardLayout({
   children,
@@ -23,6 +24,9 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen bg-background">
       {/* Route loading bar */}
       <RouteLoader />
+
+      {/* Session guard: client-side auth + SW cleanup */}
+      <SessionGuard>
 
       {/* Sidebar */}
       <Sidebar />
@@ -44,6 +48,7 @@ export default async function DashboardLayout({
 
       {/* Install PWA prompt */}
       <InstallPrompt />
+    </SessionGuard>
     </div>
   );
 }

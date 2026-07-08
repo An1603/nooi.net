@@ -70,7 +70,19 @@ export async function middleware(request: NextRequest) {
   if (!user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+    // Prevent caching of protected pages
+    const resp = NextResponse.redirect(loginUrl);
+    resp.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    resp.headers.set("Pragma", "no-cache");
+    resp.headers.set("Expires", "0");
+    return resp;
+  }
+
+  // Add no-cache headers for all /app routes
+  if (pathname.startsWith("/app")) {
+    supabaseResponse.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    supabaseResponse.headers.set("Pragma", "no-cache");
+    supabaseResponse.headers.set("Expires", "0");
   }
 
   return supabaseResponse;

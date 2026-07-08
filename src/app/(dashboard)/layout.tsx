@@ -26,7 +26,7 @@ export default async function DashboardLayout({
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Mobile topbar */}
         <Topbar />
-        <div className="flex-1 p-4 md:p-6 overflow-auto">
+        <div className="flex-1 p-4 md:p-6 overflow-auto animate-fade-in">
           {children}
         </div>
       </main>

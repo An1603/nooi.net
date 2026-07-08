@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Header } from "@/components/layout/Header";
 import type { Metadata } from "next";
+import InstallPrompt from "@/components/InstallPrompt";
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +60,7 @@ export default async function PublicLayout({
     <>
       <Header initialSession={initialSession} />
       {children}
+      <InstallPrompt />
     </>
   );
 }

@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import AIMentorFloating from "@/components/ai/AIMentorFloating";
 import TourOverlay from "@/components/onboarding/TourOverlay";
+import InstallPrompt from "@/components/InstallPrompt";
 
 export default async function DashboardLayout({
   children,
@@ -36,6 +37,9 @@ export default async function DashboardLayout({
 
       {/* Tour onboarding */}
       <TourOverlay />
+
+      {/* Install PWA prompt */}
+      <InstallPrompt />
     </div>
   );
 }

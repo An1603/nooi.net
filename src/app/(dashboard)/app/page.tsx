@@ -67,16 +67,6 @@ export default async function DashboardHome() {
     hasJournalToday(supabase, user.id),
   ]);
 
-  const xp = (journalCount ?? 0) * 10;
-  const levelNames = ["Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
-  const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2500];
-  let level = 1;
-  for (let i = levelThresholds.length - 1; i >= 0; i--) {
-    if (xp >= levelThresholds[i]) { level = i + 1; break; }
-  }
-  const nextThreshold = levelThresholds[Math.min(level, 6)];
-  const xpProgress = Math.min(100, Math.round(((xp - levelThresholds[level - 1]) / (nextThreshold - levelThresholds[level - 1])) * 100));
-
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Welcome */}
@@ -175,26 +165,6 @@ export default async function DashboardHome() {
       <StreakBadgeWidget />
 
       <QuestWidget />
-
-      {/* Level / N card */}
-      <div className="rounded-xl border border-primary/20 bg-card p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Cấp độ</p>
-            <p className="text-lg font-bold text-primary">{levelNames[Math.min(level - 1, 6)]}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">NOOI (N)</p>
-            <p className="text-lg font-bold">{xp} N</p>
-          </div>
-        </div>
-        <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${xpProgress}%` }} />
-        </div>
-        <p className="text-[10px] text-muted-foreground mt-2">
-          {xp < 2500 ? `${xpProgress}% — còn ${nextThreshold - xp} N để lên cấp tiếp theo` : "Tối đa"}
-        </p>
-      </div>
 
       {/* Journal reminder */}
       {!journalToday && (

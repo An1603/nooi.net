@@ -132,17 +132,8 @@ function TiltCard({ children, className = '' }: { children: React.ReactNode; cla
    Section wrapper with reveal
    Hero Section
    ─────────────────────────────────────────────── */
-function HeroSection({ loggedIn: _loggedIn }: { loggedIn: boolean }) {
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setLoggedIn(!!session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+function HeroSection({ loggedIn }: { loggedIn: boolean }) {
+  const { ref, visible } = useScrollReveal(0.1);
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-5 pt-24 pb-20 overflow-hidden">

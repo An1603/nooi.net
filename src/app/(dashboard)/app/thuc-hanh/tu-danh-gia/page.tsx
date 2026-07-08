@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { RadarChart } from "./RadarChart";
 
@@ -119,7 +119,9 @@ export default function SelfAssessmentPage() {
   const [saved, setSaved] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [shuffledOrder, setShuffledOrder] = useState<number[]>([]);
-  const supabase = createClient();
+  const [hasProgress, setHasProgress] = useState(false);
+  const [progressCount, setProgressCount] = useState(0);
+  const supabase = useMemo(() => createClient(), []);
   const totalQ = 35;
   const progress = Object.keys(answers).length;
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -141,8 +143,10 @@ export default function SelfAssessmentPage() {
         } else if (db.raw_answers && Object.keys(db.raw_answers).length > 0) {
           setAnswers(db.raw_answers); setCurrentQ(db.current_question || 0); setStep("quiz");
         }
+        setProgressCount(db.raw_answers ? Object.keys(db.raw_answers).length : 0);
         // Sync localStorage
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers: db.raw_answers || {}, currentQ: db.current_question || 0, scores: db.scores || null })); } catch {}
+        setHasProgress(true);
         setLoaded(true); return;
       }
 
@@ -156,6 +160,8 @@ export default function SelfAssessmentPage() {
           } else if (data.answers && Object.keys(data.answers).length > 0) {
             setAnswers(data.answers); setCurrentQ(data.currentQ || 0); setStep("quiz");
           }
+          setProgressCount(data.answers ? Object.keys(data.answers).length : 0);
+          setHasProgress(true);
         }
       } catch {}
       setLoaded(true);
@@ -226,7 +232,6 @@ export default function SelfAssessmentPage() {
   function getQuestion(idx: number) { const ai = Math.floor(idx / 5); return AXES[ai].questions[idx % 5]; }
 
   if (step === "intro") {
-    const hasProgress = (() => { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return false; const d = JSON.parse(raw); return (d.answers && Object.keys(d.answers).length > 0) || (d.scores && Object.keys(d.scores).length > 0); } catch { return false; } })();
     if (!loaded) return <div className="max-w-2xl mx-auto p-6 flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
     return (
@@ -251,7 +256,7 @@ export default function SelfAssessmentPage() {
           {hasProgress && <p className="text-amber-400 text-xs mt-2">💡 Bạn có tiến trình đang làm dở</p>}
         </div>
         <div className="space-y-3">
-          {hasProgress && <button onClick={() => { try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { const d = JSON.parse(raw); if (d.scores && Object.keys(d.scores).length > 0) { setScores(d.scores); setAnswers(d.answers || {}); setStep("result"); setSaved(true); } else if (d.answers) { setAnswers(d.answers); setCurrentQ(d.currentQ || 0); setShuffledOrder(generateShuffledOrder()); setStep("quiz"); } } } catch {} }} className="w-full py-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-medium hover:bg-amber-500/20 transition-all">▶ Tiếp tục ({JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}").answers ? Object.keys(JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}").answers).length : 0}/35 câu)</button>}
+          {hasProgress && <button onClick={() => { try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { const d = JSON.parse(raw); if (d.scores && Object.keys(d.scores).length > 0) { setScores(d.scores); setAnswers(d.answers || {}); setStep("result"); setSaved(true); } else if (d.answers) { setAnswers(d.answers); setCurrentQ(d.currentQ || 0); setShuffledOrder(generateShuffledOrder()); setStep("quiz"); } } } catch {} }} className="w-full py-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-medium hover:bg-amber-500/20 transition-all">▶ Tiếp tục ({progressCount}/35 câu)</button>}
           <button onClick={() => { setShuffledOrder(generateShuffledOrder()); setStep("quiz"); }} className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-medium hover:brightness-110 transition-all">{hasProgress ? "Bắt đầu lại từ đầu" : "Bắt đầu"}</button>
         </div>
       </div>

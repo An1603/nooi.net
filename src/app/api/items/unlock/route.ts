@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 
 /**
  * POST /api/items/unlock
  *
  * Unlock an item by spending N.
  * Body: { itemId: string }
- * Uses service role key to bypass RLS for updating N + inserting user_items.
+ * Uses service role key for mutations, SSR client for auth.
  */
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -15,14 +15,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Thiếu itemId." });
   }
 
-  // Identify user via cookie
-  const anonSupabase = createClient(
+  // Identify user via SSR client (reads cookies properly)
+  const anonSupabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: { autoRefreshToken: false, persistSession: false },
-      global: {
-        headers: { cookie: req.headers.get("cookie") || "" },
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll() {}, // Read-only — we don't need to set cookies here
       },
     }
   );
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Service role client for mutations
+  const { createClient } = await import("@supabase/supabase-js");
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -79,7 +82,6 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Deduct N (using journal count as proxy for N)
   // Insert user_item
   const { error: insertError } = await supabase.from("user_items").insert({
     user_id: user.id,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 /**
@@ -13,14 +14,16 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  // Identify user
-  const anonSupabase = createClient(
+  // SSR client for auth
+  const anonSupabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: { autoRefreshToken: false, persistSession: false },
-      global: {
-        headers: { cookie: req.headers.get("cookie") || "" },
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll() {},
       },
     }
   );
@@ -63,15 +66,13 @@ export async function GET(
     }
   }
 
-  // Generate signed URL (public bucket items don't need signing, but using storage for private)
+  // Generate signed URL
   const filePath = item.file_url.replace(/^.*\/storage\/v1\/object\/public\//, "");
-
   const { data: signedUrl } = await supabase.storage
     .from("digital-items")
-    .createSignedUrl(filePath, 60); // 60 seconds
+    .createSignedUrl(filePath, 60);
 
   if (!signedUrl) {
-    // Fallback: if item is in public bucket, use direct URL
     return NextResponse.json({ url: item.file_url });
   }
 

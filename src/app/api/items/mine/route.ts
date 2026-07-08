@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 
 /**
  * GET /api/items/mine
  *
  * Returns items the current user has unlocked.
- * Requires auth — reads user_id from the session cookie.
+ * Uses SSR client to properly read auth cookies.
  */
 export async function GET(req: NextRequest) {
-  // Use anon key + cookie auth to identify the user
-  const supabase = createClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: { autoRefreshToken: false, persistSession: false },
-      global: {
-        headers: { cookie: req.headers.get("cookie") || "" },
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll() {},
       },
     }
   );

@@ -728,12 +728,58 @@ export default function LandingPage() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    let retryCount = 0;
+
+    async function checkAuth() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getSession();
+        if (cancelled) return;
+
+        if (data?.session) {
+          setLoggedIn(true);
+          return;
+        }
+
+        // Retry 3 times (có thể session chưa kịp init)
+        if (retryCount < 3) {
+          retryCount++;
+          setTimeout(checkAuth, 500 * retryCount);
+          return;
+        }
+
+        // Final check: nếu có auth cookie mà session vẫn null → getUser()
+        const hasAuthCookie = document.cookie.includes("sb-gsnuqrutiauhnsacgzym-auth-token");
+        if (hasAuthCookie) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!cancelled && user) setLoggedIn(true);
+        }
+      } catch {}
+    }
+
+    checkAuth();
+
+    // Listen for auth changes
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setLoggedIn(!!session);
+      if (!cancelled) setLoggedIn(!!session);
     });
-    return () => subscription.unsubscribe();
+
+    // Check lại khi tab được focus (user quay lại từ tab khác)
+    const onFocus = () => {
+      const supabase = createClient();
+      supabase.auth.getSession().then(({ data }) => {
+        if (!cancelled) setLoggedIn(!!data.session);
+      });
+    };
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   return <LandingPageInner loggedIn={loggedIn} />;

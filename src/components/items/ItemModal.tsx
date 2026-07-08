@@ -1,7 +1,10 @@
 "use client";
 
-import { X, Download, Lock, Sparkles, Check } from "lucide-react";
+import { useState } from "react";
+import { X, Download, Lock, Sparkles, Check, Gift, Send } from "lucide-react";
 import type { Item } from "@/lib/items";
+import { giftItem } from "@/lib/items";
+import { toast } from "sonner";
 
 interface Props {
   item: Item;
@@ -23,6 +26,23 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function ItemModal({ item, owned, userN, userLevel, onUnlock, onDownload, onClose, unlocking }: Props) {
   const canAfford = userN >= item.price_n;
   const meetsLevel = userLevel >= item.level_required;
+  const [showGift, setShowGift] = useState(false);
+  const [recipientCode, setRecipientCode] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleGift = async () => {
+    if (!recipientCode.trim()) return;
+    setSending(true);
+    const result = await giftItem(item.id, recipientCode.trim().toUpperCase());
+    if (result.success) {
+      toast.success(`🎁 Đã tặng ${item.name} cho ${result.recipientName || recipientCode.toUpperCase()}!`);
+      setShowGift(false);
+      setRecipientCode("");
+    } else {
+      toast.error(result.error || "Không thể tặng.");
+    }
+    setSending(false);
+  };
 
   return (
     <div
@@ -46,7 +66,6 @@ export function ItemModal({ item, owned, userN, userLevel, onUnlock, onDownload,
           >
             <X className="size-4" />
           </button>
-          {/* Status badge */}
           <div className="absolute top-3 left-3">
             {owned ? (
               <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 backdrop-blur-sm">
@@ -81,14 +100,48 @@ export function ItemModal({ item, owned, userN, userLevel, onUnlock, onDownload,
             </span>
           </div>
 
-          {/* Action */}
+          {/* Actions */}
           {owned ? (
-            <button
-              onClick={() => onDownload(item)}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:brightness-110 transition-all"
-            >
-              <Download className="size-4" /> Tải về
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => onDownload(item)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:brightness-110 transition-all"
+              >
+                <Download className="size-4" /> Tải về
+              </button>
+              <button
+                onClick={() => setShowGift(!showGift)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-primary/30 text-primary font-medium hover:bg-primary/5 transition-all"
+              >
+                <Gift className="size-4" /> Tặng bạn
+              </button>
+
+              {/* Gift form */}
+              {showGift && (
+                <div className="rounded-xl bg-muted/20 p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                  <p className="text-xs text-muted-foreground">
+                    Nhập mã giới thiệu của bạn NOOI để tặng vật phẩm này
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={recipientCode}
+                      onChange={(e) => setRecipientCode(e.target.value.toUpperCase())}
+                      placeholder="VD: AN, NINH..."
+                      className="flex-1 px-3 py-2 rounded-lg bg-card border border-border text-sm focus:outline-none focus:border-primary/50 text-uppercase"
+                      maxLength={10}
+                    />
+                    <button
+                      onClick={handleGift}
+                      disabled={sending || !recipientCode.trim()}
+                      className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:brightness-110 transition-all disabled:opacity-50"
+                    >
+                      {sending ? "..." : <Send className="size-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : !meetsLevel ? (
             <button
               disabled

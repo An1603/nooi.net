@@ -80,6 +80,26 @@ export async function syncBadges(): Promise<string[]> {
   }
 }
 
+/**
+ * Gift an item to a friend by their referral code.
+ */
+export async function giftItem(
+  itemId: string,
+  recipientCode: string,
+  message?: string
+): Promise<{ success: boolean; error?: string; recipientName?: string }> {
+  try {
+    const res = await fetch("/api/items/gift", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId, recipientCode, message }),
+    });
+    return await res.json();
+  } catch {
+    return { success: false, error: "Không thể kết nối máy chủ." };
+  }
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface Item {

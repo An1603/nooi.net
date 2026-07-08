@@ -104,6 +104,17 @@ export default function CommunityPage() {
         </div>
       </div>
 
+      {/* Hướng dẫn cấp độ nhóm */}
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2">
+        <h3 className="text-sm font-semibold text-amber-400">🛡️ Quy tắc nhóm học tập</h3>
+        <div className="text-xs text-muted-foreground space-y-1">
+          <p>• <strong>🌲 Guider (Lv5)+</strong> — được tạo nhóm và thêm thành viên</p>
+          <p>• <strong>Chỉ thêm được cấp dưới kế cận</strong> — cấp cao thêm cấp thấp hơn mình</p>
+          <p>• <strong>Cấp dưới được cấp trên chủ động add</strong> — không tự yêu cầu vào nhóm</p>
+          {myLevel < 5 && <p className="text-amber-400/80 mt-2">🔒 Bạn cần đạt <strong>Guider (Lv5)</strong> để tạo nhóm. Hiện tại bạn đang ở {LEVEL_NAMES[myLevel]}.</p>}
+        </div>
+      </div>
+
       {/* Nhóm của tôi */}
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between mb-4">

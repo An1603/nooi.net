@@ -91,6 +91,17 @@ export default function MentorHub() {
         </div>
       </div>
 
+      {/* Hướng dẫn */}
+      <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 space-y-2">
+        <h3 className="text-sm font-semibold text-green-400">🌟 Cách thức kết nối Mentor</h3>
+        <div className="text-xs text-muted-foreground space-y-1">
+          <p>• <strong>Mentor = Level 6+</strong> — bất kỳ ai đạt 2200N đều là Mentor</p>
+          <p>• <strong>Kết nối trực tiếp</strong> — chọn Mentor phù hợp và nhấn &ldquo;Kết nối&rdquo;</p>
+          <p>• <strong>Mentor đồng hành</strong> — sau khi kết nối, Mentor sẽ hỗ trợ bạn trên hành trình</p>
+          {myLevel >= 6 && <p className="text-green-400/80 mt-2">✅ Bạn đã là Mentor! Hãy sẵn sàng đồng hành cùng học viên.</p>}
+        </div>
+      </div>
+
       {/* Your mentor status */}
       <div className={`rounded-xl border p-5 ${isMentor ? "border-primary/20 bg-primary/5" : "border-border bg-card"}`}>
         <div className="flex items-center gap-2 mb-3">

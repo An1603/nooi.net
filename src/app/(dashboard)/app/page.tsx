@@ -144,23 +144,7 @@ export default async function DashboardHome() {
         </div>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: "Dự án", value: String(projectCount ?? 0), icon: "📁", href: "/app/projects" },
-          { label: "Video", value: String(videoCount ?? 0), icon: "🎬", href: "/app/videos" },
-          { label: "Tài liệu", value: String(docCount ?? 0), icon: "📄", href: "/app/library" },
-          { label: "Nhật ký", value: String(journalCount ?? 0), icon: "📓", href: "/app/journal" },
-        ].map((s) => (
-          <Link key={s.label} href={s.href}
-            className="p-4 rounded-xl border border-border bg-card hover:bg-card/80 hover:border-primary/30 transition-all touch-target block"
-          >
-            <span className="text-lg mb-1.5 block">{s.icon}</span>
-            <div className="text-xl font-bold">{s.value}</div>
-            <div className="text-xs text-muted-foreground mt-0.5 truncate">{s.label}</div>
-          </Link>
-        ))}
-      </div>
+      {/* Stats grid — chuyển vào DashboardStats */}
 
       <StreakBadgeWidget />
 
@@ -269,7 +253,12 @@ export default async function DashboardHome() {
       {/* Thống kê */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Thống kê</h2>
-        <DashboardStats />
+        <DashboardStats
+          projectCount={projectCount ?? 0}
+          videoCount={videoCount ?? 0}
+          docCount={docCount ?? 0}
+          journalCount={journalCount ?? 0}
+        />
       </div>
     </div>
   );

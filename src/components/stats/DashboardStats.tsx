@@ -1,16 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Flame, BookHeart, Award, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { Flame, BookHeart, Award, TrendingUp, FolderOpen, Video, FileText, Book } from "lucide-react";
 import { LevelInfoModal } from "@/components/LevelInfoModal";
 import { LevelCard } from "@/components/LevelCard";
 
 interface WeekDay { date: string; label: string; active: boolean; }
 interface Week { label: string; count: number; }
 
+interface Props {
+  projectCount?: number;
+  videoCount?: number;
+  docCount?: number;
+  journalCount?: number;
+}
+
 const LEVEL_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2500];
 
-export default function DashboardStats() {
+const CONTENT_STATS = [
+  { label: "Dự án", icon: FolderOpen, color: "text-blue-400", href: "/app/projects" },
+  { label: "Video", icon: Video, color: "text-red-400", href: "/app/videos" },
+  { label: "Tài liệu", icon: FileText, color: "text-purple-400", href: "/app/library" },
+  { label: "Nhật ký", icon: Book, color: "text-cyan-400", href: "/app/journal" },
+];
+
+export default function DashboardStats({ projectCount = 0, videoCount = 0, docCount = 0, journalCount = 0 }: Props) {
   const [stats, setStats] = useState<{
     streak: number; totalJournals: number; totalN: number; level: number; levelName: string;
     weekDays: WeekDay[]; weeks: Week[];
@@ -26,6 +41,8 @@ export default function DashboardStats() {
     })();
   }, []);
 
+  const counts = [projectCount, videoCount, docCount, journalCount];
+
   if (!stats) return null;
 
   const maxWeekCount = Math.max(...stats.weeks.map((w) => w.count), 1);
@@ -37,7 +54,23 @@ export default function DashboardStats() {
 
   return (
     <div className="space-y-6">
-      {/* Summary cards */}
+      {/* Content stats grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {CONTENT_STATS.map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <Link key={s.label} href={s.href}
+              className="p-4 rounded-xl border border-border bg-card hover:bg-card/80 hover:border-primary/30 transition-all touch-target block"
+            >
+              <Icon className={`w-5 h-5 ${s.color} mb-1.5`} />
+              <div className="text-xl font-bold">{counts[i]}</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">{s.label}</div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Summary row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
@@ -69,7 +102,7 @@ export default function DashboardStats() {
         />
       </div>
 
-      {/* Level Card chi tiết — giống thiết kế trong hình */}
+      {/* Level Card chi tiết */}
       <LevelInfoModal
         currentN={stats.totalN}
         currentLevel={stats.level}
@@ -87,7 +120,7 @@ export default function DashboardStats() {
         }
       />
 
-      {/* Heatmap 7 ngày */}
+      {/* Heatmap */}
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="text-sm font-semibold mb-3">Hoạt động 7 ngày qua</h2>
         <div className="flex gap-2 justify-center">

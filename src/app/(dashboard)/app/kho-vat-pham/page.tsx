@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Layers, Sparkles, Download, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Layers, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getItems, getMyItems, unlockItem, downloadItem } from "@/lib/items";
 import type { Item } from "@/lib/items";
 import { ItemCard } from "@/components/items/ItemCard";
 import { ItemGrid } from "@/components/items/ItemGrid";
+import { ItemModal } from "@/components/items/ItemModal";
 import { toast } from "sonner";
 
 const LEVEL_THRESHOLDS = [0, 100, 300, 700, 1200, 2200, 3500];
@@ -20,6 +22,7 @@ function getLevel(n: number): number {
 }
 
 export default function ItemsPage() {
+  const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [myItemIds, setMyItemIds] = useState<string[]>([]);
   const [category, setCategory] = useState<string | null>(null);
@@ -27,6 +30,7 @@ export default function ItemsPage() {
   const [userLevel, setUserLevel] = useState(1);
   const [loading, setLoading] = useState(true);
   const [unlocking, setUnlocking] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -72,12 +76,19 @@ export default function ItemsPage() {
       if (result.success) {
         toast.success("✅ Đã mở khóa vật phẩm!");
         setMyItemIds((prev) => [...prev, itemId]);
+        setSelectedItem(null); // Close modal
       } else {
-        toast.error(result.error || "Không thể mở khóa.");
+        // If not logged in, redirect to login
+        if (result.error?.includes("đăng nhập") || result.error?.includes("Unauthorized")) {
+          toast.error("Vui lòng đăng nhập trước.");
+          router.push("/login?redirect=/app/kho-vat-pham");
+        } else {
+          toast.error(result.error || "Không thể mở khóa.");
+        }
       }
       setUnlocking(null);
     },
-    []
+    [router]
   );
 
   const handleDownload = useCallback(async (item: Item) => {
@@ -157,20 +168,35 @@ export default function ItemsPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {filteredItems.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                owned={myItemIds.includes(item.id)}
-                userN={userN}
-                userLevel={userLevel}
-                onUnlock={handleUnlock}
-                onDownload={handleDownload}
-                unlocking={unlocking === item.id}
-              />
+              <div key={item.id} onClick={() => setSelectedItem(item)} className="cursor-pointer">
+                <ItemCard
+                  item={item}
+                  owned={myItemIds.includes(item.id)}
+                  userN={userN}
+                  userLevel={userLevel}
+                  onUnlock={handleUnlock}
+                  onDownload={handleDownload}
+                  unlocking={unlocking === item.id}
+                />
+              </div>
             ))}
           </div>
         )}
       </ItemGrid>
+
+      {/* Modal */}
+      {selectedItem && (
+        <ItemModal
+          item={selectedItem}
+          owned={myItemIds.includes(selectedItem.id)}
+          userN={userN}
+          userLevel={userLevel}
+          onUnlock={handleUnlock}
+          onDownload={handleDownload}
+          onClose={() => setSelectedItem(null)}
+          unlocking={unlocking === selectedItem.id}
+        />
+      )}
     </div>
   );
 }

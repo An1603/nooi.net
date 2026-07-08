@@ -17,6 +17,7 @@ import {
   BookHeart,
   Users,
   Layers,
+  Package,
 } from 'lucide-react';
 
 const NAV = [
@@ -31,6 +32,7 @@ const NAV = [
 
   // Nhóm Khám phá
   { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },
+  { label: 'Kho vật phẩm', href: '/app/kho-vat-pham', icon: Package },
   { label: 'AI Mentor', href: '/app/voice', icon: Headphones },
   { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },

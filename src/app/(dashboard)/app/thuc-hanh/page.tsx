@@ -117,6 +117,27 @@ export default function PracticesPage() {
         </div>
       </a>
 
+      {/* Scenarios CTA */}
+      <a
+        href="/app/thuc-hanh/tinh-huong"
+        className="block rounded-xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 p-5 hover:border-cyan-500/40 transition-all group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center text-2xl shrink-0">
+            🎬
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
+              Tình Huống Thực Tế
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              7 trục × 3 tình huống · 21 câu chuyện — phản ứng thực của bạn trước cuộc đời
+            </p>
+          </div>
+          <span className="text-muted-foreground group-hover:text-primary transition-colors">→</span>
+        </div>
+      </a>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {practices.map((p) => {
           const Icon = p.icon;

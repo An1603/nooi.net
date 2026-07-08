@@ -124,6 +124,25 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
+      {/* Hướng dẫn nhanh */}
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+        <h3 className="text-sm font-semibold text-amber-400 mb-2">🧭 Sơ đồ quản trị</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-muted-foreground">
+          <div><strong>👥 Người dùng</strong><br/>CRUD, phân quyền, báo cáo</div>
+          <div><strong>📖 Bài giảng</strong><br/>Lộ trình 7 cấp, lesson CRUD</div>
+          <div><strong>🎥 Lớp Live</strong><br/>Quản lý sessions, đăng ký</div>
+          <div><strong>📄 Tài liệu</strong><br/>All documents cross-user</div>
+          <div><strong>🌟 Mentor</strong><br/>Quản lý mentor (Lv6+)</div>
+          <div><strong>🛡️ Phân quyền</strong><br/>Assign admin roles</div>
+          <div><strong>👥 Nhóm</strong><br/>Groups + members</div>
+          <div><strong>📈 Hoạt động</strong><br/>Activity feed + stats</div>
+          <div><strong>✓ Đánh giá</strong><br/>Evaluate users</div>
+          <div><strong>⚙️ Cấu hình</strong><br/>Levels, N points, badges</div>
+          <div><strong>📊 Tiến độ</strong><br/>Lesson progress stats</div>
+          <div><strong>🎬 Video</strong><br/>All videos overview</div>
+        </div>
+      </div>
+
       {/* User stats */}
       <div>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Người dùng</h2>

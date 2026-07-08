@@ -1,11 +1,44 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, Play, Sparkles, ChevronRight, Clock, Award, Bot } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import LessonComments from "@/components/comment/LessonComments";
+
+// ─── Helper: Fisher-Yates shuffle ──────────────────────────────────────────
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+interface QuizItem {
+  question: string;
+  options: string[];
+  correct: number;
+}
+
+/** Trộn câu hỏi + đáp án mỗi lần render để chống học vẹt / bấm bừa */
+function shuffleQuiz(quiz: QuizItem[]): QuizItem[] {
+  // 1. Trộn thứ tự câu hỏi
+  const shuffled = shuffleArray(quiz);
+  // 2. Mỗi câu: trộn đáp án + cập nhật index đúng
+  return shuffled.map((q) => {
+    const indexed = q.options.map((opt, i) => ({ opt, origIdx: i }));
+    const mixed = shuffleArray(indexed);
+    return {
+      ...q,
+      options: mixed.map((m) => m.opt),
+      correct: mixed.findIndex((m) => m.origIdx === q.correct),
+    };
+  });
+}
 
 // ─── Dữ liệu bài học ───────────────────────────────────────────────────────
 
@@ -148,6 +181,10 @@ export default function LessonPage() {
   const params = useParams();
   const lessonId = params.id as string;
   const lesson = LESSONS[lessonId];
+
+  // ── Shuffle quiz on mount ──
+  const shuffledQuiz = useMemo(() => lesson ? shuffleQuiz(lesson.quiz) : [], [lessonId]);
+
   const [progress, setProgress] = useState({ timeSpent: 0, quizScore: 0, quizTotal: 0, pct: 0, completed: false });
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -179,7 +216,6 @@ export default function LessonPage() {
           if (p.quizSubmitted) setQuizLocked(false);
         } catch {}
       }
-      // Nếu chưa có progress, lock quiz
     })();
   }, [lessonId, lesson]);
 
@@ -210,7 +246,7 @@ export default function LessonPage() {
   // ── Submit Quiz ──
   async function submitQuiz() {
     let correct = 0;
-    lesson.quiz.forEach((q, i) => { if (quizAnswers[i] === q.correct) correct++; });
+    shuffledQuiz.forEach((q, i) => { if (quizAnswers[i] === q.correct) correct++; });
     setQuizResult(correct);
     setQuizSubmitted(true);
     savedRef.current = false; // force re-save
@@ -225,7 +261,6 @@ export default function LessonPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      // Trừ N bằng cách xóa 1 journal entry (nếu có)
       const { data: journals } = await supabase.from("documents")
         .select("id").eq("user_id", user.id).eq("file_type", "journal").limit(penalty / 10);
       if (journals && journals.length > 0) {
@@ -330,7 +365,7 @@ export default function LessonPage() {
           <h3 className="font-semibold">Kiểm tra kiến thức</h3>
           {quizSubmitted && (
             <span className="text-sm ml-auto">
-              {quizResult}/{lesson.quiz.length} ({Math.round((quizResult / lesson.quiz.length) * 100)}%)
+              {quizResult}/{shuffledQuiz.length} ({Math.round((quizResult / shuffledQuiz.length) * 100)}%)
             </span>
           )}
           {quizLocked && !quizSubmitted && (
@@ -347,7 +382,7 @@ export default function LessonPage() {
           </div>
         ) : (
           <div className="space-y-5">
-            {lesson.quiz.map((q, qi) => (
+            {shuffledQuiz.map((q, qi) => (
               <div key={qi}>
                 <p className="text-sm font-medium mb-2">Câu {qi + 1}: {q.question}</p>
                 <div className="space-y-2">
@@ -376,7 +411,7 @@ export default function LessonPage() {
 
         <div className="flex gap-3 mt-5">
           {!quizSubmitted && !quizLocked && (
-            <button onClick={submitQuiz} disabled={quizAnswers.length < lesson.quiz.length}
+            <button onClick={submitQuiz} disabled={quizAnswers.length < shuffledQuiz.length}
               className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 transition-colors disabled:opacity-50"
             >Nộp bài</button>
           )}

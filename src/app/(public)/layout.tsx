@@ -51,8 +51,8 @@ export default async function PublicLayout({
         },
       }
     );
-    const { data: { session } } = await supabase.auth.getSession();
-    initialSession = !!session;
+    const { data: { user } } = await supabase.auth.getUser();
+    initialSession = !!user;
   } catch {
     // Not critical — Header will check client-side
   }

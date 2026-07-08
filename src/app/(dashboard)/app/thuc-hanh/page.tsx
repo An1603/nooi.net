@@ -96,6 +96,27 @@ export default function PracticesPage() {
         </p>
       </div>
 
+      {/* Self-Assessment CTA */}
+      <a
+        href="/app/thuc-hanh/tu-danh-gia"
+        className="block rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-rose-500/5 p-5 hover:border-amber-500/40 transition-all group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 flex items-center justify-center text-2xl shrink-0">
+            🪞
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
+              Tấm Gương Tự Biết Mình
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              7 trục đánh giá · 35 câu hỏi · 5 phút — khám phá bức tranh bản thân
+            </p>
+          </div>
+          <span className="text-muted-foreground group-hover:text-primary transition-colors">→</span>
+        </div>
+      </a>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {practices.map((p) => {
           const Icon = p.icon;

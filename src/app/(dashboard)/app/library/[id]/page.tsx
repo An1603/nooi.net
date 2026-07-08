@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { ArrowLeft, Edit3, Calendar, FileText, FolderOpen, File, Music } from "lucide-react";
 import { Thumbnail } from "@/components/content/Thumbnail";
+import { FullscreenImage } from "@/components/content/FullscreenImage";
 import { notFound } from "next/navigation";
 
 function parseContent(content: string | null) {
@@ -105,14 +106,14 @@ export default async function DocumentDetailPage({
             </div>
           </div>
         ) : parsed.url && doc.file_type === "image" ? (
-          <div className="relative aspect-video bg-muted">
+          <div className="relative bg-muted/30 rounded-xl overflow-hidden">
             <img
               src={parsed.url}
               alt={doc.title}
-              className="w-full h-full object-cover"
+              className="w-full object-contain"
+              style={{ maxHeight: "50vh" }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute bottom-4 left-4">
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4">
               <h1 className="text-2xl font-bold text-white drop-shadow-lg">{doc.title}</h1>
             </div>
           </div>
@@ -176,11 +177,12 @@ export default async function DocumentDetailPage({
                       />
                     </div>
                   ) : doc.file_type === "image" ? (
-                    /* Image: full display */
-                    <div>
-                      <img src={c.url} alt={doc.title} className="w-full rounded-lg object-cover max-h-96" />
-                      {c.caption && <p className="text-xs text-muted-foreground mt-2 text-center">{c.caption}</p>}
-                    </div>
+                    /* Image: full display with fullscreen button */
+                    <FullscreenImage
+                      src={c.url}
+                      alt={doc.title}
+                      caption={c.caption}
+                    />
                   ) : doc.file_type === "audio" ? (
                     /* Audio: player */
                     <div>
@@ -190,19 +192,31 @@ export default async function DocumentDetailPage({
                       </audio>
                     </div>
                   ) : doc.file_type === "pdf" ? (
-                    /* PDF: embed viewer */
+                    /* PDF: embedded qua proxy (Supabase storage chặn iframe) */
+                    (() => {
+                      const proxyUrl = `/api/library/pdf-proxy?url=${encodeURIComponent(c.url)}`;
+                      return (
                     <div>
-                      <p className="text-xs text-muted-foreground mb-2">📕 PDF · {c.pages || "?"} trang</p>
-                      <a href={c.url} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 rounded-lg text-sm text-primary-foreground mb-3"
-                      >
-                        📕 Mở PDF
-                      </a>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-muted-foreground">📕 PDF · {c.pages || "?"} trang</p>
+                        <a
+                          href={c.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          Mở tab mới ↗
+                        </a>
+                      </div>
                       <iframe
-                        src={`https://docs.google.com/viewer?url=${encodeURIComponent(c.url)}&embedded=true`}
-                        className="w-full h-96 rounded-lg border border-border"
+                        src={proxyUrl}
+                        className="w-full rounded-lg border border-border"
+                        style={{ height: "80vh", minHeight: "500px" }}
+                        title={doc.title}
                       />
                     </div>
+                      );
+                    })()
                   ) : (
                     /* Other: link */
                     <>

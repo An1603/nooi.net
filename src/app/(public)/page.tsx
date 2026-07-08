@@ -726,36 +726,33 @@ function LandingPageInner({ loggedIn }: { loggedIn: boolean }) {
 
 export default function LandingPage() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    let retryCount = 0;
 
     async function checkAuth() {
       try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getSession();
-        if (cancelled) return;
-
-        if (data?.session) {
-          setLoggedIn(true);
-          return;
+        // Dùng API server-side để check session (đọc cookie chính xác)
+        const res = await fetch("/api/auth/check", { cache: "no-store" });
+        const data = await res.json();
+        if (!cancelled) {
+          setLoggedIn(data.loggedIn);
+          setChecked(true);
         }
-
-        // Retry 3 times (có thể session chưa kịp init)
-        if (retryCount < 3) {
-          retryCount++;
-          setTimeout(checkAuth, 500 * retryCount);
-          return;
+      } catch {
+        // Fallback: check client-side
+        try {
+          const supabase = createClient();
+          const { data } = await supabase.auth.getSession();
+          if (!cancelled) {
+            setLoggedIn(!!data.session);
+            setChecked(true);
+          }
+        } catch {
+          if (!cancelled) setChecked(true);
         }
-
-        // Final check: nếu có auth cookie mà session vẫn null → getUser()
-        const hasAuthCookie = document.cookie.includes("sb-gsnuqrutiauhnsacgzym-auth-token");
-        if (hasAuthCookie) {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!cancelled && user) setLoggedIn(true);
-        }
-      } catch {}
+      }
     }
 
     checkAuth();
@@ -766,12 +763,12 @@ export default function LandingPage() {
       if (!cancelled) setLoggedIn(!!session);
     });
 
-    // Check lại khi tab được focus (user quay lại từ tab khác)
+    // Check lại khi focus tab
     const onFocus = () => {
-      const supabase = createClient();
-      supabase.auth.getSession().then(({ data }) => {
-        if (!cancelled) setLoggedIn(!!data.session);
-      });
+      fetch("/api/auth/check", { cache: "no-store" })
+        .then(r => r.json())
+        .then(d => { if (!cancelled) setLoggedIn(d.loggedIn); })
+        .catch(() => {});
     };
     window.addEventListener("focus", onFocus);
 

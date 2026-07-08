@@ -9,11 +9,11 @@ interface Group {
   id: string; name: string; description: string; schedule: string; member_count: number;
 }
 
-const LEVEL_NAMES = ["", "Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+const LEVEL_NAMES = ["", "🌰 Member", "Seeker 🌱", "Grower 🌿", "Giver 🌳", "Guider 🌲", "Mentor 🌳", "Master 👑"];
 
 function getLevel(userId: string, journalCounts: Record<string, number>) {
   const n = (journalCounts[userId] || 0) * 10;
-  const t = [0, 100, 300, 600, 1000, 1500, 2500];
+  const t = [0, 100, 300, 700, 1200, 2200, 3500];
   for (let i = t.length - 1; i >= 0; i--) if (n >= t[i]) return i + 1;
   return 1;
 }

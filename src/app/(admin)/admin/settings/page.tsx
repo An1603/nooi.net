@@ -22,8 +22,8 @@ interface SystemConfig {
 }
 
 const DEFAULT_CONFIG: SystemConfig = {
-  levelThresholds: [0, 100, 300, 600, 1000, 1500, 2500],
-  levelNames: ["Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"],
+  levelThresholds: [0, 100, 300, 700, 1200, 2200, 3500],
+  levelNames: ["🌰 Member", "Seeker 🌱", "Grower 🌿", "Giver 🌳", "Guider 🌲", "Mentor 🌳", "Master 👑"],
   nPerJournal: 10,
   nPerQuiz: 5,
   nPerPractice: 5,

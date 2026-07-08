@@ -120,7 +120,7 @@ export default function LivePage() {
           .eq("user_id", user.id)
           .eq("file_type", "journal");
         const n = (count ?? 0) * 10;
-        const thresholds = [0, 100, 300, 600, 1000, 1500, 2500];
+        const thresholds = [0, 100, 300, 700, 1200, 2200, 3500];
         let lvl = 1;
         for (let i = thresholds.length - 1; i >= 0; i--) {
           if (n >= thresholds[i]) { lvl = i + 1; break; }

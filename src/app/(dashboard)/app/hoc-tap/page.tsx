@@ -8,13 +8,13 @@ import { createClient } from "@/lib/supabase/client";
 // ─── Level metadata (names, descriptions, unlock thresholds) ───────────────
 // These are business config, not yet in the database.
 const LEVEL_META = [
-  { id: 1, name: "Người mới", desc: "Bắt đầu hành trình chuyển hóa", nRequired: 0 },
-  { id: 2, name: "Người tìm kiếm", desc: "Hiểu rõ bản thân", nRequired: 100 },
-  { id: 3, name: "Học viên", desc: "Xây nền tảng vững chắc", nRequired: 300 },
-  { id: 4, name: "Người thực hành", desc: "Chuyển hóa hàng ngày", nRequired: 600 },
-  { id: 5, name: "Người đồng hành", desc: "Lan tỏa giá trị", nRequired: 1000 },
-  { id: 6, name: "Mentor", desc: "Hướng dẫn người khác", nRequired: 1500 },
-  { id: 7, name: "Master Mentor", desc: "Làm chủ hành trình", nRequired: 2500 },
+  { id: 1, name: "🌰 Member", desc: "Bắt đầu hành trình chuyển hóa", nRequired: 0 },
+  { id: 2, name: "Seeker 🌱", desc: "Hiểu rõ bản thân", nRequired: 100 },
+  { id: 3, name: "Grower 🌿", desc: "Xây nền tảng vững chắc", nRequired: 300 },
+  { id: 4, name: "Giver 🌳", desc: "Chuyển hóa hàng ngày", nRequired: 700 },
+  { id: 5, name: "Guider 🌲", desc: "Lan tỏa giá trị", nRequired: 1200 },
+  { id: 6, name: "Mentor 🌳", desc: "Hướng dẫn người khác", nRequired: 2200 },
+  { id: 7, name: "Master 👑", desc: "Làm chủ hành trình", nRequired: 3500 },
 ];
 
 // ─── Hardcoded fallback lessons (used when API is unavailable) ──────────────
@@ -182,7 +182,7 @@ export default function LearningHub() {
           <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${overallPct}%` }} />
         </div>
         <p className="text-[10px] text-muted-foreground mt-2">
-          {n} N · {n < 2500 ? `${n}/2500 N để đạt Master Mentor` : "🏆 Tối đa"}
+          {n} N · {n < 3500 ? `${n}/3500 N để đạt Master 👑` : "🏆 Tối đa"}
         </p>
       </div>
 

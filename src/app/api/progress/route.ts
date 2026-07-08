@@ -21,13 +21,13 @@ export async function GET() {
     let level = 1;
     if (xp >= 100) level = 2;
     if (xp >= 300) level = 3;
-    if (xp >= 600) level = 4;
-    if (xp >= 1000) level = 5;
-    if (xp >= 1500) level = 6;
-    if (xp >= 2500) level = 7;
+    if (xp >= 700) level = 4;
+    if (xp >= 1200) level = 5;
+    if (xp >= 2200) level = 6;
+    if (xp >= 3500) level = 7;
 
-    const levelNames = ["Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
-    const nextLevelXp = [100, 300, 600, 1000, 1500, 2500, 99999];
+    const levelNames = ["🌰 Member", "Seeker 🌱", "Grower 🌿", "Giver 🌳", "Guider 🌲", "Mentor 🌳", "Master 👑"];
+    const nextLevelXp = [100, 300, 700, 1200, 2200, 3500, 99999];
     const xpToNext = nextLevelXp[Math.min(level, 6)] - xp;
 
     return NextResponse.json({

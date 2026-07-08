@@ -16,7 +16,7 @@ interface Props {
   journalCount?: number;
 }
 
-const LEVEL_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2500];
+const LEVEL_THRESHOLDS = [0, 100, 300, 700, 1200, 2200, 3500];
 
 const CONTENT_STATS = [
   { label: "Dự án", icon: FolderOpen, color: "text-blue-400", href: "/app/projects" },
@@ -48,7 +48,7 @@ export default function DashboardStats({ projectCount = 0, videoCount = 0, docCo
   const maxWeekCount = Math.max(...stats.weeks.map((w) => w.count), 1);
   const nForNext = LEVEL_THRESHOLDS[Math.min(stats.level, 6)];
   const nCurrent = LEVEL_THRESHOLDS[stats.level - 1];
-  const progressPercent = stats.totalN >= 2500
+  const progressPercent = stats.totalN >= 3500
     ? 100
     : Math.min(100, Math.round(((stats.totalN - nCurrent) / (nForNext - nCurrent)) * 100));
 

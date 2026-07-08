@@ -37,7 +37,7 @@ export default function MentorHub() {
             .select("id", { count: "exact", head: true })
             .eq("user_id", user.id).eq("file_type", "journal");
           const n = (count ?? 0) * 10;
-          const thresholds = [0, 100, 300, 600, 1000, 1500, 2500];
+          const thresholds = [0, 100, 300, 700, 1200, 2200, 3500];
           let lvl = 1;
           for (let i = thresholds.length - 1; i >= 0; i--) {
             if (n >= thresholds[i]) { lvl = i + 1; break; }
@@ -105,7 +105,7 @@ export default function MentorHub() {
         ) : (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Bất kỳ ai cũng có thể trở thành Mentor! Chỉ cần đạt <strong>Level 6</strong> (1.500 N).
+              Bất kỳ ai cũng có thể trở thành Mentor! Chỉ cần đạt <strong>Level 6</strong> (2.200 N).
               Mỗi nhật ký = 10 N.
             </p>
             {myLevel > 0 && (
@@ -160,7 +160,7 @@ export default function MentorHub() {
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                         mentor.level >= 7 ? "bg-purple-500/10 text-purple-400" : "bg-red-500/10 text-red-400"
                       }`}>
-                        {mentor.level === 7 ? "🌟 Master Mentor" : "⭐ Mentor"}
+                        {mentor.level === 7 ? "👑 Master" : "⭐ Mentor 🌳"}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">

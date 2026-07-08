@@ -327,7 +327,15 @@ export function ProfileClient({ user, profile }: Props) {
             Thông tin cá nhân, mã giới thiệu và bản đồ số mệnh của bạn.
           </p>
         </div>
-        <form action="/auth/logout" method="POST">
+        <form action="/auth/logout" method="POST" onSubmit={() => {
+          // Clear SW caches before logout for immediate effect
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+              regs.forEach(reg => reg.unregister());
+            });
+            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+          }
+        }}>
           <button type="submit"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/5 px-3 py-2 rounded-lg transition-colors"
           >

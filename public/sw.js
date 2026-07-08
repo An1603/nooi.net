@@ -1,14 +1,9 @@
 // NOOI — PWA Service Worker
-// Version: 2.0.0
+// Version: 2.1.0 — Fix: network-first cho app routes (tránh cache dashboard sau logout)
 
 const CACHE_NAME = "nooi-v2";
 const APP_ROUTES = [
   "/",
-  "/app",
-  "/app/journal",
-  "/app/thuc-hanh",
-  "/app/voice",
-  "/app/sandbox",
   "/manifest.json",
   "/favicon.ico",
   "/favicon.png",
@@ -40,10 +35,20 @@ self.addEventListener("activate", (event) => {
       )
     )
   );
+  // Clear all cached app pages on activate (fresh start after logout)
+  caches.open(CACHE_NAME).then((cache) => {
+    cache.keys().then((keys) => {
+      keys.forEach((request) => {
+        if (request.url.includes("/app/")) {
+          cache.delete(request);
+        }
+      });
+    });
+  });
   self.clients.claim();
 });
 
-// ── Fetch: stale-while-revalidate for app, network-first for rest ──
+// ── Fetch: network-first for app, cache-first for static ──
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -51,33 +56,37 @@ self.addEventListener("fetch", (event) => {
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
 
-  // App routes: stale-while-revalidate (fast offline, fresh online)
-  if (request.mode === "navigate") {
-    const isAppRoute = url.pathname.startsWith("/app");
-    if (isAppRoute) {
-      event.respondWith(
-        caches.match(request).then((cached) => {
-          const fetchPromise = fetch(request).then((response) => {
-            if (response.ok) {
-              const clone = response.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            }
-            return response;
-          }).catch(() => cached);
-          return cached || fetchPromise;
-        })
-      );
-      return;
-    }
-
-    // For main site pages: network-first with offline fallback
+  // ── App routes: NETWORK-FIRST (critical for auth) ──
+  // Always fetch from network so middleware can redirect unauthenticated users.
+  // Only fall back to cache if network fails (offline).
+  if (request.mode === "navigate" && url.pathname.startsWith("/app")) {
     event.respondWith(
-      fetch(request).catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
+      fetch(request).then((response) => {
+        // Only cache successful, non-redirect responses
+        if (response.ok && response.status < 300) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      }).catch(() => {
+        // Offline: serve cached version (or root as fallback)
+        return caches.match(request).then((cached) => cached || caches.match("/"));
+      })
     );
     return;
   }
 
-  // For static assets: cache-first
+  // ── Main site navigation: network-first ──
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches.match(request).then((cached) => cached || caches.match("/"))
+      )
+    );
+    return;
+  }
+
+  // ── Static assets: cache-first (fast) ──
   event.respondWith(
     caches.match(request).then((cached) => {
       return cached || fetch(request).then((response) => {

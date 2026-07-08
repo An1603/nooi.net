@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { RadarChart } from "./RadarChart";
+import { downloadSvgAsPng } from "@/lib/svg-to-png";
+import { Download } from "lucide-react";
 
 const STORAGE_KEY = "nooi_self_assessment_v1";
 
@@ -117,6 +119,7 @@ export default function SelfAssessmentPage() {
   const [scores, setScores] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const chartRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [shuffledOrder, setShuffledOrder] = useState<number[]>([]);
   const supabase = createClient();
@@ -290,7 +293,8 @@ export default function SelfAssessmentPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-8">
       <div className="text-center space-y-2"><h1 className="text-2xl font-bold">🪞 Bức Tranh Bản Thân</h1><p className="text-muted-foreground text-sm">{saving ? "Đang lưu..." : saved ? "✅ Đã lưu" : ""}</p></div>
-      <div className="rounded-xl border border-border bg-card p-4 flex justify-center"><RadarChart scores={scores} labels={AXES.map(a => a.label)}/></div>
+      <div ref={chartRef} className="rounded-xl border border-border bg-card p-4 flex justify-center"><RadarChart scores={scores} labels={AXES.map(a => a.label)}/></div>
+      <button onClick={() => { const svg = chartRef.current?.querySelector('svg'); if (svg) downloadSvgAsPng(svg as unknown as SVGSVGElement, 'ket-qua-danh-gia-nooi.png'); }} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"><Download className="size-4" /> Tải ảnh kết quả</button>
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
         <h3 className="font-semibold text-sm">📊 Chi tiết từng trục</h3>
         {AXES.map(a => { const sc = scores[a.key] || 5; return <div key={a.key} className="space-y-1"><div className="flex items-center justify-between text-sm"><span className="font-medium">{a.label}</span><span className="text-muted-foreground">{sc}/10</span></div><div className="w-full h-2 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500" style={{width:`${sc*10}%`}}/></div><p className="text-xs text-muted-foreground">{a.desc}</p></div>; })}

@@ -18,11 +18,22 @@ export default function ScenariosPage() {
   const [loaded, setLoaded] = useState(false);
   const [hasProgress, setHasProgress] = useState(false);
   const [progressCount, setProgressCount] = useState(0);
+  const [shuffledOrder, setShuffledOrder] = useState<number[]>([]);
   const [showFeedback, setShowFeedback] = useState(false);
   const [lastChoice, setLastChoice] = useState<{ optionIdx: number; feedback: string } | null>(null);
   const supabase = useMemo(() => createClient(), []);
 
   const progress = Object.keys(answers).length;
+
+  // ─── Fisher-Yates shuffle toàn bộ 21 scenario ───
+  function generateShuffledOrder(): number[] {
+    const order = Array.from({ length: TOTAL }, (_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    return order;
+  }
 
   // ─── Khôi phục tiến trình ───
   useEffect(() => {
@@ -39,11 +50,11 @@ export default function ScenariosPage() {
         if (db.scores && Object.keys(db.scores).length > 0) {
           setScores(db.scores); setAnswers(db.raw_answers || {}); setStep("result"); setSaved(true);
         } else if (db.raw_answers && Object.keys(db.raw_answers).length > 0) {
-          setAnswers(db.raw_answers); setCurrentQ(db.current_question || 0); setStep("quiz");
+          setAnswers(db.raw_answers); setCurrentQ(db.current_question || 0); setShuffledOrder(generateShuffledOrder()); setStep("quiz");
         }
         setProgressCount(db.raw_answers ? Object.keys(db.raw_answers).length : 0);
         setHasProgress(true);
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers: db.raw_answers || {}, currentQ: db.current_question || 0, scores: db.scores || null })); } catch {}
+        try { const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers: db.raw_answers || {}, currentQ: db.current_question || 0, shuffledOrder: stored.shuffledOrder || generateShuffledOrder(), scores: db.scores || null })); } catch {}
         setLoaded(true); return;
       }
 
@@ -55,7 +66,7 @@ export default function ScenariosPage() {
           if (data.scores && Object.keys(data.scores).length > 0) {
             setScores(data.scores); setAnswers(data.answers || {}); setStep("result"); setSaved(true);
           } else if (data.answers && Object.keys(data.answers).length > 0) {
-            setAnswers(data.answers); setCurrentQ(data.currentQ || 0); setStep("quiz");
+            setAnswers(data.answers); setCurrentQ(data.currentQ || 0); setShuffledOrder(data.shuffledOrder || generateShuffledOrder()); setStep("quiz");
           }
           setProgressCount(data.answers ? Object.keys(data.answers).length : 0);
           setHasProgress(true);
@@ -66,11 +77,11 @@ export default function ScenariosPage() {
   }, [supabase]);
 
   // ─── Sync ───
-  const persist = useCallback((a: Record<number, number>, q: number, s?: Record<string, number>) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers: a, currentQ: q, scores: s || null })); } catch {}
+  const persist = useCallback((a: Record<number, number>, q: number, order: number[], s?: Record<string, number>) => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers: a, currentQ: q, shuffledOrder: order, scores: s || null })); } catch {}
   }, []);
 
-  const syncToServer = useCallback(async (a: Record<number, number>, q: number) => {
+  const syncToServer = useCallback(async (a: Record<number, number>, q: number, order: number[]) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("self_assessments").upsert({
@@ -81,10 +92,11 @@ export default function ScenariosPage() {
   }, [supabase]);
 
   function selectOption(optionIdx: number) {
-    const scenario = SCENARIOS[currentQ];
+    const realIdx = shuffledOrder[currentQ];
+    const scenario = SCENARIOS[realIdx];
     const choice = scenario.options[optionIdx];
     const next = { ...answers, [scenario.id]: choice.score };
-    setAnswers(next); persist(next, currentQ + 1); syncToServer(next, currentQ + 1);
+    setAnswers(next); persist(next, currentQ + 1, shuffledOrder); syncToServer(next, currentQ + 1, shuffledOrder);
     setLastChoice({ optionIdx, feedback: choice.feedback });
     setShowFeedback(true);
   }
@@ -106,7 +118,7 @@ export default function ScenariosPage() {
       simpleScores[key] = val.score;
     }
     setScores(simpleScores);
-    persist(answers, currentQ, simpleScores);
+    persist(answers, currentQ, shuffledOrder, simpleScores);
     saveResults(simpleScores);
     setStep("result");
   }
@@ -127,7 +139,7 @@ export default function ScenariosPage() {
     localStorage.removeItem(STORAGE_KEY);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await supabase.from("self_assessments").delete().eq("user_id", user.id).eq("assessment_type", "scenarios_21");
-    setStep("intro"); setAnswers({}); setCurrentQ(0); setScores({}); setSaved(false); setHasProgress(false); setProgressCount(0);
+    setStep("intro"); setAnswers({}); setCurrentQ(0); setScores({}); setSaved(false); setHasProgress(false); setProgressCount(0); setShuffledOrder([]);
   }
 
   // ─── INTRO ───
@@ -156,8 +168,8 @@ export default function ScenariosPage() {
           {hasProgress && <p className="text-cyan-400 text-xs mt-2">💡 Bạn có tiến trình đang làm dở</p>}
         </div>
         <div className="space-y-3">
-          {hasProgress && <button onClick={() => { try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { const d = JSON.parse(raw); if (d.scores && Object.keys(d.scores).length > 0) { setScores(d.scores); setAnswers(d.answers || {}); setStep("result"); setSaved(true); } else if (d.answers) { setAnswers(d.answers); setCurrentQ(d.currentQ || 0); setStep("quiz"); } } } catch {} }} className="w-full py-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-medium hover:bg-cyan-500/20 transition-all">▶ Tiếp tục ({progressCount}/{TOTAL} tình huống)</button>}
-          <button onClick={() => { setStep("quiz"); }} className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-medium hover:brightness-110 transition-all">{hasProgress ? "Bắt đầu lại từ đầu" : "Bắt đầu"}</button>
+          {hasProgress && <button onClick={() => { try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { const d = JSON.parse(raw); if (d.scores && Object.keys(d.scores).length > 0) { setScores(d.scores); setAnswers(d.answers || {}); setStep("result"); setSaved(true); } else if (d.answers) { setAnswers(d.answers); setCurrentQ(d.currentQ || 0); setShuffledOrder(d.shuffledOrder || generateShuffledOrder()); setStep("quiz"); } } } catch {} }} className="w-full py-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-medium hover:bg-cyan-500/20 transition-all">▶ Tiếp tục ({progressCount}/{TOTAL} tình huống)</button>}
+          <button onClick={() => { setShuffledOrder(generateShuffledOrder()); setStep("quiz"); }} className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-medium hover:brightness-110 transition-all">{hasProgress ? "Bắt đầu lại từ đầu" : "Bắt đầu"}</button>
         </div>
       </div>
     );
@@ -165,7 +177,8 @@ export default function ScenariosPage() {
 
   // ─── QUIZ ───
   if (step === "quiz") {
-    const scenario = SCENARIOS[currentQ];
+    const realIdx = shuffledOrder[currentQ];
+    const scenario = SCENARIOS[realIdx];
     const axis = AXES.find(a => a.key === scenario.axis)!;
     const axisIdx = AXES.indexOf(axis) + 1;
 

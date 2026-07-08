@@ -42,8 +42,13 @@ export async function unlockItem(
 /**
  * Download an item file (gets signed URL, then triggers browser download).
  */
-export async function downloadItem(itemId: string, fileName: string) {
+export async function downloadItem(itemId: string, itemSlug: string, fileName: string) {
   try {
+    // Special case: certificate is generated dynamically
+    if (itemSlug === "certificate-level") {
+      window.open("/api/items/certificate", "_blank");
+      return;
+    }
     const res = await fetch(`/api/items/${itemId}/download`);
     if (!res.ok) throw new Error("Download failed");
     const { url } = await res.json();
@@ -58,6 +63,20 @@ export async function downloadItem(itemId: string, fileName: string) {
     document.body.removeChild(a);
   } catch {
     throw new Error("Không thể tải file. Vui lòng thử lại.");
+  }
+}
+
+/**
+ * Sync auto-unlock badges for the current user.
+ * Returns list of newly unlocked badge IDs.
+ */
+export async function syncBadges(): Promise<string[]> {
+  try {
+    const res = await fetch("/api/items/sync-badges", { method: "POST" });
+    const data = await res.json();
+    return data.unlocked || [];
+  } catch {
+    return [];
   }
 }
 

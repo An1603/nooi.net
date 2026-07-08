@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Layers, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { getItems, getMyItems, unlockItem, downloadItem } from "@/lib/items";
+import { getItems, getMyItems, unlockItem, downloadItem, syncBadges } from "@/lib/items";
 import type { Item } from "@/lib/items";
 import { ItemCard } from "@/components/items/ItemCard";
 import { ItemGrid } from "@/components/items/ItemGrid";
@@ -57,6 +57,12 @@ export default function ItemsPage() {
         const n = (count ?? 0) * 10;
         setUserN(n);
         setUserLevel(getLevel(n));
+
+        // Auto-unlock badges based on level
+        const newBadges = await syncBadges();
+        if (newBadges.length > 0) {
+          setMyItemIds((prev) => [...prev, ...newBadges]);
+        }
       }
     } catch {
       // Silently handle
@@ -93,7 +99,7 @@ export default function ItemsPage() {
 
   const handleDownload = useCallback(async (item: Item) => {
     try {
-      await downloadItem(item.id, `${item.slug}.${item.type === "pdf" ? "pdf" : "png"}`);
+      await downloadItem(item.id, item.slug, `${item.slug}.${item.type === "pdf" ? "pdf" : "png"}`);
       toast.success(`Đang tải ${item.name}...`);
     } catch {
       toast.error("Không thể tải file.");

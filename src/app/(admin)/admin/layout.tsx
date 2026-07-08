@@ -17,6 +17,7 @@ import {
   FolderOpen,
   TrendingUp,
 } from "lucide-react";
+import { RouteLoader } from "@/components/Loading";
 
 const NAV_ITEMS = [
   // Dashboard
@@ -76,6 +77,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex">
+      <RouteLoader />
       {/* Sidebar */}
       <aside className="w-60 bg-[#0d0d0d] border-r border-border/30 flex flex-col shrink-0">
         {/* Logo */}

@@ -5,6 +5,7 @@ import Topbar from "@/components/layout/Topbar";
 import AIMentorFloating from "@/components/ai/AIMentorFloating";
 import TourOverlay from "@/components/onboarding/TourOverlay";
 import InstallPrompt from "@/components/InstallPrompt";
+import { RouteLoader } from "@/components/Loading";
 
 export default async function DashboardLayout({
   children,
@@ -20,6 +21,9 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Route loading bar */}
+      <RouteLoader />
+
       {/* Sidebar */}
       <Sidebar />
 

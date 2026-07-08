@@ -30,9 +30,16 @@ export default function ItemsPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [allItems, ownedIds] = await Promise.all([getItems(category || undefined), getMyItems()]);
+      const allItems = await getItems(category || undefined);
       setItems(allItems);
-      setMyItemIds(ownedIds);
+
+      // My items — may fail for unauthenticated users, don't block
+      try {
+        const ownedIds = await getMyItems();
+        setMyItemIds(ownedIds);
+      } catch {
+        setMyItemIds([]);
+      }
 
       // Get user N
       const supabase = createClient();

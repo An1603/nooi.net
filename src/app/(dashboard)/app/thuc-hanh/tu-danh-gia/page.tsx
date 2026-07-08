@@ -141,7 +141,7 @@ export default function SelfAssessmentPage() {
         if (db.scores && Object.keys(db.scores).length > 0) {
           setScores(db.scores); setAnswers(db.raw_answers || {}); setStep("result"); setSaved(true);
         } else if (db.raw_answers && Object.keys(db.raw_answers).length > 0) {
-          setAnswers(db.raw_answers); setCurrentQ(db.current_question || 0); setStep("quiz");
+          setAnswers(db.raw_answers); setCurrentQ(db.current_question || 0); setShuffledOrder(generateShuffledOrder()); setStep("quiz");
         }
         setProgressCount(db.raw_answers ? Object.keys(db.raw_answers).length : 0);
         // Sync localStorage
@@ -158,7 +158,7 @@ export default function SelfAssessmentPage() {
           if (data.scores && Object.keys(data.scores).length > 0) {
             setScores(data.scores); setAnswers(data.answers || {}); setStep("result"); setSaved(true);
           } else if (data.answers && Object.keys(data.answers).length > 0) {
-            setAnswers(data.answers); setCurrentQ(data.currentQ || 0); setStep("quiz");
+            setAnswers(data.answers); setCurrentQ(data.currentQ || 0); setShuffledOrder(generateShuffledOrder()); setStep("quiz");
           }
           setProgressCount(data.answers ? Object.keys(data.answers).length : 0);
           setHasProgress(true);

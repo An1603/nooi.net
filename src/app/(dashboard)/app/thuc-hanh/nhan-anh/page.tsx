@@ -3,17 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { MultiRadarChart } from "./MultiRadarChart";
-import { AXES as G2_AXES } from "../tinh-huong/scenarios-data";
-
-const G1_AXES = [
-  { key: "thay", label: "THẤY", desc: "Quan sát bản thân", icon: "👁️" },
-  { key: "hieu", label: "HIỂU", desc: "Thấu triệt nhân quả", icon: "🔍" },
-  { key: "buong", label: "BUÔNG", desc: "Xả bỏ chấp trước", icon: "🍂" },
-  { key: "antru", label: "AN TRÚ", desc: "Bình an nội tại", icon: "🏠" },
-  { key: "bieton", label: "BIẾT ƠN", desc: "Lòng tri ân", icon: "🙏" },
-  { key: "phungsu", label: "PHỤNG SỰ", desc: "Cho đi vô điều kiện", icon: "🤲" },
-  { key: "tinhthuc", label: "TỈNH THỨC", desc: "Chánh niệm thường trực", icon: "🧘" },
-];
 
 const AXIS_KEYS = ["thay", "hieu", "buong", "antru", "bieton", "phungsu", "tinhthuc"];
 const AXIS_LABELS = ["THẤY", "HIỂU", "BUÔNG", "AN TRÚ", "BIẾT ƠN", "PHỤNG SỰ", "TỈNH THỨC"];

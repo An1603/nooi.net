@@ -60,7 +60,6 @@ export function MultiRadarChart({ labels, datasets }: MultiRadarChartProps) {
   // Score polygons và dots
   const scorePolygons = datasets.map((ds, di) => {
     const points = labels.map((_, i) => {
-      const key = labels[i]; // labels map 1:1 with axis keys
       // Tìm key thực từ labels
       const axisKeys = ["THẤY", "HIỂU", "BUÔNG", "AN TRÚ", "BIẾT ƠN", "PHỤNG SỰ", "TỈNH THỨC"];
       const actualKey = axisKeys[i];

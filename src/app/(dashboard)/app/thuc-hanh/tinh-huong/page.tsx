@@ -81,7 +81,7 @@ export default function ScenariosPage() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers: a, currentQ: q, shuffledOrder: order, scores: s || null })); } catch {}
   }, []);
 
-  const syncToServer = useCallback(async (a: Record<number, number>, q: number, order: number[]) => {
+  const syncToServer = useCallback(async (a: Record<number, number>, q: number, _order: number[]) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("self_assessments").upsert({

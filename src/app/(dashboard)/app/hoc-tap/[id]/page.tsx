@@ -50,7 +50,7 @@ const LESSONS: Record<string, {
   youtubeId?: string;
 }> = {
   "1-1": {
-    title: "NOOI là gì?", level: 1, levelName: "Người mới",
+    title: "NOOI là gì?", level: 1, levelName: "Member 🌰",
     duration: "15:00", durationSec: 900,
     youtubeId: "dQw4w9WgXcQ",
     content: `## NOOI là gì?
@@ -72,7 +72,7 @@ Kết nối con người với chính mình, với cộng đồng và với nh�
     nextId: "1-2",
   },
   "1-2": {
-    title: "Vì sao NOOI ra đời?", level: 1, levelName: "Người mới",
+    title: "Vì sao NOOI ra đời?", level: 1, levelName: "Member 🌰",
     duration: "12:00", durationSec: 720,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Vì sao NOOI ra đời?
@@ -90,7 +90,7 @@ Trường học dạy cách **kiếm sống**, nhưng không dạy **cách sốn
     prevId: "1-1", nextId: "1-3",
   },
   "1-3": {
-    title: "Bản đồ con người", level: 1, levelName: "Người mới",
+    title: "Bản đồ con người", level: 1, levelName: "Member 🌰",
     duration: "20:00", durationSec: 1200,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Bản đồ con người
@@ -109,7 +109,7 @@ Trường học dạy cách **kiếm sống**, nhưng không dạy **cách sốn
     prevId: "1-2", nextId: "1-4",
   },
   "1-4": {
-    title: "Bản đồ khổ đau", level: 1, levelName: "Người mới",
+    title: "Bản đồ khổ đau", level: 1, levelName: "Member 🌰",
     duration: "18:00", durationSec: 1080,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Bản đồ khổ đau
@@ -128,7 +128,7 @@ Giống như **đèn báo trên xe hơi**.
     prevId: "1-3", nextId: "1-5",
   },
   "1-5": {
-    title: "Bắt đầu thực hành", level: 1, levelName: "Người mới",
+    title: "Bắt đầu thực hành", level: 1, levelName: "Member 🌰",
     duration: "10:00", durationSec: 600,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Bắt đầu thực hành
@@ -148,7 +148,7 @@ Giống như **đèn báo trên xe hơi**.
     prevId: "1-4",
   },
   "2-1": {
-    title: "Quan sát thân-tâm", level: 2, levelName: "Người tìm kiếm",
+    title: "Quan sát thân-tâm", level: 2, levelName: "Seeker 🌱",
     duration: "15:00", durationSec: 900,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Quan sát thân-tâm

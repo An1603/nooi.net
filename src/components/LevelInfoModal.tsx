@@ -4,13 +4,13 @@ import { useState } from "react";
 import { X, Sparkles, CheckCircle, Lock, TrendingUp, BookOpen, Award } from "lucide-react";
 
 const LEVELS = [
-  { level: 1, name: "Người mới", nRequired: 0, desc: "Bắt đầu hành trình chuyển hóa", icon: "🌱", color: "text-gray-400", bg: "bg-gray-500/10" },
-  { level: 2, name: "Người tìm kiếm", nRequired: 100, desc: "Hiểu rõ bản thân", icon: "🔍", color: "text-blue-400", bg: "bg-blue-500/10" },
-  { level: 3, name: "Học viên", nRequired: 300, desc: "Xây nền tảng vững chắc", icon: "📚", color: "text-cyan-400", bg: "bg-cyan-500/10" },
-  { level: 4, name: "Người thực hành", nRequired: 600, desc: "Chuyển hóa hàng ngày", icon: "🔥", color: "text-amber-400", bg: "bg-amber-500/10" },
-  { level: 5, name: "Người đồng hành", nRequired: 1000, desc: "Lan tỏa giá trị", icon: "🤝", color: "text-orange-400", bg: "bg-orange-500/10" },
-  { level: 6, name: "Mentor", nRequired: 1500, desc: "Hướng dẫn người khác", icon: "⭐", color: "text-red-400", bg: "bg-red-500/10" },
-  { level: 7, name: "Master Mentor", nRequired: 2500, desc: "Làm chủ hành trình", icon: "🌟", color: "text-purple-400", bg: "bg-purple-500/10" },
+  { level: 1, name: "Member", role: "Thành viên", nRequired: 0, desc: "Bắt đầu hành trình chuyển hóa", icon: "🌰", color: "text-gray-400", bg: "bg-gray-500/10" },
+  { level: 2, name: "Seeker", role: "Người tìm kiếm", nRequired: 100, desc: "Đặt câu hỏi, khám phá bản thân", icon: "🌱", color: "text-amber-400", bg: "bg-amber-500/10" },
+  { level: 3, name: "Grower", role: "Người phát triển", nRequired: 300, desc: "Xây thực hành, chuyển hóa mỗi ngày", icon: "🌿", color: "text-green-400", bg: "bg-green-500/10" },
+  { level: 4, name: "Giver", role: "Người cho đi", nRequired: 700, desc: "Cho đi, phụng sự, lan tỏa", icon: "🌳", color: "text-rose-400", bg: "bg-rose-500/10" },
+  { level: 5, name: "Guider", role: "Người dẫn đường", nRequired: 1200, desc: "Dẫn dắt nhóm, chia sẻ kinh nghiệm", icon: "🌲", color: "text-blue-400", bg: "bg-blue-500/10" },
+  { level: 6, name: "Mentor", role: "Người nuôi dưỡng", nRequired: 2200, desc: "Cố vấn chuyên sâu, nuôi dưỡng người khác", icon: "🌳", color: "text-purple-400", bg: "bg-purple-500/10" },
+  { level: 7, name: "Master", role: "Người kiến tạo", nRequired: 3500, desc: "Kiến tạo hệ sinh thái, truyền thừa", icon: "👑", color: "text-yellow-400", bg: "bg-yellow-500/10" },
 ];
 
 const N_RULES = [
@@ -61,10 +61,10 @@ export function LevelInfoModal({ currentN, currentLevel, currentLevelName, trigg
             <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
               {/* Level ladder */}
               <div className="space-y-2">
-                {LEVELS.map((lvl, i) => {
+                {[...LEVELS].reverse().map((lvl, i) => {
                   const unlocked = currentN >= lvl.nRequired;
                   const isCurrent = currentLevel === lvl.level;
-                  const nextN = i < LEVELS.length - 1 ? LEVELS[i + 1].nRequired - currentN : 0;
+                  const nRequired = lvl.nRequired;
 
                   return (
                     <div
@@ -95,21 +95,21 @@ export function LevelInfoModal({ currentN, currentLevel, currentLevelName, trigg
                             <span className={`text-sm font-bold ${isCurrent ? "text-primary" : unlocked ? "text-foreground" : "text-muted-foreground"}`}>
                               {lvl.icon} {lvl.name}
                             </span>
+                            <span className="text-[10px] text-muted-foreground">— {lvl.role}</span>
                             {isCurrent && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Hiện tại</span>}
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">{lvl.desc}</p>
                           <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
                             <span>Cần {lvl.nRequired} N</span>
-                            {isCurrent && nextN > 0 && <span>Còn {nextN} N để lên cấp</span>}
                           </div>
 
                           {/* Progress bar cho level hiện tại */}
-                          {isCurrent && nextN > 0 && (
+                          {isCurrent && currentN < 3500 && (
                             <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
                               <div
                                 className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all"
                                 style={{
-                                  width: `${i > 0 ? Math.min(100, ((currentN - LEVELS[i - 1].nRequired) / (lvl.nRequired - LEVELS[i - 1].nRequired)) * 100) : (currentN / LEVELS[1].nRequired) * 100}%`,
+                                  width: `${Math.min(100, (currentN / 3500) * 100)}%`,
                                 }}
                               />
                             </div>
@@ -143,16 +143,24 @@ export function LevelInfoModal({ currentN, currentLevel, currentLevelName, trigg
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Mở khóa theo cấp</h3>
                 <div className="space-y-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 font-mono">Lv.5</span>
-                    <span className="text-muted-foreground">Tạo nhóm học tập</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono">🌱 Seeker</span>
+                    <span className="text-muted-foreground">Mở khóa bộ thẻ cấp 1-2</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-mono">Lv.6</span>
-                    <span className="text-muted-foreground">Trở thành Mentor, tổ chức lớp Live</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 font-mono">🌳 Giver</span>
+                    <span className="text-muted-foreground">Tham gia nhóm học tập, tặng quà cho bạn</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-mono">Lv.7</span>
-                    <span className="text-muted-foreground">Master Mentor — Toàn quyền hướng dẫn</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono">🌲 Guider</span>
+                    <span className="text-muted-foreground">Tạo nhóm riêng, dẫn dắt người mới</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-mono">🌳 Mentor</span>
+                    <span className="text-muted-foreground">Tổ chức lớp Live, cố vấn chuyên sâu</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 font-mono">👑 Master</span>
+                    <span className="text-muted-foreground">Toàn quyền kiến tạo, truyền thừa, điều hành</span>
                   </div>
                 </div>
               </div>

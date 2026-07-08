@@ -9,17 +9,20 @@ interface Props {
 }
 
 const LEVEL_COLORS = [
-  "text-amber-400", // Level 1
-  "text-blue-400",  // Level 2
-  "text-cyan-400",  // Level 3
-  "text-amber-400", // Level 4
-  "text-orange-400",// Level 5
-  "text-red-400",   // Level 6
-  "text-purple-400",// Level 7
+  "text-gray-400",   // Level 1 — Member 🌰
+  "text-amber-400",  // Level 2 — Seeker 🌱
+  "text-green-400",  // Level 3 — Grower 🌿
+  "text-rose-400",   // Level 4 — Giver 🌳
+  "text-blue-400",   // Level 5 — Guider 🌲
+  "text-purple-400", // Level 6 — Mentor 🌳
+  "text-yellow-400", // Level 7 — Master 👑
 ];
 
+const LEVEL_ICONS = ["🌰", "🌱", "🌿", "🌳", "🌲", "🌳", "👑"];
+
 export function LevelCard({ level, levelName, n, nForNext, progressPercent }: Props) {
-  const levelColor = LEVEL_COLORS[Math.min(level - 1, 6)] || "text-amber-400";
+  const levelColor = LEVEL_COLORS[Math.min(level - 1, 6)] || "text-gray-400";
+  const levelIcon = LEVEL_ICONS[Math.min(level - 1, 6)] || "🌰";
   const remaining = nForNext > 0 ? nForNext - n : 0;
 
   return (
@@ -32,7 +35,7 @@ export function LevelCard({ level, levelName, n, nForNext, progressPercent }: Pr
 
           {/* Level name */}
           <h2 className={`text-2xl font-bold mt-1 ${levelColor}`}>
-            {levelName}
+            {levelIcon} {levelName}
           </h2>
         </div>
 
@@ -55,8 +58,8 @@ export function LevelCard({ level, levelName, n, nForNext, progressPercent }: Pr
           />
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          {n >= 2500 ? (
-            "🏆 Tối đa"
+          {n >= 3500 ? (
+            "👑 Tối đa"
           ) : (
             <>{progressPercent}% — còn {remaining} N để lên cấp tiếp theo</>
           )}

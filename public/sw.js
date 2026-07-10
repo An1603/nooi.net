@@ -1,7 +1,7 @@
 // NOOI — PWA Service Worker
 // Version: 2.1.0 — Fix: network-first cho app routes (tránh cache dashboard sau logout)
 
-const CACHE_NAME = "nooi-v2";
+const CACHE_NAME = "nooi-v3";
 const APP_ROUTES = [
   "/",
   "/manifest.json",

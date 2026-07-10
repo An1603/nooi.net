@@ -38,6 +38,16 @@ export default function DashboardLoading() {
           </div>
         ))}
       </div>
+
+      {/* Streak & Quest skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {[1, 2].map((i) => (
+          <div key={i} className="h-20 rounded-xl border border-border/50 bg-card/50 p-4">
+            <div className="h-5 w-28 bg-muted/30 rounded-lg mb-2" />
+            <div className="h-3 w-40 bg-muted/20 rounded-lg" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

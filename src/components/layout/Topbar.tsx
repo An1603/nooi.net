@@ -9,7 +9,7 @@ export default function Topbar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-border bg-background/80 backdrop-blur-sm">
+    <header className="sticky top-0 z-30 w-full border-b border-border bg-card/95 backdrop-blur-md">
       <div className="flex items-center justify-between px-4 h-12">
         {/* Left side */}
         <div className="flex items-center gap-2">

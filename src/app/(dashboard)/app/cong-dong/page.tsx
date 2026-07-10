@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Users, Plus, UserPlus, Shield, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CommunityLeaderboard from "@/components/community/CommunityLeaderboard";
+import BuddyWidget from "@/components/community/BuddyWidget";
+import GroupQuizLeaderboard from "@/components/community/GroupQuizLeaderboard";
 
 interface Group {
   id: string; name: string; description: string; schedule: string; member_count: number;
@@ -108,6 +110,9 @@ export default function CommunityPage() {
           <p className="text-muted-foreground text-sm mt-0.5">Cùng nhau thực hành và chuyển hóa</p>
         </div>
       </div>
+
+      {/* Bạn đồng hành */}
+      <BuddyWidget />
 
       {/* Hướng dẫn cấp độ nhóm */}
       <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2">
@@ -227,6 +232,9 @@ export default function CommunityPage() {
           ))}
         </div>
       </div>
+
+      {/* Thi đua nhóm */}
+      <GroupQuizLeaderboard />
 
       {/* Bảng xếp hạng */}
       <CommunityLeaderboard />

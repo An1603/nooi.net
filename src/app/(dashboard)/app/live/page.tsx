@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Video, Calendar, Clock, User, Users, Plus, CheckCircle, Lock, Copy, Bell } from "lucide-react";
+import { Video, Calendar, Clock, User, Users, Plus, CheckCircle, Lock, Copy, Bell, Loader2, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Countdown Timer Component ───────────────────────────────────────────────
@@ -97,6 +97,8 @@ export default function LivePage() {
   const [userLevel, setUserLevel] = useState(1);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [reminderSending, setReminderSending] = useState<string | null>(null);
+  const [hasTelegram, setHasTelegram] = useState(false);
   const isMentor = userLevel >= 6;
 
   const showNotif = useCallback((type: "success" | "error", msg: string) => {
@@ -160,6 +162,14 @@ export default function LivePage() {
           .eq("user_id", user.id)
           .eq("file_type", "live_registration");
         if (myReg) setRegisteredIds(myReg.map((r) => r.title));
+
+        // Kiểm tra đã kết nối Telegram chưa
+        const { data: myProfile } = await supabase
+          .from("profiles")
+          .select("telegram_chat_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        setHasTelegram(!!myProfile?.telegram_chat_id);
       } catch {}
     })();
   }, []);
@@ -211,6 +221,25 @@ export default function LivePage() {
         showNotif("success", "🎉 Đã đăng ký thành công! Kiểm tra thông tin phòng học bên dưới.");
       }
     } catch {}
+  }
+
+  // ── Gửi nhắc nhở Telegram ──
+  async function sendReminder(sessionId: string) {
+    setReminderSending(sessionId);
+    try {
+      const res = await fetch("/api/telegram/reminder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Lỗi gửi nhắc nhở");
+      showNotif("success", `🔔 Đã gửi nhắc nhở đến ${data.sent} người!`);
+    } catch (err) {
+      showNotif("error", `❌ ${err instanceof Error ? err.message : "Lỗi gửi nhắc nhở"}`);
+    } finally {
+      setReminderSending(null);
+    }
   }
 
   // ── Copy text ──
@@ -376,8 +405,23 @@ export default function LivePage() {
                       </button>
                     )}
                     {!isRegistered && (
-                      <button className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1">
-                        <Bell className="w-3 h-3" /> Nhắc tôi
+                      <button
+                        onClick={() => {
+                          if (hasTelegram) {
+                            sendReminder(s.id);
+                          } else {
+                            showNotif("error", "❌ Bạn chưa kết nối Telegram. Vào Cài đặt để kết nối.");
+                          }
+                        }}
+                        disabled={reminderSending === s.id}
+                        className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {reminderSending === s.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Bell className="w-3 h-3" />
+                        )}
+                        Nhắc tôi
                       </button>
                     )}
                   </div>

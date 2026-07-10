@@ -17,8 +17,8 @@ export default async function SignupPage(props: { searchParams?: Promise<{ ref?:
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} } }
     );
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) redirect("/app");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) redirect("/app");
   } catch {}
 
   return (

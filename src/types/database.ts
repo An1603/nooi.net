@@ -20,6 +20,7 @@ export interface Database {
           onboarding_completed: boolean;
           ref_code: string | null;
           referred_by: string | null;
+          telegram_chat_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -39,6 +40,7 @@ export interface Database {
           onboarding_completed?: boolean;
           ref_code?: string | null;
           referred_by?: string | null;
+          telegram_chat_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -58,6 +60,7 @@ export interface Database {
           onboarding_completed?: boolean;
           ref_code?: string | null;
           referred_by?: string | null;
+          telegram_chat_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

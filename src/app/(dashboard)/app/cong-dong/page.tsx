@@ -3,16 +3,17 @@
 import { useState, useEffect } from "react";
 import { Users, Plus, UserPlus, Shield, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import CommunityLeaderboard from "@/components/community/CommunityLeaderboard";
 
 interface Group {
   id: string; name: string; description: string; schedule: string; member_count: number;
 }
 
-const LEVEL_NAMES = ["", "Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+const LEVEL_NAMES = ["", "🌰 Member", "Seeker 🌱", "Grower 🌿", "Giver 🌳", "Guider 🌲", "Mentor 🌳", "Master 👑"];
 
 function getLevel(userId: string, journalCounts: Record<string, number>) {
   const n = (journalCounts[userId] || 0) * 10;
-  const t = [0, 100, 300, 600, 1000, 1500, 2500];
+  const t = [0, 100, 300, 700, 1200, 2200, 3500];
   for (let i = t.length - 1; i >= 0; i--) if (n >= t[i]) return i + 1;
   return 1;
 }
@@ -81,15 +82,20 @@ export default function CommunityPage() {
     try {
       const supabase = createClient();
       const targetUser = allUsers.find((u) => u.user_id === targetUserId);
-      if (!targetUser || targetUser.level >= myLevel) return alert("Chỉ có thể thêm user có cấp độ thấp hơn bạn!");
+      // Guider (Lv5): add được cấp 1-4. Mentor (Lv6)+: chỉ add được cấp kế cận
+      const isEligible = myLevel === 5 ? targetUser && targetUser.level >= 1 && targetUser.level <= 4 : targetUser && targetUser.level === myLevel - 1;
+      if (!isEligible) return alert("Chỉ có thể thêm cấp dưới kế cận! Xem quy tắc nhóm ở trên.");
       await supabase.from("group_members").insert({ group_id: groupId, user_id: targetUserId, role: "member" });
       setMyGroupIds((prev) => [...prev, groupId]);
-      alert(`✅ Đã thêm ${targetUser.name} vào nhóm!`);
+      alert(`✅ Đã thêm ${targetUser!.name} vào nhóm!`);
     } catch {}
   }
 
-  const canManage = myLevel >= 5; // Từ Người đồng hành trở lên
-  const eligibleUsers = allUsers.filter((u) => u.level < myLevel);
+  const canManage = myLevel >= 5;
+  const eligibleUsers = allUsers.filter((u) => {
+    if (myLevel === 5) return u.level >= 1 && u.level <= 4; // Guider: add tất cả cấp dưới
+    return u.level === myLevel - 1; // Mentor/Master: chỉ kế cận
+  });
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
@@ -100,6 +106,18 @@ export default function CommunityPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Cộng đồng tu học</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Cùng nhau thực hành và chuyển hóa</p>
+        </div>
+      </div>
+
+      {/* Hướng dẫn cấp độ nhóm */}
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2">
+        <h3 className="text-sm font-semibold text-amber-400">🛡️ Quy tắc nhóm học tập</h3>
+        <div className="text-xs text-muted-foreground space-y-1">
+          <p>• <strong>🌲 Guider (Lv5)</strong> — tạo nhóm, add được cấp 1→4</p>
+          <p>• <strong>🌳 Mentor (Lv6)</strong> — add được cấp 5 (kế cận dưới)</p>
+          <p>• <strong>👑 Master (Lv7)</strong> — add được cấp 6 (kế cận dưới)</p>
+          <p>• <strong>Cấp dưới được cấp trên chủ động add</strong> — không tự yêu cầu vào nhóm</p>
+          {myLevel < 5 && <p className="text-amber-400/80 mt-2">🔒 Bạn cần đạt <strong>Guider (Lv5)</strong> để tạo nhóm. Hiện tại bạn đang ở {LEVEL_NAMES[myLevel]}.</p>}
         </div>
       </div>
 
@@ -209,6 +227,9 @@ export default function CommunityPage() {
           ))}
         </div>
       </div>
+
+      {/* Bảng xếp hạng */}
+      <CommunityLeaderboard />
     </div>
   );
 }

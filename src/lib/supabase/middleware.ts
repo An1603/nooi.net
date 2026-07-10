@@ -41,17 +41,16 @@ export const updateSession = async (request: NextRequest) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // ALWAYS rewrite auth cookies with .nooi.net domain on every request
-  // This ensures cookies set by client-side login get the correct domain
-  for (const name of COOKIE_NAMES) {
-    const cookie = request.cookies.get(name);
-    if (cookie) {
-      supabaseResponse.cookies.set(name, cookie.value, cookieOptions({
-        maxAge: 60 * 60 * 24 * 365,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-      }));
+  if (!user) {
+    // User not authenticated — CLEAR auth cookies, don't rewrite them
+    for (const name of COOKIE_NAMES) {
+      const cookie = request.cookies.get(name);
+      if (cookie) {
+        supabaseResponse.cookies.set(name, "", {
+          ...cookieOptions({ path: "/", maxAge: 0 }),
+          maxAge: 0,
+        });
+      }
     }
   }
 

@@ -96,6 +96,78 @@ export default function PracticesPage() {
         </p>
       </div>
 
+      {/* ─── NHÂN ẢNH — Hero nổi bật nhất ─── */}
+      <a
+        href="/app/thuc-hanh/nhan-anh"
+        className="block rounded-2xl border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/5 p-7 hover:border-violet-500/50 transition-all group shadow-lg shadow-violet-500/5"
+      >
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/30 to-purple-500/30 flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform">
+            🧬
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] text-violet-400 font-medium uppercase tracking-wider mb-1">Tổng hợp 3 lớp đánh giá</p>
+            <h3 className="text-lg font-bold group-hover:text-violet-300 transition-colors">
+              NHÂN ẢNH
+            </h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Chân dung chân thật của tôi — xem khoảng cách giữa Số Mệnh · Tình Huống · Tự Đánh Giá
+            </p>
+          </div>
+          <span className="text-2xl text-violet-400 group-hover:translate-x-1 transition-transform">→</span>
+        </div>
+      </a>
+
+      {/* ─── 2 cột: Tấm Gương + Tình Huống ─── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a
+          href="/app/thuc-hanh/tu-danh-gia"
+          className="block rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-rose-500/5 p-6 hover:border-amber-500/40 transition-all group"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 transition-transform">
+              🪞
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                Tấm Gương Tự Biết Mình
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                7 trục đánh giá · 35 câu hỏi · 5 phút<br/>Khám phá bức tranh bản thân
+              </p>
+            </div>
+            <span className="text-muted-foreground group-hover:text-primary transition-colors mt-1">→</span>
+          </div>
+        </a>
+
+        <a
+          href="/app/thuc-hanh/tinh-huong"
+          className="block rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 p-6 hover:border-cyan-500/40 transition-all group"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 transition-transform">
+              🎬
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                Tình Huống Thực Tế
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                7 trục × 3 tình huống · 21 câu chuyện<br/>Phản ứng thực của bạn trước cuộc đời
+              </p>
+            </div>
+            <span className="text-muted-foreground group-hover:text-primary transition-colors mt-1">→</span>
+          </div>
+        </a>
+      </div>
+
+      {/* ─── Phân cách ─── */}
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-border/50" />
+        <span className="text-xs text-muted-foreground">Thực hành hàng ngày</span>
+        <div className="h-px flex-1 bg-border/50" />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {practices.map((p) => {
           const Icon = p.icon;

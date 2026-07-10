@@ -4,6 +4,7 @@ import { SettingsForm } from "./SettingsForm";
 import { AccountLinkingSection } from "@/components/auth/AccountLinking";
 import { ChangePasswordSection } from "@/components/auth/ChangePasswordSection";
 import { SetPasswordSection } from "@/components/auth/SetPasswordSection";
+import { TelegramConnect } from "@/components/telegram/TelegramConnect";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -13,7 +14,7 @@ export default async function SettingsPage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("*, telegram_chat_id")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -93,6 +94,9 @@ export default async function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Telegram Notification Section */}
+      <TelegramConnect userId={user.id} initialChatId={profile?.telegram_chat_id ?? null} />
 
       {/* Security Section */}
       <div className="rounded-xl border border-border bg-card mb-6">

@@ -5,62 +5,56 @@ import Link from "next/link";
 import { BookOpen, Play, ChevronRight, Lock, CheckCircle, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const LEVELS = [
-  {
-    id: 1, name: "Người mới", desc: "Bắt đầu hành trình chuyển hóa",
-    lessons: [
-      { id: "1-1", title: "NOOI là gì?", type: "video", duration: "15:00", free: true },
-      { id: "1-2", title: "Vì sao NOOI ra đời?", type: "video", duration: "12:00" },
-      { id: "1-3", title: "Bản đồ con người", type: "video", duration: "20:00" },
-      { id: "1-4", title: "Bản đồ khổ đau", type: "video", duration: "18:00" },
-      { id: "1-5", title: "Bắt đầu thực hành", type: "practice", duration: "10:00", free: true },
-    ],
-    nRequired: 0,
-  },
-  {
-    id: 2, name: "Người tìm kiếm", desc: "Hiểu rõ bản thân",
-    lessons: [
-      { id: "2-1", title: "Quan sát thân-tâm", type: "video", duration: "15:00" },
-      { id: "2-2", title: "Nhận diện cảm xúc", type: "video", duration: "12:00" },
-      { id: "2-3", title: "Thiền căn bản", type: "video", duration: "20:00" },
-      { id: "2-4", title: "Bài tập: Nhật ký cảm xúc", type: "practice", duration: "15:00" },
-    ],
-    nRequired: 100,
-  },
-  {
-    id: 3, name: "Học viên", desc: "Xây nền tảng vững chắc",
-    lessons: [
-      { id: "3-1", title: "Chánh niệm trong đời sống", type: "video", duration: "20:00" },
-      { id: "3-2", title: "Quản trị tâm trí", type: "video", duration: "15:00" },
-      { id: "3-3", title: "Thực hành: Đi bộ chánh niệm", type: "practice", duration: "10:00" },
-    ],
-    nRequired: 300,
-  },
-  {
-    id: 4, name: "Người thực hành", desc: "Chuyển hóa hàng ngày",
-    lessons: [
-      { id: "4-1", title: "Chuyển hóa cảm xúc", type: "video", duration: "20:00" },
-      { id: "4-2", title: "Sống chánh niệm", type: "video", duration: "15:00" },
-    ],
-    nRequired: 600,
-  },
-  {
-    id: 5, name: "Người đồng hành", desc: "Lan tỏa giá trị",
-    lessons: [
-      { id: "5-1", title: "Lắng nghe sâu", type: "video", duration: "15:00" },
-      { id: "5-2", title: "Đồng hành cùng người khác", type: "video", duration: "20:00" },
-    ],
-    nRequired: 1000,
-  },
-  {
-    id: 6, name: "Mentor", desc: "Hướng dẫn người khác",
-    lessons: [
-      { id: "6-1", title: "Kỹ năng Mentor", type: "video", duration: "25:00" },
-    ],
-    nRequired: 1500,
-  },
-  { id: 7, name: "Master Mentor", desc: "Làm chủ hành trình", lessons: [], nRequired: 2500 },
+// ─── Level metadata (names, descriptions, unlock thresholds) ───────────────
+// These are business config, not yet in the database.
+const LEVEL_META = [
+  { id: 1, name: "🌰 Member", desc: "Bắt đầu hành trình chuyển hóa", nRequired: 0 },
+  { id: 2, name: "Seeker 🌱", desc: "Hiểu rõ bản thân", nRequired: 100 },
+  { id: 3, name: "Grower 🌿", desc: "Xây nền tảng vững chắc", nRequired: 300 },
+  { id: 4, name: "Giver 🌳", desc: "Chuyển hóa hàng ngày", nRequired: 700 },
+  { id: 5, name: "Guider 🌲", desc: "Lan tỏa giá trị", nRequired: 1200 },
+  { id: 6, name: "Mentor 🌳", desc: "Hướng dẫn người khác", nRequired: 2200 },
+  { id: 7, name: "Master 👑", desc: "Làm chủ hành trình", nRequired: 3500 },
 ];
+
+// ─── Hardcoded fallback lessons (used when API is unavailable) ──────────────
+const FALLBACK_LESSONS: Record<number, Array<{
+  id: string; title: string; type: string; duration: string; free?: boolean;
+}>> = {
+  1: [
+    { id: "1-1", title: "NOOI là gì?", type: "video", duration: "15:00", free: true },
+    { id: "1-2", title: "Vì sao NOOI ra đời?", type: "video", duration: "12:00" },
+    { id: "1-3", title: "Bản đồ con người", type: "video", duration: "20:00" },
+    { id: "1-4", title: "Bản đồ khổ đau", type: "video", duration: "18:00" },
+    { id: "1-5", title: "Bắt đầu thực hành", type: "practice", duration: "10:00", free: true },
+  ],
+  2: [
+    { id: "2-1", title: "Quan sát thân-tâm", type: "video", duration: "15:00" },
+    { id: "2-2", title: "Nhận diện cảm xúc", type: "video", duration: "12:00" },
+    { id: "2-3", title: "Thiền căn bản", type: "video", duration: "20:00" },
+    { id: "2-4", title: "Bài tập: Nhật ký cảm xúc", type: "practice", duration: "15:00" },
+  ],
+  3: [
+    { id: "3-1", title: "Chánh niệm trong đời sống", type: "video", duration: "20:00" },
+    { id: "3-2", title: "Quản trị tâm trí", type: "video", duration: "15:00" },
+    { id: "3-3", title: "Thực hành: Đi bộ chánh niệm", type: "practice", duration: "10:00" },
+  ],
+  4: [
+    { id: "4-1", title: "Chuyển hóa cảm xúc", type: "video", duration: "20:00" },
+    { id: "4-2", title: "Sống chánh niệm", type: "video", duration: "15:00" },
+  ],
+  5: [
+    { id: "5-1", title: "Lắng nghe sâu", type: "video", duration: "15:00" },
+    { id: "5-2", title: "Đồng hành cùng người khác", type: "video", duration: "20:00" },
+  ],
+  6: [
+    { id: "6-1", title: "Kỹ năng Mentor", type: "video", duration: "25:00" },
+  ],
+  7: [],
+};
+
+type LessonShape = { id: string; title: string; type: string; duration: string; free?: boolean };
+type LevelShape = { id: number; name: string; desc: string; lessons: LessonShape[]; nRequired: number };
 
 interface LessonProgress {
   lesson_id: string;
@@ -68,11 +62,55 @@ interface LessonProgress {
   completed: boolean;
 }
 
-const totalLessons = LEVELS.reduce((sum, l) => sum + l.lessons.length, 0);
+/** Build LEVELS array from level metadata + lesson records keyed by level_id */
+function buildLevels(lessonsByLevel: Record<number, LessonShape[]>): LevelShape[] {
+  return LEVEL_META.map((meta) => ({
+    ...meta,
+    lessons: lessonsByLevel[meta.id] ?? [],
+  }));
+}
+
+const defaultLevels = buildLevels(FALLBACK_LESSONS);
+const totalLessons = defaultLevels.reduce((sum, l) => sum + l.lessons.length, 0);
 
 export default function LearningHub() {
+  const [levels, setLevels] = useState<LevelShape[]>(defaultLevels);
   const [progress, setProgress] = useState<LessonProgress[]>([]);
   const [n, setN] = useState(0);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // ── Fetch lessons from public API ──────────────────────────────
+        const res = await fetch("/api/lessons");
+        if (res.ok) {
+          const { lessons } = await res.json() as {
+            lessons: Array<{
+              level_id: number;
+              lesson_id: string;
+              title: string;
+              type: string;
+              duration: string;
+            }>;
+          };
+          // Group by level_id
+          const grouped: Record<number, LessonShape[]> = {};
+          for (const l of lessons) {
+            if (!grouped[l.level_id]) grouped[l.level_id] = [];
+            grouped[l.level_id].push({
+              id: l.lesson_id,
+              title: l.title,
+              type: l.type,
+              duration: l.duration,
+            });
+          }
+          setLevels(buildLevels(grouped));
+        }
+      } catch {
+        // API failed — keep fallback (defaultLevels)
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -108,7 +146,7 @@ export default function LearningHub() {
   const isUnlocked = (nRequired: number) => n >= nRequired;
 
   // Flat list of all lessons in order for prev-lesson check
-  const allLessons = LEVELS.flatMap((l) => l.lessons.map((lesson) => ({ ...lesson, levelNRequired: l.nRequired })));
+  const allLessons = levels.flatMap((l) => l.lessons.map((lesson) => ({ ...lesson, levelNRequired: l.nRequired })));
   const isLessonAccessible = (lessonId: string, nRequired: number) => {
     if (n >= nRequired) {
       const idx = allLessons.findIndex((l) => l.id === lessonId);
@@ -144,13 +182,13 @@ export default function LearningHub() {
           <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${overallPct}%` }} />
         </div>
         <p className="text-[10px] text-muted-foreground mt-2">
-          {n} N · {n < 2500 ? `${n}/2500 N để đạt Master Mentor` : "🏆 Tối đa"}
+          {n} N · {n < 3500 ? `${n}/3500 N để đạt Master 👑` : "🏆 Tối đa"}
         </p>
       </div>
 
       {/* Levels */}
       <div className="space-y-4">
-        {LEVELS.map((level) => {
+        {levels.map((level) => {
           const unlocked = isUnlocked(level.nRequired);
           const levelDone = level.lessons.filter((l) => getLesson(l.id).completed).length;
           const levelPct = level.lessons.length > 0 ? Math.round((levelDone / level.lessons.length) * 100) : 0;

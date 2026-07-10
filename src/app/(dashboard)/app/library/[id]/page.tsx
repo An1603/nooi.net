@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { ArrowLeft, Edit3, Calendar, FileText, FolderOpen, File, Music } from "lucide-react";
+import { Thumbnail } from "@/components/content/Thumbnail";
+import { FullscreenImage } from "@/components/content/FullscreenImage";
 import { notFound } from "next/navigation";
 
 function parseContent(content: string | null) {
@@ -21,7 +23,7 @@ function parseContent(content: string | null) {
 }
 
 function getYoutubeId(url: string): string | null {
-  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
 }
 
@@ -38,6 +40,11 @@ function renderBody(body: string): React.ReactNode[] {
     if (trimmed.match(/^\d+\. /)) return <li key={i} className="text-sm ml-4 list-decimal">{trimmed.replace(/^\d+\. /, "")}</li>;
     return <p key={i} className="text-sm leading-relaxed">{trimmed}</p>;
   });
+}
+
+function getYoutubeThumbnail(url: string): string | null {
+  const id = getYoutubeId(url);
+  return id ? `https://img.youtube.com/vi/${id}/maxresdefault.jpg` : null;
 }
 
 export default async function DocumentDetailPage({
@@ -71,6 +78,9 @@ export default async function DocumentDetailPage({
     if (project) projectTitle = project.title;
   }
 
+  const parsed = parseContent(doc.content);
+  const ytThumb = parsed.url ? getYoutubeThumbnail(parsed.url) : null;
+
   return (
     <div className="max-w-4xl mx-auto">
       <Link
@@ -81,30 +91,59 @@ export default async function DocumentDetailPage({
         Thư viện
       </Link>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="shrink-0 w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
-              {doc.file_type ? (
-                <File size={20} className="text-secondary" />
-              ) : (
-                <FileText size={20} className="text-secondary" />
-              )}
+      {/* Hero Thumbnail */}
+      <div className="rounded-xl overflow-hidden mb-6">
+        {ytThumb ? (
+          <div className="relative aspect-video bg-muted">
+            <img
+              src={ytThumb}
+              alt={doc.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute bottom-4 left-4">
+              <h1 className="text-2xl font-bold text-white drop-shadow-lg">{doc.title}</h1>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">{doc.title}</h1>
           </div>
-          <div className="flex items-center gap-3 ml-[52px]">
-            {doc.file_type && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-secondary/10 text-secondary border-secondary/20 uppercase">
-                {doc.file_type}
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar size={12} />
-              Cập nhật: {new Date(doc.updated_at).toLocaleDateString("vi-VN")}
+        ) : parsed.url && doc.file_type === "image" ? (
+          <div className="relative bg-muted/30 rounded-xl overflow-hidden">
+            <img
+              src={parsed.url}
+              alt={doc.title}
+              className="w-full object-contain"
+              style={{ maxHeight: "50vh" }}
+            />
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4">
+              <h1 className="text-2xl font-bold text-white drop-shadow-lg">{doc.title}</h1>
+            </div>
+          </div>
+        ) : (
+          <div className="relative">
+            <Thumbnail
+              fileType={doc.file_type}
+              title={doc.title}
+              className="aspect-[2.1/1]"
+              showOverlay={true}
+            />
+            <div className="absolute bottom-4 left-4 right-4">
+              <h1 className="text-2xl font-bold text-white drop-shadow-lg">{doc.title}</h1>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Meta bar */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          {doc.file_type && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-secondary/10 text-secondary border-secondary/20 uppercase">
+              {doc.file_type}
             </span>
-          </div>
+          )}
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Calendar size={12} />
+            Cập nhật: {new Date(doc.updated_at).toLocaleDateString("vi-VN")}
+          </span>
         </div>
         <Link
           href={`/app/library/${id}/edit`}
@@ -119,7 +158,7 @@ export default async function DocumentDetailPage({
       <div className="p-6 rounded-xl border border-border bg-card mb-6">
         <h2 className="text-sm font-semibold text-muted-foreground mb-4">Nội dung</h2>
         {(() => {
-          const c = parseContent(doc.content);
+          const c = parsed;
           return (
             <>
               {c.category && (
@@ -138,11 +177,12 @@ export default async function DocumentDetailPage({
                       />
                     </div>
                   ) : doc.file_type === "image" ? (
-                    /* Image: full display */
-                    <div>
-                      <img src={c.url} alt={doc.title} className="w-full rounded-lg object-cover max-h-96" />
-                      {c.caption && <p className="text-xs text-muted-foreground mt-2 text-center">{c.caption}</p>}
-                    </div>
+                    /* Image: full display with fullscreen button */
+                    <FullscreenImage
+                      src={c.url}
+                      alt={doc.title}
+                      caption={c.caption}
+                    />
                   ) : doc.file_type === "audio" ? (
                     /* Audio: player */
                     <div>
@@ -152,16 +192,31 @@ export default async function DocumentDetailPage({
                       </audio>
                     </div>
                   ) : doc.file_type === "pdf" ? (
-                    /* PDF: iframe embed */
+                    /* PDF: embedded qua proxy (Supabase storage chặn iframe) */
+                    (() => {
+                      const proxyUrl = `/api/library/pdf-proxy?url=${encodeURIComponent(c.url)}`;
+                      return (
                     <div>
-                      <p className="text-xs text-muted-foreground mb-2">📕 PDF · {c.pages || "?"} trang</p>
-                      <a href={c.url} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 bg-primary px-4 py-2 rounded-lg text-sm text-primary-foreground mb-3"
-                      >
-                        📕 Tải PDF
-                      </a>
-                      <iframe src={c.url} className="w-full h-96 rounded-lg border border-border" />
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-muted-foreground">📕 PDF · {c.pages || "?"} trang</p>
+                        <a
+                          href={c.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          Mở tab mới ↗
+                        </a>
+                      </div>
+                      <iframe
+                        src={proxyUrl}
+                        className="w-full rounded-lg border border-border"
+                        style={{ height: "80vh", minHeight: "500px" }}
+                        title={doc.title}
+                      />
                     </div>
+                      );
+                    })()
                   ) : (
                     /* Other: link */
                     <>

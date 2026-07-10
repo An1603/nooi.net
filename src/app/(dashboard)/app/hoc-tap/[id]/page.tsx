@@ -1,11 +1,44 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, Play, Sparkles, ChevronRight, Clock, Award, Bot } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import LessonComments from "@/components/comment/LessonComments";
+
+// ─── Helper: Fisher-Yates shuffle ──────────────────────────────────────────
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+interface QuizItem {
+  question: string;
+  options: string[];
+  correct: number;
+}
+
+/** Trộn câu hỏi + đáp án mỗi lần render để chống học vẹt / bấm bừa */
+function shuffleQuiz(quiz: QuizItem[]): QuizItem[] {
+  // 1. Trộn thứ tự câu hỏi
+  const shuffled = shuffleArray(quiz);
+  // 2. Mỗi câu: trộn đáp án + cập nhật index đúng
+  return shuffled.map((q) => {
+    const indexed = q.options.map((opt, i) => ({ opt, origIdx: i }));
+    const mixed = shuffleArray(indexed);
+    return {
+      ...q,
+      options: mixed.map((m) => m.opt),
+      correct: mixed.findIndex((m) => m.origIdx === q.correct),
+    };
+  });
+}
 
 // ─── Dữ liệu bài học ───────────────────────────────────────────────────────
 
@@ -17,7 +50,7 @@ const LESSONS: Record<string, {
   youtubeId?: string;
 }> = {
   "1-1": {
-    title: "NOOI là gì?", level: 1, levelName: "Người mới",
+    title: "NOOI là gì?", level: 1, levelName: "Member 🌰",
     duration: "15:00", durationSec: 900,
     youtubeId: "dQw4w9WgXcQ",
     content: `## NOOI là gì?
@@ -39,7 +72,7 @@ Kết nối con người với chính mình, với cộng đồng và với nh�
     nextId: "1-2",
   },
   "1-2": {
-    title: "Vì sao NOOI ra đời?", level: 1, levelName: "Người mới",
+    title: "Vì sao NOOI ra đời?", level: 1, levelName: "Member 🌰",
     duration: "12:00", durationSec: 720,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Vì sao NOOI ra đời?
@@ -57,7 +90,7 @@ Trường học dạy cách **kiếm sống**, nhưng không dạy **cách sốn
     prevId: "1-1", nextId: "1-3",
   },
   "1-3": {
-    title: "Bản đồ con người", level: 1, levelName: "Người mới",
+    title: "Bản đồ con người", level: 1, levelName: "Member 🌰",
     duration: "20:00", durationSec: 1200,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Bản đồ con người
@@ -76,7 +109,7 @@ Trường học dạy cách **kiếm sống**, nhưng không dạy **cách sốn
     prevId: "1-2", nextId: "1-4",
   },
   "1-4": {
-    title: "Bản đồ khổ đau", level: 1, levelName: "Người mới",
+    title: "Bản đồ khổ đau", level: 1, levelName: "Member 🌰",
     duration: "18:00", durationSec: 1080,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Bản đồ khổ đau
@@ -95,7 +128,7 @@ Giống như **đèn báo trên xe hơi**.
     prevId: "1-3", nextId: "1-5",
   },
   "1-5": {
-    title: "Bắt đầu thực hành", level: 1, levelName: "Người mới",
+    title: "Bắt đầu thực hành", level: 1, levelName: "Member 🌰",
     duration: "10:00", durationSec: 600,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Bắt đầu thực hành
@@ -115,7 +148,7 @@ Giống như **đèn báo trên xe hơi**.
     prevId: "1-4",
   },
   "2-1": {
-    title: "Quan sát thân-tâm", level: 2, levelName: "Người tìm kiếm",
+    title: "Quan sát thân-tâm", level: 2, levelName: "Seeker 🌱",
     duration: "15:00", durationSec: 900,
     youtubeId: "dQw4w9WgXcQ",
     content: `## Quan sát thân-tâm
@@ -148,6 +181,10 @@ export default function LessonPage() {
   const params = useParams();
   const lessonId = params.id as string;
   const lesson = LESSONS[lessonId];
+
+  // ── Shuffle quiz on mount ──
+  const shuffledQuiz = useMemo(() => lesson ? shuffleQuiz(lesson.quiz) : [], [lessonId]);
+
   const [progress, setProgress] = useState({ timeSpent: 0, quizScore: 0, quizTotal: 0, pct: 0, completed: false });
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -179,7 +216,6 @@ export default function LessonPage() {
           if (p.quizSubmitted) setQuizLocked(false);
         } catch {}
       }
-      // Nếu chưa có progress, lock quiz
     })();
   }, [lessonId, lesson]);
 
@@ -210,7 +246,7 @@ export default function LessonPage() {
   // ── Submit Quiz ──
   async function submitQuiz() {
     let correct = 0;
-    lesson.quiz.forEach((q, i) => { if (quizAnswers[i] === q.correct) correct++; });
+    shuffledQuiz.forEach((q, i) => { if (quizAnswers[i] === q.correct) correct++; });
     setQuizResult(correct);
     setQuizSubmitted(true);
     savedRef.current = false; // force re-save
@@ -225,7 +261,6 @@ export default function LessonPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      // Trừ N bằng cách xóa 1 journal entry (nếu có)
       const { data: journals } = await supabase.from("documents")
         .select("id").eq("user_id", user.id).eq("file_type", "journal").limit(penalty / 10);
       if (journals && journals.length > 0) {
@@ -330,7 +365,7 @@ export default function LessonPage() {
           <h3 className="font-semibold">Kiểm tra kiến thức</h3>
           {quizSubmitted && (
             <span className="text-sm ml-auto">
-              {quizResult}/{lesson.quiz.length} ({Math.round((quizResult / lesson.quiz.length) * 100)}%)
+              {quizResult}/{shuffledQuiz.length} ({Math.round((quizResult / shuffledQuiz.length) * 100)}%)
             </span>
           )}
           {quizLocked && !quizSubmitted && (
@@ -347,7 +382,7 @@ export default function LessonPage() {
           </div>
         ) : (
           <div className="space-y-5">
-            {lesson.quiz.map((q, qi) => (
+            {shuffledQuiz.map((q, qi) => (
               <div key={qi}>
                 <p className="text-sm font-medium mb-2">Câu {qi + 1}: {q.question}</p>
                 <div className="space-y-2">
@@ -376,7 +411,7 @@ export default function LessonPage() {
 
         <div className="flex gap-3 mt-5">
           {!quizSubmitted && !quizLocked && (
-            <button onClick={submitQuiz} disabled={quizAnswers.length < lesson.quiz.length}
+            <button onClick={submitQuiz} disabled={quizAnswers.length < shuffledQuiz.length}
               className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 transition-colors disabled:opacity-50"
             >Nộp bài</button>
           )}

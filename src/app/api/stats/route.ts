@@ -84,12 +84,12 @@ export async function GET() {
       .eq("file_type", "journal");
 
     const n = (journalCount ?? 0) * 10;
-    const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2500];
+    const levelThresholds = [0, 100, 300, 700, 1200, 2200, 3500];
     let level = 1;
     for (let i = levelThresholds.length - 1; i >= 0; i--) {
       if (n >= levelThresholds[i]) { level = i + 1; break; }
     }
-    const levelNames = ["Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
+    const levelNames = ["🌰 Member", "Seeker 🌱", "Grower 🌿", "Giver 🌳", "Guider 🌲", "Mentor 🌳", "Master 👑"];
 
     return NextResponse.json({
       streak,

@@ -69,7 +69,7 @@ export default async function VideoDetailPage({
       <div className="aspect-video rounded-xl bg-muted mb-6 overflow-hidden border border-border">
         {(() => {
           const ytMatch = video.url?.match(
-            /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+            /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
           );
           if (ytMatch) {
             return (

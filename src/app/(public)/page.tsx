@@ -132,17 +132,8 @@ function TiltCard({ children, className = '' }: { children: React.ReactNode; cla
    Section wrapper with reveal
    Hero Section
    ─────────────────────────────────────────────── */
-function HeroSection() {
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setLoggedIn(!!session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+function HeroSection({ loggedIn }: { loggedIn: boolean }) {
+  const { ref, visible } = useScrollReveal(0.1);
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-5 pt-24 pb-20 overflow-hidden">
@@ -406,7 +397,7 @@ const PILLARS = [
   },
 ];
 
-function PillarsSection() {
+function PillarsSection({ loggedIn }: { loggedIn: boolean }) {
   const { ref, visible } = useScrollReveal(0.1);
 
   return (
@@ -460,10 +451,10 @@ function PillarsSection() {
 
         <div className={`text-center mt-12 transition-all duration-700 delay-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <Link
-            href="/signup"
+            href={loggedIn ? "/app" : "/signup"}
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-medium hover:brightness-110 transition-all"
           >
-            Bắt đầu hành trình
+            {loggedIn ? "Vào trang cá nhân" : "Bắt đầu hành trình"}
             <ArrowUpRight size={16} />
           </Link>
         </div>
@@ -577,7 +568,7 @@ function HowSection() {
 /* ───────────────────────────────────────────────
    CTA Section
    ─────────────────────────────────────────────── */
-function CTASection() {
+function CTASection({ loggedIn }: { loggedIn: boolean }) {
   const { ref, visible } = useScrollReveal();
 
   return (
@@ -610,12 +601,12 @@ function CTASection() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="/signup"
+                href={loggedIn ? "/app" : "/signup"}
                 className="group relative inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-medium hover:brightness-110 transition-all shadow-lg shadow-primary/20 overflow-hidden"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                 <span className="relative z-10 flex items-center gap-2">
-                  Tham gia miễn phí
+                  {loggedIn ? "Vào trang cá nhân" : "Tham gia miễn phí"}
                   <ArrowUpRight size={16} />
                 </span>
               </Link>
@@ -720,15 +711,73 @@ function FooterSection() {
 /* ───────────────────────────────────────────────
    Page assembly
    ─────────────────────────────────────────────── */
-export default function LandingPage() {
+function LandingPageInner({ loggedIn }: { loggedIn: boolean }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <HeroSection />
+      <HeroSection loggedIn={loggedIn} />
       <FeaturesSection />
-      <PillarsSection />
+      <PillarsSection loggedIn={loggedIn} />
       <HowSection />
-      <CTASection />
+      <CTASection loggedIn={loggedIn} />
       <FooterSection />
     </div>
   );
+}
+
+export default function LandingPage() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkAuth() {
+      try {
+        // Dùng API server-side để check session (đọc cookie chính xác)
+        const res = await fetch("/api/auth/check", { cache: "no-store" });
+        const data = await res.json();
+        if (!cancelled) {
+          setLoggedIn(data.loggedIn);
+          setChecked(true);
+        }
+      } catch {
+        // Fallback: check client-side
+        try {
+          const supabase = createClient();
+          const { data } = await supabase.auth.getSession();
+          if (!cancelled) {
+            setLoggedIn(!!data.session);
+            setChecked(true);
+          }
+        } catch {
+          if (!cancelled) setChecked(true);
+        }
+      }
+    }
+
+    checkAuth();
+
+    // Listen for auth changes
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!cancelled) setLoggedIn(!!session);
+    });
+
+    // Check lại khi focus tab
+    const onFocus = () => {
+      fetch("/api/auth/check", { cache: "no-store" })
+        .then(r => r.json())
+        .then(d => { if (!cancelled) setLoggedIn(d.loggedIn); })
+        .catch(() => {});
+    };
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
+  return <LandingPageInner loggedIn={loggedIn} />;
 }

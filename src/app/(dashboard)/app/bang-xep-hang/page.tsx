@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trophy, Medal, Award, TrendingUp } from "lucide-react";
+import { Trophy, Medal, TrendingUp } from "lucide-react";
 
 interface Entry {
   rank: number; user_id: string; name: string; n: number; journals: number;

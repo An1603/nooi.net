@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BookHeart, Bot, TrendingUp } from "lucide-react";
 import StreakBadgeWidget from "@/components/streak/StreakBadgeWidget";
 import QuestWidget from "@/components/quest/QuestWidget";
+import DashboardStats from "@/components/stats/DashboardStats";
 
 async function getRecentJournals(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase
@@ -66,69 +67,88 @@ export default async function DashboardHome() {
     hasJournalToday(supabase, user.id),
   ]);
 
-  const xp = (journalCount ?? 0) * 10;
-  const levelNames = ["Người mới", "Người tìm kiếm", "Học viên", "Người thực hành", "Người đồng hành", "Mentor", "Master Mentor"];
-  const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2500];
-  let level = 1;
-  for (let i = levelThresholds.length - 1; i >= 0; i--) {
-    if (xp >= levelThresholds[i]) { level = i + 1; break; }
-  }
-  const nextThreshold = levelThresholds[Math.min(level, 6)];
-  const xpProgress = Math.min(100, Math.round(((xp - levelThresholds[level - 1]) / (nextThreshold - levelThresholds[level - 1])) * 100));
-
-  const stats = [
-    { label: "Dự án", value: String(projectCount ?? 0), icon: "📁" },
-    { label: "Video", value: String(videoCount ?? 0), icon: "🎬" },
-    { label: "Tài liệu", value: String(docCount ?? 0), icon: "📄" },
-    { label: "Nhật ký", value: String(journalCount ?? 0), icon: "📓" },
-  ];
-
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Welcome */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Xin chào, <span className="text-gradient-ai">{name}</span>
+          Hi!, <span className="text-gradient-ai">{name}</span>
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Đây là tổng quan không gian làm việc của bạn trên NOOI.
         </p>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {stats.map((s, i) => (
-          <div key={i} className="p-4 rounded-xl border border-border bg-card hover:bg-card/80 transition-colors">
-            <span className="text-lg mb-1.5 block">{s.icon}</span>
-            <div className="text-xl font-bold">{s.value}</div>
-            <div className="text-xs text-muted-foreground mt-0.5 truncate">{s.label}</div>
+      {/* AI Mentor suggestion */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
+            <Bot className="w-5 h-5 text-primary" />
           </div>
-        ))}
+          <div className="flex-1">
+            <h2 className="text-base font-semibold mb-1">NOOI AI Mentor</h2>
+            <p className="text-sm text-muted-foreground mb-3">
+              {(journalCount ?? 0) > 0
+                ? "Bạn đã ghi nhật ký. Hãy chia sẻ để AI Mentor phân tích và đồng hành cùng bạn."
+                : "Bắt đầu hành trình chuyển hóa — viết nhật ký đầu tiên và nhận phản hồi từ AI Mentor."}
+            </p>
+            <div className="flex gap-3">
+              <Link
+                href="/app/voice"
+                className="text-sm bg-primary px-4 py-2 rounded-lg text-primary-foreground hover:bg-primary/80 transition-colors"
+              >
+                🎧 Hỏi AI Mentor
+              </Link>
+              <Link
+                href="/app/journal"
+                className="text-sm border border-border px-4 py-2 rounded-lg hover:bg-muted/30 transition-colors"
+              >
+                📝 Viết nhật ký
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Quick actions */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Bắt đầu nhanh</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+          {[
+            {
+              title: "📓 Nhật ký",
+              desc: "Ghi lại Thân-Tâm-Hành mỗi ngày",
+              href: "/app/journal",
+              color: "from-amber-500/10 to-amber-500/5 border-amber-500/20 hover:border-amber-500/30",
+            },
+            {
+              title: "🧘 Thiền",
+              desc: "Thực hành chánh niệm cùng hướng dẫn",
+              href: "/app/thuc-hanh",
+              color: "from-green-500/10 to-green-500/5 border-green-500/20 hover:border-green-500/30",
+            },
+            {
+              title: "🎮 Game",
+              desc: "Học qua trò chơi ghép thẻ chuyển hóa",
+              href: "/app/game",
+              color: "from-purple-500/10 to-purple-500/5 border-purple-500/20 hover:border-purple-500/30",
+            },
+          ].map((action) => (
+            <Link key={action.title} href={action.href}
+              className={`flex flex-col p-4 sm:p-5 rounded-xl border bg-gradient-to-br ${action.color} transition-all hover:scale-[1.02] active:scale-95 touch-target`}
+            >
+              <span className="text-lg mb-1">{action.title}</span>
+              <span className="text-xs text-muted-foreground">{action.desc}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats grid — chuyển vào DashboardStats */}
 
       <StreakBadgeWidget />
 
       <QuestWidget />
-
-      {/* Level / N card */}
-      <div className="rounded-xl border border-primary/20 bg-card p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Cấp độ</p>
-            <p className="text-lg font-bold text-primary">{levelNames[Math.min(level - 1, 6)]}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">NOOI (N)</p>
-            <p className="text-lg font-bold">{xp} N</p>
-          </div>
-        </div>
-        <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${xpProgress}%` }} />
-        </div>
-        <p className="text-[10px] text-muted-foreground mt-2">
-          {xp < 2500 ? `${xpProgress}% — còn ${nextThreshold - xp} N để lên cấp tiếp theo` : "Tối đa"}
-        </p>
-      </div>
 
       {/* Journal reminder */}
       {!journalToday && (
@@ -230,65 +250,15 @@ export default async function DashboardHome() {
         </div>
       </div>
 
-      {/* AI Mentor suggestion */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
-            <Bot className="w-5 h-5 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-base font-semibold mb-1">NOOI AI Mentor</h2>
-            <p className="text-sm text-muted-foreground mb-3">
-              {(journalCount ?? 0) > 0
-                ? "Bạn đã ghi nhật ký. Hãy chia sẻ để AI Mentor phân tích và đồng hành cùng bạn."
-                : "Bắt đầu hành trình chuyển hóa — viết nhật ký đầu tiên và nhận phản hồi từ AI Mentor."}
-            </p>
-            <div className="flex gap-3">
-              <Link
-                href="/app/journal"
-                className="text-sm bg-primary px-4 py-2 rounded-lg text-primary-foreground hover:bg-primary/80 transition-colors"
-              >
-                {(journalCount ?? 0) > 0 ? "📝 Viết nhật ký" : "📝 Bắt đầu"}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick actions */}
+      {/* Thống kê */}
       <div>
-        <h2 className="text-lg font-semibold mb-4">Bắt đầu nhanh</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            {
-              title: "📓 Nhật ký",
-              desc: "Ghi lại Thân-Tâm-Hành mỗi ngày",
-              href: "/app/journal",
-              color: "from-amber-500/10 to-amber-500/5 border-amber-500/20 hover:border-amber-500/30",
-            },
-            {
-              title: "⚡ Thực hành",
-              desc: "Bài tập 60 giây chuyển hóa",
-              href: "/app/thuc-hanh",
-              color: "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/30",
-            },
-            {
-              title: "🎙 Trợ lý giọng nói",
-              desc: "Trò chuyện với AI Mentor",
-              href: "/app/voice",
-              color: "from-violet-500/10 to-violet-500/5 border-violet-500/20 hover:border-violet-500/30",
-            },
-          ].map((card, i) => (
-            <Link
-              key={i}
-              href={card.href}
-              className={`p-5 rounded-xl border bg-gradient-to-br ${card.color} transition-all group`}
-            >
-              <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">{card.title}</h3>
-              <p className="text-xs text-muted-foreground">{card.desc}</p>
-            </Link>
-          ))}
-        </div>
+        <h2 className="text-lg font-semibold mb-4">Thống kê</h2>
+        <DashboardStats
+          projectCount={projectCount ?? 0}
+          videoCount={videoCount ?? 0}
+          docCount={docCount ?? 0}
+          journalCount={journalCount ?? 0}
+        />
       </div>
     </div>
   );

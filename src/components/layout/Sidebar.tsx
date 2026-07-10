@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -11,46 +11,50 @@ import {
   Video,
   BookOpen,
   Settings,
-  LogOut,
-  Menu,
-  X,
   Sparkles,
-  Sun,
-  Globe,
   Headphones,
   User,
   BookHeart,
   Users,
-  BarChart3,
-  Trophy,
   Layers,
+  Package,
 } from 'lucide-react';
 
 const NAV = [
+  // Nhóm Dashboard
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
+
+  // Nhóm AI & Học tập
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
-  { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },
-  { label: 'Game học', href: '/app/game', icon: Sparkles },
-  { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
-  { label: 'Bảng xếp hạng', href: '/app/bang-xep-hang', icon: Trophy },
   { label: 'Lớp Live', href: '/app/live', icon: Video },
-  { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
-  { label: 'Thống kê', href: '/app/thong-ke', icon: BarChart3 },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },
   { label: 'Thực hành', href: '/app/thuc-hanh', icon: Sparkles },
-  { label: 'Hồ sơ', href: '/app/profile', icon: User },
-  { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
+
+  // Nhóm Khám phá
+  { label: 'Thẻ chuyển hóa', href: '/app/the-chuyen-hoa', icon: Layers },
+  { label: 'Kho vật phẩm', href: '/app/kho-vat-pham', icon: Package },
+  { label: 'AI Mentor', href: '/app/voice', icon: Headphones },
+  { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
+  { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
+
+  // Nhóm Cá nhân
   { label: 'Video', href: '/app/videos', icon: Video },
   { label: 'Thư viện', href: '/app/library', icon: BookOpen },
-  { label: 'Thần số học', href: '/app/numerology', icon: Sparkles },
-  { label: 'Tử Vi', href: '/app/tuvi', icon: Sun },
-  { label: 'Chiêm tinh', href: '/app/astrology', icon: Globe },
-  { label: 'AI Mentor', href: '/app/voice', icon: Headphones },
+  { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
+  { label: 'Hồ sơ', href: '/app/profile', icon: User },
+  { label: 'Cài đặt', href: '/app/settings', icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Listen for toggle events from Topbar
+  useEffect(() => {
+    const handler = () => setMobileOpen((prev) => !prev);
+    window.addEventListener("sidebar:toggle", handler);
+    return () => window.removeEventListener("sidebar:toggle", handler);
+  }, []);
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/app' && pathname.startsWith(href + '/'));
@@ -79,7 +83,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-3 space-y-0.5">
+      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
         {NAV.map((item) => {
           const Icon = item.icon;
           return (
@@ -96,40 +100,13 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-2 py-3 border-t border-border space-y-0.5">
-        <Link
-          href="/app/settings"
-          onClick={() => setMobileOpen(false)}
-          className={linkClass('/app/settings')}
-        >
-          <Settings size={18} className="shrink-0" />
-          <span>Cài đặt</span>
-        </Link>
-        <form action="/auth/logout" method="POST">
-          <button
-            type="submit"
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all border-l-2 border-transparent"
-          >
-            <LogOut size={18} className="shrink-0" />
-            <span>Đăng xuất</span>
-          </button>
-        </form>
-      </div>
+      {/* Footer spacer */}
+      <div className="px-2 py-3 border-t border-border" />
     </>
   );
 
   return (
     <>
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground"
-        aria-label="Toggle menu"
-      >
-        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-52 shrink-0 min-h-screen border-r border-border bg-card flex-col">
         {sidebarContent}

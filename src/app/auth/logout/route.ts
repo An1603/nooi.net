@@ -19,9 +19,17 @@ async function handleLogout(request: NextRequest) {
 
   // Admin host → redirect to admin login
   if (host === "admin.nooi.net") {
-    return NextResponse.redirect(new URL("/admin-login", `https://admin.nooi.net`));
+    const resp = NextResponse.redirect(new URL("/admin-login", `https://admin.nooi.net`));
+    // Clear auth cookies
+    resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.0", "", { maxAge: 0, path: "/" });
+    resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.1", "", { maxAge: 0, path: "/" });
+    return resp;
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net";
-  return NextResponse.redirect(new URL("/", siteUrl));
+  const resp = NextResponse.redirect(new URL("/", siteUrl));
+  // Clear auth cookies
+  resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.0", "", { maxAge: 0, path: "/" });
+  resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.1", "", { maxAge: 0, path: "/" });
+  return resp;
 }

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Calendar, Play, Music, FileText, Image } from "lucide-react";
+import { Calendar, FileText, Music, Play } from "lucide-react";
+import { Thumbnail } from "./Thumbnail";
 
 export interface DocumentCardData {
   id: string;
   title: string;
   content: string | null;
   file_type: string | null;
+  file_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -18,7 +20,7 @@ function parseContent(content: string | null) {
 }
 
 function getYoutubeId(url: string): string | null {
-  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
 }
 
@@ -41,8 +43,11 @@ const TYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string; border
   note: { icon: <FileText className="w-5 h-5" />, label: "Ghi chú", border: "border-l-purple-500/50" },
 };
 
+// Need to import Image from 'lucide-react' for the config
+import { Image } from "lucide-react";
+
 export function DocumentCard({ document: doc }: DocumentCardProps) {
-  const { id, title, content, file_type, created_at } = doc;
+  const { id, title, content, file_type, file_url, created_at } = doc;
   const parsed = parseContent(content);
   const ytId = parsed.url ? getYoutubeId(parsed.url) : null;
   const type = TYPE_CONFIG[file_type || "document"] || TYPE_CONFIG.document;
@@ -55,8 +60,9 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
         `border-l-2 ${type.border}`
       )}
     >
-      {/* Video thumbnail */}
-      {ytId && (
+      {/* Thumbnail — luôn hiển thị, ưu tiên ảnh thật */}
+      {ytId ? (
+        /* Video: YouTube thumbnail */
         <div className="relative aspect-video bg-muted overflow-hidden">
           <img
             src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
@@ -64,7 +70,7 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
           />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center group-hover:bg-black/80 transition-colors">
               <Play className="w-6 h-6 text-white ml-0.5" />
             </div>
           </div>
@@ -74,15 +80,22 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
             </span>
           )}
         </div>
-      )}
-
-      {/* Image thumbnail */}
-      {!ytId && file_type === "image" && parsed.url && (
+      ) : file_type === "image" && parsed.url ? (
+        /* Image: real image */
         <div className="relative aspect-video bg-muted overflow-hidden">
           <img
             src={parsed.url}
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+          />
+        </div>
+      ) : (
+        /* Auto-generated gradient thumbnail cho các loại còn lại */
+        <div className="group-hover:scale-105 transition-transform duration-300">
+          <Thumbnail
+            fileType={file_type}
+            title={title}
+            showOverlay={true}
           />
         </div>
       )}

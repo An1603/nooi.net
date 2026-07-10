@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 // ─── 12 Thẻ chuyển hóa từ Blueprint ────────────────────────────────────────
 
 const CARDS = [
-  // ── Level 1: Người mới — Nhận thức cơ bản ──
+  // ── 🌰 Member (Lv.1) — Nhận thức cơ bản ──
   { term: "Tánh biết", def: "Bầu trời trong vắt, nơi mọi hiện tượng đến rồi đi", icon: "☀️" },
   { term: "Vô minh", def: "Không biết mình là ai, quên mất bản chất thật", icon: "🌫️" },
   { term: "Chấp ngã", def: "Bám víu vào cái tôi, danh vọng, sở hữu", icon: "🔗" },
@@ -25,7 +25,7 @@ const CARDS = [
   { term: "Vô thường", def: "Mọi thứ liên tục thay đổi, không có gì cố định", icon: "🌊" },
   { term: "Khổ", def: "Cảm giác bất toại nguyện khi sự việc không như ý", icon: "😔" },
 
-  // ── Level 2: Người tìm kiếm — Hiểu rõ bản thân ──
+  // ── 🌱 Seeker (Lv.2) — Hiểu rõ bản thân ──
   { term: "Thân", def: "Cơ thể vật chất, nơi cảm thọ sinh khởi", icon: "🧍" },
   { term: "Tâm", def: "Khu vườn ký ức, nơi lưu giữ mọi trải nghiệm", icon: "🧠" },
   { term: "Hành", def: "Ý chí và hành động xuất phát từ tâm", icon: "🏃" },
@@ -43,7 +43,7 @@ const CARDS = [
   { term: "Tuệ", def: "Trí tuệ thấy rõ bản chất thật của sự vật", icon: "🪷" },
   { term: "Giới", def: "Nguyên tắc sống giúp tâm không hối hận", icon: "🛡️" },
 
-  // ── Level 3: Học viên — Xây nền tảng ──
+  // ── 🌿 Grower (Lv.3) — Xây nền tảng ──
   { term: "Hơi thở", def: "Cầu nối giữa thân và tâm, neo giữ hiện tại", icon: "💨" },
   { term: "Thiền", def: "Thực hành đưa tâm về trạng thái an tĩnh", icon: "🧘" },
   { term: "Tọa thiền", def: "Ngồi yên, quán sát thân-tâm không phán xét", icon: "🙏" },
@@ -61,7 +61,7 @@ const CARDS = [
   { term: "Buông xả", def: "Không bám víu, không chống đối, để mọi thư tự nhiên", icon: "🍂" },
   { term: "An trú", def: "Sống trọn vẹn trong giây phút hiện tại", icon: "🏡" },
 
-  // ── Level 4-5: Người thực hành / Đồng hành ──
+  // ── 🌳 Giver + 🌲 Guider (Lv.4-5) — Thực hành & Dẫn đường ──
   { term: "Micro-practice", def: "Bài tập 60 giây áp dụng chánh niệm vào đời sống", icon: "⚡" },
   { term: "Sám hối", def: "Nhìn lại lỗi lầm với tâm tha thứ và học hỏi", icon: "🕯️" },
   { term: "Tùy hỷ", def: "Hoan hỷ với điều tốt mình và người đã làm", icon: "🌟" },
@@ -79,7 +79,7 @@ const CARDS = [
   { term: "Giác ngộ", def: "Thấy rõ bản chất thật của thực tại", icon: "🪷" },
   { term: "Giải thoát", def: "Tự do khỏi mọi ràng buộc của tâm", icon: "🕊️" },
 
-  // ── Level 6-7: Mentor / Master Mentor ──
+  // ── 🌳 Mentor + 👑 Master (Lv.6-7) — Dẫn dắt & Kiến tạo ──
   { term: "THẤY", def: "Nhìn rõ bản thân, quan sát thực tại không phán xét", icon: "👁️" },
   { term: "HIỂU", def: "Hiểu nguyên nhân gốc rễ của khổ đau", icon: "💡" },
   { term: "SỐNG", def: "Biến hiểu biết thành thực hành mỗi ngày", icon: "🌟" },

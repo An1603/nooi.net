@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Header } from "@/components/layout/Header";
 import type { Metadata } from "next";
+import InstallPrompt from "@/components/InstallPrompt";
+import { RouteLoader } from "@/components/Loading";
 
 export const dynamic = 'force-dynamic';
 
@@ -49,16 +51,18 @@ export default async function PublicLayout({
         },
       }
     );
-    const { data: { session } } = await supabase.auth.getSession();
-    initialSession = !!session;
+    const { data: { user } } = await supabase.auth.getUser();
+    initialSession = !!user;
   } catch {
     // Not critical — Header will check client-side
   }
 
   return (
     <>
+      <RouteLoader />
       <Header initialSession={initialSession} />
       {children}
+      <InstallPrompt />
     </>
   );
 }

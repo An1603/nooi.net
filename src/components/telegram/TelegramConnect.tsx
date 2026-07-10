@@ -9,7 +9,7 @@ interface Props {
   initialChatId: string | null;
 }
 
-const BOT_USERNAME = "NooiVNBot"; // Thay bằng bot username thật
+const BOT_USERNAME = "NOOI_Agent_Bot";
 
 export function TelegramConnect({ userId, initialChatId }: Props) {
   const supabase = createClient();

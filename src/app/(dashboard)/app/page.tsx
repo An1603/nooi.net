@@ -70,18 +70,20 @@ export default async function DashboardHome() {
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Welcome */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Hi!, <span className="text-gradient-ai">{name}</span>
+      <div className="relative">
+        <div className="absolute -inset-x-4 -inset-y-2 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 rounded-2xl pointer-events-none" />
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight relative">
+          Hi!, <span className="text-gradient-gold">{name}</span>
         </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-muted-foreground mt-1 text-sm relative">
           Đây là tổng quan không gian làm việc của bạn trên NOOI.
         </p>
       </div>
 
       {/* AI Mentor suggestion */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-        <div className="flex items-start gap-4">
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 card-elevated relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-full pointer-events-none" />
+        <div className="flex items-start gap-4 relative">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
             <Bot className="w-5 h-5 text-primary" />
           </div>
@@ -135,7 +137,7 @@ export default async function DashboardHome() {
             },
           ].map((action) => (
             <Link key={action.title} href={action.href}
-              className={`flex flex-col p-4 sm:p-5 rounded-xl border bg-gradient-to-br ${action.color} transition-all hover:scale-[1.02] active:scale-95 touch-target`}
+              className={`flex flex-col p-4 sm:p-5 rounded-xl border bg-gradient-to-br ${action.color} transition-all hover:scale-[1.02] active:scale-95 touch-target card-elevated-hover`}
             >
               <span className="text-lg mb-1">{action.title}</span>
               <span className="text-xs text-muted-foreground">{action.desc}</span>

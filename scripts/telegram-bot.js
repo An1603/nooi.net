@@ -2,8 +2,25 @@
 /**
  * NOOI Telegram Bot — Auto-reply Chat ID
  * Run: node ~/nooi.net/scripts/telegram-bot.js
- * PM2: pm2 start ~/nooi.net/scripts/telegram-bot.js --name nooi-tg-bot
+ * PM2: pm2 start ~/nooi.net/scripts/telegram-bot.js --name nooi-tg-bot --cwd /home/hadmin/nooi.net
  */
+
+// Load .env.local manually
+const fs = require("fs");
+const path = require("path");
+const envPath = path.join(__dirname, "..", ".env.local");
+if (fs.existsSync(envPath)) {
+  for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eqIdx = trimmed.indexOf("=");
+    if (eqIdx > 0) {
+      const key = trimmed.slice(0, eqIdx).trim();
+      const val = trimmed.slice(eqIdx + 1).trim();
+      if (!process.env[key]) process.env[key] = val;
+    }
+  }
+}
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 if (!TOKEN) {

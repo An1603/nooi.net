@@ -180,6 +180,59 @@
   box-shadow: 0 0 30px rgba(244,114,182,0.15), 0 0 60px rgba(167,139,250,0.1), 0 0 90px rgba(34,211,238,0.05);
 }
 
+/* ── Enhanced Depth Utilities ── */
+@utility glass-deep {
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+@utility card-elevated {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+@utility card-elevated-hover {
+  &:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06);
+    border-color: rgba(200,148,62,0.15);
+    transform: translateY(-1px);
+  }
+}
+
+/* ── Mesh Gradient Backgrounds ── */
+@utility mesh-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(167,139,250,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(200,148,62,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(74,173,106,0.04) 0%, transparent 50%),
+    #1a0a2e;
+}
+@utility mesh-bg-subtle {
+  background:
+    radial-gradient(ellipse at 15% 30%, rgba(167,139,250,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 70%, rgba(200,148,62,0.04) 0%, transparent 60%),
+    transparent;
+}
+
+/* ── Focus & Interaction States ── */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid rgba(200,148,62,0.5);
+    outline-offset: 2px;
+  }
+}
+@utility interactive {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  &:active { transform: scale(0.98); }
+}
+
+/* ── Subtle Separator Lines ── */
+@utility separator-glow {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,148,62,0.2), transparent);
+}
+
 /* ── Voice Visualizer Animations ── */
 @keyframes particle-drift-0 {
   0%, 100% { transform: translate(-50%, -50%) translate(0, 0); opacity: 0; }

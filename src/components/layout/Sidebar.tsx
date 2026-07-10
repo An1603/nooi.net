@@ -61,17 +61,18 @@ export function Sidebar() {
 
   const linkClass = (href: string) =>
     cn(
-      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
       isActive(href)
-        ? 'bg-primary/10 text-primary border-l-2 border-primary pl-2.5'
+        ? 'bg-primary/10 text-primary border-l-2 border-primary pl-2.5 shadow-[inset_0_1px_0_rgba(200,148,62,0.1)]'
         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent pl-2.5'
     );
 
   const sidebarContent = (
     <>
       {/* Brand */}
-      <div className="px-3 pt-3 pb-4 border-b border-border">
-        <Link href="/" className="flex items-center gap-2 no-underline" onClick={() => setMobileOpen(false)}>
+      <div className="px-3 pt-3 pb-4 border-b border-border relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+        <Link href="/" className="flex items-center gap-2 no-underline relative" onClick={() => setMobileOpen(false)}>
           <Logo variant="circular" className="!w-6 !h-6 shrink-0" />
           <div className="min-w-0">
             <span className="text-sm font-bold tracking-tight text-foreground">NOOI</span>
@@ -108,8 +109,11 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-52 shrink-0 min-h-screen border-r border-border bg-card flex-col">
-        {sidebarContent}
+      <aside className="hidden md:flex w-52 shrink-0 min-h-screen border-r border-border bg-card flex-col relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/3 via-transparent to-accent/3 pointer-events-none" />
+        <div className="relative flex flex-col h-full">
+          {sidebarContent}
+        </div>
       </aside>
 
       {/* Mobile overlay */}

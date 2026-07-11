@@ -343,21 +343,24 @@ export default function LivePage() {
                 <div className="flex items-start justify-between gap-4">
                   {/* Left: Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Sắp tới</span>
                       <CountdownTimer target={`${s.date}T${s.time}:00`} />
+                      {isRegistered && (
+                        <span className="text-xs text-green-400 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Đã đăng ký</span>
+                      )}
                     </div>
                     <h3 className="font-semibold text-base">{s.title}</h3>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{s.description}</p>
 
-                    {/* Thông tin chi tiết */}
-                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-muted-foreground">
+                    {/* Thông tin chi tiết — stack trên mobile */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {s.date}</span>
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {s.time}</span>
                       <span className="flex items-center gap-1"><User className="w-3 h-3" /> {s.mentor_name}</span>
                       <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {s.registered}/{s.max_participants}</span>
                       {s.meeting_id && (
-                        <span className="flex items-center gap-1 font-mono text-[10px] opacity-60">ID: {s.meeting_id}</span>
+                        <span className="flex items-center gap-1 font-mono text-[10px] opacity-60 col-span-2">ID: {s.meeting_id}</span>
                       )}
                     </div>
 
@@ -397,9 +400,7 @@ export default function LivePage() {
 
                   {/* Right: Action */}
                   <div className="shrink-0 flex flex-col items-end gap-2">
-                    {isRegistered ? (
-                      <span className="text-xs text-green-400 flex items-center gap-1"><CheckCircle className="w-4 h-4" /> Đã đăng ký</span>
-                    ) : (
+                    {!isRegistered && (
                       <button onClick={() => register(s.id)} className="text-sm bg-primary px-5 py-2 rounded-lg text-primary-foreground font-medium hover:brightness-110 transition-all">
                         Đăng ký
                       </button>

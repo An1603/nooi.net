@@ -72,7 +72,7 @@ export default async function DashboardHome() {
       {/* Welcome */}
       <div className="relative">
         <div className="absolute -inset-x-4 -inset-y-2 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 rounded-2xl pointer-events-none" />
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight relative">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight relative">
           Hi!, <span className="text-gradient-gold">{name}</span>
         </h1>
         <p className="text-muted-foreground mt-1 text-sm relative">

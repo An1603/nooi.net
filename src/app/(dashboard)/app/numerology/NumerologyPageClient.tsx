@@ -67,7 +67,7 @@ function NumerologyReport({ result, fullName, dateOfBirth }: { result: Numerolog
       </Link>
       <h1 className="text-2xl font-bold">Bản đồ Thần số học</h1>
       <p className="text-sm text-muted-foreground">{fullName}{dateOfBirth ? ` • ${new Date(dateOfBirth).toLocaleDateString("vi-VN")}` : ""}</p>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
           { label: "Đường đời", value: result.lifePath.value },
           { label: "Sứ mệnh", value: result.destiny.value },

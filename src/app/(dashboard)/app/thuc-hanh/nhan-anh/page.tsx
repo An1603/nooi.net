@@ -165,7 +165,7 @@ export default function NhanAnhPage() {
       )}
 
       {/* Chỉ số */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "SAI", value: SAI, desc: "Tự Biết Mình", detail: "Khoảng cách giữa điều bạn nghĩ về mình và số mệnh" },
           { label: "SRI", value: SRI, desc: "Thực Chứng", detail: "Khoảng cách giữa lời nói và hành động thực tế" },

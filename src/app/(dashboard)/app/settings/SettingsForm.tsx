@@ -234,7 +234,7 @@ export function SettingsForm({ user, profile }: Props) {
 
       <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
         {/* Static info */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Email</label>
             <p className="text-sm font-medium">{user.email}</p>

@@ -92,7 +92,7 @@ function PillarCard({ label, cc, accent }: { label: string; cc: CanChi; accent: 
       <div className={`h-1 w-full rounded-full bg-gradient-to-r ${accentBar} mb-3`} />
       <p className="text-[10px] text-amber-300/70 mb-1 uppercase tracking-widest font-semibold">{label}</p>
       <p className="text-xl font-bold text-amber-200">{cc.fullName}</p>
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
         <div className={`rounded-md ${canColor.bg} ${canColor.border} border px-2 py-1.5`}>
           <p className="text-muted-foreground">Thiên Can</p>
           <p className={`font-semibold ${canColor.text}`}>{cc.can.name} · {NGU_HANH_NAMES[cc.can.hanh]}</p>
@@ -358,7 +358,7 @@ export function TuViReportClient({ profile }: Props) {
               </span>
             </div>
             <p className="text-sm text-foreground/85 leading-relaxed">{result.banMenh.meaning}</p>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div className="p-2 rounded-lg bg-background/40">
                 <p className="text-muted-foreground">Hành</p>
                 <p className={`font-semibold ${color.text}`}>{NGU_HANH_NAMES[banMenhHanh]} ({menhInfo.nameEn})</p>
@@ -383,7 +383,7 @@ export function TuViReportClient({ profile }: Props) {
               </span>
             </div>
             <p className="text-sm text-foreground/85 leading-relaxed">{result.cuc.meaning}</p>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div className="p-2 rounded-lg bg-background/40">
                 <p className="text-muted-foreground">Số cục</p>
                 <p className="font-semibold text-amber-300">{result.cuc.value}</p>

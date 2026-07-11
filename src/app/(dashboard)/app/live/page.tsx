@@ -289,16 +289,16 @@ export default function LivePage() {
         <div className="rounded-xl border border-border bg-card p-5 space-y-3 animate-in fade-in">
           <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Tiêu đề buổi học *" className="w-full px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Mô tả nội dung buổi học" className="w-full px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm resize-none" rows={2} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
             <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} className="px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} placeholder="Link Zoom/Meet" className="px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
             <input value={form.max_participants} onChange={(e) => setForm({ ...form, max_participants: Number(e.target.value) })} type="number" min={2} max={100} className="px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
           </div>
           {/* Meeting info auto-generated */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-mono">ID:</span>
               <input value={form.meeting_id} onChange={(e) => setForm({ ...form, meeting_id: e.target.value })} className="w-full px-9 py-2.5 rounded-lg bg-muted/20 border border-border text-sm font-mono tracking-wider" />

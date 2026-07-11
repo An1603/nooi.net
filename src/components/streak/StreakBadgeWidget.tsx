@@ -92,10 +92,10 @@ export default function StreakBadgeWidget() {
 
         {/* 7-day activity dots */}
         {weekDays.length > 0 && (
-          <div className="flex gap-2 justify-center mb-4">
+          <div className="flex gap-1.5 sm:gap-2 justify-center mb-4">
             {weekDays.map((day) => (
               <div key={day.date} className="flex flex-col items-center gap-1">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-all ${
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-all ${
                   day.active
                     ? "bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-[0_0_8px_rgba(249,115,22,0.3)]"
                     : "bg-muted/20 text-muted-foreground/50 border border-border/50"

@@ -190,7 +190,7 @@ export default function SetupPage() {
             <h1 className="text-2xl font-bold">Hoàn tất thiết lập! 🎉</h1>
             <p className="text-muted-foreground mt-2">Tất cả 3 hệ thống đã sẵn sàng. Khám phá bản thân ngay!</p>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
               { label: "Thần số học", href: "/app/numerology", color: "from-amber-500 to-orange-500", emoji: "🔮" },
               { label: "Tử Vi", href: "/app/tuvi", color: "from-red-600 to-amber-600", emoji: "☀️" },
@@ -253,7 +253,7 @@ export default function SetupPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="gio">Giờ sinh</Label>
                 <div className="relative">

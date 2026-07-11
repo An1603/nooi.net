@@ -404,7 +404,7 @@ export function ProfileClient({ user, profile }: Props) {
               </div>
             }
           />
-          <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border/50">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5 pt-4 border-t border-border/50">
             <div className="text-center p-3 rounded-lg bg-muted/20">
               <p className="text-lg font-bold text-primary">{journalCount ?? 0}</p>
               <p className="text-xs text-muted-foreground">Nhật ký</p>
@@ -662,7 +662,7 @@ export function ProfileClient({ user, profile }: Props) {
               <Users className="size-4 text-primary" />
               <span className="text-sm font-medium">Thống kê giới thiệu</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4">
               <div className="p-3 rounded-lg border border-border bg-muted/20 text-center">
                 <p className="text-2xl font-bold text-gradient-gold">{referralStats?.total_referred ?? 0}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Đã mời</p>

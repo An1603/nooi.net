@@ -447,7 +447,7 @@ function ElementQualityCard({ result }: { result: AstrologyResult }) {
       {/* Element breakdown */}
       <div>
         <p className="text-xs font-medium text-muted-foreground mb-2">Phân bổ Nguyên tố</p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {Object.entries(elementCounts).map(([el, count]) => {
             const Icon = elementIcons[el];
             const isDominant = el === result.dominantElement;
@@ -476,7 +476,7 @@ function ElementQualityCard({ result }: { result: AstrologyResult }) {
       {/* Quality breakdown */}
       <div>
         <p className="text-xs font-medium text-muted-foreground mb-2">Phân bổ Phẩm chất</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {Object.entries(qualityCounts).map(([q, count]) => {
             const isDominant = q === result.dominantQuality;
             return (

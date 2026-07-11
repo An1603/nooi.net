@@ -55,7 +55,7 @@ export default function DashboardStats({ projectCount = 0, videoCount = 0, docCo
   return (
     <div className="space-y-6">
       {/* Content stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {CONTENT_STATS.map((s, i) => {
           const Icon = s.icon;
           return (
@@ -71,7 +71,7 @@ export default function DashboardStats({ projectCount = 0, videoCount = 0, docCo
       </div>
 
       {/* Summary row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
           <p className="text-xl font-bold">{stats.streak}</p>
@@ -126,7 +126,7 @@ export default function DashboardStats({ projectCount = 0, videoCount = 0, docCo
           <Award className="w-4 h-4 text-yellow-500" />
           Huy hiệu cấp độ
         </h2>
-        <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3">
           {[
             { level: 1, name: "Member", icon: "/items/badge-member.png", threshold: 0 },
             { level: 2, name: "Seeker", icon: "/items/badge-seeker.png", threshold: 100 },
@@ -165,10 +165,10 @@ export default function DashboardStats({ projectCount = 0, videoCount = 0, docCo
       {/* Heatmap */}
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="text-sm font-semibold mb-3">Hoạt động 7 ngày qua</h2>
-        <div className="flex gap-2 justify-center">
+        <div className="flex gap-1.5 sm:gap-2 justify-center">
           {stats.weekDays.map((day) => (
             <div key={day.date} className="flex flex-col items-center gap-1">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-medium transition-all ${
+              <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-xs font-medium transition-all ${
                 day.active
                   ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_0_8px_rgba(200,148,62,0.25)]"
                   : "bg-muted/20 text-muted-foreground/50 border border-border/50"

@@ -219,7 +219,7 @@ export default function CommunityPage() {
       {/* Bạn học */}
       <div className="rounded-xl border border-border bg-card p-5">
         <h2 className="font-semibold text-sm mb-4">Cộng đồng tu học</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
           {allUsers.slice(0, 12).map((u) => (
             <div key={u.user_id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{u.name.charAt(0)}</div>

@@ -61,7 +61,7 @@ function CoreNumberCard({ icon: Icon, label, number, traits }: {
 
 function NumerologyReport({ result, fullName, dateOfBirth }: { result: NumerologyResult; fullName: string; dateOfBirth: string | null }) {
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-16">
+    <div className="page-shell page-shell-wide space-y-6 pb-16">
       <Link href="/app" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2">
         <ArrowLeft className="size-3" /> Về Dashboard
       </Link>

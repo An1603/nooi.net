@@ -654,7 +654,7 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
   const allPlanets = [sun, moon, ...planets];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16">
+    <div className="page-shell page-shell-wide space-y-8 pb-16">
       {/* HEADER */}
       <div>
         <Link href="/app" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">

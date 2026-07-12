@@ -120,7 +120,7 @@ export default async function DashboardHome() {
   const levelInfo = getLevelInfo(totalN);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="page-shell page-shell-wide space-y-8">
       {/* ─── 1. WELCOME (trên cùng) ─── */}
       <div className="relative px-4">
         <div className="absolute inset-x-0 -inset-y-2 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 rounded-2xl pointer-events-none" />

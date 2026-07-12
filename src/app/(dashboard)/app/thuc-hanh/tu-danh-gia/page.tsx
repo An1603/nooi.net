@@ -232,7 +232,7 @@ export default function SelfAssessmentPage() {
   function getQuestion(idx: number) { const ai = Math.floor(idx / 5); return AXES[ai].questions[idx % 5]; }
 
   if (step === "intro") {
-    if (!loaded) return <div className="max-w-2xl mx-auto p-6 flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+    if (!loaded) return <div className="page-shell page-shell-narrow flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
     return (
       <div className="page-shell page-shell-narrow space-y-8">

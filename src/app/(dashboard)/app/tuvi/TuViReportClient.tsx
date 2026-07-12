@@ -265,7 +265,7 @@ export function TuViReportClient({ profile }: Props) {
   const menhInfo = NGU_HANH[banMenhHanh];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20">
+    <div className="page-shell page-shell-wide space-y-6 pb-20">
       {/* ---------- HEADER ---------- */}
       <div>
         <Link href="/app" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-amber-300 mb-3 transition-colors">

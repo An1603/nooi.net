@@ -191,7 +191,7 @@ export default async function DashboardHome() {
               </Link>
               <Link
                 href="/app/journal"
-                className="text-sm border border-border px-4 py-2 rounded-lg hover:bg-muted/30 transition-colors text-center"
+                className="text-sm bg-primary/80 px-4 py-2 rounded-lg text-primary-foreground hover:bg-primary/70 transition-colors text-center"
               >
                 📝 Viết nhật ký
               </Link>

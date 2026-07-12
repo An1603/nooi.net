@@ -257,7 +257,7 @@ export default function LivePage() {
   const past = sessions.filter((s) => s.date < today || (s.date === today && s.time < currentTime));
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-wide space-y-8">
       {/* Toast notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-right
@@ -340,7 +340,7 @@ export default function LivePage() {
             const icsUrl = generateICS({ title: s.title, description: s.description, date: s.date, time: s.time });
             return (
               <div key={s.id} className={`rounded-xl border ${isRegistered ? "border-primary/30 bg-primary/5" : "border-border bg-card"} p-5 transition-all hover:shadow-md`}>
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   {/* Left: Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -398,10 +398,10 @@ export default function LivePage() {
                     )}
                   </div>
 
-                  {/* Right: Action */}
-                  <div className="shrink-0 flex flex-col items-end gap-2">
+                  {/* Right: Action — desktop bên phải, mobile xuống dưới full-width */}
+                  <div className="flex sm:flex-col sm:items-end items-stretch gap-2 sm:gap-2 sm:shrink-0">
                     {!isRegistered && (
-                      <button onClick={() => register(s.id)} className="text-sm bg-primary px-5 py-2 rounded-lg text-primary-foreground font-medium hover:brightness-110 transition-all">
+                      <button onClick={() => register(s.id)} className="flex-1 sm:flex-none text-sm bg-primary px-5 py-2.5 rounded-lg text-primary-foreground font-medium hover:brightness-110 transition-all">
                         Đăng ký
                       </button>
                     )}
@@ -415,7 +415,7 @@ export default function LivePage() {
                           }
                         }}
                         disabled={reminderSending === s.id}
-                        className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1 disabled:opacity-50"
+                        className="flex-1 sm:flex-none text-[10px] text-muted-foreground hover:text-primary flex items-center justify-center gap-1 disabled:opacity-50 sm:justify-end"
                       >
                         {reminderSending === s.id ? (
                           <Loader2 className="w-3 h-3 animate-spin" />

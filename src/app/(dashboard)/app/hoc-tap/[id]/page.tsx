@@ -277,7 +277,7 @@ export default function LessonPage() {
 
   if (!lesson) {
     return (
-      <div className="max-w-3xl mx-auto p-6 text-center">
+      <div className="page-shell page-shell-narrow text-center">
         <p className="text-muted-foreground">Bài học không tồn tại.</p>
         <Link href="/app/hoc-tap" className="text-primary hover:underline mt-4 inline-block">← Về học tập</Link>
       </div>
@@ -285,7 +285,7 @@ export default function LessonPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="page-shell page-shell-narrow space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/app/hoc-tap" className="hover:text-foreground transition-colors flex items-center gap-1">

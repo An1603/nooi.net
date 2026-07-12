@@ -119,11 +119,11 @@ export default function NhanAnhPage() {
   }
 
   // ─── RENDER ───
-  if (loading) return <div className="max-w-3xl mx-auto p-6 flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="page-shell page-shell-narrow flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   if (!hasG1 && !hasG2) {
     return (
-      <div className="max-w-2xl mx-auto p-6 space-y-6 text-center">
+      <div className="page-shell page-shell-narrow space-y-6 text-center">
         <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center"><span className="text-3xl">🧬</span></div>
         <h1 className="text-2xl font-bold">NHÂN ẢNH</h1>
         <p className="text-muted-foreground text-sm max-w-md mx-auto">
@@ -142,7 +142,7 @@ export default function NhanAnhPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-narrow space-y-8">
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center"><span className="text-3xl">🧬</span></div>

@@ -235,7 +235,7 @@ export default function SelfAssessmentPage() {
     if (!loaded) return <div className="max-w-2xl mx-auto p-6 flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
     return (
-      <div className="max-w-2xl mx-auto p-6 space-y-8">
+      <div className="page-shell page-shell-narrow space-y-8">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 flex items-center justify-center"><span className="text-3xl">🪞</span></div>
           <h1 className="text-2xl font-bold">Tấm Gương Tự Biết Mình</h1>
@@ -271,7 +271,7 @@ export default function SelfAssessmentPage() {
     const q = getQuestion(realIdx);
     const cur = answers[realIdx];
     return (
-      <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <div className="page-shell page-shell-narrow space-y-6">
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Trục {axisIdx+1}/7 — {axis.label}</span><span>{progress}/{totalQ} câu</span></div>
           <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-300" style={{width:`${(progress/totalQ)*100}%`}}/></div>

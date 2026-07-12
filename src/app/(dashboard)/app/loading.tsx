@@ -1,6 +1,6 @@
 export default function DashboardLoading() {
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8 animate-pulse">
+    <div className="page-shell page-shell-wide space-y-8 animate-pulse">
       {/* Welcome skeleton */}
       <div className="space-y-2">
         <div className="h-8 w-48 bg-muted/30 rounded-lg" />

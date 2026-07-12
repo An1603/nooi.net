@@ -122,7 +122,7 @@ export default async function DashboardHome() {
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* ─── 1. WELCOME (trên cùng) ─── */}
-      <div className="relative px-5">
+      <div className="relative px-4">
         <div className="absolute inset-x-0 -inset-y-2 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 rounded-2xl pointer-events-none" />
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight relative">
           Hi!, <span className="text-gradient-gold">{name}</span>

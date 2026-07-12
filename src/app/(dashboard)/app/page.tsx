@@ -80,6 +80,41 @@ export default async function DashboardHome() {
         </p>
       </div>
 
+      {/* Transformation progress */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Transformation path */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold">Hành trình chuyển hóa</h2>
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: "THẤY — Nhìn rõ bản thân", progress: 80, color: "bg-amber-500" },
+              { label: "HIỂU — Hiểu nguyên nhân", progress: 60, color: "bg-emerald-500" },
+              { label: "SỐNG — Thực hành mỗi ngày", progress: 35, color: "bg-blue-500" },
+              { label: "LAN TỎA — Chia sẻ giá trị", progress: 15, color: "bg-purple-500" },
+            ].map((item) => (
+              <div key={item.label}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-foreground">{item.label}</span>
+                  <span className="text-muted-foreground">{item.progress}%</span>
+                </div>
+                <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${item.color} rounded-full transition-all duration-500`}
+                    style={{ width: `${item.progress}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-4">
+            Dựa trên tổng số bài học & nhật ký đã hoàn thành
+          </p>
+        </div>
+      </div>
+
       {/* AI Mentor suggestion */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 card-elevated relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-full pointer-events-none" />
@@ -94,7 +129,7 @@ export default async function DashboardHome() {
                 ? "Bạn đã ghi nhật ký. Hãy chia sẻ để AI Mentor phân tích và đồng hành cùng bạn."
                 : "Bắt đầu hành trình chuyển hóa — viết nhật ký đầu tiên và nhận phản hồi từ AI Mentor."}
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 href="/app/voice"
                 className="text-sm bg-primary px-4 py-2 rounded-lg text-primary-foreground hover:bg-primary/80 transition-colors"

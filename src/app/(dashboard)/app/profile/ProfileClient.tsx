@@ -18,6 +18,7 @@ import {
   Globe,
   ChevronRight,
   LogOut,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -377,6 +378,48 @@ export function ProfileClient({ user, profile }: Props) {
           >
             Chỉnh sửa thông tin <ChevronRight className="size-3" />
           </Link>
+        </div>
+      </div>
+
+      <SectionSeparator />
+
+      {/* ─── SECTION: Public Profile ─── */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <SectionHeader icon={<Globe className="size-5" />} title="Trang cá nhân" desc="Trang hồ sơ công khai của bạn trên NOOI" />
+        </div>
+        <div className="px-5 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Trang cá nhân công khai</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {profile.public_slug
+                  ? `nooi.net/u/${profile.public_slug}`
+                  : "Chưa có slug — vào Cài đặt để thiết lập"}
+              </p>
+            </div>
+            <Link
+              href="/app/settings"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-primary/20 bg-primary/5 text-sm text-primary hover:bg-primary/10 transition-all"
+            >
+              <ExternalLink className="size-3.5" />
+              Tùy chỉnh
+            </Link>
+          </div>
+          {profile.public_slug && (
+            <div className="mt-3 pt-3 border-t border-border/40">
+              <a
+                href={`/u/${profile.public_slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+              >
+                <ExternalLink className="size-3.5" />
+                Xem trang cá nhân
+                <ChevronRight className="size-3" />
+              </a>
+            </div>
+          )}
         </div>
       </div>
 

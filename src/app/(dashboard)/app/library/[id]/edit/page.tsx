@@ -181,7 +181,7 @@ export default function EditDocumentPage({
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="page-shell page-shell-narrow">
         <div className="animate-pulse space-y-6 p-6 rounded-xl border border-border bg-card">
           <div className="h-6 w-48 bg-muted rounded" />
           <div className="h-16 w-full bg-muted rounded-lg" />
@@ -196,7 +196,7 @@ export default function EditDocumentPage({
 
   if (notFound) {
     return (
-      <div className="max-w-2xl mx-auto p-12 text-center">
+      <div className="page-shell page-shell-narrow text-center">
         <div className="text-4xl mb-4">🔍</div>
         <h2 className="text-lg font-semibold mb-2">Không tìm thấy tài liệu</h2>
         <p className="text-sm text-muted-foreground mb-6">
@@ -214,7 +214,7 @@ export default function EditDocumentPage({
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="page-shell page-shell-narrow">
       <div className="flex items-center gap-3 mb-8">
         <Link
           href="/app/library"

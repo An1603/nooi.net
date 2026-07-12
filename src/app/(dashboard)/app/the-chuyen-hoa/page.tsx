@@ -143,7 +143,7 @@ export default function CardCollectionPage() {
   const unlocked = activeLevel <= userLevel;
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-wide space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">

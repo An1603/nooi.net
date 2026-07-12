@@ -26,7 +26,7 @@ export default async function SettingsPage() {
   const hasEmailIdentity = identities.some((i) => i.provider === "email");
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="page-shell page-shell-narrow">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Cài đặt</h1>
         <p className="text-muted-foreground mt-1 text-sm">

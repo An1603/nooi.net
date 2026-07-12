@@ -293,7 +293,7 @@ export default function SelfAssessmentPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-narrow space-y-8">
       <div className="text-center space-y-2"><h1 className="text-2xl font-bold">🪞 Bức Tranh Bản Thân</h1><p className="text-muted-foreground text-sm">{saving ? "Đang lưu..." : saved ? "✅ Đã lưu" : ""}</p></div>
       <div className="rounded-xl border border-border bg-card p-4 flex justify-center"><RadarChart scores={scores} labels={AXES.map(a => a.label)}/></div>
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">

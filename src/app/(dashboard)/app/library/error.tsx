@@ -10,7 +10,7 @@ export default function LibraryError({
   reset: () => void;
 }) {
   return (
-    <div className="max-w-2xl mx-auto p-12 text-center">
+    <div className="page-shell page-shell-narrow text-center">
       <div className="text-4xl mb-4">⚠️</div>
       <h2 className="text-lg font-semibold mb-2">Đã xảy ra lỗi</h2>
       <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">

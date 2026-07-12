@@ -319,7 +319,7 @@ export function ProfileClient({ user, profile }: Props) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="page-shell page-shell-wide">
       {/* Page Header */}
       <div className="flex items-start justify-between mb-8">
         <div>

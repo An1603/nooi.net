@@ -82,7 +82,7 @@ export default async function DocumentDetailPage({
   const ytThumb = parsed.url ? getYoutubeThumbnail(parsed.url) : null;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="page-shell page-shell-wide">
       <Link
         href="/app/library"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"

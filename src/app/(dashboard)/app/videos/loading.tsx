@@ -1,6 +1,6 @@
 export default function VideosLoading() {
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="page-shell page-shell-wide">
       <div className="flex items-center justify-between mb-8">
         <div className="animate-pulse">
           <div className="h-7 w-32 bg-muted rounded mb-2" />

@@ -14,7 +14,7 @@ export default async function ProjectsPage() {
     .order("updated_at", { ascending: false });
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="page-shell page-shell-wide">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dự án</h1>

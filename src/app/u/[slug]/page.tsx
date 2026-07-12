@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 import { PublicProfileClient } from "./PublicProfileClient";
 
 interface Props {
@@ -119,6 +121,20 @@ export default async function PublicProfilePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Top Logo */}
+      <div className="relative z-10 flex justify-center pt-6 pb-2">
+        <Link href="/" className="inline-flex items-center no-underline opacity-90 hover:opacity-100 transition-opacity">
+          <Image
+            src="/logo-icon-original.png"
+            alt="NOOI"
+            width={120}
+            height={40}
+            className="h-9 w-auto"
+            priority
+          />
+        </Link>
+      </div>
+
       <div className="relative">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-accent/5 to-background pointer-events-none" />
@@ -262,6 +278,18 @@ export default async function PublicProfilePage({ params }: Props) {
             </div>
           </div>
         </div>
+
+        {/* ─── Footer Copyright ─── */}
+        <footer className="relative z-10 mt-16 py-8 border-t border-border/30">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} NOOI Center — Kết nối chuyển mình.
+            </p>
+            <p className="text-[10px] text-muted-foreground/70 mt-1">
+              Thân khỏe · Tâm minh · Hệ sinh thái giáo dục trải nghiệm & healing tourism
+            </p>
+          </div>
+        </footer>
       </div>
     </div>
   );

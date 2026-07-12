@@ -145,7 +145,7 @@ export default async function PublicProfilePage({ params }: Props) {
         <div className="absolute top-1/3 -right-32 w-96 h-96 bg-primary/5 rounded-full blur-[150px]" />
         <div className="absolute bottom-1/3 -left-32 w-96 h-96 bg-accent/5 rounded-full blur-[150px]" />
 
-        <div className="page-shell page-shell-wide py-12 md:py-20">
+        <div className="page-shell page-shell-wide px-4 sm:px-6 py-12 md:py-20">
           {/* ─── Hero Section ─── */}
           <div className="text-center mb-12">
             {/* Avatar */}

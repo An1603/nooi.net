@@ -291,18 +291,15 @@
 }
 
 /* ── Page shell: standardized horizontal padding ──
-   Mobile: 16px (px-4) · Desktop: 24px (md:px-6)
-   Use instead of raw p-6 on page wrappers so margins stay balanced
-   with the layout's p-4 md:p-6 outer container. */
+   Relies on layout.tsx for outer padding (p-2 md:p-6).
+   Only manages max-width, centering, and vertical spacing. */
 @utility page-shell {
   width: 100%;
   max-width: 56rem; /* max-w-4xl */
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;   /* px-4 = 16px mobile */
-  padding-right: 1rem;
-  padding-top: 1.5rem;  /* py-6 */
-  padding-bottom: 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 2rem;
 }
 @utility page-shell-wide {
   max-width: 64rem; /* max-w-5xl */

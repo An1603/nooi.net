@@ -393,9 +393,9 @@ export function ProfileClient({ user, profile }: Props) {
             <div>
               <p className="text-sm font-medium">Trang cá nhân công khai</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {profile.public_slug
-                  ? `nooi.net/u/${profile.public_slug}`
-                  : "Chưa có slug — vào Cài đặt để thiết lập"}
+                {profile.ref_code
+                  ? `nooi.net/u/${profile.ref_code.toLowerCase()}`
+                  : "Chưa có mã giới thiệu — liên hệ Admin để thiết lập"}
               </p>
             </div>
             <Link
@@ -406,10 +406,10 @@ export function ProfileClient({ user, profile }: Props) {
               Tùy chỉnh
             </Link>
           </div>
-          {profile.public_slug && (
+          {profile.ref_code && (
             <div className="mt-3 pt-3 border-t border-border/40">
               <a
-                href={`/u/${profile.public_slug}`}
+                href={`/u/${profile.ref_code.toLowerCase()}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"

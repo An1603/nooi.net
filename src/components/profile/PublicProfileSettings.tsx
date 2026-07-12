@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import {
   User,
   Globe,
-  Link,
   Image,
   Sparkles,
   Loader2,
@@ -56,7 +55,6 @@ export function PublicProfileSettings({ userId, profile }: Props) {
   const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [slug, setSlug] = useState(profile?.public_slug ?? "");
   const [headline, setHeadline] = useState(profile?.public_headline ?? "");
   const [bio, setBio] = useState(profile?.public_bio ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile?.public_avatar_url ?? "");
@@ -69,8 +67,8 @@ export function PublicProfileSettings({ userId, profile }: Props) {
     profile?.public_social_links ?? {}
   );
 
-  const publicUrl = profile?.public_slug
-    ? `https://nooi.net/u/${profile.public_slug}`
+  const publicUrl = profile?.ref_code
+    ? `https://nooi.net/u/${profile.ref_code.toLowerCase()}`
     : null;
 
   const handleCopyPublicUrl = useCallback(async () => {
@@ -151,7 +149,6 @@ export function PublicProfileSettings({ userId, profile }: Props) {
       }
 
       const updates: Record<string, unknown> = {
-        public_slug: slug.trim() || null,
         public_headline: headline.trim() || null,
         public_bio: bio.trim() || null,
         public_avatar_url: avatarUrl || null,
@@ -160,16 +157,6 @@ export function PublicProfileSettings({ userId, profile }: Props) {
         public_is_visible: isVisible,
         public_social_links: cleanSocial,
       };
-
-      // Validate slug format
-      const cleanSlug = slug.trim().toLowerCase();
-      if (cleanSlug && !/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/.test(cleanSlug)) {
-        toast.error(
-          "Slug không hợp lệ. Chỉ dùng chữ thường, số và dấu gạch ngang (2-50 ký tự)."
-        );
-        setLoading(false);
-        return;
-      }
 
       const { error } = await supabase
         .from("profiles")
@@ -186,7 +173,6 @@ export function PublicProfileSettings({ userId, profile }: Props) {
       setLoading(false);
     }
   }, [
-    slug,
     headline,
     bio,
     avatarUrl,
@@ -300,29 +286,6 @@ export function PublicProfileSettings({ userId, profile }: Props) {
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Slug */}
-        <div className="space-y-1.5">
-          <Label htmlFor="pub-slug">
-            Đường dẫn (slug) <span className="text-muted-foreground font-normal">— nooi.net/u/...</span>
-          </Label>
-          <div className="relative">
-            <Link className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="pub-slug"
-              placeholder="ten-cua-ban"
-              value={slug}
-              onChange={(e) =>
-                setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
-              }
-              className="pl-8 font-mono text-sm"
-              maxLength={50}
-            />
-          </div>
-          <p className="text-[10px] text-muted-foreground">
-            Chỉ chữ thường, số và dấu gạch ngang. Tự động tạo từ mã giới thiệu.
-          </p>
         </div>
 
         {/* Headline */}

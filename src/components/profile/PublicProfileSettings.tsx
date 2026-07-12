@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ import {
   ExternalLink,
   Copy,
   Check,
+  Upload,
+  X,
 } from "lucide-react";
 
 interface Props {
@@ -50,7 +52,9 @@ const SOCIAL_PLATFORMS = [
 export function PublicProfileSettings({ userId, profile }: Props) {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [slug, setSlug] = useState(profile?.public_slug ?? "");
   const [headline, setHeadline] = useState(profile?.public_headline ?? "");
@@ -81,6 +85,50 @@ export function PublicProfileSettings({ userId, profile }: Props) {
     }
   }, [publicUrl]);
 
+  // ─── Avatar Upload ───
+  const handleAvatarUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Chỉ chấp nhận JPEG, PNG, WebP, GIF");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ảnh tối đa 5MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("user_id", userId);
+
+      const res = await fetch("/api/upload/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload thất bại");
+
+      setAvatarUrl(data.url);
+      toast.success("✅ Đã upload ảnh đại diện!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload thất bại");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [userId]);
+
+  const handleRemoveAvatar = useCallback(() => {
+    setAvatarUrl("");
+  }, []);
+
   const handleSave = useCallback(async () => {
     setLoading(true);
 
@@ -106,7 +154,7 @@ export function PublicProfileSettings({ userId, profile }: Props) {
         public_slug: slug.trim() || null,
         public_headline: headline.trim() || null,
         public_bio: bio.trim() || null,
-        public_avatar_url: avatarUrl.trim() || null,
+        public_avatar_url: avatarUrl || null,
         public_website: website.trim() || null,
         public_skills: skillsArray,
         public_is_visible: isVisible,
@@ -196,6 +244,64 @@ export function PublicProfileSettings({ userId, profile }: Props) {
           </div>
         )}
 
+        {/* Avatar Upload */}
+        <div className="space-y-2">
+          <Label>Ảnh đại diện</Label>
+          <div className="flex items-center gap-4">
+            {/* Preview */}
+            <div className="relative shrink-0">
+              {avatarUrl ? (
+                <div className="relative">
+                  <img
+                    src={avatarUrl}
+                    alt="Avatar"
+                    className="size-20 rounded-full object-cover border-2 border-border"
+                  />
+                  <button
+                    onClick={handleRemoveAvatar}
+                    className="absolute -top-1 -right-1 size-5 rounded-full bg-red-500/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                    title="Xoá ảnh"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="size-20 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 border-2 border-border flex items-center justify-center">
+                  <Image className="size-8 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+
+            {/* Upload button */}
+            <div className="flex-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="text-sm"
+              >
+                {uploading ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Upload className="size-3.5" />
+                )}
+                {uploading ? "Đang tải..." : "Tải ảnh lên"}
+              </Button>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                JPEG, PNG, WebP, GIF. Tối đa 5MB.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Slug */}
         <div className="space-y-1.5">
           <Label htmlFor="pub-slug">
@@ -249,24 +355,6 @@ export function PublicProfileSettings({ userId, profile }: Props) {
           />
           <p className="text-[10px] text-muted-foreground text-right">
             {bio.length}/1000
-          </p>
-        </div>
-
-        {/* Avatar URL */}
-        <div className="space-y-1.5">
-          <Label htmlFor="pub-avatar">Ảnh đại diện (URL)</Label>
-          <div className="relative">
-            <Image className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="pub-avatar"
-              placeholder="https://example.com/avatar.jpg"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              className="pl-8 text-sm"
-            />
-          </div>
-          <p className="text-[10px] text-muted-foreground">
-            URL ảnh từ Google Drive, Imgur, hoặc bất kỳ nguồn nào. Để trống để dùng chữ cái đầu.
           </p>
         </div>
 

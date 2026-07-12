@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Plus, Trash2, Eye, Shield, Loader2, Search, X, Mail, Lock, User, Pencil,
+  Plus, Trash2, Eye, EyeOff, Shield, Loader2, Search, X, Mail, Lock, User, Pencil,
   Sparkles, BarChart3, Hash, Users, Trophy, Layers,
 } from "lucide-react";
 import Link from "next/link";
@@ -39,6 +39,9 @@ interface AdminUser {
   n: number;
   level: number;
   level_name: string;
+  public_slug: string | null;
+  public_is_visible: boolean | null;
+  public_headline: string | null;
 }
 
 interface AdminStats {
@@ -283,6 +286,7 @@ export default function AdminUsersPage() {
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground hidden md:table-cell">N</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Journals</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Role</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden xl:table-cell">Public</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden xl:table-cell">Tham gia</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Hành động</th>
               </tr></thead>
@@ -313,6 +317,19 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     {u.role==="super_admin"||u.role==="admin"?<span className="inline-flex items-center gap-1 text-xs text-primary font-medium"><Shield className="size-3"/>{u.role==="super_admin"?"Super Admin":"Admin"}</span>:<span className="text-xs text-muted-foreground">User</span>}
+                  </td>
+                  <td className="px-4 py-3 hidden xl:table-cell">
+                    <span className={`inline-flex items-center gap-1 text-xs ${u.public_is_visible ? "text-emerald-400" : "text-muted-foreground"}`}>
+                      {u.public_is_visible ? (
+                        u.public_slug ? (
+                          <a href={`https://nooi.net/u/${u.public_slug}`} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                            <Eye className="size-3" /> {u.public_slug}
+                          </a>
+                        ) : <><EyeOff className="size-3" /> Visible</>
+                      ) : (
+                        <><EyeOff className="size-3" /> Ẩn</>
+                      )}
+                    </span>
                   </td>
                   <td className="px-4 py-3 hidden xl:table-cell text-xs text-muted-foreground">
                     <LocalTime iso={u.created_at} format="short" />

@@ -46,6 +46,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? `${profile.full_name} — ${profile.public_headline}`
     : `Hồ sơ thành viên NOOI: ${profile.full_name}`;
 
+  const ogImageUrl = `https://nooi.net/api/og/profile/${profile.public_slug}`;
+
   return {
     title,
     description,
@@ -55,19 +57,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "profile",
       locale: "vi_VN",
       siteName: "NOOI",
-      images: profile.public_avatar_url
-        ? [{ url: profile.public_avatar_url, width: 400, height: 400 }]
-        : [],
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${profile.full_name} — NOOI Profile`,
+        },
+      ],
       username: profile.public_slug,
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: `${profile.full_name} — NOOI Profile`,
       description,
+      images: [ogImageUrl],
     },
     robots: { index: true, follow: true },
     alternates: {
       canonical: `https://nooi.net/u/${profile.public_slug}`,
+    },
+    other: {
+      "fb:app_id": "", // Optional: Facebook App ID for better analytics
     },
   };
 }

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { PublicProfileClient } from "./PublicProfileClient";
+import { ShareButton } from "./ShareButton";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -121,6 +122,9 @@ export default async function PublicProfilePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Floating Share Button */}
+      <ShareButton refCode={profile.ref_code} fullName={profile.full_name} />
+
       {/* Top Logo */}
       <div className="relative z-10 flex justify-center pt-6 pb-2">
         <Link href="/" className="inline-flex items-center no-underline opacity-90 hover:opacity-100 transition-opacity">
@@ -269,7 +273,7 @@ export default async function PublicProfilePage({ params }: Props) {
                 >
                   Tham gia NOOI
                 </a>
-                <PublicProfileClient refCode={profile.ref_code} />
+                <PublicProfileClient refCode={profile.ref_code} fullName={profile.full_name} />
               </div>
               <p className="text-xs text-muted-foreground mt-4">
                 Mã giới thiệu: <code className="font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">{profile.ref_code}</code>

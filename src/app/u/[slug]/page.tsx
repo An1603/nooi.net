@@ -139,11 +139,11 @@ export default async function PublicProfilePage({ params }: Props) {
         </Link>
       </div>
 
-      <div className="relative">
+      <div className="relative overflow-x-hidden">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-accent/5 to-background pointer-events-none" />
-        <div className="absolute top-1/3 -right-32 w-96 h-96 bg-primary/5 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/3 -left-32 w-96 h-96 bg-accent/5 rounded-full blur-[150px]" />
+        <div className="absolute top-1/3 -right-32 w-96 h-96 bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
+        <div className="absolute bottom-1/3 -left-32 w-96 h-96 bg-accent/5 rounded-full blur-[150px] pointer-events-none" />
 
         <div className="page-shell page-shell-wide px-4 sm:px-6 py-12 md:py-20">
           {/* ─── Hero Section ─── */}

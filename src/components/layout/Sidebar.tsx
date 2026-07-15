@@ -18,7 +18,6 @@ import {
   Users,
   Layers,
   Package,
-  ChevronLeft,
 } from 'lucide-react';
 
 const NAV = [
@@ -143,11 +142,6 @@ export function Sidebar() {
   return (
     <>
       {/* ── Sidebar: Desktop (>1024px) + Tablet (821-1024px) ── */}
-      {/*
-          - max-[820px]:hidden → ẩn trên mobile
-          - >820px:flex → hiện trên tablet & desktop
-          - When collapsed on tablet → w-0 + overflow-hidden (show only collapse button)
-      */}
       <aside
         className={`hidden max-[820px]:hidden shrink-0 min-h-screen border-r border-border bg-card flex-col relative transition-all duration-300 ${
           collapsed ? 'w-0 !overflow-hidden !border-0' : 'w-52'
@@ -158,22 +152,6 @@ export function Sidebar() {
           {sidebarContent}
         </div>
       </aside>
-
-      {/* ── Collapse toggle button: only on tablet (821-1024px) ── */}
-      {viewport === 'tablet' && (
-        <button
-          onClick={() => setCollapsed((prev) => !prev)}
-          className="fixed left-0 top-1/2 -translate-y-1/2 z-30 w-5 h-10 rounded-r-md bg-card border border-border border-l-0 flex items-center justify-center hover:bg-muted/50 transition-all cursor-pointer group"
-          aria-label={collapsed ? 'Mở menu' : 'Thu gọn menu'}
-        >
-          <ChevronLeft
-            size={14}
-            className={`text-muted-foreground transition-transform duration-300 ${
-              collapsed ? 'rotate-180' : ''
-            }`}
-          />
-        </button>
-      )}
 
       {/* ── Mobile overlay (≤820px) ── */}
       {mobileOpen && (

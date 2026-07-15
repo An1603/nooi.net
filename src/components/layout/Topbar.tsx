@@ -13,21 +13,18 @@ export default function Topbar() {
       <div className="flex items-center justify-between px-4 h-12">
         {/* Left side */}
         <div className="flex items-center gap-2">
-          {/* Hamburger + Logo: only visible on mobile */}
-          <div className="flex items-center gap-2 max-[820px]:flex hidden">
-            <button
-              onClick={toggleSidebar}
-              className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors"
-              aria-label="Menu"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-foreground">
-                <path d="M3 5h14M3 10h14M3 15h14" />
-              </svg>
-            </button>
-            <Logo variant="horizontal" className="!h-7" />
-          </div>
-          {/* Desktop: empty to avoid redundancy with sidebar logo */}
-          <span className="hidden md:block text-xs text-muted-foreground" />
+          {/* Hamburger: visible on ≤1024px (mobile + tablet) */}
+          <button
+            onClick={toggleSidebar}
+            className="max-[1024px]:flex hidden items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors"
+            aria-label="Menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-foreground">
+              <path d="M3 5h14M3 10h14M3 15h14" />
+            </svg>
+          </button>
+          {/* Logo: always show on mobile, hidden on desktop (redundant with sidebar) */}
+          <Logo variant="horizontal" className="!h-7 max-[1024px]:flex hidden" />
         </div>
 
         {/* Right: notification bell */}

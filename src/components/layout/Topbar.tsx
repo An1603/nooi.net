@@ -11,23 +11,22 @@ export default function Topbar() {
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-card/95 backdrop-blur-md">
       <div className="flex items-center justify-between px-4 h-12">
-        {/* Left side */}
+        {/* Left */}
         <div className="flex items-center gap-2">
           {/* Hamburger: visible on ≤1024px (mobile + tablet) */}
           <button
             onClick={toggleSidebar}
-            className="max-[1024px]:flex hidden items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors"
+            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors"
             aria-label="Menu"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-foreground">
               <path d="M3 5h14M3 10h14M3 15h14" />
             </svg>
           </button>
-          {/* Logo: always show on mobile, hidden on desktop (redundant with sidebar) */}
-          <Logo variant="horizontal" className="!h-7 max-[1024px]:flex hidden" />
+          {/* Logo: visible on ≤1024px */}
+          <Logo variant="horizontal" className="!h-7 lg:hidden" />
         </div>
-
-        {/* Right: notification bell */}
+        {/* Right */}
         <NotificationDropdown />
       </div>
     </header>

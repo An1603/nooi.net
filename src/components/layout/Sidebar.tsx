@@ -6,18 +6,8 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/brand/Logo';
 import {
-  LayoutDashboard,
-  FolderOpen,
-  Video,
-  BookOpen,
-  Settings,
-  Sparkles,
-  Headphones,
-  User,
-  BookHeart,
-  Users,
-  Layers,
-  Package,
+  LayoutDashboard, FolderOpen, Video, BookOpen, Settings,
+  Sparkles, Headphones, User, BookHeart, Users, Layers, Package,
 } from 'lucide-react';
 
 const NAV = [
@@ -43,34 +33,29 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
-  // Listen for toggle events from Topbar
+  // Listen for toggle from hamburger
   useEffect(() => {
     const handler = () => {
-      const w = window.innerWidth;
-      if (w <= 820) {
-        // Mobile: open overlay
-        setMobileOpen((prev) => !prev);
-      } else if (w <= 1024) {
-        // Tablet: toggle collapse
-        setCollapsed((prev) => !prev);
+      if (window.innerWidth < 768) {
+        // Mobile: toggle overlay
+        setMobileOpen(prev => !prev);
+      } else {
+        // Tablet/desktop: toggle collapse
+        setCollapsed(prev => !prev);
       }
-      // Desktop (>1024): do nothing
     };
     window.addEventListener("sidebar:toggle", handler);
     return () => window.removeEventListener("sidebar:toggle", handler);
   }, []);
 
-  // Auto-uncollapse when resizing from tablet to desktop
+  // Auto-uncollapse on desktop
   useEffect(() => {
-    const checkWidth = () => {
-      if (window.innerWidth > 1024) {
-        setCollapsed(false);
-      }
+    const check = () => {
+      if (window.innerWidth >= 1024) setCollapsed(false);
     };
-    window.addEventListener('resize', checkWidth);
-    // Also run on mount
-    checkWidth();
-    return () => window.removeEventListener('resize', checkWidth);
+    window.addEventListener('resize', check);
+    check();
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   const isActive = (href: string) =>
@@ -88,48 +73,36 @@ export function Sidebar() {
 
   const sidebarContent = (
     <>
-      {/* Brand */}
       <div className="px-3 pt-3 pb-4 border-b border-border relative overflow-hidden shrink-0">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
         <Link href="/" className="flex items-center gap-2 no-underline relative" onClick={closeMobile}>
           <Logo variant="circular" className="!w-6 !h-6 shrink-0" />
           <div className="min-w-0">
             <span className="text-sm font-bold tracking-tight text-foreground">NOOI</span>
-            <span className="text-[10px] text-muted-foreground block leading-tight">
-              Kết nối chuyển mình.
-            </span>
+            <span className="text-[10px] text-muted-foreground block leading-tight">Kết nối chuyển mình.</span>
           </div>
         </Link>
       </div>
-
-      {/* Navigation */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
         {NAV.map((item) => {
           const Icon = item.icon;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={closeMobile}
-              className={linkClass(item.href)}
-            >
+            <Link key={item.href} href={item.href} onClick={closeMobile} className={linkClass(item.href)}>
               <Icon size={18} className="shrink-0" />
               <span className="truncate">{item.label}</span>
             </Link>
           );
         })}
       </nav>
-
-      {/* Footer spacer */}
       <div className="px-2 py-3 border-t border-border" />
     </>
   );
 
   return (
     <>
-      {/* ── Sidebar: Desktop (>1024px) + Tablet (821-1024px) ── */}
+      {/* ── Desktop/Tablet sidebar (≥768px) ── */}
       <aside
-        className={`max-[820px]:hidden flex shrink-0 min-h-screen border-r border-border bg-card flex-col relative transition-all duration-300 ${
+        className={`hidden md:flex shrink-0 min-h-screen border-r border-border bg-card flex-col relative transition-all duration-300 ${
           collapsed ? 'w-0 !overflow-hidden !border-0' : 'w-52'
         }`}
       >
@@ -139,19 +112,14 @@ export function Sidebar() {
         </div>
       </aside>
 
-      {/* ── Mobile overlay (≤820px) ── */}
+      {/* ── Mobile overlay (<768px) ── */}
       {mobileOpen && (
         <>
-          <div
-            className="max-[820px]:block hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-            onClick={closeMobile}
-          />
-          <aside className="max-[820px]:flex hidden fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex-col shadow-2xl animate-slide-up">
+          <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
+          <aside className="md:hidden fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex flex-col shadow-2xl animate-slide-up">
             <div className="relative flex flex-col h-full overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-primary/3 via-transparent to-accent/3 pointer-events-none" />
-              <div className="relative flex flex-col h-full">
-                {sidebarContent}
-              </div>
+              <div className="relative flex flex-col h-full">{sidebarContent}</div>
             </div>
           </aside>
         </>

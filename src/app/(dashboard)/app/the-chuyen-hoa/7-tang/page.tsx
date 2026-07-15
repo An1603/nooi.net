@@ -33,7 +33,7 @@ const TIERS = [
     desc: 'Chủ động đi tìm: đọc sách, học hỏi, thiền, trị liệu. Có năng lượng mạnh nhưng dễ lạc. Nguy cơ: tích lũy kiến thức mà không chuyển hóa thật sự.',
     keys: ['Nói nhiều hơn sống — biết lý thuyết nhưng vẫn phản ứng cũ', 'Nhảy từ phương pháp này sang phương pháp khác', 'Dùng ngôn ngữ tâm linh để tránh cảm xúc thật', 'Tủ sách đầy nhưng đời vẫn rối'],
     chiaKhoa: { title: 'THỰC HÀNH, KHÔNG PHẢI KIẾN THỨC', desc: 'Dừng tìm thêm. Chọn một con đường và đi sâu. Bài test: khi tức giận, tất cả sách đã đọc có giúp gì không?' },
-    story: { title: 'Developer 200 cuốn sách', text: '32 tuổi. Đọc Eckhart Tolle, Vipassana, Stoicism, NLP, Human Design. Nói vanh vách về "ego." Nhưng khi bị tổn thương — vẫn cold war 3 ngày. Cơ thể vẫn nắm chặt.' },
+    story: { title: 'Anh CEO "conscious leadership"', text: 'Một CEO startup 36 tuổi, tự nhận là "conscious leader." Đọc hết Ken Wilber, Integral Theory, Spiral Dynamics. Trong meeting hay nói về "teal organization" và "holding space." Nhưng khi nhân viên nghỉ việc, anh tức giận và nói sau lưng. Khi investor từ chối, anh mất ngủ cả tuần. Anh dùng framework tâm linh như áo giáp trí thức, nhưng bên dưới vẫn là nỗi sợ thất bại giống hệt cha mình.' },
   },
   {
     n: 4, name: 'Làm Chủ', en: 'The Owner', keyword: 'CHỦ',
@@ -57,7 +57,7 @@ const TIERS = [
     desc: 'Ranh giới "tôi" và "thế giới" tan. Từ bi không cần nỗ lực, nó tự chảy. Phụng sự như tay phải giúp tay trái. Cảnh giới Bồ Tát: giác ngộ giữa chợ đời.',
     keys: ['Đau của người khác là đau thật, không cần lý do', 'Hiện diện mà không cần sửa, không cần cứu', 'Bình an không phụ thuộc điều kiện bên ngoài', 'Cho mà không đếm, nhận mà không mắc nợ'],
     chiaKhoa: { title: 'BUÔNG LUÔN "SỰ HÒA NHẤT"', desc: 'Còn thấy mình đang hòa nhất là còn một người đang hòa nhất. Còn ở trong tam giới, dù là cõi cao nhất. Phải buông nốt cái thấy cuối cùng.' },
-    story: { title: 'Thích Nhất Hạnh', text: 'Trong chiến tranh VN, chọn "đứng giữa" — bị cả hai bên ghét. Rửa bát như thiền, đi bộ như cầu nguyện. Sự hiện diện như nhau với bất kỳ ai: từ tổng thống đến đứa trẻ.' },
+    story: { title: 'Bác sĩ trong khu ung thư', text: 'Một bác sĩ 60 tuổi, 30 năm làm trong khoa ung bướu. Mỗi tuần nhìn bệnh nhân ra đi. Đồng nghiệp burnout hết lượt, nhưng bà vẫn ở đó, không chai sạn, không kiệt sức. Bí quyết? Bà không "cố gắng mạnh mẽ." Bà khóc với bệnh nhân khi cần, cười khi cần, và mỗi tối về nhà tưới cây bình thường. Bà không tách mình khỏi đau khổ, cũng không bị nó cuốn. Bà ở ngay giữa.' },
   },
   {
     n: 7, name: 'Giải Thoát', en: 'The Liberated', keyword: 'THOÁT',

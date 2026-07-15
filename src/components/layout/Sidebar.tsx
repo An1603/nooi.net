@@ -129,7 +129,7 @@ export function Sidebar() {
     <>
       {/* ── Sidebar: Desktop (>1024px) + Tablet (821-1024px) ── */}
       <aside
-        className={`hidden max-[820px]:hidden shrink-0 min-h-screen border-r border-border bg-card flex-col relative transition-all duration-300 ${
+        className={`max-[820px]:hidden flex shrink-0 min-h-screen border-r border-border bg-card flex-col relative transition-all duration-300 ${
           collapsed ? 'w-0 !overflow-hidden !border-0' : 'w-52'
         }`}
       >

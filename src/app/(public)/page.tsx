@@ -147,8 +147,8 @@ function HeroSection({ loggedIn }: { loggedIn: boolean }) {
           <div className="relative">
             <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-pink-500/15 via-purple-500/10 to-blue-500/15 blur-2xl animate-pulse-glow" />
             <NextImage
-              src="/brand/nooi-horizontal.png"
-              alt="NOOI"
+              src="/brand/nooi-horizontal-white.png"
+              alt="NOOI — Kết nối chuyển mình"
               width={260}
               height={80}
               className="h-16 w-auto"

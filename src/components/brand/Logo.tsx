@@ -13,20 +13,21 @@ interface LogoProps {
 
 /* ==================================================================
    NOOI Logo — sử dụng ảnh thiết kế mới từ /public/brand/
-   - nooi-stacked.png   : dọc (hexagon + NOI + tagline)
-   - nooi-horizontal.png: ngang (hexagon + NOI + tagline)
-   - nooi-icon-v.png    : icon dọc (infinity knot, nền trắng)
-   - nooi-icon-h.png    : icon ngang (infinity knot, nền trắng)
+   - nooi-stacked(-white).png   : dọc (hexagon + NOI + tagline)
+   - nooi-horizontal(-white).png: ngang (hexagon + NOI + tagline)
+   - nooi-icon-v.png            : icon standalone (infinity knot)
+   theme='dark' → nền tối → logo trắng
+   theme='light' → nền sáng → logo màu
    ================================================================== */
 
 /**
  * Logo đầy đủ dạng dọc: hexagon + NOI + "Kết nối chuyển mình."
  * Dùng cho hero section, landing page
  */
-export function LogoFull({ className }: { className?: string }) {
+export function LogoFull({ className, theme = 'dark' }: { className?: string; theme?: 'light' | 'dark' }) {
   return (
     <Image
-      src="/brand/nooi-stacked.png"
+      src={theme === 'dark' ? '/brand/nooi-stacked-white.png' : '/brand/nooi-stacked.png'}
       alt="NOOI — Kết nối chuyển mình"
       width={180}
       height={180}
@@ -38,7 +39,8 @@ export function LogoFull({ className }: { className?: string }) {
 
 /**
  * Logo ngang: hexagon cluster bên trái + NOI text + tagline
- * Dùng cho header. theme='light' → nền sáng, theme='dark' → nền tối
+ * theme='dark' → nền tối → logo trắng
+ * theme='light' → nền sáng → logo màu
  */
 export function LogoHorizontal({
   className,
@@ -50,7 +52,7 @@ export function LogoHorizontal({
   return (
     <Link href="/" className={cn('flex items-center gap-2 no-underline', className)}>
       <Image
-        src="/brand/nooi-horizontal.png"
+        src={theme === 'dark' ? '/brand/nooi-horizontal-white.png' : '/brand/nooi-horizontal.png'}
         alt="NOOI — Kết nối chuyển mình"
         width={160}
         height={48}
@@ -99,7 +101,7 @@ export function Logo({ variant = 'horizontal', className, linkClassName, theme =
   if (variant === 'full') {
     return (
       <Link href="/" className={cn('flex items-center no-underline', linkClassName)}>
-        <LogoFull className={className} />
+        <LogoFull className={className} theme={theme} />
       </Link>
     );
   }

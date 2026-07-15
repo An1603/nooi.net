@@ -129,11 +129,11 @@ export default async function PublicProfilePage({ params }: Props) {
       <div className="relative z-10 flex justify-center pt-6 pb-2">
         <Link href="/" className="inline-flex items-center no-underline opacity-90 hover:opacity-100 transition-opacity">
           <Image
-            src="/logo-icon-original.png"
+            src="/brand/nooi-horizontal.png"
             alt="NOOI"
-            width={120}
-            height={40}
-            className="h-9 w-auto"
+            width={160}
+            height={48}
+            className="h-8 w-auto"
             priority
           />
         </Link>

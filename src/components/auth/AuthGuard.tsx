@@ -26,7 +26,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
         <Image
-          src="/logo-icon-xs.png"
+          src="/brand/nooi-icon-v.png"
           alt="NOOI"
           width={32}
           height={32}

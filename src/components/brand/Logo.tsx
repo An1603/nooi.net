@@ -12,18 +12,22 @@ interface LogoProps {
 }
 
 /* ==================================================================
-   NOOI Logo — sử dụng ảnh thiết kế gốc từ /public/
+   NOOI Logo — sử dụng ảnh thiết kế mới từ /public/brand/
+   - nooi-stacked.png   : dọc (hexagon + NOI + tagline)
+   - nooi-horizontal.png: ngang (hexagon + NOI + tagline)
+   - nooi-icon-v.png    : icon dọc (infinity knot, nền trắng)
+   - nooi-icon-h.png    : icon ngang (infinity knot, nền trắng)
    ================================================================== */
 
 /**
- * Logo đầy đủ dạng vuông: hexagon pyramid + NOOI + "Kết nối chuyển mình."
+ * Logo đầy đủ dạng dọc: hexagon + NOI + "Kết nối chuyển mình."
  * Dùng cho hero section, landing page
  */
 export function LogoFull({ className }: { className?: string }) {
   return (
     <Image
-      src="/logo-512w.png"
-      alt="NOOI"
+      src="/brand/nooi-stacked.png"
+      alt="NOOI — Kết nối chuyển mình"
       width={180}
       height={180}
       className={cn('w-auto h-auto', className)}
@@ -33,7 +37,7 @@ export function LogoFull({ className }: { className?: string }) {
 }
 
 /**
- * Logo ngang: hexagon cluster bên trái + NOOI text + tagline
+ * Logo ngang: hexagon cluster bên trái + NOI text + tagline
  * Dùng cho header. theme='light' → nền sáng, theme='dark' → nền tối
  */
 export function LogoHorizontal({
@@ -46,10 +50,10 @@ export function LogoHorizontal({
   return (
     <Link href="/" className={cn('flex items-center gap-2 no-underline', className)}>
       <Image
-        src="/logo-icon-original.png"
-        alt="NOOI"
-        width={96}
-        height={32}
+        src="/brand/nooi-horizontal.png"
+        alt="NOOI — Kết nối chuyển mình"
+        width={160}
+        height={48}
         className="h-8 w-auto"
         priority
       />
@@ -58,27 +62,28 @@ export function LogoHorizontal({
 }
 
 /**
- * Icon hình tròn (nền xám) — dùng cho dashboard sidebar
+ * Icon hình tròn — dùng cho dashboard sidebar
+ * Sử dụng icon ngang, CSS rounded-full tự crop
  */
 export function LogoCircular({ size = 40, className }: { size?: number; className?: string }) {
   return (
     <Image
-      src="/logo-c.png"
+      src="/brand/nooi-icon-h.png"
       alt="NOOI"
       width={size}
       height={size}
-      className={cn('shrink-0 rounded-full', className)}
+      className={cn('shrink-0 rounded-full object-cover', className)}
     />
   );
 }
 
 /**
- * Icon hexagon pyramid (từ logo 512w50)
+ * Icon infinity knot (dọc) — small icon variant
  */
 export function LogoIcon({ size = 32, className }: { size?: number; className?: string }) {
   return (
     <Image
-      src="/logo-512w50.png"
+      src="/brand/nooi-icon-v.png"
       alt="NOOI"
       width={size}
       height={size}

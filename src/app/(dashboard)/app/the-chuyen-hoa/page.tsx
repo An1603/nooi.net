@@ -154,11 +154,18 @@ export default function CardCollectionPage() {
             <p className="text-muted-foreground text-sm mt-0.5">Bộ sưu tập khái niệm từ 7 cấp độ, từ Người mới đến Master Mentor</p>
           </div>
         </div>
-        <Link href="/app/game"
-          className="inline-flex items-center justify-center gap-1.5 bg-primary px-4 py-2.5 rounded-lg text-sm text-primary-foreground hover:bg-primary/80 transition-colors sm:w-auto"
-        >
-          🎮 Chơi game
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/app/game"
+            className="inline-flex items-center justify-center gap-1.5 bg-primary px-4 py-2.5 rounded-lg text-sm text-primary-foreground hover:bg-primary/80 transition-colors sm:w-auto"
+          >
+            🎮 Chơi game
+          </Link>
+          <Link href="/app/the-chuyen-hoa/7-tang"
+            className="inline-flex items-center justify-center gap-1.5 border border-border px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-muted/30 transition-colors sm:w-auto"
+          >
+            📖 7 Tầng Chuyển Hóa
+          </Link>
+        </div>
       </div>
 
       {/* Level tabs */}

@@ -42,20 +42,6 @@ export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [viewport, setViewport] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
-
-  // Detect viewport size
-  useEffect(() => {
-    const check = () => {
-      const w = window.innerWidth;
-      if (w <= 820) setViewport('mobile');
-      else if (w <= 1024) setViewport('tablet');
-      else setViewport('desktop');
-    };
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   // Listen for toggle events from Topbar
   useEffect(() => {

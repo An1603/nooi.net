@@ -63,12 +63,12 @@ export function LogoHorizontal({
 
 /**
  * Icon hình tròn — dùng cho dashboard sidebar
- * Sử dụng icon ngang, CSS rounded-full tự crop
+ * Sử dụng icon standalone (infinity knot), CSS rounded-full
  */
 export function LogoCircular({ size = 40, className }: { size?: number; className?: string }) {
   return (
     <Image
-      src="/brand/nooi-icon-h.png"
+      src="/brand/nooi-icon-v.png"
       alt="NOOI"
       width={size}
       height={size}

@@ -14,7 +14,7 @@ export default function Topbar() {
         {/* Left side */}
         <div className="flex items-center gap-2">
           {/* Hamburger + Logo: only visible on mobile */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <button
               onClick={toggleSidebar}
               className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors"
@@ -27,7 +27,7 @@ export default function Topbar() {
             <Logo variant="horizontal" className="!h-7" />
           </div>
           {/* Desktop: empty to avoid redundancy with sidebar logo */}
-          <span className="hidden md:block text-xs text-muted-foreground" />
+          <span className="hidden lg:block text-xs text-muted-foreground" />
         </div>
 
         {/* Right: notification bell */}

@@ -173,13 +173,13 @@ export default async function AdminDashboardPage() {
             return (
               <div key={card.label} className="rounded-xl border border-border/50 bg-[#0d0d0d] p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] text-muted-foreground">{card.label}</span>
+                  <span className="text-[12px] text-muted-foreground">{card.label}</span>
                   <div className={`size-7 rounded-lg ${card.bg} flex items-center justify-center`}>
                     <Icon className={`size-3.5 ${card.color}`} />
                   </div>
                 </div>
                 <p className="text-lg font-bold">{card.value.toLocaleString("vi-VN")}</p>
-                {card.sub && <p className="text-[11px] text-muted-foreground mt-0.5">{card.sub}</p>}
+                {card.sub && <p className="text-[12px] text-muted-foreground mt-0.5">{card.sub}</p>}
               </div>
             );
           })}
@@ -219,7 +219,7 @@ export default async function AdminDashboardPage() {
               <Users className="size-4 text-primary" />
               <h2 className="text-sm font-semibold">Lớp Live gần đây</h2>
             </div>
-            <Link href="/admin/users" className="text-[11px] text-primary hover:underline">Quản lý</Link>
+            <Link href="/admin/users" className="text-[12px] text-primary hover:underline">Quản lý</Link>
           </div>
           {liveSessions.length === 0 ? (
             <p className="text-xs text-muted-foreground py-4 text-center">Chưa có buổi học nào.</p>
@@ -229,11 +229,11 @@ export default async function AdminDashboardPage() {
                 <div key={s.id} className="flex items-center justify-between text-xs p-2.5 rounded-lg hover:bg-white/[0.02] transition-colors">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium truncate">{s.title}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <p className="text-[12px] text-muted-foreground mt-0.5">
                       {s.date} · {s.time || "—"} · {s.mentor || "—"}
                     </p>
                   </div>
-                  <span className="shrink-0 ml-2 text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                  <span className="shrink-0 ml-2 text-[12px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
                     {s.registered}/{s.max_participants}
                   </span>
                 </div>
@@ -249,7 +249,7 @@ export default async function AdminDashboardPage() {
               <BookOpen className="size-4 text-primary" />
               <h2 className="text-sm font-semibold">Nhật ký gần đây</h2>
             </div>
-            <Link href="/admin/users" className="text-[11px] text-primary hover:underline">Tất cả user</Link>
+            <Link href="/admin/users" className="text-[12px] text-primary hover:underline">Tất cả user</Link>
           </div>
           {recentJournals.length === 0 ? (
             <p className="text-xs text-muted-foreground py-4 text-center">Chưa có nhật ký nào.</p>
@@ -257,12 +257,12 @@ export default async function AdminDashboardPage() {
             <div className="space-y-1.5">
               {recentJournals.map((j) => (
                 <div key={j.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/[0.02] transition-colors">
-                  <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary shrink-0">
+                  <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center text-[12px] font-bold text-primary shrink-0">
                     {(j.title || "N")[0].toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs truncate">{j.title}</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-[12px] text-muted-foreground">
                       {j.user_id?.slice(0, 8)}... · {new Date(j.created_at).toLocaleDateString("vi-VN")}
                     </p>
                   </div>

@@ -299,10 +299,10 @@ export default function LessonPage() {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+            <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
               Level {lesson.level}: {lesson.levelName}
             </span>
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <span className="text-[12px] text-muted-foreground flex items-center gap-1">
               <Clock className="w-3 h-3" /> {lesson.duration}
             </span>
           </div>
@@ -313,7 +313,7 @@ export default function LessonPage() {
           <div className="w-16 h-16 rounded-full bg-muted/30 border-4 border-primary/30 flex items-center justify-center">
             <span className="text-lg font-bold text-primary">{progress.pct}%</span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">
+          <p className="text-[12px] text-muted-foreground mt-1">
             {progress.completed ? "✅ Hoàn thành" : "Đang học"}
           </p>
         </div>

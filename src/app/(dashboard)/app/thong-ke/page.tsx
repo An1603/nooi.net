@@ -83,7 +83,7 @@ export default function StatsPage() {
               }`}>
                 {day.active ? "✓" : "•"}
               </div>
-              <span className="text-[11px] text-muted-foreground">{day.label}</span>
+              <span className="text-[12px] text-muted-foreground">{day.label}</span>
             </div>
           ))}
         </div>
@@ -100,7 +100,7 @@ export default function StatsPage() {
                 className="w-full rounded-t-md bg-gradient-to-t from-primary to-primary/60 transition-all"
                 style={{ height: `${(week.count / maxWeekCount) * 100}%`, minHeight: week.count > 0 ? "8px" : "4px" }}
               />
-              <span className="text-[11px] text-muted-foreground">{week.label}</span>
+              <span className="text-[12px] text-muted-foreground">{week.label}</span>
             </div>
           ))}
         </div>

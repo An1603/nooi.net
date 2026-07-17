@@ -320,7 +320,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
                   {m.icon}
                 </span>
                 <span className="text-sm font-medium leading-tight">{m.label}</span>
-                <span className="text-[11px] text-muted-foreground leading-tight hidden sm:block">
+                <span className="text-[12px] text-muted-foreground leading-tight hidden sm:block">
                   {m.desc}
                 </span>
               </button>
@@ -359,7 +359,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
               <div className="flex items-center justify-between">
                 <Label htmlFor="auth-password" className="text-xs">Mật khẩu</Label>
                 {tab === "signin" && (
-                  <Link href="/auth/reset" className="text-[11px] text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="/auth/reset" className="text-[12px] text-muted-foreground hover:text-primary transition-colors">
                     Quên mật khẩu?
                   </Link>
                 )}
@@ -424,7 +424,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
                 <button
                   type="button"
                   onClick={() => { setShowRefInput(false); setRefCode(""); setRefOwner(null); setRefLookupStatus("idle"); }}
-                  className="text-[11px] text-muted-foreground hover:text-foreground"
+                  className="text-[12px] text-muted-foreground hover:text-foreground"
                 >
                   Bỏ qua
                 </button>
@@ -469,7 +469,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
                 : <><Wand2 className="size-4" />Gửi link đăng nhập</>}
             </Button>
 
-            <p className="text-[11px] text-muted-foreground text-center">
+            <p className="text-[12px] text-muted-foreground text-center">
               Bạn sẽ nhận được một email chứa link đăng nhập. Không cần mật khẩu.
             </p>
           </form>

@@ -209,7 +209,7 @@ export function TelegramConnect({ userId, initialChatId }: Props) {
         )}
 
         {/* Info */}
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[12px] text-muted-foreground">
           💡 Sau khi kết nối, bạn sẽ nhận nhắc nhở trước 15 phút khi buổi học Live sắp bắt đầu.
         </p>
       </div>

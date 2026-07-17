@@ -50,7 +50,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </div>
         <span
           className={cn(
-            "shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full border",
+            "shrink-0 text-[12px] font-medium px-2 py-0.5 rounded-full border",
             STATUS_COLORS[status] || STATUS_COLORS.draft
           )}
         >
@@ -65,11 +65,11 @@ export function ProjectCard({ project }: ProjectCardProps) {
       )}
 
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+        <span className="text-[12px] text-muted-foreground flex items-center gap-1">
           <Calendar size={11} />
           {new Date(created_at).toLocaleDateString("vi-VN")}
         </span>
-        <span className="text-[11px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+        <span className="text-[12px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
           <Edit3 size={11} />
           Chi tiết
         </span>

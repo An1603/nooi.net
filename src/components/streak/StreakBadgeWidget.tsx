@@ -79,7 +79,7 @@ export default function StreakBadgeWidget() {
             </div>
             <div>
               <h2 className="font-semibold text-sm">Chuỗi ngày</h2>
-              <p className="text-[11px] text-muted-foreground">Duy trì mỗi ngày để nhận thưởng</p>
+              <p className="text-[12px] text-muted-foreground">Duy trì mỗi ngày để nhận thưởng</p>
             </div>
           </div>
           <div className="text-right">
@@ -102,7 +102,7 @@ export default function StreakBadgeWidget() {
                 }`}>
                   {day.active ? <Flame className="w-3.5 h-3.5" /> : "·"}
                 </div>
-                <span className="text-[11px] text-muted-foreground">{day.label}</span>
+                <span className="text-[12px] text-muted-foreground">{day.label}</span>
               </div>
             ))}
           </div>
@@ -131,7 +131,7 @@ export default function StreakBadgeWidget() {
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Award className="w-3 h-3" /> Huy hiệu ({earned.length}/{badges.length})
               </span>
-              <Link href="/app/kho-vat-pham" className="text-[11px] text-primary hover:underline flex items-center gap-0.5">
+              <Link href="/app/kho-vat-pham" className="text-[12px] text-primary hover:underline flex items-center gap-0.5">
                 Xem tất cả <ChevronRight className="w-3 h-3" />
               </Link>
             </div>

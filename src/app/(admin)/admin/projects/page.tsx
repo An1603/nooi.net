@@ -73,19 +73,19 @@ export default async function AdminProjectsPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium truncate">{p.title}</p>
-                      <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${statusColors[p.status] || statusColors.draft}`}>
+                      <span className={`text-[12px] px-1.5 py-0.5 rounded font-medium ${statusColors[p.status] || statusColors.draft}`}>
                         {p.status === "in_progress" ? "Đang làm" : p.status}
                       </span>
                     </div>
                     {p.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{p.description}</p>}
-                    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                    <div className="flex items-center gap-3 mt-1.5 text-[12px] text-muted-foreground">
                       <span className="flex items-center gap-1"><Users className="size-3" /> {ownerNames.get(p.user_id) || p.user_id.slice(0, 8)}</span>
                       <span className="flex items-center gap-1"><Eye className="size-3" /> {videoMap.get(p.id) || 0} video · {docMap.get(p.id) || 0} tài liệu</span>
                       <span><Calendar className="size-3 inline" /> {new Date(p.created_at).toLocaleDateString("vi-VN")}</span>
                     </div>
                   </div>
                 </div>
-                <Link href={`/admin/users/${p.user_id}`} className="text-[11px] text-primary hover:underline shrink-0">Xem user</Link>
+                <Link href={`/admin/users/${p.user_id}`} className="text-[12px] text-primary hover:underline shrink-0">Xem user</Link>
               </div>
             </div>
           ))

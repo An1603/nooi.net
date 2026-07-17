@@ -65,7 +65,7 @@ export default function NotificationDropdown() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">{n.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{n.desc}</p>
-                    <p className="text-[11px] text-muted-foreground mt-1">{n.time}</p>
+                    <p className="text-[12px] text-muted-foreground mt-1">{n.time}</p>
                   </div>
                 </div>
               ))

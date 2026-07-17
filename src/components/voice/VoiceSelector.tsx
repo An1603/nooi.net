@@ -159,7 +159,7 @@ export function VoiceSelector({ userId, currentVoice, onVoiceChange }: VoiceSele
                     <span className="text-base shrink-0">{voice.emoji}</span>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium leading-tight">{voice.label}</div>
-                      <div className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                      <div className="text-[12px] text-muted-foreground truncate leading-tight mt-0.5">
                         {voice.desc}
                       </div>
                     </div>

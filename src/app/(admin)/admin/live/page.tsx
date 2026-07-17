@@ -231,7 +231,7 @@ export default function AdminLivePage() {
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">{s.title}</p>
                           {s.description && (
-                            <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">{s.description}</p>
+                            <p className="text-[12px] text-muted-foreground truncate max-w-[200px]">{s.description}</p>
                           )}
                         </div>
                       </div>
@@ -247,7 +247,7 @@ export default function AdminLivePage() {
                             day: "2-digit",
                           })}
                         </span>
-                        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <span className="text-[12px] text-muted-foreground flex items-center gap-1">
                           <Clock className="size-3" />
                           {s.time || "—"}
                         </span>

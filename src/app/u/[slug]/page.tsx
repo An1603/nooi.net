@@ -289,7 +289,7 @@ export default async function PublicProfilePage({ params }: Props) {
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} NOOI Center — Kết nối chuyển mình.
             </p>
-            <p className="text-[11px] text-muted-foreground/70 mt-1">
+            <p className="text-[12px] text-muted-foreground/70 mt-1">
               Thân khỏe · Tâm minh · Hệ sinh thái giáo dục trải nghiệm & healing tourism
             </p>
           </div>

@@ -231,7 +231,7 @@ function Tip({ icon, title, desc }: { icon: string; title: string; desc: string 
     <div className="p-3 rounded-xl bg-muted/20 border border-border/40 text-center">
       <div className="text-lg mb-1">{icon}</div>
       <h3 className="text-xs font-medium text-foreground mb-0.5">{title}</h3>
-      <p className="text-[11px] text-muted-foreground leading-tight">{desc}</p>
+      <p className="text-[12px] text-muted-foreground leading-tight">{desc}</p>
     </div>
   );
 }

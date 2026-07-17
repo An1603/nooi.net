@@ -107,7 +107,7 @@ export default function BuddyWidget() {
           </div>
           <div>
             <h2 className="font-semibold text-sm">Bạn đồng hành</h2>
-            <p className="text-[11px] text-muted-foreground">Cùng nhau thực hành, nhắc nhở lẫn nhau</p>
+            <p className="text-[12px] text-muted-foreground">Cùng nhau thực hành, nhắc nhở lẫn nhau</p>
           </div>
         </div>
         <button
@@ -139,7 +139,7 @@ export default function BuddyWidget() {
                 <button
                   onClick={() => sendRequest(u.user_id)}
                   disabled={actionLoading === u.user_id}
-                  className="text-[11px] bg-pink-500/10 text-pink-400 px-2 py-1 rounded-lg hover:bg-pink-500/20 disabled:opacity-50"
+                  className="text-[12px] bg-pink-500/10 text-pink-400 px-2 py-1 rounded-lg hover:bg-pink-500/20 disabled:opacity-50"
                 >
                   {actionLoading === u.user_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                 </button>
@@ -164,7 +164,7 @@ export default function BuddyWidget() {
                 </div>
                 <div>
                   <p className="text-xs font-medium">{r.fromName}</p>
-                  {r.message && <p className="text-[11px] text-muted-foreground">{r.message}</p>}
+                  {r.message && <p className="text-[12px] text-muted-foreground">{r.message}</p>}
                 </div>
               </div>
               <div className="flex gap-1.5">
@@ -197,7 +197,7 @@ export default function BuddyWidget() {
         <div className="text-center py-6">
           <Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
           <p className="text-xs text-muted-foreground">Chưa có bạn đồng hành</p>
-          <p className="text-[11px] text-muted-foreground/60 mt-1">Nhấn &quot;Tìm bạn&quot; để bắt đầu kết nối</p>
+          <p className="text-[12px] text-muted-foreground/60 mt-1">Nhấn &quot;Tìm bạn&quot; để bắt đầu kết nối</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -208,7 +208,7 @@ export default function BuddyWidget() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{b.name}</p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   Bạn đồng hành từ {new Date(b.since).toLocaleDateString("vi-VN")}
                 </p>
               </div>
@@ -221,7 +221,7 @@ export default function BuddyWidget() {
       {/* Pending sent */}
       {pendingSent.length > 0 && (
         <div className="mt-3 pt-3 border-t border-border/30">
-          <p className="text-[11px] text-muted-foreground">Đã gửi lời mời: {pendingSent.map(p => p.toName).join(", ")}</p>
+          <p className="text-[12px] text-muted-foreground">Đã gửi lời mời: {pendingSent.map(p => p.toName).join(", ")}</p>
         </div>
       )}
     </div>

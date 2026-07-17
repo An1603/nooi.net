@@ -143,10 +143,10 @@ function PlanetCard({ p }: { p: PlanetPosition }) {
         <div>
           <p className="text-2xl">{p.symbol}</p>
           <p className="font-semibold text-sm mt-1">{p.planet}</p>
-          <p className="text-[11px] text-muted-foreground">{p.planetEn}</p>
+          <p className="text-[12px] text-muted-foreground">{p.planetEn}</p>
         </div>
         {p.retrograde && (
-          <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-medium">
+          <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-medium">
             ℞ Nghịch hành
           </span>
         )}
@@ -171,7 +171,7 @@ function PlanetCard({ p }: { p: PlanetPosition }) {
           </p>
         )}
       </div>
-      <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed border-t border-border/50 pt-2">
+      <p className="text-[12px] text-muted-foreground mt-3 leading-relaxed border-t border-border/50 pt-2">
         {planetMeta?.meaning || p.meaning}
       </p>
     </div>
@@ -196,14 +196,14 @@ function AspectCard({ a }: { a: Aspect }) {
         <span className="text-xs font-semibold">
           {a.planet1} <span className="opacity-60">{aspectSymbolMap[a.type] || "·"}</span> {a.planet2}
         </span>
-        <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${a.harmonious ? "bg-emerald-500/20" : "bg-red-500/20"}`}>
+        <span className={`text-[12px] px-1.5 py-0.5 rounded-full ${a.harmonious ? "bg-emerald-500/20" : "bg-red-500/20"}`}>
           {a.harmonious ? "Hài hòa" : "Xung khắc"}
         </span>
       </div>
-      <p className="text-[11px] mt-1 opacity-80">
+      <p className="text-[12px] mt-1 opacity-80">
         {a.typeVi} ({a.typeEn}) · {a.angle}° · orb {a.orb}°
       </p>
-      <p className="text-[11px] mt-1.5 opacity-70 leading-relaxed">{a.meaning}</p>
+      <p className="text-[12px] mt-1.5 opacity-70 leading-relaxed">{a.meaning}</p>
     </div>
   );
 }
@@ -220,8 +220,8 @@ function HouseRow({ h }: { h: House }) {
         </span>
         <span className="text-xs">{getZodiacEmoji(signIdx)} {h.sign}</span>
       </div>
-      <p className="text-[11px] text-muted-foreground leading-relaxed">{h.meaning}</p>
-      <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground leading-relaxed">{h.meaning}</p>
+      <div className="flex items-center gap-3 mt-2 text-[12px] text-muted-foreground">
         <span>Cusp: <span className="font-mono">{formatDegrees(((h.cusp % 360) + 360) % 360)}</span></span>
         {z && <span>· {z.element} · {z.quality}</span>}
       </div>
@@ -238,7 +238,7 @@ function SectionTitle({ icon: Icon, title, subtitle, color = "text-blue-400" }: 
       </div>
       <div>
         <h2 className="text-base font-semibold">{title}</h2>
-        {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
+        {subtitle && <p className="text-[12px] text-muted-foreground">{subtitle}</p>}
       </div>
     </div>
   );
@@ -352,7 +352,7 @@ function AstrologySetupForm({ profile, onCalculated }: { profile: ProfileData; o
                   autoComplete="off"
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Nhập tên tỉnh/thành phố — hệ thống tự tra toạ độ. Nếu không rõ, để mặc định Hà Nội.
               </p>
             </div>
@@ -406,11 +406,11 @@ function BigThreeCard({
   return (
     <div className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-purple-950/30 to-blue-950/20 p-4 text-center">
       <Icon className={`size-4 mx-auto mb-1 ${color}`} />
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{label}</p>
+      <p className="text-[12px] uppercase tracking-wide text-muted-foreground mb-1">{label}</p>
       <p className={`text-2xl ${color}`}>{emoji}</p>
       <p className={`text-base font-bold mt-0.5 ${color}`}>{value}</p>
-      <p className="text-[11px] text-muted-foreground">{sub}</p>
-      {meaning && <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed border-t border-border/50 pt-2">{meaning}</p>}
+      <p className="text-[12px] text-muted-foreground">{sub}</p>
+      {meaning && <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed border-t border-border/50 pt-2">{meaning}</p>}
     </div>
   );
 }
@@ -460,14 +460,14 @@ function ElementQualityCard({ result }: { result: AstrologyResult }) {
               >
                 <Icon className={`size-4 mx-auto ${elementColors[el]}`} />
                 <p className={`text-xs font-semibold mt-1 ${isDominant ? elementColors[el] : ""}`}>{el}</p>
-                <p className="text-[11px] text-muted-foreground">{count}/{total}</p>
-                {isDominant && <p className="text-[11px] mt-0.5 text-blue-300 font-medium">★ Chủ đạo</p>}
+                <p className="text-[12px] text-muted-foreground">{count}/{total}</p>
+                {isDominant && <p className="text-[12px] mt-0.5 text-blue-300 font-medium">★ Chủ đạo</p>}
               </div>
             );
           })}
         </div>
         {ELEMENTS[result.dominantElement as keyof typeof ELEMENTS] && (
-          <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+          <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
             {ELEMENTS[result.dominantElement as keyof typeof ELEMENTS].meaning}
           </p>
         )}
@@ -487,8 +487,8 @@ function ElementQualityCard({ result }: { result: AstrologyResult }) {
                 }`}
               >
                 <p className={`text-xs font-semibold ${isDominant ? "text-purple-300" : ""}`}>{q}</p>
-                <p className="text-[11px] text-muted-foreground">{count}/{total}</p>
-                {isDominant && <p className="text-[11px] mt-0.5 text-purple-300 font-medium">★ Chủ đạo</p>}
+                <p className="text-[12px] text-muted-foreground">{count}/{total}</p>
+                {isDominant && <p className="text-[12px] mt-0.5 text-purple-300 font-medium">★ Chủ đạo</p>}
               </div>
             );
           })}
@@ -508,7 +508,7 @@ function ScientificBasis() {
         </div>
         <div>
           <h2 className="text-base font-semibold">Cơ sở khoa học & Nguồn gốc Chiêm tinh học</h2>
-          <p className="text-[11px] text-muted-foreground">Phương pháp tính toán và nền tảng thiên văn</p>
+          <p className="text-[12px] text-muted-foreground">Phương pháp tính toán và nền tảng thiên văn</p>
         </div>
       </div>
 
@@ -587,7 +587,7 @@ function ScientificBasis() {
           <Microscope className="size-3.5 text-emerald-400" /> Mô hình AI & Thư viện
         </h3>
         <p className="text-xs text-foreground/80 leading-relaxed">
-          NOOI sử dụng thư viện <code className="px-1 py-0.5 rounded bg-muted text-blue-300 font-mono text-[11px]">astronomy-engine</code>{" "}
+          NOOI sử dụng thư viện <code className="px-1 py-0.5 rounded bg-muted text-blue-300 font-mono text-[12px]">astronomy-engine</code>{" "}
           (theo thuật toán Jean Meeus, &ldquo;Astronomical Algorithms&rdquo;, 1991) — chuẩn NASA/JPL — để tính vị trí chính xác
           các hành tinh. Độ chính xác ±0.01°.
         </p>
@@ -601,17 +601,17 @@ function ScientificBasis() {
         <p className="text-xs text-foreground/80 leading-relaxed mb-2">
           Sử dụng công thức:
         </p>
-        <div className="rounded-lg border border-blue-500/30 bg-blue-950/30 p-3 font-mono text-[11px] text-blue-200 overflow-x-auto">
+        <div className="rounded-lg border border-blue-500/30 bg-blue-950/30 p-3 font-mono text-[12px] text-blue-200 overflow-x-auto">
           ASC = arctan2(-cos(LST), -(sin(LST)·cos(ε) + tan(φ)·sin(ε)))
         </div>
-        <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+        <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
           Trong đó: <strong>LST</strong> = Local Sidereal Time, <strong>ε</strong> = obliquity, <strong>φ</strong> = latitude.
         </p>
       </div>
 
       {/* Ghi chú */}
       <div className="rounded-lg border border-amber-500/20 bg-amber-950/10 p-3">
-        <p className="text-[11px] text-amber-200/80 leading-relaxed">
+        <p className="text-[12px] text-amber-200/80 leading-relaxed">
           <strong>Ghi chú:</strong> Chiêm tinh học kết hợp thiên văn học và biểu tượng học. Vị trí hành tinh tính chính xác
           theo thiên văn, nhưng luận giải mang tính biểu tượng và tham khảo.
         </p>
@@ -671,16 +671,16 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
                 {profile.full_name} — {profile.date_of_birth} giờ {profile.gio_sinh}:{String(input?.phutSinh ?? 0).padStart(2, "0")} ·{" "}
                 {profile.noi_sinh || "Hà Nội"}
               </p>
-              <p className="text-[11px] text-muted-foreground mt-1">
+              <p className="text-[12px] text-muted-foreground mt-1">
                 Vĩ độ {input?.viDo?.toFixed(4) ?? profile.vi_do?.toFixed(4) ?? "21.0285"}° · Kinh độ{" "}
                 {input?.kinhDo?.toFixed(4) ?? profile.kinh_do?.toFixed(4) ?? "105.8542"}°
               </p>
             </div>
             <div className="text-center">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Cung Mọc</p>
+              <p className="text-[12px] uppercase tracking-wide text-muted-foreground">Cung Mọc</p>
               <p className="text-2xl">{getZodiacEmoji(ascendant.signIndex)}</p>
               <p className="text-base font-bold text-blue-400">{ascendant.sign}</p>
-              <p className="text-[11px] text-muted-foreground">{ascendant.signEn}</p>
+              <p className="text-[12px] text-muted-foreground">{ascendant.signEn}</p>
             </div>
           </div>
         </div>
@@ -866,7 +866,7 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
                   {interpretations.diemManh.map((s, j) => (
                     <span
                       key={j}
-                      className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      className="text-[12px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                     >
                       ✓ {s}
                     </span>
@@ -879,7 +879,7 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
                   {interpretations.diemYeu.map((w, j) => (
                     <span
                       key={j}
-                      className="text-[11px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
+                      className="text-[12px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
                     >
                       △ {w}
                     </span>
@@ -909,11 +909,11 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
 
       {/* FOOTER */}
       <div className="text-center pt-4 border-t border-blue-500/20">
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[12px] text-muted-foreground">
           Bản đồ sao tính dựa trên thư viện <code className="font-mono">astronomy-engine</code> (thuật toán Jean Meeus,
           chuẩn NASA/JPL). Độ chính xác ±0.01°.
         </p>
-        <p className="text-[11px] text-muted-foreground mt-1">NOOI — Kết nối chuyển mình.</p>
+        <p className="text-[12px] text-muted-foreground mt-1">NOOI — Kết nối chuyển mình.</p>
       </div>
     </div>
   );

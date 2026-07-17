@@ -44,17 +44,17 @@ export default function CommunityLeaderboard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium truncate">{entry.name}</p>
-              <p className="text-[11px] text-muted-foreground">{entry.journals} nhật ký</p>
+              <p className="text-[12px] text-muted-foreground">{entry.journals} nhật ký</p>
             </div>
             <div className="text-right">
               <p className="text-sm font-bold text-primary">{entry.n}</p>
-              <p className="text-[11px] text-muted-foreground">N</p>
+              <p className="text-[12px] text-muted-foreground">N</p>
             </div>
           </div>
         ))}
       </div>
       {data.length > 10 && (
-        <p className="text-[11px] text-center text-muted-foreground mt-3">+{data.length - 10} người khác</p>
+        <p className="text-[12px] text-center text-muted-foreground mt-3">+{data.length - 10} người khác</p>
       )}
     </div>
   );

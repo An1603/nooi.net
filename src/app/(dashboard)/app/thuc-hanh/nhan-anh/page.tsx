@@ -176,8 +176,8 @@ export default function NhanAnhPage() {
             <p className={`text-2xl font-bold ${value === null ? "text-muted-foreground/30" : value >= 60 ? "text-green-400" : value >= 40 ? "text-yellow-400" : "text-red-400"}`}>
               {value ?? "—"}
             </p>
-            <p className="text-[11px] text-muted-foreground leading-tight">{detail}</p>
-            <p className="text-[11px] text-muted-foreground/60">{levelLabel(value)}</p>
+            <p className="text-[12px] text-muted-foreground leading-tight">{detail}</p>
+            <p className="text-[12px] text-muted-foreground/60">{levelLabel(value)}</p>
           </div>
         ))}
       </div>

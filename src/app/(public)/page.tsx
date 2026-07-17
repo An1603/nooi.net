@@ -240,7 +240,7 @@ function HeroSection({ loggedIn }: { loggedIn: boolean }) {
 
       {/* Scroll indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-        <span className="text-[11px] text-muted-foreground/50">Cuộn xuống</span>
+        <span className="text-[12px] text-muted-foreground/50">Cuộn xuống</span>
         <div className="w-5 h-8 rounded-full border border-border flex items-start justify-center p-1 animate-bounce">
           <div className="w-1 h-2 rounded-full bg-muted-foreground/50" />
         </div>
@@ -548,7 +548,7 @@ function SevenTiersSection() {
                       <div className="pl-6 flex items-start">
                         <div className="flex items-center gap-2 mt-2">
                           <span
-                            className="text-[11px] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-full"
+                            className="text-[12px] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-full"
                             style={{ color: tier.color, background: `${tier.color}14`, border: `1px solid ${tier.color}26` }}
                           >
                             ◆ {tier.keyword}
@@ -563,7 +563,7 @@ function SevenTiersSection() {
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs text-muted-foreground">{tier.pop}</span>
                           <span
-                            className="text-[11px] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-full"
+                            className="text-[12px] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-full"
                             style={{ color: tier.color, background: `${tier.color}14`, border: `1px solid ${tier.color}26` }}
                           >
                             ◆ {tier.keyword}
@@ -589,7 +589,7 @@ function SevenTiersSection() {
                 <div className="md:hidden flex-1 min-w-0">
                   <TierCard tier={tier} align="left" />
                   <span
-                    className="inline-block text-[11px] font-semibold tracking-widest uppercase px-2 py-0.5 rounded-full mt-1.5"
+                    className="inline-block text-[12px] font-semibold tracking-widest uppercase px-2 py-0.5 rounded-full mt-1.5"
                     style={{ color: tier.color, background: `${tier.color}14` }}
                   >
                     ◆ {tier.keyword} · {tier.pop}
@@ -618,11 +618,11 @@ function SevenTiersSection() {
 function TierCard({ tier, align }: { tier: typeof TIERS[number]; align: 'left' | 'right' }) {
   return (
     <div className={align === 'right' ? 'text-right' : 'text-left'}>
-      <div className="text-[11px] tracking-widest uppercase font-semibold mb-0.5" style={{ color: tier.color }}>
+      <div className="text-[12px] tracking-widest uppercase font-semibold mb-0.5" style={{ color: tier.color }}>
         Tầng {tier.n}
       </div>
       <h3 className="text-lg font-bold text-foreground leading-tight">{tier.name}</h3>
-      <p className="text-[11px] text-muted-foreground/70 italic mb-1.5">{tier.en}</p>
+      <p className="text-[12px] text-muted-foreground/70 italic mb-1.5">{tier.en}</p>
       <p className="text-sm text-muted-foreground leading-relaxed">{tier.desc}</p>
     </div>
   );

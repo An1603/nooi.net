@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Upload, Trash2, RefreshCw, Image, Loader2, FolderOpen, Check } from "lucide-react";
+import { Upload, Trash2, RefreshCw, Image, Loader2, FolderOpen, Check, X, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface BrandAsset {
@@ -60,6 +60,7 @@ export default function BrandClient() {
   const [uploading, setUploading] = useState<string | null>(null);
   const [storageFiles, setStorageFiles] = useState<StorageFile[]>([]);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [fullscreen, setFullscreen] = useState<{ url: string; label: string } | null>(null);
 
   const loadAll = useCallback(async () => {
     try {
@@ -185,7 +186,14 @@ export default function BrandClient() {
                       <td className="py-2.5 px-4 font-mono text-xs text-primary/70">{loc.size}</td>
                       <td className="py-2.5 px-4">
                         {asset?.url ? (
-                          <img src={asset.url} className="max-h-8 max-w-[60px] object-contain rounded" />
+                          <button
+                            onClick={() => setFullscreen({ url: asset.url, label: LABELS[key] || key })}
+                            className="relative group/preview flex items-center gap-1"
+                            title="Bấm để xem full"
+                          >
+                            <img src={asset.url} className="w-7 h-7 object-contain rounded border border-border" />
+                            <Maximize2 size={10} className="absolute -top-0.5 -right-0.5 text-muted-foreground opacity-0 group-hover/preview:opacity-100 transition-opacity" />
+                          </button>
                         ) : (
                           <span className="text-[10px] text-muted-foreground">mặc định</span>
                         )}
@@ -247,6 +255,25 @@ export default function BrandClient() {
       <div className="mt-6 p-3 rounded-xl bg-primary/5 border border-primary/10 text-xs text-muted-foreground">
         <strong>💡 Cách dùng:</strong> Upload file mới → áp dụng ngay toàn hệ thống. Chọn từ kho để dùng lại file đã upload. Reset để về mặc định. Sau khi đổi favicon/PWA icon, user cần <strong>Cài lại</strong> PWA.
       </div>
+
+      {/* Fullscreen preview modal */}
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-8 cursor-pointer"
+          onClick={() => setFullscreen(null)}
+        >
+          <button
+            onClick={() => setFullscreen(null)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+          >
+            <X size={20} />
+          </button>
+          <div className="max-w-4xl max-h-[90vh] flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            <img src={fullscreen.url} alt={fullscreen.label} className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl" />
+            <p className="text-white/70 text-sm">{fullscreen.label}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

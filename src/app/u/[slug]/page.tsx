@@ -131,8 +131,8 @@ export default async function PublicProfilePage({ params }: Props) {
           <Image
             src="/brand/nooi-horizontal.png"
             alt="NOOI"
-            width={160}
-            height={48}
+            width={163}
+            height={75}
             className="h-8 w-auto"
             priority
           />

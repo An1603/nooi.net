@@ -149,8 +149,8 @@ function HeroSection({ loggedIn }: { loggedIn: boolean }) {
             <NextImage
               src="/brand/nooi-horizontal-white.png"
               alt="NOOI — Kết nối chuyển mình"
-              width={260}
-              height={80}
+              width={326}
+              height={150}
               className="h-16 w-auto"
               priority
             />

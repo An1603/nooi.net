@@ -13,15 +13,16 @@ interface LogoProps {
 
 /* ==================================================================
    NOOI Logo — sử dụng ảnh thiết kế mới từ /public/brand/
-   - nooi-stacked(-white).png   : dọc (hexagon + NOI + tagline)
-   - nooi-horizontal(-white).png: ngang (hexagon + NOI + tagline)
-   - nooi-icon-v.png            : icon standalone (infinity knot)
+   - nooi-horizontal(-white).png : ngang (NOOI + infinity + tagline)
+   - nooi-stacked(-white).png    : vuông (NOOI + infinity + tagline)
+   - nooi-icon-v.png             : icon standalone (infinity knot tím)
+   - nooi-icon-v-white.png       : icon standalone (trắng trên nền tím)
    theme='dark' → nền tối → logo trắng
    theme='light' → nền sáng → logo màu
    ================================================================== */
 
 /**
- * Logo đầy đủ dạng dọc: hexagon + NOI + "Kết nối chuyển mình."
+ * Logo đầy đủ dạng vuông: NOOI + infinity + "Kết nối chuyển mình."
  * Dùng cho hero section, landing page
  */
 export function LogoFull({ className, theme = 'dark' }: { className?: string; theme?: 'light' | 'dark' }) {
@@ -29,8 +30,8 @@ export function LogoFull({ className, theme = 'dark' }: { className?: string; th
     <Image
       src={theme === 'dark' ? '/brand/nooi-stacked-white.png' : '/brand/nooi-stacked.png'}
       alt="NOOI — Kết nối chuyển mình"
-      width={180}
-      height={180}
+      width={163}
+      height={163}
       className={cn('w-auto h-auto', className)}
       priority
     />
@@ -38,7 +39,7 @@ export function LogoFull({ className, theme = 'dark' }: { className?: string; th
 }
 
 /**
- * Logo ngang: hexagon cluster bên trái + NOI text + tagline
+ * Logo ngang: NOOI text + infinity icon + tagline
  * theme='dark' → nền tối → logo trắng
  * theme='light' → nền sáng → logo màu
  */
@@ -54,8 +55,8 @@ export function LogoHorizontal({
       <Image
         src={theme === 'dark' ? '/brand/nooi-horizontal-white.png' : '/brand/nooi-horizontal.png'}
         alt="NOOI — Kết nối chuyển mình"
-        width={160}
-        height={48}
+        width={163}
+        height={75}
         className="h-8 w-auto"
         priority
       />

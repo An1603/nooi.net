@@ -73,7 +73,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
             <span className="text-[11px] text-muted-foreground">Phương thức:</span>
             {providers.length > 0 ? providers.map(p => {
               const info = PROVIDER_LABELS[p] || { name: p, color: "text-muted-foreground bg-muted/20" };
-              return <span key={p} className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${info.color}`}>{info.name}</span>;
+              return <span key={p} className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${info.color}`}>{info.name}</span>;
             }) : <span className="text-[11px] text-muted-foreground">—</span>}
           </div>
           <div className="flex items-center gap-1.5">
@@ -212,7 +212,7 @@ function AstrologyContent({ ast }: { ast: any }) {
     </div>}
     {ast.aspects?.length>0&&<div><h4 className="text-xs font-semibold text-muted-foreground mb-2">Góc chiếu ({ast.aspects.length})</h4>
       <div className="flex flex-wrap gap-1.5">
-        {ast.aspects.map((a:any,i:number)=><span key={i} className={`text-[11px] px-1.5 py-0.5 rounded ${a.harmonious?"bg-emerald-500/10 text-emerald-400":"bg-red-500/10 text-red-400"}`}>{a.planet1} {a.typeVi||a.type} {a.planet2}</span>)}
+        {ast.aspects.map((a:any,i:number)=><span key={i} className={`text-[10px] px-1.5 py-0.5 rounded ${a.harmonious?"bg-emerald-500/10 text-emerald-400":"bg-red-500/10 text-red-400"}`}>{a.planet1} {a.typeVi||a.type} {a.planet2}</span>)}
       </div>
     </div>}
   </div>;

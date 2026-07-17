@@ -196,7 +196,7 @@ function AspectCard({ a }: { a: Aspect }) {
         <span className="text-xs font-semibold">
           {a.planet1} <span className="opacity-60">{aspectSymbolMap[a.type] || "·"}</span> {a.planet2}
         </span>
-        <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${a.harmonious ? "bg-emerald-500/20" : "bg-red-500/20"}`}>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${a.harmonious ? "bg-emerald-500/20" : "bg-red-500/20"}`}>
           {a.harmonious ? "Hài hòa" : "Xung khắc"}
         </span>
       </div>

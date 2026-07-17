@@ -16,6 +16,7 @@ import {
   Video,
   FolderOpen,
   TrendingUp,
+  Palette,
 } from "lucide-react";
 import { RouteLoader } from "@/components/Loading";
 
@@ -40,6 +41,7 @@ const NAV_ITEMS = [
   // Theo dõi & Cấu hình
   { href: "/admin/activity", label: "Hoạt động", icon: Activity },
   { href: "/admin/evaluate", label: "Đánh giá", icon: UserCheck },
+  { href: "/admin/brand", label: "Thương hiệu", icon: Palette },
   { href: "/admin/settings", label: "Cấu hình", icon: Settings },
 ];
 

@@ -4,57 +4,50 @@ import { useEffect, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { RefreshCw, X } from "lucide-react";
 
+const STORAGE_KEY = "nooi_sw_version";
+const CURRENT_VERSION = "nooi-v4";
+
 /**
- * PWAUpdateToast — hiển thị thông báo khi có phiên bản PWA mới.
- * Lắng nghe message "SW_UPDATED" từ Service Worker + kiểm tra waiting SW.
- * - Bấm ✕ → ẩn tạm thời, sẽ hiện lại khi chuyển trang
- * - Bấm "Cài lại" → reload → SW mới kích hoạt → không còn thông báo
+ * PWAUpdateToast — thông báo khi có phiên bản PWA mới.
+ *
+ * Cơ chế: so sánh version trong localStorage với CURRENT_VERSION.
+ * - Khớp → không hiện toast
+ * - Không khớp (hoặc chưa có) → hiện toast yêu cầu cài lại
+ * - Bấm "Cài lại" → lưu version + reload → hết toast
+ * - Bấm ✕ → ẩn tạm, hiện lại khi chuyển trang
  */
 export function PWAUpdateToast() {
   const [dismissed, setDismissed] = useState(false);
-  const [hasUpdate, setHasUpdate] = useState(false);
+  const [needsUpdate, setNeedsUpdate] = useState(false);
   const pathname = usePathname();
 
-  // Kiểm tra waiting SW
-  const checkUpdate = useCallback(() => {
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.ready.then((reg) => {
-      if (reg.waiting) {
-        setHasUpdate(true);
-        setDismissed(false); // reset dismiss on route change
-      }
-    });
+  const checkVersion = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored !== CURRENT_VERSION) {
+      setNeedsUpdate(true);
+      setDismissed(false);
+    } else {
+      setNeedsUpdate(false);
+    }
   }, []);
 
   useEffect(() => {
-    // Kiểm tra ngay khi mount
-    checkUpdate();
+    checkVersion();
 
-    // Lắng nghe SW message
+    // Cũng lắng nghe SW message (nếu SW kịp gửi)
     function handleMessage(event: MessageEvent) {
       if (event.data?.type === "SW_UPDATED") {
-        setHasUpdate(true);
-        setDismissed(false);
+        localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);
+        setNeedsUpdate(false);
       }
     }
-
-    // Lắng nghe updatefound
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.ready.then((reg) => {
-        reg.addEventListener("updatefound", () => {
-          const newWorker = reg.installing;
-          if (newWorker) {
-            newWorker.addEventListener("statechange", () => {
-              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                setHasUpdate(true);
-                setDismissed(false);
-              }
-            });
-          }
-        });
-      });
-
       navigator.serviceWorker.addEventListener("message", handleMessage);
+      // Force SW update check
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg) reg.update().catch(() => {});
+      });
     }
 
     return () => {
@@ -62,15 +55,17 @@ export function PWAUpdateToast() {
         navigator.serviceWorker.removeEventListener("message", handleMessage);
       }
     };
-  }, [checkUpdate]);
+  }, [checkVersion]);
 
-  // Mỗi lần chuyển trang → kiểm tra lại + reset dismissed
+  // Kiểm tra lại mỗi lần chuyển trang
   useEffect(() => {
-    checkUpdate();
-  }, [pathname, checkUpdate]);
+    checkVersion();
+  }, [pathname, checkVersion]);
 
   function handleReload() {
-    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+    localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);
+    // Skip waiting nếu SW đang chờ
+    if ("serviceWorker" in navigator) {
       navigator.serviceWorker.ready.then((reg) => {
         if (reg.waiting) {
           reg.waiting.postMessage({ type: "SKIP_WAITING" });
@@ -80,8 +75,7 @@ export function PWAUpdateToast() {
     window.location.reload();
   }
 
-  // Chỉ hiện khi có update VÀ chưa bị dismiss trong lần navigate hiện tại
-  if (!hasUpdate || dismissed) return null;
+  if (!needsUpdate || dismissed) return null;
 
   return (
     <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] animate-slide-up">

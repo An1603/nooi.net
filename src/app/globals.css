@@ -11,7 +11,7 @@
 
 @theme {
   --color-background: #1a0a2e;
-  --color-foreground: #f0f0f0;
+  --color-foreground: #f5f0f8;
   --color-primary: #C8943E;
   --color-primary-foreground: #ffffff;
   --color-secondary: #4aad6a;
@@ -114,8 +114,15 @@
 
 @layer base {
   * { @apply border-border outline-ring/50; }
-  body { @apply bg-background text-foreground; }
-  html { scroll-behavior: smooth; }
+  html {
+    font-size: 17px;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-weight: 500;
+    line-height: 1.7;
+  }
 }
 
 /* ── Premium Gradients ── */

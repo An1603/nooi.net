@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ToastProvider";
+import { PWAUpdateToast } from "@/components/pwa/PWAUpdateToast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -89,6 +90,7 @@ export default function RootLayout({
         </div>
         {children}
         <ToastProvider />
+        <PWAUpdateToast />
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { LibraryClient } from "./LibraryClient";
 
 // Ngài An's user ID — brand assets owner
@@ -12,7 +13,7 @@ export default async function LibraryPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // User's personal documents
+  // User's personal documents (RLS-scoped)
   const { data: userDocs } = await supabase
     .from("documents")
     .select("*")
@@ -20,8 +21,9 @@ export default async function LibraryPage({
     .neq("file_type", "journal")
     .order("updated_at", { ascending: false });
 
-  // Brand assets — visible to everyone
-  const { data: brandDocs } = await supabase
+  // Brand assets — dùng admin client để bypass RLS
+  const adminClient = createAdminClient();
+  const { data: brandDocs } = await adminClient
     .from("documents")
     .select("*")
     .eq("user_id", BRAND_OWNER_ID)

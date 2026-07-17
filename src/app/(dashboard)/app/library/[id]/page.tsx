@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { ArrowLeft, Edit3, Calendar, FileText, FolderOpen, File, Music } from "lucide-react";
 import { Thumbnail } from "@/components/content/Thumbnail";
@@ -56,7 +57,9 @@ export default async function DocumentDetailPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: doc } = await supabase
+  // Dùng admin client để query document — bypass RLS (cần cho brand docs)
+  const adminClient = createAdminClient();
+  const { data: doc } = await adminClient
     .from("documents")
     .select("*")
     .eq("id", id)

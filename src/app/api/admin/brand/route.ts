@@ -32,11 +32,8 @@ async function getConfigDoc() {
 async function getConfig(): Promise<BrandConfig> {
   const doc = await getConfigDoc();
   if (!doc?.content) return { version: 1, assets: {} };
-  try {
-    return JSON.parse(doc.content);
-  } catch {
-    return { version: 1, assets: {} };
-  }
+  try { return JSON.parse(doc.content); }
+  catch { return { version: 1, assets: {} }; }
 }
 
 async function saveConfig(config: BrandConfig) {
@@ -53,6 +50,68 @@ async function saveConfig(config: BrandConfig) {
       file_type: "system",
     });
   }
+}
+
+/**
+ * Upload file to Supabase Storage, thử nhiều bucket + retry không contentType
+ */
+async function uploadToStorage(
+  adminClient: ReturnType<typeof createAdminClient>,
+  bucketPath: string,
+  buffer: Buffer,
+  mimeType: string
+): Promise<string | null> {
+  // Buckets theo thứ tự ưu tiên
+  const buckets = ["images", "avatars", "documents"];
+
+  for (const bucket of buckets) {
+    // Thử 1: có contentType
+    const { error: e1 } = await adminClient.storage
+      .from(bucket)
+      .upload(bucketPath, buffer, {
+        contentType: mimeType || "application/octet-stream",
+        upsert: true,
+        cacheControl: "31536000",
+      });
+
+    if (!e1) {
+      const { data } = adminClient.storage.from(bucket).getPublicUrl(bucketPath);
+      return data.publicUrl;
+    }
+
+    // Thử 2: không contentType
+    if (e1.message?.includes("mime type")) {
+      const { error: e2 } = await adminClient.storage
+        .from(bucket)
+        .upload(bucketPath, buffer, {
+          upsert: true,
+          cacheControl: "31536000",
+        });
+
+      if (!e2) {
+        const { data } = adminClient.storage.from(bucket).getPublicUrl(bucketPath);
+        return data.publicUrl;
+      }
+
+      // Thử 3: đổi extension sang .png + không contentType
+      if (e2.message?.includes("mime type")) {
+        const altPath = bucketPath.replace(/\.[^.]+$/, ".png");
+        const { error: e3 } = await adminClient.storage
+          .from(bucket)
+          .upload(altPath, buffer, {
+            upsert: true,
+            cacheControl: "31536000",
+          });
+
+        if (!e3) {
+          const { data } = adminClient.storage.from(bucket).getPublicUrl(altPath);
+          return data.publicUrl;
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 // GET /api/admin/brand
@@ -81,7 +140,7 @@ export async function PUT(req: NextRequest) {
     const config = await getConfig();
     const adminClient = createAdminClient();
 
-    // Reset: xóa asset khỏi config → dùng file mặc định
+    // Reset
     if (resetUrl === "") {
       delete config.assets[key];
       config.version += 1;
@@ -90,50 +149,29 @@ export async function PUT(req: NextRequest) {
     }
 
     if (file && file.size > 0) {
-      const ext = file.name.split(".").pop() || "png";
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
       const bucketPath = `brand/uploads/${key}.${ext}`;
-
       const buffer = Buffer.from(await file.arrayBuffer());
-      const { error: uploadError } = await adminClient.storage
-        .from("images")
-        .upload(bucketPath, buffer, {
-          contentType: file.type || "application/octet-stream",
-          upsert: true,
-          cacheControl: "31536000",
-        });
 
-      // Nếu bị từ chối vì MIME type, thử lại không có contentType
-      if (uploadError && uploadError.message?.includes("mime type")) {
-        const { error: retryError } = await adminClient.storage
-          .from("images")
-          .upload(bucketPath, buffer, {
-            upsert: true,
-            cacheControl: "31536000",
-          });
-        if (retryError) {
-          return NextResponse.json({ error: retryError.message }, { status: 500 });
-        }
-      } else if (uploadError) {
-        return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      const url = await uploadToStorage(adminClient, bucketPath, buffer, file.type);
+
+      if (!url) {
+        return NextResponse.json({ error: "Không thể upload file. Thử đổi định dạng ảnh (PNG, JPG)." }, { status: 500 });
       }
-
-      const { data: urlData } = adminClient.storage
-        .from("images")
-        .getPublicUrl(bucketPath);
 
       config.assets[key] = {
         key,
         label,
-        url: urlData.publicUrl,
-        file_type: file.type,
+        url,
+        file_type: file.type || "image/png",
         updated_at: new Date().toISOString(),
       };
     }
 
     config.version += 1;
     await saveConfig(config);
-
     return NextResponse.json({ success: true, asset: config.assets[key] });
+
   } catch (err) {
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }

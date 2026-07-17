@@ -43,4 +43,12 @@ done
 echo "🧹 Purging Cloudflare cache..."
 bash scripts/purge-cf-cache.sh
 
+echo "🔁 Creating CSS fallback for any hash mismatch..."
+NEW_CSS=$(ls .next/static/css/ | grep -v b496025 | head -1)
+OLD_CSS=$(curl -s https://nooi.net 2>/dev/null | grep -oP 'css/[a-f0-9]+\.css' | grep -v b496025 | head -1 | cut -d/ -f2)
+if [ -n "$OLD_CSS" ] && [ "$OLD_CSS" != "$NEW_CSS" ] && [ -f ".next/static/css/$NEW_CSS" ]; then
+  cp ".next/static/css/$NEW_CSS" ".next/static/css/$OLD_CSS"
+  echo "  ✅ Fallback: $OLD_CSS ← $NEW_CSS"
+fi
+
 echo "✅ Done — deploy successful!"

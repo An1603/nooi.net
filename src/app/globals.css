@@ -41,6 +41,12 @@
   --color-glass: rgba(255,255,255,0.04);
   --color-glass-border: rgba(255,255,255,0.06);
   --color-glass-hover: rgba(255,255,255,0.08);
+
+  /* ── Larger text for readability (older users) ── */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: calc(1.25 / 0.8125);
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: calc(1.375 / 0.9375);
 }
 
 :root {
@@ -115,7 +121,6 @@
 @layer base {
   * { @apply border-border outline-ring/50; }
   html {
-    font-size: 18px;
     scroll-behavior: smooth;
   }
   body {
@@ -322,3 +327,9 @@
 }
 .touch-target { min-height: 44px; }
 .touch-target-sm { min-height: 36px; }
+
+/* ── Larger text for readability ── */
+@layer utilities {
+  .text-\[10px\] { font-size: 0.6875rem; }
+  .text-\[11px\] { font-size: 0.75rem; }
+}

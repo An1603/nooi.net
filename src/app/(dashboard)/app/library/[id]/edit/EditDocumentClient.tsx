@@ -60,7 +60,7 @@ export default function EditDocumentClient({
   doc,
   projects,
 }: {
-  doc: any;
+  doc: Record<string, unknown> & { id: string; title: string; content: string | null; file_type: string | null; file_url?: string | null; project_id?: string | null; created_at: string; updated_at: string };
   projects: { id: string; title: string }[];
 }) {
   const [submitting, setSubmitting] = useState(false);

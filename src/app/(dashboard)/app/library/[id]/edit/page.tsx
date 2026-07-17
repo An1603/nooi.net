@@ -33,5 +33,6 @@ export default async function EditDocumentPage({
     .eq("user_id", user.id)
     .order("title");
 
-  return <EditDocumentClient doc={doc} projects={projects || []} />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <EditDocumentClient doc={doc as any} projects={projects || []} />;
 }

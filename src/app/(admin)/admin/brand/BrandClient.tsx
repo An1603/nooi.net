@@ -137,7 +137,7 @@ export default function BrandClient() {
         ) : (
           storageFiles.map((f) => (
             <div key={f.name} className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/50 text-xs">
-              <img src={f.url} className="w-4 h-4 object-contain rounded" />
+              <img src={f.url} className="w-4 h-4 object-contain rounded" alt="" />
               <span className="truncate max-w-[100px]">{f.name}</span>
               <span className="text-[10px] text-muted-foreground/50">{fmtSize(f.size)}</span>
             </div>
@@ -173,7 +173,7 @@ export default function BrandClient() {
                         <td className="py-2.5 px-4 font-medium" rowSpan={locations.length}>
                           <div className="flex items-center gap-2">
                             {asset?.url ? (
-                              <img src={asset.url} className="w-6 h-6 object-contain rounded" />
+                              <img src={asset.url} className="w-6 h-6 object-contain rounded" alt="" />
                             ) : (
                               <Image size={16} className="text-muted-foreground" />
                             )}
@@ -191,7 +191,7 @@ export default function BrandClient() {
                             className="relative group/preview flex items-center gap-1"
                             title="Bấm để xem full"
                           >
-                            <img src={asset.url} className="w-7 h-7 object-contain rounded border border-border" />
+                            <img src={asset.url} className="w-7 h-7 object-contain rounded border border-border" alt="" />
                             <Maximize2 size={10} className="absolute -top-0.5 -right-0.5 text-muted-foreground opacity-0 group-hover/preview:opacity-100 transition-opacity" />
                           </button>
                         ) : (
@@ -240,7 +240,7 @@ export default function BrandClient() {
                       <button key={f.name}
                         onClick={() => doPick(pickerFor, f.url, f.name)}
                         className="flex items-center gap-1.5 px-2 py-1 rounded text-xs hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-colors">
-                        <img src={f.url} className="w-5 h-5 object-contain rounded" />
+                        <img src={f.url} className="w-5 h-5 object-contain rounded" alt="" />
                         <span className="truncate max-w-[100px]">{f.name}</span>
                       </button>
                     ))

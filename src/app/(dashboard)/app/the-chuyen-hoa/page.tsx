@@ -161,7 +161,7 @@ export default function CardCollectionPage() {
             🎮 Chơi game
           </Link>
           <Link href="/app/the-chuyen-hoa/7-tang"
-            className="inline-flex items-center justify-center gap-1.5 border border-border px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-muted/30 transition-colors sm:w-auto"
+            className="inline-flex items-center justify-center gap-1.5 bg-orange-500 px-4 py-2.5 rounded-lg text-sm text-white font-medium hover:bg-orange-600 transition-colors sm:w-auto"
           >
             📖 7 Tầng Chuyển Hóa
           </Link>

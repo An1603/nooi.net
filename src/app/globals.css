@@ -45,7 +45,7 @@
 
 :root {
   --background: #1a0a2e;
-  --foreground: #f0f0f0;
+  --foreground: #f5f0f8;
   --card: #22163a;
   --card-foreground: #f0f0f0;
   --popover: #22163a;
@@ -115,13 +115,13 @@
 @layer base {
   * { @apply border-border outline-ring/50; }
   html {
-    font-size: 17px;
+    font-size: 18px;
     scroll-behavior: smooth;
   }
   body {
     @apply bg-background text-foreground;
     font-weight: 500;
-    line-height: 1.7;
+    line-height: 1.8;
   }
 }
 

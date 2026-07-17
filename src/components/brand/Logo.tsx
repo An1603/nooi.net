@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useBrandUrl } from '@/components/brand/BrandProvider';
 
 interface LogoProps {
   variant?: 'full' | 'horizontal' | 'icon' | 'circular';
@@ -12,23 +13,16 @@ interface LogoProps {
 }
 
 /* ==================================================================
-   NOOI Logo — sử dụng ảnh thiết kế mới từ /public/brand/
-   - nooi-horizontal(-white).png : ngang (NOOI + infinity + tagline)
-   - nooi-stacked(-white).png    : vuông (NOOI + infinity + tagline)
-   - nooi-icon-v.png             : icon standalone (infinity knot tím)
-   - nooi-icon-v-white.png       : icon standalone (trắng trên nền tím)
-   theme='dark' → nền tối → logo trắng
-   theme='light' → nền sáng → logo màu
+   NOOI Logo — đọc URL từ BrandProvider (admin config).
+   Fallback về /public/brand/ nếu chưa có config.
    ================================================================== */
 
-/**
- * Logo đầy đủ dạng vuông: NOOI + infinity + "Kết nối chuyển mình."
- * Dùng cho hero section, landing page
- */
 export function LogoFull({ className, theme = 'dark' }: { className?: string; theme?: 'light' | 'dark' }) {
+  const colorUrl = useBrandUrl('logo-square');
+  const whiteUrl = useBrandUrl('logo-square-white');
   return (
     <Image
-      src={theme === 'dark' ? '/brand/nooi-stacked-white.png' : '/brand/nooi-stacked.png'}
+      src={theme === 'dark' ? whiteUrl : colorUrl}
       alt="NOOI — Kết nối chuyển mình"
       width={163}
       height={163}
@@ -38,11 +32,6 @@ export function LogoFull({ className, theme = 'dark' }: { className?: string; th
   );
 }
 
-/**
- * Logo ngang: NOOI text + infinity icon + tagline
- * theme='dark' → nền tối → logo trắng
- * theme='light' → nền sáng → logo màu
- */
 export function LogoHorizontal({
   className,
   theme = 'dark',
@@ -50,10 +39,12 @@ export function LogoHorizontal({
   className?: string;
   theme?: 'light' | 'dark';
 }) {
+  const colorUrl = useBrandUrl('logo-horizontal');
+  const whiteUrl = useBrandUrl('logo-horizontal-white');
   return (
     <Link href="/" className={cn('flex items-center gap-2 no-underline', className)}>
       <Image
-        src={theme === 'dark' ? '/brand/nooi-horizontal-white.png' : '/brand/nooi-horizontal.png'}
+        src={theme === 'dark' ? whiteUrl : colorUrl}
         alt="NOOI — Kết nối chuyển mình"
         width={163}
         height={75}
@@ -64,14 +55,11 @@ export function LogoHorizontal({
   );
 }
 
-/**
- * Icon hình tròn — dùng cho dashboard sidebar
- * Sử dụng icon standalone (infinity knot), CSS rounded-full
- */
 export function LogoCircular({ size = 40, className }: { size?: number; className?: string }) {
+  const iconUrl = useBrandUrl('logo-icon');
   return (
     <Image
-      src="/brand/nooi-icon-v.png"
+      src={iconUrl}
       alt="NOOI"
       width={size}
       height={size}
@@ -80,13 +68,11 @@ export function LogoCircular({ size = 40, className }: { size?: number; classNam
   );
 }
 
-/**
- * Icon infinity knot (dọc) — small icon variant
- */
 export function LogoIcon({ size = 32, className }: { size?: number; className?: string }) {
+  const iconUrl = useBrandUrl('logo-icon');
   return (
     <Image
-      src="/brand/nooi-icon-v.png"
+      src={iconUrl}
       alt="NOOI"
       width={size}
       height={size}
@@ -95,9 +81,6 @@ export function LogoIcon({ size = 32, className }: { size?: number; className?: 
   );
 }
 
-/* ------------------------------------------------------------------
-   Main exported Logo component
-   ------------------------------------------------------------------ */
 export function Logo({ variant = 'horizontal', className, linkClassName, theme = 'dark' }: LogoProps) {
   if (variant === 'full') {
     return (
@@ -106,7 +89,6 @@ export function Logo({ variant = 'horizontal', className, linkClassName, theme =
       </Link>
     );
   }
-
   if (variant === 'circular') {
     return (
       <Link href="/app" className={cn('flex items-center no-underline', linkClassName)}>
@@ -114,7 +96,6 @@ export function Logo({ variant = 'horizontal', className, linkClassName, theme =
       </Link>
     );
   }
-
   if (variant === 'icon') {
     return (
       <Link href="/" className={cn('flex items-center no-underline', linkClassName)}>
@@ -122,7 +103,5 @@ export function Logo({ variant = 'horizontal', className, linkClassName, theme =
       </Link>
     );
   }
-
-  // horizontal (default)
   return <LogoHorizontal className={className} theme={theme} />;
 }

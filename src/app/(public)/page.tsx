@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import NextImage from 'next/image';
 import Link from 'next/link';
+import { useBrandUrl } from '@/components/brand/BrandProvider';
 import { createClient } from '@/lib/supabase/client';
 import { TechBackground } from '@/components/effects/TechBackground';
 import {
@@ -134,6 +135,7 @@ function TiltCard({ children, className = '' }: { children: React.ReactNode; cla
    ─────────────────────────────────────────────── */
 function HeroSection({ loggedIn }: { loggedIn: boolean }) {
   const { ref, visible } = useScrollReveal(0.1);
+  const logoWhiteUrl = useBrandUrl('logo-horizontal-white');
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-5 pt-24 pb-20 overflow-hidden">
@@ -147,7 +149,7 @@ function HeroSection({ loggedIn }: { loggedIn: boolean }) {
           <div className="relative">
             <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-pink-500/15 via-purple-500/10 to-blue-500/15 blur-2xl animate-pulse-glow" />
             <NextImage
-              src="/brand/nooi-horizontal-white.png"
+              src={logoWhiteUrl}
               alt="NOOI — Kết nối chuyển mình"
               width={326}
               height={150}

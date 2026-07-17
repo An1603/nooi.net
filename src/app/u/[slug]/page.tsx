@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { PublicProfileClient } from "./PublicProfileClient";
 import { ShareButton } from "./ShareButton";
+import { getBrandUrl } from "@/lib/brand";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -89,6 +90,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PublicProfilePage({ params }: Props) {
   const { slug } = await params;
   const profile = await getPublicProfile(slug);
+  const logoUrl = await getBrandUrl("logo-horizontal", "/brand/nooi-horizontal.png");
 
   if (!profile) notFound();
 
@@ -129,7 +131,7 @@ export default async function PublicProfilePage({ params }: Props) {
       <div className="relative z-10 flex justify-center pt-6 pb-2">
         <Link href="/" className="inline-flex items-center no-underline opacity-90 hover:opacity-100 transition-opacity">
           <Image
-            src="/brand/nooi-horizontal.png"
+            src={logoUrl}
             alt="NOOI"
             width={163}
             height={75}

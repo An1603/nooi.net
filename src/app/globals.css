@@ -329,7 +329,3 @@
 .touch-target-sm { min-height: 36px; }
 
 /* ── Larger text for readability ── */
-@layer utilities {
-  .text-\[10px\] { font-size: 0.6875rem; }
-  .text-\[11px\] { font-size: 0.75rem; }
-}

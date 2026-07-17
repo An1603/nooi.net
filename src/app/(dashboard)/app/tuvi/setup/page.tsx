@@ -130,7 +130,7 @@ export default function TuViSetupPage() {
                   ))}
                 </select>
               </div>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 Nếu không biết giờ sinh, chọn giữa trưa (Ngọ: 11:00-12:59)
               </p>
             </div>
@@ -167,7 +167,7 @@ export default function TuViSetupPage() {
               )}
             </Button>
 
-            <p className="text-[10px] text-center text-muted-foreground">
+            <p className="text-[11px] text-center text-muted-foreground">
               Thông tin được bảo mật và chỉ dùng để luận giải theo Tứ trụ phương Đông
             </p>
           </form>

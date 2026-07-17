@@ -728,14 +728,14 @@ export function ProfileClient({ user, profile }: Props) {
                     >
                       <span className="text-sm font-medium truncate">{r.full_name || "Người dùng"}</span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-medium ${
                           r.has_onboarding
                             ? "bg-emerald-500/10 text-emerald-400"
                             : "bg-yellow-500/10 text-yellow-400"
                         }`}>
                           {r.has_onboarding ? "Đã thiết lập" : "Chưa hoàn tất"}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[11px] text-muted-foreground">
                           <LocalTime iso={r.created_at} format="short" />
                         </span>
                       </div>
@@ -795,7 +795,7 @@ export function ProfileClient({ user, profile }: Props) {
           <SectionHeader icon={<Calendar className="size-5" />} title="Lịch sử tài khoản" desc="Thông tin về tài khoản và hoạt động của bạn" />
         </div>
         <div className="px-5 py-2">
-          <InfoRow label="ID tài khoản" value={<code className="text-[10px] text-muted-foreground font-mono">{user.id}</code>} />
+          <InfoRow label="ID tài khoản" value={<code className="text-[11px] text-muted-foreground font-mono">{user.id}</code>} />
           <InfoRow label="Ngày tham gia" value={<LocalTime iso={user.created_at} format="full" />} />
           <InfoRow label="Trạng thái" value={
             <span className="inline-flex items-center gap-1 text-xs text-emerald-400">

@@ -152,7 +152,7 @@ export default function CommunityPage() {
             <div key={g.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/10">
               <div>
                 <p className="text-sm font-medium">{g.name}</p>
-                <p className="text-[10px] text-muted-foreground"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên</p>
+                <p className="text-[11px] text-muted-foreground"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên</p>
               </div>
               {canManage && (
                 <div className="relative">
@@ -161,7 +161,7 @@ export default function CommunityPage() {
                   </button>
                   {addingTo === g.id && (
                     <div className="absolute right-0 top-full mt-1 w-64 bg-card border border-border rounded-xl shadow-2xl z-10 p-2 max-h-48 overflow-y-auto">
-                      <p className="text-[10px] text-muted-foreground px-2 py-1">Chọn user cấp thấp hơn để thêm:</p>
+                      <p className="text-[11px] text-muted-foreground px-2 py-1">Chọn user cấp thấp hơn để thêm:</p>
                       {eligibleUsers.map((u) => (
                         <button key={u.user_id} onClick={() => addMember(g.id, u.user_id)}
                           className="w-full text-left flex items-center gap-2 p-2 rounded-lg hover:bg-muted/20 text-xs">
@@ -188,7 +188,7 @@ export default function CommunityPage() {
             <div key={g.id} className="p-4 rounded-lg border border-border/50">
               <p className="text-sm font-medium">{g.name}</p>
               <p className="text-xs text-muted-foreground">{g.description}</p>
-              <p className="text-[10px] text-muted-foreground mt-1"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên · {g.schedule}</p>
+              <p className="text-[11px] text-muted-foreground mt-1"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên · {g.schedule}</p>
               {canManage && (
                 <div className="relative mt-2">
                   <button onClick={() => setAddingTo(addingTo === g.id ? null : g.id)} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg flex items-center gap-1">
@@ -225,7 +225,7 @@ export default function CommunityPage() {
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{u.name.charAt(0)}</div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium truncate">{u.name}</p>
-                <p className="text-[10px] text-muted-foreground">Lv.{u.level} {LEVEL_NAMES[u.level]}</p>
+                <p className="text-[11px] text-muted-foreground">Lv.{u.level} {LEVEL_NAMES[u.level]}</p>
               </div>
               <Shield className={`w-3 h-3 ${u.level >= 5 ? "text-primary" : "text-muted-foreground/30"}`} />
             </div>

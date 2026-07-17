@@ -169,7 +169,7 @@ export default function LessonComments({ lessonId }: { lessonId: string }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium">{c.user_name || "Người dùng"}</span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[11px] text-muted-foreground">
               {new Date(c.created_at).toLocaleDateString("vi-VN")}
             </span>
           </div>
@@ -177,7 +177,7 @@ export default function LessonComments({ lessonId }: { lessonId: string }) {
           <div className="flex items-center gap-3 mt-1.5">
             <button
               onClick={() => toggleLike(c.id)}
-              className={`flex items-center gap-1 text-[10px] transition-colors ${
+              className={`flex items-center gap-1 text-[11px] transition-colors ${
                 c.liked_by_me ? "text-pink-400" : "text-muted-foreground/50 hover:text-pink-400"
               }`}
             >
@@ -187,7 +187,7 @@ export default function LessonComments({ lessonId }: { lessonId: string }) {
             {!isReply && (
               <button
                 onClick={() => { setReplyTo(replyTo === c.id ? null : c.id); setReplyText(""); }}
-                className="flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-primary transition-colors"
+                className="flex items-center gap-1 text-[11px] text-muted-foreground/50 hover:text-primary transition-colors"
               >
                 <Reply className="w-3 h-3" /> Trả lời
               </button>
@@ -220,7 +220,7 @@ export default function LessonComments({ lessonId }: { lessonId: string }) {
             <div className="mt-2">
               <button
                 onClick={() => toggleReplies(c.id)}
-                className="flex items-center gap-1 text-[10px] text-primary"
+                className="flex items-center gap-1 text-[11px] text-primary"
               >
                 {expandedReplies.has(c.id) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 {c.replies.length} trả lời
@@ -247,13 +247,13 @@ export default function LessonComments({ lessonId }: { lessonId: string }) {
         <div className="flex gap-1">
           <button
             onClick={() => setSortBy("newest")}
-            className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${sortBy === "newest" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/20"}`}
+            className={`text-[11px] px-2 py-1 rounded-lg transition-colors ${sortBy === "newest" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/20"}`}
           >
             Mới nhất
           </button>
           <button
             onClick={() => setSortBy("popular")}
-            className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${sortBy === "popular" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/20"}`}
+            className={`text-[11px] px-2 py-1 rounded-lg transition-colors ${sortBy === "popular" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/20"}`}
           >
             Yêu thích
           </button>

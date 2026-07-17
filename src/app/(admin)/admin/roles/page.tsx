@@ -224,7 +224,7 @@ export default function AdminRolesPage() {
                           <p className="text-sm font-medium truncate">
                             {r.full_name || "Chưa đặt tên"}
                           </p>
-                          <p className="text-[10px] text-muted-foreground truncate">
+                          <p className="text-[11px] text-muted-foreground truncate">
                             {r.user_id.slice(0, 12)}...
                           </p>
                         </div>

@@ -158,7 +158,7 @@ export default function AdminEvaluatePage() {
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium truncate">{u.full_name || "Chưa đặt tên"}</p>
                           {u.role !== "user" && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                            <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
                               u.role === "super_admin" ? "bg-red-500/10 text-red-400" :
                               u.role === "admin" ? "bg-primary/10 text-primary" :
                               "bg-amber-500/10 text-amber-400"
@@ -167,10 +167,10 @@ export default function AdminEvaluatePage() {
                             </span>
                           )}
                           {!u.onboarding_completed && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">Chưa setup</span>
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">Chưa setup</span>
                           )}
                         </div>
-                        <p className="text-[10px] text-muted-foreground">{u.email || u.id.slice(0, 12)}...</p>
+                        <p className="text-[11px] text-muted-foreground">{u.email || u.id.slice(0, 12)}...</p>
                       </div>
                     </div>
                     <Link href={`/admin/users/${u.id}`} className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors">
@@ -185,7 +185,7 @@ export default function AdminEvaluatePage() {
                     <StatBadge icon={TrendingUp} label="N" value={String(u.stats?.n ?? 0)} color="text-primary" />
                     <StatBadge icon={FileText} label="Tài liệu" value={String(u.stats?.documents ?? 0)} color="text-blue-400" />
                     {u.stats?.lastActive && (
-                      <span className="text-[10px] text-muted-foreground ml-auto">
+                      <span className="text-[11px] text-muted-foreground ml-auto">
                         Hoạt động: {new Date(u.stats.lastActive).toLocaleDateString("vi-VN")}
                       </span>
                     )}
@@ -204,7 +204,7 @@ function SummaryCard({ label, value, icon: Icon, color }: { label: string; value
   return (
     <div className="rounded-xl border border-border/50 bg-[#0d0d0d] p-4">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] text-muted-foreground">{label}</span>
+        <span className="text-[11px] text-muted-foreground">{label}</span>
         <div className={`size-7 rounded-lg bg-white/5 flex items-center justify-center`}>
           <Icon className={`size-3.5 ${color}`} />
         </div>

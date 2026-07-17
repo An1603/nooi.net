@@ -143,7 +143,7 @@ export default function GroupQuizLeaderboard({ groupId }: { groupId?: string }) 
         <div className="text-center py-8">
           <Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
           <p className="text-xs text-muted-foreground">Bạn chưa tham gia nhóm nào</p>
-          <p className="text-[10px] text-muted-foreground/60 mt-1">Tham gia nhóm để thi đua cùng bạn bè</p>
+          <p className="text-[11px] text-muted-foreground/60 mt-1">Tham gia nhóm để thi đua cùng bạn bè</p>
         </div>
       ) : scores.length === 0 ? (
         <div className="text-center py-8">
@@ -181,9 +181,9 @@ export default function GroupQuizLeaderboard({ groupId }: { groupId?: string }) 
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">
                     {s.name}
-                    {s.user_id === myUserId && <span className="text-[10px] text-primary ml-1">(Bạn)</span>}
+                    {s.user_id === myUserId && <span className="text-[11px] text-primary ml-1">(Bạn)</span>}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground">
                     {levelIcons[s.level - 1]} Lv.{s.level}
                   </p>
                 </div>
@@ -192,7 +192,7 @@ export default function GroupQuizLeaderboard({ groupId }: { groupId?: string }) 
               {/* Score */}
               <div className="text-right">
                 <p className="text-sm font-bold text-primary">{s.score}</p>
-                <p className="text-[10px] text-muted-foreground">điểm</p>
+                <p className="text-[11px] text-muted-foreground">điểm</p>
               </div>
             </div>
           ))}

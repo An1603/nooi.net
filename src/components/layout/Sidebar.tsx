@@ -79,7 +79,7 @@ export function Sidebar() {
           <Logo variant="circular" className="!w-6 !h-6 shrink-0" />
           <div className="min-w-0">
             <span className="text-sm font-bold tracking-tight text-foreground">NOOI</span>
-            <span className="text-[10px] text-muted-foreground block leading-tight">Kết nối chuyển mình.</span>
+            <span className="text-[11px] text-muted-foreground block leading-tight">Kết nối chuyển mình.</span>
           </div>
         </Link>
       </div>

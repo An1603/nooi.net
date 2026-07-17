@@ -168,7 +168,7 @@ export default function MentorHub() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold">{mentor.full_name}</h3>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
                         mentor.level >= 7 ? "bg-purple-500/10 text-purple-400" : "bg-red-500/10 text-red-400"
                       }`}>
                         {mentor.level === 7 ? "👑 Master" : "⭐ Mentor 🌳"}

@@ -23,7 +23,7 @@ function CountdownTimer({ target }: { target: string }) {
     return () => clearInterval(id);
   }, [target]);
 
-  return <span className="text-[10px] font-mono tabular-nums">{remaining}</span>;
+  return <span className="text-[11px] font-mono tabular-nums">{remaining}</span>;
 }
 
 // ─── ICS Generator ────────────────────────────────────────────────────────────
@@ -300,15 +300,15 @@ export default function LivePage() {
           {/* Meeting info auto-generated */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-mono">ID:</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground font-mono">ID:</span>
               <input value={form.meeting_id} onChange={(e) => setForm({ ...form, meeting_id: e.target.value })} className="w-full px-9 py-2.5 rounded-lg bg-muted/20 border border-border text-sm font-mono tracking-wider" />
             </div>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-mono">🔑</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground font-mono">🔑</span>
               <input value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="w-full px-9 py-2.5 rounded-lg bg-muted/20 border border-border text-sm font-mono" />
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span>🔄 ID & mã đã tự động tạo — click vào để sửa</span>
           </div>
           <div className="flex gap-2">
@@ -344,7 +344,7 @@ export default function LivePage() {
                   {/* Left: Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Sắp tới</span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Sắp tới</span>
                       <CountdownTimer target={`${s.date}T${s.time}:00`} />
                       {isRegistered && (
                         <span className="text-xs text-green-400 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Đã đăng ký</span>
@@ -360,7 +360,7 @@ export default function LivePage() {
                       <span className="flex items-center gap-1"><User className="w-3 h-3" /> {s.mentor_name}</span>
                       <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {s.registered}/{s.max_participants}</span>
                       {s.meeting_id && (
-                        <span className="flex items-center gap-1 font-mono text-[10px] opacity-60 col-span-2">ID: {s.meeting_id}</span>
+                        <span className="flex items-center gap-1 font-mono text-[11px] opacity-60 col-span-2">ID: {s.meeting_id}</span>
                       )}
                     </div>
 
@@ -370,7 +370,7 @@ export default function LivePage() {
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-medium text-primary flex items-center gap-1"><Lock className="w-3 h-3" /> Thông tin phòng học</span>
                           <div className="flex gap-2">
-                            <a href={icsUrl} download={`nooi-${s.meeting_id || "live"}.ics`} className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
+                            <a href={icsUrl} download={`nooi-${s.meeting_id || "live"}.ics`} className="text-[11px] text-primary hover:underline flex items-center gap-0.5">
                               <Calendar className="w-3 h-3" /> Thêm vào lịch
                             </a>
                           </div>
@@ -415,7 +415,7 @@ export default function LivePage() {
                           }
                         }}
                         disabled={reminderSending === s.id}
-                        className="flex-1 sm:flex-none text-[10px] text-muted-foreground hover:text-primary flex items-center justify-center gap-1 disabled:opacity-50 sm:justify-end"
+                        className="flex-1 sm:flex-none text-[11px] text-muted-foreground hover:text-primary flex items-center justify-center gap-1 disabled:opacity-50 sm:justify-end"
                       >
                         {reminderSending === s.id ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -442,13 +442,13 @@ export default function LivePage() {
               <div key={s.id} className="rounded-lg border border-border/50 bg-card/50 p-4 opacity-70">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground shrink-0">Đã kết thúc</span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground shrink-0">Đã kết thúc</span>
                     <h3 className="text-sm font-medium truncate">{s.title}</h3>
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0 ml-2">{s.date} · {s.time}</span>
+                  <span className="text-[11px] text-muted-foreground shrink-0 ml-2">{s.date} · {s.time}</span>
                 </div>
                 {s.registered > 0 && (
-                  <p className="text-[10px] text-muted-foreground mt-1">{s.registered} học viên đã tham gia</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{s.registered} học viên đã tham gia</p>
                 )}
               </div>
             ))}

@@ -302,7 +302,7 @@ export function SettingsForm({ user, profile }: Props) {
                 ))}
               </select>
             </div>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               Giờ sinh ảnh hưởng trực tiếp đến Tứ Trụ (giờ Can Chi) trong Tử Vi. Nếu không biết, chọn Ngọ (11:00-12:59).
             </p>
           </div>
@@ -331,7 +331,7 @@ export function SettingsForm({ user, profile }: Props) {
                 onChange={(e) => { setNoiSinh(e.target.value); setSuccess(null); }}
                 className="pl-8" />
             </div>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               Dùng để tính vị trí Cung Mọc và 12 Nhà trong Chiêm tinh học
             </p>
           </div>

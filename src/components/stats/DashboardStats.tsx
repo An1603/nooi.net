@@ -96,7 +96,7 @@ export default function DashboardStats({ projectCount = 0, videoCount = 0, docCo
               <TrendingUp className="w-5 h-5 text-primary mx-auto mb-1" />
               <p className="text-xl font-bold">{stats.level}</p>
               <p className="text-xs text-muted-foreground">Cấp độ</p>
-              <p className="text-[10px] text-primary mt-0.5">{stats.levelName}</p>
+              <p className="text-[11px] text-primary mt-0.5">{stats.levelName}</p>
             </div>
           }
         />
@@ -152,10 +152,10 @@ export default function DashboardStats({ projectCount = 0, videoCount = 0, docCo
                     </div>
                   )}
                 </div>
-                <span className={`text-[10px] font-medium ${unlocked ? "text-foreground" : "text-muted-foreground"}`}>
+                <span className={`text-[11px] font-medium ${unlocked ? "text-foreground" : "text-muted-foreground"}`}>
                   {b.name}
                 </span>
-                <span className="text-[9px] text-muted-foreground">{b.threshold}N</span>
+                <span className="text-[11px] text-muted-foreground">{b.threshold}N</span>
               </div>
             );
           })}
@@ -175,7 +175,7 @@ export default function DashboardStats({ projectCount = 0, videoCount = 0, docCo
               }`}>
                 {day.active ? "✓" : "·"}
               </div>
-              <span className="text-[10px] text-muted-foreground">{day.label}</span>
+              <span className="text-[11px] text-muted-foreground">{day.label}</span>
             </div>
           ))}
         </div>
@@ -191,7 +191,7 @@ export default function DashboardStats({ projectCount = 0, videoCount = 0, docCo
               <div className="w-full rounded-t-md bg-gradient-to-t from-primary to-primary/60 transition-all"
                 style={{ height: `${(week.count / maxWeekCount) * 100}%`, minHeight: week.count > 0 ? "6px" : "2px" }}
               />
-              <span className="text-[10px] text-muted-foreground">{week.label}</span>
+              <span className="text-[11px] text-muted-foreground">{week.label}</span>
             </div>
           ))}
         </div>

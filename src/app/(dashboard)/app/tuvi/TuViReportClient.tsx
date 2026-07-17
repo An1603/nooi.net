@@ -90,22 +90,22 @@ function PillarCard({ label, cc, accent }: { label: string; cc: CanChi; accent: 
   return (
     <div className={`rounded-xl border border-amber-500/20 bg-gradient-to-b from-red-950/20 to-amber-950/10 p-4`}>
       <div className={`h-1 w-full rounded-full bg-gradient-to-r ${accentBar} mb-3`} />
-      <p className="text-[10px] text-amber-300/70 mb-1 uppercase tracking-widest font-semibold">{label}</p>
+      <p className="text-[11px] text-amber-300/70 mb-1 uppercase tracking-widest font-semibold">{label}</p>
       <p className="text-xl font-bold text-amber-200">{cc.fullName}</p>
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
         <div className={`rounded-md ${canColor.bg} ${canColor.border} border px-2 py-1.5`}>
           <p className="text-muted-foreground">Thiên Can</p>
           <p className={`font-semibold ${canColor.text}`}>{cc.can.name} · {NGU_HANH_NAMES[cc.can.hanh]}</p>
-          <p className="text-muted-foreground/70 text-[10px] mt-0.5">{cc.can.amDuong === "duong" ? "Dương" : "Âm"}</p>
+          <p className="text-muted-foreground/70 text-[11px] mt-0.5">{cc.can.amDuong === "duong" ? "Dương" : "Âm"}</p>
         </div>
         <div className={`rounded-md ${chiColor.bg} ${chiColor.border} border px-2 py-1.5`}>
           <p className="text-muted-foreground">Địa Chi</p>
           <p className={`font-semibold ${chiColor.text}`}>{cc.chi.name} · {NGU_HANH_NAMES[cc.chi.hanh]}</p>
-          <p className="text-muted-foreground/70 text-[10px] mt-0.5">{cc.chi.amDuong === "duong" ? "Dương" : "Âm"}</p>
+          <p className="text-muted-foreground/70 text-[11px] mt-0.5">{cc.chi.amDuong === "duong" ? "Dương" : "Âm"}</p>
         </div>
       </div>
       {napAmEntry && (
-        <p className="text-[10px] text-amber-300/80 mt-2 border-t border-amber-500/10 pt-2">
+        <p className="text-[11px] text-amber-300/80 mt-2 border-t border-amber-500/10 pt-2">
           Nạp âm: <span className="text-amber-200 font-medium">{napAmEntry.napAm}</span>
         </p>
       )}
@@ -154,7 +154,7 @@ function CungCard({ cung, accent }: { cung: Cuc; accent: "red" | "amber" }) {
     <div className={`rounded-xl border ${color.border} bg-gradient-to-br ${grad} p-4`}>
       <div className="flex items-center justify-between mb-2">
         <h4 className={`font-semibold ${color.text}`}>{cung.name}</h4>
-        <span className={`text-[10px] px-2 py-0.5 rounded-full ${color.bg} ${color.text} border ${color.border}`}>
+        <span className={`text-[11px] px-2 py-0.5 rounded-full ${color.bg} ${color.text} border ${color.border}`}>
           {NGU_HANH_NAMES[cung.hanh]}
         </span>
       </div>
@@ -297,24 +297,24 @@ export function TuViReportClient({ profile }: Props) {
       {/* ---------- BẢN MỆNH / CỤC / THÂN CHỦ (Quick summary) ---------- */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className={`rounded-xl border ${color.border} ${color.bg} p-3`}>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Bản Mệnh (Nạp âm)</p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Bản Mệnh (Nạp âm)</p>
           <p className={`text-sm font-bold mt-1 ${color.text}`}>{result.banMenh.napAm}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{NGU_HANH_NAMES[banMenhHanh]} · {menhInfo.direction}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{NGU_HANH_NAMES[banMenhHanh]} · {menhInfo.direction}</p>
         </div>
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Cục</p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Cục</p>
           <p className="text-sm font-bold mt-1 text-amber-300">{result.cuc.name}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">Số {result.cuc.value} · {NGU_HANH_NAMES[result.cuc.hanh]}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Số {result.cuc.value} · {NGU_HANH_NAMES[result.cuc.hanh]}</p>
         </div>
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Thân chủ (Can ngày)</p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Thân chủ (Can ngày)</p>
           <p className="text-sm font-bold mt-1 text-red-300">{result.thanChu.name} {tuTru.ngay.chi.name}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{NGU_HANH_NAMES[result.thanChu.hanh]} · {result.thanChu.amDuong === "duong" ? "Dương" : "Âm"}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{NGU_HANH_NAMES[result.thanChu.hanh]} · {result.thanChu.amDuong === "duong" ? "Dương" : "Âm"}</p>
         </div>
         <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Âm lịch sinh</p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Âm lịch sinh</p>
           <p className="text-sm font-bold mt-1 text-rose-300">{result.lunarDate.ngay}/{result.lunarDate.thang}/{result.lunarDate.nam}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{result.lunarDate.nhuan ? "Tháng nhuận" : "Tháng thường"}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{result.lunarDate.nhuan ? "Tháng nhuận" : "Tháng thường"}</p>
         </div>
       </div>
 
@@ -490,9 +490,9 @@ export function TuViReportClient({ profile }: Props) {
               const c = hanhColor(dh.cung.can.hanh);
               return (
                 <div key={i} className={`rounded-lg border ${c.border} ${c.bg} p-3`}>
-                  <p className="text-[10px] text-muted-foreground">{dh.thoiGian}</p>
+                  <p className="text-[11px] text-muted-foreground">{dh.thoiGian}</p>
                   <p className={`text-sm font-bold mt-0.5 ${c.text}`}>{dh.cung.fullName}</p>
-                  {napAm && <p className="text-[10px] text-muted-foreground mt-0.5">{napAm.napAm}</p>}
+                  {napAm && <p className="text-[11px] text-muted-foreground mt-0.5">{napAm.napAm}</p>}
                 </div>
               );
             })}
@@ -508,7 +508,7 @@ export function TuViReportClient({ profile }: Props) {
               <Sun className="size-4 text-amber-400" />
               Năm {result.namHienTai.nam} — {result.namHienTai.amLich}
             </h3>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+            <span className={`text-[11px] px-2 py-0.5 rounded-full ${
               result.namHienTai.tuongKhacTuoi
                 ? "bg-red-500/10 text-red-400 border border-red-500/20"
                 : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -518,17 +518,17 @@ export function TuViReportClient({ profile }: Props) {
           </div>
           <p className="text-sm text-amber-100/85 leading-relaxed">{result.namHienTai.meaning}</p>
           <div className="flex flex-wrap gap-2 mt-3">
-            <span className="text-[10px] px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 flex items-center gap-1">
+            <span className="text-[11px] px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 flex items-center gap-1">
               <Star className="size-2.5" /> Sao: {result.namHienTai.sao}
             </span>
-            <span className="text-[10px] px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+            <span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
               <AlertCircle className="size-2.5" /> Hạn: {result.namHienTai.han}
             </span>
-            <span className="text-[10px] px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1">
+            <span className="text-[11px] px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1">
               <Compass className="size-2.5" /> Hành: {NGU_HANH_NAMES[result.namHienTai.hanh]}
             </span>
           </div>
-          <p className="text-[10px] text-amber-300/60 mt-2">
+          <p className="text-[11px] text-amber-300/60 mt-2">
             Cập nhật: {result.ngayHienTai}
           </p>
         </section>
@@ -603,11 +603,11 @@ export function TuViReportClient({ profile }: Props) {
 
       {/* ---------- FOOTER ---------- */}
       <div className="text-center pt-2 border-t border-amber-500/15">
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           Lá số Tử Vi được luận giải dựa trên Tứ trụ (Bát tự) — Can Chi và Ngũ hành.
           Thông tin mang tính tham khảo và phát triển bản thân.
         </p>
-        <p className="text-[10px] text-amber-300/60 mt-1">
+        <p className="text-[11px] text-amber-300/60 mt-1">
           NOOI — Kết nối chuyển mình.
         </p>
       </div>

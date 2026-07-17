@@ -263,7 +263,7 @@ export default async function DashboardHome() {
               </div>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground mt-4">
+          <p className="text-[11px] text-muted-foreground mt-4">
             Dựa trên tổng số bài học & nhật ký đã hoàn thành
           </p>
         </div>

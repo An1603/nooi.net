@@ -181,7 +181,7 @@ export default function LearningHub() {
         <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all" style={{ width: `${overallPct}%` }} />
         </div>
-        <p className="text-[10px] text-muted-foreground mt-2">
+        <p className="text-[11px] text-muted-foreground mt-2">
           {n} N · {n < 3500 ? `${n}/3500 N để đạt Master 👑` : "🏆 Tối đa"}
         </p>
       </div>
@@ -200,7 +200,7 @@ export default function LearningHub() {
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${unlocked ? "bg-primary/10 text-primary" : "bg-muted/30 text-muted-foreground"}`}>Level {level.id}</span>
                     {!unlocked && <Lock className="w-3 h-3 text-muted-foreground" />}
                     {unlocked && level.lessons.length > 0 && (
-                      <span className="text-[10px] text-muted-foreground">{levelDone}/{level.lessons.length} ({levelPct}%)</span>
+                      <span className="text-[11px] text-muted-foreground">{levelDone}/{level.lessons.length} ({levelPct}%)</span>
                     )}
                   </div>
                   <h3 className="text-lg font-bold mt-2">{level.name}</h3>
@@ -223,9 +223,9 @@ export default function LearningHub() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-medium truncate">{lesson.title}</p>
-                                {p.pct > 0 && <span className="text-[10px] text-muted-foreground shrink-0">{p.pct}%</span>}
+                                {p.pct > 0 && <span className="text-[11px] text-muted-foreground shrink-0">{p.pct}%</span>}
                               </div>
-                              <p className="text-[10px] text-muted-foreground">{lesson.duration} · {lesson.type === "video" ? "Video" : "Thực hành"}</p>
+                              <p className="text-[11px] text-muted-foreground">{lesson.duration} · {lesson.type === "video" ? "Video" : "Thực hành"}</p>
                             </div>
                             <div className="w-12 h-1.5 bg-muted/30 rounded-full overflow-hidden shrink-0">
                               <div className="h-full bg-primary/60 rounded-full" style={{ width: `${p.pct}%` }} />
@@ -239,9 +239,9 @@ export default function LearningHub() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate text-muted-foreground">{lesson.title}</p>
-                              <p className="text-[10px] text-muted-foreground">Cần hoàn thành bài trước</p>
+                              <p className="text-[11px] text-muted-foreground">Cần hoàn thành bài trước</p>
                             </div>
-                            {lesson.free && <span className="text-[10px] text-primary">Free</span>}
+                            {lesson.free && <span className="text-[11px] text-primary">Free</span>}
                           </div>
                         )}
                       </div>

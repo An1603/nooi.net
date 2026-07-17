@@ -102,7 +102,7 @@ export default function AdminDocumentsPage() {
           }`}
         >
           Tất cả
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+          <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
             filterType === null
               ? "bg-primary/20 text-primary"
               : "bg-white/10 text-muted-foreground"
@@ -124,7 +124,7 @@ export default function AdminDocumentsPage() {
             >
               <cfg.icon className="size-3.5" />
               {cfg.label}
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+              <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
                 filterType === type
                   ? `${cfg.color.split(" ")[0]} bg-white/10`
                   : "bg-white/10 text-muted-foreground"
@@ -195,7 +195,7 @@ export default function AdminDocumentsPage() {
 
                       {/* Type */}
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${cfg.color}`}>
+                        <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${cfg.color}`}>
                           <cfg.icon className="size-3" />
                           {cfg.label}
                         </span>

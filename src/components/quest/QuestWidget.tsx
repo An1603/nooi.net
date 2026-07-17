@@ -52,7 +52,7 @@ export default function QuestWidget() {
             <span className={`text-sm flex-1 ${q.done ? "text-muted-foreground line-through" : "text-foreground"}`}>
               {q.icon} {q.label}
             </span>
-            <span className={`text-[10px] font-medium ${q.done ? "text-green-400" : "text-muted-foreground"}`}>
+            <span className={`text-[11px] font-medium ${q.done ? "text-green-400" : "text-muted-foreground"}`}>
               +{q.n} N
             </span>
           </div>

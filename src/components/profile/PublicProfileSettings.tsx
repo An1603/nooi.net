@@ -281,7 +281,7 @@ export function PublicProfileSettings({ userId, profile }: Props) {
                 )}
                 {uploading ? "Đang tải..." : "Tải ảnh lên"}
               </Button>
-              <p className="text-[10px] text-muted-foreground mt-1">
+              <p className="text-[11px] text-muted-foreground mt-1">
                 JPEG, PNG, WebP, GIF. Tối đa 5MB.
               </p>
             </div>
@@ -316,7 +316,7 @@ export function PublicProfileSettings({ userId, profile }: Props) {
             className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
             maxLength={1000}
           />
-          <p className="text-[10px] text-muted-foreground text-right">
+          <p className="text-[11px] text-muted-foreground text-right">
             {bio.length}/1000
           </p>
         </div>
@@ -349,7 +349,7 @@ export function PublicProfileSettings({ userId, profile }: Props) {
               className="pl-8 text-sm"
             />
           </div>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Cách nhau bằng dấu phẩy. VD: Thiền, Khí công, Coaching
           </p>
         </div>

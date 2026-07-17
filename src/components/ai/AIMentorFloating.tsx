@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Bot, X, Send, Loader2, Mic, Keyboard, Maximize2, Minimize2, Trash2 } from "lucide-react";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
 import { createClient } from "@/lib/supabase/client";
@@ -36,6 +37,8 @@ When the user shares a journal entry with Thân (body), Tâm (mind), Hành (acti
 - Goal: Help users move from 'Currently stuck' -> 'Insight' -> 'Micro-practice' -> 'An trú'.`;
 
 export default function AIMentorFloating() {
+  const pathname = usePathname();
+  const isVoicePage = pathname === "/app/voice";
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"chat" | "voice">("chat");
   const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string }[]>([]);
@@ -45,6 +48,11 @@ export default function AIMentorFloating() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const journalDataRef = useRef<string>("");
+
+  // Ẩn FAB trên trang voice, tự đóng panel khi vào voice
+  useEffect(() => {
+    if (isVoicePage && open) setOpen(false);
+  }, [isVoicePage, open]);
 
   // Listen for external "ai-mentor:ask" event
   useEffect(() => {
@@ -161,7 +169,8 @@ export default function AIMentorFloating() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating button — ẩn trên trang /app/voice */}
+      {!isVoicePage && (
       <button
         onClick={() => setOpen(!open)}
         className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-200 flex items-center justify-center"
@@ -169,6 +178,7 @@ export default function AIMentorFloating() {
       >
         {open ? <X className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
       </button>
+      )}
 
       {/* Panel */}
       {open && (

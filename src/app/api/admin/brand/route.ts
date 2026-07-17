@@ -124,9 +124,36 @@ export async function GET() {
   }
 }
 
-// PUT /api/admin/brand — upload file + update config
+// PUT /api/admin/brand — upload file hoặc chọn từ kho
 export async function PUT(req: NextRequest) {
   try {
+    const contentType = req.headers.get("content-type") || "";
+
+    // JSON mode: chọn file từ kho (không upload)
+    if (contentType.includes("application/json")) {
+      const body = await req.json();
+      const key = body.key as string;
+      const label = body.label as string;
+      const url = body.url as string;
+
+      if (!key || !label || !url) {
+        return NextResponse.json({ error: "Missing key, label, or url" }, { status: 400 });
+      }
+
+      const config = await getConfig();
+      config.assets[key] = {
+        key,
+        label,
+        url,
+        file_type: url.endsWith(".ico") ? "image/x-icon" : "image/png",
+        updated_at: new Date().toISOString(),
+      };
+      config.version += 1;
+      await saveConfig(config);
+      return NextResponse.json({ success: true, asset: config.assets[key] });
+    }
+
+    // FormData mode: upload file
     const formData = await req.formData();
     const key = formData.get("key") as string;
     const label = formData.get("label") as string;

@@ -197,7 +197,7 @@ export default function AdminBrandPage() {
                         Upload
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,.ico"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];

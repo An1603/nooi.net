@@ -97,12 +97,23 @@ export async function PUT(req: NextRequest) {
       const { error: uploadError } = await adminClient.storage
         .from("images")
         .upload(bucketPath, buffer, {
-          contentType: file.type,
+          contentType: file.type || "application/octet-stream",
           upsert: true,
           cacheControl: "31536000",
         });
 
-      if (uploadError) {
+      // Nếu bị từ chối vì MIME type, thử lại không có contentType
+      if (uploadError && uploadError.message?.includes("mime type")) {
+        const { error: retryError } = await adminClient.storage
+          .from("images")
+          .upload(bucketPath, buffer, {
+            upsert: true,
+            cacheControl: "31536000",
+          });
+        if (retryError) {
+          return NextResponse.json({ error: retryError.message }, { status: 500 });
+        }
+      } else if (uploadError) {
         return NextResponse.json({ error: uploadError.message }, { status: 500 });
       }
 

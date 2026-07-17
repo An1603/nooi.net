@@ -98,7 +98,7 @@ export default function InstallPrompt() {
           </div>
           <div>
             <h3 className="text-sm font-semibold">Cài đặt NOOI</h3>
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {deferredPrompt
                 ? "Trải nghiệm tốt hơn với ứng dụng"
                 : "Thêm NOOI vào màn hình chính"}

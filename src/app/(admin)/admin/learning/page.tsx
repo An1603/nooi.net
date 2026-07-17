@@ -119,7 +119,7 @@ export default async function AdminLearningPage() {
                           <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden">
                             <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
                           </div>
-                          <span className="text-[12px] text-muted-foreground w-8 text-right">{pct}%</span>
+                          <span className="text-[11px] text-muted-foreground w-8 text-right">{pct}%</span>
                         </div>
                       </td>
                     </tr>
@@ -143,11 +143,11 @@ export default async function AdminLearningPage() {
             {topUsers.map(([userId, count], i) => (
               <div key={userId} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.02]">
                 <span className="text-xs font-bold text-muted-foreground w-5 text-right">#{i + 1}</span>
-                <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center text-[12px] font-bold text-primary">
+                <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary">
                   {(nameMap.get(userId) || "?")[0].toUpperCase()}
                 </div>
                 <span className="text-xs flex-1">{nameMap.get(userId) || userId.slice(0, 8)}</span>
-                <span className="text-[12px] text-muted-foreground">{count} bài</span>
+                <span className="text-[11px] text-muted-foreground">{count} bài</span>
                 <div className="w-16 h-1 bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.round((count / totalLessons) * 100)}%` }} />
                 </div>

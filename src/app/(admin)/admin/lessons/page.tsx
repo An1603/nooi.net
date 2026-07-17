@@ -299,15 +299,15 @@ export default function AdminLessonsPage() {
                 {/* Level header */}
                 <div className="px-5 py-3 border-b border-border/20 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                       Level {level.id}
                     </span>
                     <h2 className="text-sm font-semibold">{level.name}</h2>
-                    <span className="text-[12px] text-muted-foreground hidden sm:inline">
+                    <span className="text-[11px] text-muted-foreground hidden sm:inline">
                       {level.desc}
                     </span>
                   </div>
-                  <span className="text-[12px] text-muted-foreground">
+                  <span className="text-[11px] text-muted-foreground">
                     {level.lessons.length} bài
                   </span>
                 </div>
@@ -317,15 +317,15 @@ export default function AdminLessonsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border/10">
-                        <th className="text-left px-4 py-2 text-[12px] font-medium text-muted-foreground">ID</th>
-                        <th className="text-left px-4 py-2 text-[12px] font-medium text-muted-foreground">Tiêu đề</th>
-                        <th className="text-center px-4 py-2 text-[12px] font-medium text-muted-foreground hidden sm:table-cell">Loại</th>
-                        <th className="text-center px-4 py-2 text-[12px] font-medium text-muted-foreground hidden md:table-cell">TG</th>
-                        <th className="text-center px-4 py-2 text-[12px] font-medium text-muted-foreground hidden lg:table-cell">YouTube</th>
-                        <th className="text-center px-4 py-2 text-[12px] font-medium text-muted-foreground hidden xl:table-cell">Thứ tự</th>
-                        <th className="text-center px-4 py-2 text-[12px] font-medium text-muted-foreground hidden lg:table-cell">Học viên</th>
-                        <th className="text-center px-4 py-2 text-[12px] font-medium text-muted-foreground">Trạng thái</th>
-                        <th className="text-right px-4 py-2 text-[12px] font-medium text-muted-foreground">Hành động</th>
+                        <th className="text-left px-4 py-2 text-[11px] font-medium text-muted-foreground">ID</th>
+                        <th className="text-left px-4 py-2 text-[11px] font-medium text-muted-foreground">Tiêu đề</th>
+                        <th className="text-center px-4 py-2 text-[11px] font-medium text-muted-foreground hidden sm:table-cell">Loại</th>
+                        <th className="text-center px-4 py-2 text-[11px] font-medium text-muted-foreground hidden md:table-cell">TG</th>
+                        <th className="text-center px-4 py-2 text-[11px] font-medium text-muted-foreground hidden lg:table-cell">YouTube</th>
+                        <th className="text-center px-4 py-2 text-[11px] font-medium text-muted-foreground hidden xl:table-cell">Thứ tự</th>
+                        <th className="text-center px-4 py-2 text-[11px] font-medium text-muted-foreground hidden lg:table-cell">Học viên</th>
+                        <th className="text-center px-4 py-2 text-[11px] font-medium text-muted-foreground">Trạng thái</th>
+                        <th className="text-right px-4 py-2 text-[11px] font-medium text-muted-foreground">Hành động</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/5">
@@ -337,7 +337,7 @@ export default function AdminLessonsPage() {
                           }`}
                         >
                           <td className="px-4 py-2.5">
-                            <code className="text-[12px] font-mono text-muted-foreground">
+                            <code className="text-[11px] font-mono text-muted-foreground">
                               {lesson.lesson_id}
                             </code>
                           </td>
@@ -353,7 +353,7 @@ export default function AdminLessonsPage() {
                                   {lesson.title}
                                 </p>
                                 {lesson.description && (
-                                  <p className="text-[12px] text-muted-foreground truncate max-w-[200px]">
+                                  <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">
                                     {lesson.description}
                                   </p>
                                 )}
@@ -361,32 +361,32 @@ export default function AdminLessonsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-2.5 text-center hidden sm:table-cell">
-                            <span className={`text-[12px] px-1.5 py-0.5 rounded ${typeBadge(lesson.type)}`}>
+                            <span className={`text-[11px] px-1.5 py-0.5 rounded ${typeBadge(lesson.type)}`}>
                               {lesson.type === "video" ? "Video" : "Thực hành"}
                             </span>
                           </td>
                           <td className="px-4 py-2.5 text-center hidden md:table-cell">
-                            <span className="text-[12px] font-mono text-muted-foreground">
+                            <span className="text-[11px] font-mono text-muted-foreground">
                               {lesson.duration}
                             </span>
                           </td>
                           <td className="px-4 py-2.5 text-center hidden lg:table-cell">
                             {lesson.youtube_id ? (
-                              <span className="text-[12px] font-mono text-blue-400 truncate inline-block max-w-[100px]">
+                              <span className="text-[11px] font-mono text-blue-400 truncate inline-block max-w-[100px]">
                                 {lesson.youtube_id}
                               </span>
                             ) : (
-                              <span className="text-[12px] text-muted-foreground">—</span>
+                              <span className="text-[11px] text-muted-foreground">—</span>
                             )}
                           </td>
                           <td className="px-4 py-2.5 text-center hidden xl:table-cell">
-                            <span className="text-[12px] text-muted-foreground flex items-center justify-center gap-1">
+                            <span className="text-[11px] text-muted-foreground flex items-center justify-center gap-1">
                               <GripVertical className="size-3" />
                               {lesson.sort_order}
                             </span>
                           </td>
                           <td className="px-4 py-2.5 text-center hidden lg:table-cell">
-                            <span className="text-[12px] text-muted-foreground">
+                            <span className="text-[11px] text-muted-foreground">
                               {lesson.stats_total > 0
                                 ? `${lesson.stats_completed}/${lesson.stats_total}`
                                 : "—"}
@@ -395,7 +395,7 @@ export default function AdminLessonsPage() {
                           <td className="px-4 py-2.5 text-center">
                             <button
                               onClick={() => toggleActive(lesson)}
-                              className={`inline-flex items-center gap-1 text-[12px] px-2 py-0.5 rounded-full transition-colors ${
+                              className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full transition-colors ${
                                 lesson.is_active
                                   ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
                                   : "bg-muted/30 text-muted-foreground hover:bg-red-500/10 hover:text-red-400"
@@ -468,7 +468,7 @@ export default function AdminLessonsPage() {
                 className="h-9 text-sm"
                 required
               />
-              <p className="text-[12px] text-muted-foreground">Mã định danh duy nhất, VD: 1-6, 2-5</p>
+              <p className="text-[11px] text-muted-foreground">Mã định danh duy nhất, VD: 1-6, 2-5</p>
             </div>
 
             {/* Title */}
@@ -518,7 +518,7 @@ export default function AdminLessonsPage() {
                   onChange={(e) => setCreateForm({ ...createForm, youtube_id: e.target.value })}
                   className="h-9 text-sm"
                 />
-                <p className="text-[12px] text-muted-foreground">Phần ID sau v= trong URL YouTube</p>
+                <p className="text-[11px] text-muted-foreground">Phần ID sau v= trong URL YouTube</p>
               </div>
             )}
 

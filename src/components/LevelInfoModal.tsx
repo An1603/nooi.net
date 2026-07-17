@@ -95,11 +95,11 @@ export function LevelInfoModal({ currentN, currentLevel, currentLevelName, trigg
                             <span className={`text-sm font-bold ${isCurrent ? "text-primary" : unlocked ? "text-foreground" : "text-muted-foreground"}`}>
                               {lvl.icon} {lvl.name}
                             </span>
-                            <span className="text-[12px] text-muted-foreground">— {lvl.role}</span>
-                            {isCurrent && <span className="text-[12px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Hiện tại</span>}
+                            <span className="text-[11px] text-muted-foreground">— {lvl.role}</span>
+                            {isCurrent && <span className="text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Hiện tại</span>}
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">{lvl.desc}</p>
-                          <div className="flex items-center gap-3 mt-1.5 text-[12px] text-muted-foreground">
+                          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
                             <span>Cần {lvl.nRequired} N</span>
                           </div>
 
@@ -130,7 +130,7 @@ export function LevelInfoModal({ currentN, currentLevel, currentLevelName, trigg
                     return (
                       <div key={rule.action} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
                         <Icon className="size-3.5 text-primary shrink-0" />
-                        <span className="text-[12px] text-muted-foreground flex-1">{rule.action}</span>
+                        <span className="text-[11px] text-muted-foreground flex-1">{rule.action}</span>
                         <span className="text-xs font-bold text-primary">+{rule.n}N</span>
                       </div>
                     );
@@ -143,23 +143,23 @@ export function LevelInfoModal({ currentN, currentLevel, currentLevelName, trigg
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Mở khóa theo cấp</h3>
                 <div className="space-y-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono">🌱 Seeker</span>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono">🌱 Seeker</span>
                     <span className="text-muted-foreground">Mở khóa bộ thẻ cấp 1-2</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 font-mono">🌳 Giver</span>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 font-mono">🌳 Giver</span>
                     <span className="text-muted-foreground">Tham gia nhóm học tập, tặng quà cho bạn</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono">🌲 Guider</span>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono">🌲 Guider</span>
                     <span className="text-muted-foreground">Tạo nhóm riêng, dẫn dắt người mới</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-mono">🌳 Mentor</span>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-mono">🌳 Mentor</span>
                     <span className="text-muted-foreground">Tổ chức lớp Live, cố vấn chuyên sâu</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 font-mono">👑 Master</span>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 font-mono">👑 Master</span>
                     <span className="text-muted-foreground">Toàn quyền kiến tạo, truyền thừa, điều hành</span>
                   </div>
                 </div>

@@ -185,7 +185,7 @@ export default function CardCollectionPage() {
             >
               {isUnlocked ? l.icon : <Lock className="w-3 h-3" />}
               <span>{l.icon} {l.name}</span>
-              <span className="text-[12px] opacity-70">— {l.role}</span>
+              <span className="text-[11px] opacity-70">— {l.role}</span>
             </button>
           );
         })}
@@ -211,12 +211,12 @@ export default function CardCollectionPage() {
               )}
               <div className="text-3xl mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">{card.icon}</div>
               <p className="text-sm font-semibold group-hover:text-primary transition-colors">{card.term}</p>
-              <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">{card.def}</p>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{card.def}</p>
               <div className="flex items-center gap-1 mt-2">
                 {isUnlocked ? (
-                  <span className="text-[12px] text-green-400/70">✓ Đã mở khóa</span>
+                  <span className="text-[11px] text-green-400/70">✓ Đã mở khóa</span>
                 ) : (
-                  <span className="text-[12px] text-muted-foreground">🔒 Cần Lv.{card.level}</span>
+                  <span className="text-[11px] text-muted-foreground">🔒 Cần Lv.{card.level}</span>
                 )}
               </div>
             </div>

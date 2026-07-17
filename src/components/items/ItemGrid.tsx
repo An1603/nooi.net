@@ -38,7 +38,7 @@ export function ItemGrid({ activeCategory, onCategoryChange, items, children }: 
               {Icon && <Icon className="size-3.5" />}
               {tab.label}
               {tab.key !== null && (
-                <span className={`text-[12px] ${isActive ? "opacity-70" : "text-muted-foreground/50"}`}>
+                <span className={`text-[11px] ${isActive ? "opacity-70" : "text-muted-foreground/50"}`}>
                   {items.filter((i) => i.category === tab.key).length}
                 </span>
               )}

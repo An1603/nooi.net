@@ -285,7 +285,7 @@ export default function SetupPage() {
                   value={noiSinh} onChange={(e) => { setNoiSinh(e.target.value); setError(null); }}
                   className="pl-8" />
               </div>
-              <p className="text-[12px] text-muted-foreground">Dùng cho Chiêm tinh (cung Mọc). Nếu không rõ, để trống.</p>
+              <p className="text-[11px] text-muted-foreground">Dùng cho Chiêm tinh (cung Mọc). Nếu không rõ, để trống.</p>
             </div>
 
             {error && (
@@ -298,7 +298,7 @@ export default function SetupPage() {
                 <><Sparkles className="size-4" /> Khám phá ngay — 3 hệ thống</>}
             </Button>
 
-            <p className="text-[12px] text-center text-muted-foreground">
+            <p className="text-[11px] text-center text-muted-foreground">
               Thông tin của bạn được bảo mật. Có thể cập nhật sau trong Settings.
             </p>
           </form>

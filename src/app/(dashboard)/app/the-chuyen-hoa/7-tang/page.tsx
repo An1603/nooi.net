@@ -80,7 +80,7 @@ const NOTES = [
 function DescPanel({ tier, align }: { tier: typeof TIERS[number]; align: 'left' | 'right' }) {
   return (
     <div className={`py-5 ${align === 'right' ? 'text-right pr-6' : 'text-left pl-6'}`}>
-      <div className="text-[12px] tracking-[3px] uppercase font-semibold mb-0.5" style={{ color: tier.color }}>
+      <div className="text-[11px] tracking-[3px] uppercase font-semibold mb-0.5" style={{ color: tier.color }}>
         Tầng {tier.n}
       </div>
       <h3 className="text-2xl md:text-3xl font-light text-foreground leading-tight mb-0.5">{tier.name}</h3>
@@ -88,7 +88,7 @@ function DescPanel({ tier, align }: { tier: typeof TIERS[number]; align: 'left' 
 
       <div className={`flex items-center gap-2 mb-4 ${align === 'right' ? 'justify-end' : 'justify-start'}`}>
         <span
-          className="text-[12px] font-semibold tracking-[2px] uppercase px-3 py-1 rounded-full"
+          className="text-[11px] font-semibold tracking-[2px] uppercase px-3 py-1 rounded-full"
           style={{ color: tier.color, background: tier.colorBg, border: `1px solid ${tier.color}26` }}
         >
           ◆ {tier.keyword}
@@ -106,7 +106,7 @@ function DescPanel({ tier, align }: { tier: typeof TIERS[number]; align: 'left' 
       </div>
 
       {/* Keys */}
-      <div className="text-[12px] tracking-[2px] uppercase font-semibold mb-2 text-muted-foreground">Dấu hiệu</div>
+      <div className="text-[11px] tracking-[2px] uppercase font-semibold mb-2 text-muted-foreground">Dấu hiệu</div>
       <ul className={`space-y-1.5 ${align === 'right' ? 'ml-auto' : ''}`} style={{ maxWidth: 360 }}>
         {tier.keys.map((k, i) => (
           <li key={i} className={`text-sm text-muted-foreground/80 flex items-start gap-2 ${align === 'right' ? 'flex-row-reverse text-right' : ''}`}>
@@ -132,7 +132,7 @@ function ActionPanel({ tier, align }: { tier: typeof TIERS[number]; align: 'left
           borderRight: align === 'right' ? `2px solid ${tier.color}` : undefined,
         }}
       >
-        <div className="text-[12px] tracking-[2px] uppercase font-semibold mb-1.5" style={{ color: tier.color }}>
+        <div className="text-[11px] tracking-[2px] uppercase font-semibold mb-1.5" style={{ color: tier.color }}>
           🔑 Chìa khóa
         </div>
         {tier.chiaKhoa.isFinal ? (
@@ -211,7 +211,7 @@ export default function SevenTiersPage() {
           Tổng hợp từ triết học Phật giáo, Lão giáo, Tây phương và tâm lý học hiện đại.
           Viết bằng ngôn ngữ đương đại, dành cho người đang sống, đang hỏi, đang tìm.
         </p>
-        <span className="inline-block text-[12px] tracking-[2px] uppercase text-muted-foreground/50 px-3 py-1 border border-border rounded-full">
+        <span className="inline-block text-[11px] tracking-[2px] uppercase text-muted-foreground/50 px-3 py-1 border border-border rounded-full">
           Tài liệu Workshop
         </span>
       </div>
@@ -220,10 +220,10 @@ export default function SevenTiersPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {PHASES.map((p) => (
           <div key={p.label} className="p-5 rounded-xl bg-card/60 border border-border/50 text-center">
-            <div className="text-[12px] tracking-[3px] uppercase font-semibold text-primary mb-1">{p.label}</div>
+            <div className="text-[11px] tracking-[3px] uppercase font-semibold text-primary mb-1">{p.label}</div>
             <div className="text-lg font-medium text-foreground mb-1">{p.tiers}</div>
             <p className="text-xs text-muted-foreground leading-relaxed mb-2">{p.desc}</p>
-            <div className="text-[12px] text-primary/70 font-medium">{p.stat}</div>
+            <div className="text-[11px] text-primary/70 font-medium">{p.stat}</div>
           </div>
         ))}
       </div>
@@ -275,11 +275,11 @@ export default function SevenTiersPage() {
                 {/* Content */}
                 <div className="flex-1 min-w-0 space-y-3 pb-4">
                   <div>
-                    <div className="text-[12px] tracking-[3px] uppercase font-semibold" style={{ color: tier.color }}>Tầng {tier.n}</div>
+                    <div className="text-[11px] tracking-[3px] uppercase font-semibold" style={{ color: tier.color }}>Tầng {tier.n}</div>
                     <h3 className="text-xl font-light text-foreground leading-tight">{tier.name}</h3>
                     <p className="text-xs text-muted-foreground/60 italic">{tier.en}</p>
                     <span
-                      className="inline-block text-[12px] font-semibold tracking-[2px] uppercase px-2 py-0.5 rounded-full mt-1.5"
+                      className="inline-block text-[11px] font-semibold tracking-[2px] uppercase px-2 py-0.5 rounded-full mt-1.5"
                       style={{ color: tier.color, background: tier.colorBg }}
                     >
                       ◆ {tier.keyword} · {tier.popLabel}
@@ -295,7 +295,7 @@ export default function SevenTiersPage() {
                     ))}
                   </ul>
                   <div className="p-3 rounded-lg" style={{ background: tier.colorBg, borderLeft: `2px solid ${tier.color}` }}>
-                    <div className="text-[12px] tracking-[2px] uppercase font-semibold mb-1" style={{ color: tier.color }}>🔑 {tier.chiaKhoa.isFinal ? tier.chiaKhoa.desc : tier.chiaKhoa.title}</div>
+                    <div className="text-[11px] tracking-[2px] uppercase font-semibold mb-1" style={{ color: tier.color }}>🔑 {tier.chiaKhoa.isFinal ? tier.chiaKhoa.desc : tier.chiaKhoa.title}</div>
                     {!tier.chiaKhoa.isFinal && <p className="text-xs text-muted-foreground leading-relaxed">{tier.chiaKhoa.desc}</p>}
                   </div>
                   <div className="p-3 rounded-lg bg-card/50 border border-border/30">

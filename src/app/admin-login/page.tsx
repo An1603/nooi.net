@@ -78,7 +78,7 @@ export default function AdminLoginPage() {
             </Button>
           </form>
         </div>
-        <p className="text-center text-[12px] text-muted-foreground mt-4">
+        <p className="text-center text-[11px] text-muted-foreground mt-4">
           <a href="https://nooi.net" className="hover:text-foreground transition-colors">← Về NOOI.net</a>
         </p>
       </div>

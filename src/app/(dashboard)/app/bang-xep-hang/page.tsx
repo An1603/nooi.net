@@ -65,7 +65,7 @@ export default function LeaderboardPage() {
             </div>
             <div className="text-right">
               <p className="font-bold text-primary">{entry.n}</p>
-              <p className="text-[12px] text-muted-foreground">N</p>
+              <p className="text-[11px] text-muted-foreground">N</p>
             </div>
           </div>
         ))}

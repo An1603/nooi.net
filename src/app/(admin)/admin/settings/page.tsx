@@ -119,13 +119,13 @@ export default function AdminSettingsPage() {
               const unlocked = i === 0 ? 0 : config.levelThresholds[i];
               return (
                 <div key={i} className="rounded-lg border border-border/30 bg-white/[0.02] p-3 text-center">
-                  <span className="text-[12px] text-muted-foreground">Level {i + 1}</span>
+                  <span className="text-[11px] text-muted-foreground">Level {i + 1}</span>
                   <input
                     value={name}
                     onChange={(e) => updateLevelName(i, e.target.value)}
                     className="w-full text-center text-xs font-bold bg-transparent border-b border-transparent hover:border-primary/30 focus:border-primary outline-none mt-1"
                   />
-                  <div className="mt-2 text-[12px] text-muted-foreground">Cần N</div>
+                  <div className="mt-2 text-[11px] text-muted-foreground">Cần N</div>
                   <input
                     type="number"
                     value={unlocked}
@@ -138,7 +138,7 @@ export default function AdminSettingsPage() {
               );
             })}
           </div>
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <Shield className="size-3" />
             Level {config.mentorLevel}+: Mentor · Level {config.createGroupLevel}+: Tạo nhóm · Level {config.createLiveLevel}+: Tạo Live
           </div>
@@ -162,7 +162,7 @@ export default function AdminSettingsPage() {
           <div className="grid grid-cols-7 gap-2">
             {config.streakMilestones.map((milestone, i) => (
               <div key={i} className="rounded-lg border border-border/20 bg-white/[0.02] p-2.5 text-center">
-                <div className="text-[12px] text-muted-foreground">Mốc {i + 1}</div>
+                <div className="text-[11px] text-muted-foreground">Mốc {i + 1}</div>
                 <input
                   type="number"
                   value={milestone}
@@ -170,7 +170,7 @@ export default function AdminSettingsPage() {
                   className="w-full text-center text-xs font-bold font-mono bg-muted/20 rounded px-1 py-0.5 mt-1 outline-none focus:ring-1 focus:ring-primary"
                   min={1}
                 />
-                <span className="text-[12px] text-muted-foreground block mt-1">ngày</span>
+                <span className="text-[11px] text-muted-foreground block mt-1">ngày</span>
               </div>
             ))}
           </div>
@@ -181,7 +181,7 @@ export default function AdminSettingsPage() {
                 key={i}
                 value={name}
                 onChange={(e) => updateBadgeName(i, e.target.value)}
-                className="text-center text-[12px] bg-muted/20 border border-border/30 rounded-lg px-1 py-1.5 outline-none focus:border-primary"
+                className="text-center text-[11px] bg-muted/20 border border-border/30 rounded-lg px-1 py-1.5 outline-none focus:border-primary"
               />
             ))}
           </div>
@@ -195,7 +195,7 @@ export default function AdminSettingsPage() {
           <PermField label="Tạo nhóm" value={config.createGroupLevel} onChange={(v) => setConfig({ ...config, createGroupLevel: v })} />
           <PermField label="Tạo Live Class" value={config.createLiveLevel} onChange={(v) => setConfig({ ...config, createLiveLevel: v })} />
         </div>
-        <div className="mt-3 text-[12px] text-muted-foreground">
+        <div className="mt-3 text-[11px] text-muted-foreground">
           <span className="font-medium text-amber-400">⚠️ </span>Thay đổi permission ảnh hưởng đến code trong app — cần cập nhật tương ứng trong code logic.
         </div>
       </Section>
@@ -212,7 +212,7 @@ export default function AdminSettingsPage() {
             min={0}
             max={10}
           />
-          <span className="text-[12px] text-muted-foreground">lần</span>
+          <span className="text-[11px] text-muted-foreground">lần</span>
         </div>
       </Section>
 
@@ -239,7 +239,7 @@ function Section({ icon: Icon, title, desc, children }: { icon: React.ElementTyp
         </div>
         <div>
           <h2 className="text-sm font-semibold">{title}</h2>
-          <p className="text-[12px] text-muted-foreground">{desc}</p>
+          <p className="text-[11px] text-muted-foreground">{desc}</p>
         </div>
       </div>
       {children}
@@ -252,7 +252,7 @@ function NField({ label, value, onChange, icon: Icon, color }: { label: string; 
     <div className="rounded-lg border border-border/20 bg-white/[0.02] p-3">
       <div className="flex items-center gap-1.5 mb-2">
         <Icon className={`size-3 ${color}`} />
-        <span className="text-[12px] text-muted-foreground">{label}</span>
+        <span className="text-[11px] text-muted-foreground">{label}</span>
       </div>
       <div className="flex items-center gap-1">
         <input
@@ -274,7 +274,7 @@ function PermField({ label, value, onChange }: { label: string; value: number; o
     <div className="rounded-lg border border-border/20 bg-white/[0.02] p-3 flex items-center justify-between">
       <span className="text-xs text-muted-foreground">{label}</span>
       <div className="flex items-center gap-1">
-        <span className="text-[12px] text-muted-foreground">Level</span>
+        <span className="text-[11px] text-muted-foreground">Level</span>
         <input
           type="number"
           value={value}

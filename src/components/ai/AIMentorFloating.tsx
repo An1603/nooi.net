@@ -184,7 +184,7 @@ export default function AIMentorFloating() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground">NOOI AI Mentor</p>
-              <p className="text-[12px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 {mode === "voice" ? "Trò chuyện giọng nói" : "Nhắn tin trực tiếp"}
               </p>
             </div>

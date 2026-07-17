@@ -106,7 +106,7 @@ export default function PracticesPage() {
             🧬
           </div>
           <div className="flex-1">
-            <p className="text-[12px] text-violet-400 font-medium uppercase tracking-wider mb-1">Tổng hợp 3 lớp đánh giá</p>
+            <p className="text-[11px] text-violet-400 font-medium uppercase tracking-wider mb-1">Tổng hợp 3 lớp đánh giá</p>
             <h3 className="text-lg font-bold group-hover:text-violet-300 transition-colors">
               NHÂN ẢNH
             </h3>
@@ -187,7 +187,7 @@ export default function PracticesPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-sm">{p.title}</h3>
-                  <p className="text-[12px] text-muted-foreground">⏱ {p.time}</p>
+                  <p className="text-[11px] text-muted-foreground">⏱ {p.time}</p>
                 </div>
                 <span className="text-muted-foreground text-sm">{isActive ? "▲" : "▼"}</span>
               </div>

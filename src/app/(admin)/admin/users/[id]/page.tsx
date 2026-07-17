@@ -64,23 +64,23 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Thông tin tài khoản</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div><span className="text-muted-foreground">Email</span><p className="font-medium mt-0.5">{authUser?.email ?? adminUser?.email ?? profile.full_name ?? "—"}</p></div>
-          <div><span className="text-muted-foreground">User ID</span><p className="font-medium mt-0.5 font-mono text-[12px]">{id.slice(0, 12)}...</p></div>
+          <div><span className="text-muted-foreground">User ID</span><p className="font-medium mt-0.5 font-mono text-[11px]">{id.slice(0, 12)}...</p></div>
           <div><span className="text-muted-foreground">Đăng ký</span><p className="font-medium mt-0.5"><LocalTime iso={authUser?.created_at} /></p></div>
           <div><span className="text-muted-foreground">Đăng nhập cuối</span><p className="font-medium mt-0.5"><LocalTime iso={authUser?.last_sign_in_at} /></p></div>
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-border/30">
           <div className="flex items-center gap-1.5">
-            <span className="text-[12px] text-muted-foreground">Phương thức:</span>
+            <span className="text-[11px] text-muted-foreground">Phương thức:</span>
             {providers.length > 0 ? providers.map(p => {
               const info = PROVIDER_LABELS[p] || { name: p, color: "text-muted-foreground bg-muted/20" };
-              return <span key={p} className={`text-[12px] px-1.5 py-0.5 rounded font-medium ${info.color}`}>{info.name}</span>;
-            }) : <span className="text-[12px] text-muted-foreground">—</span>}
+              return <span key={p} className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${info.color}`}>{info.name}</span>;
+            }) : <span className="text-[11px] text-muted-foreground">—</span>}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[12px] text-muted-foreground">Email xác thực:</span>
+            <span className="text-[11px] text-muted-foreground">Email xác thực:</span>
             {emailConfirmed
-              ? <span className="text-[12px] text-emerald-400 font-medium">✅ <LocalTime iso={authUser?.email_confirmed_at} /></span>
-              : <span className="text-[12px] text-amber-400">⚠️ Chưa xác thực</span>}
+              ? <span className="text-[11px] text-emerald-400 font-medium">✅ <LocalTime iso={authUser?.email_confirmed_at} /></span>
+              : <span className="text-[11px] text-amber-400">⚠️ Chưa xác thực</span>}
           </div>
         </div>
       </div>
@@ -145,16 +145,16 @@ function NumerologyContent({ num }: { num: any }) {
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {keys.map(k => { const n=num[k]; if(!n) return null;
         return <div key={k} className="rounded-lg border border-border/20 bg-white/[0.02] p-3 text-center">
-          <p className="text-2xl font-bold text-amber-400">{n.value}</p><p className="text-[12px] text-muted-foreground">{lb[k]}</p>
-          <p className="text-[12px] font-medium mt-0.5">{n.name||""}</p>
-          {n.meaning&&<p className="text-[12px] text-muted-foreground mt-1 line-clamp-2">{n.meaning}</p>}
+          <p className="text-2xl font-bold text-amber-400">{n.value}</p><p className="text-[11px] text-muted-foreground">{lb[k]}</p>
+          <p className="text-[11px] font-medium mt-0.5">{n.name||""}</p>
+          {n.meaning&&<p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{n.meaning}</p>}
         </div>;
       })}
     </div>
     {num.periodCycles?.length>0&&<div>
       <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1"><RefreshCw className="size-3"/>Chu kỳ</h4>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        {num.periodCycles.map((pc:any,i:number)=><div key={i} className="rounded-lg border border-border/20 bg-white/[0.02] p-2"><span className="text-xs font-medium text-amber-400">{pc.number}</span><span className="text-[12px] text-muted-foreground ml-1.5">{pc.ageRange}</span>{pc.meaning&&<p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-2">{pc.meaning}</p>}</div>)}
+        {num.periodCycles.map((pc:any,i:number)=><div key={i} className="rounded-lg border border-border/20 bg-white/[0.02] p-2"><span className="text-xs font-medium text-amber-400">{pc.number}</span><span className="text-[11px] text-muted-foreground ml-1.5">{pc.ageRange}</span>{pc.meaning&&<p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{pc.meaning}</p>}</div>)}
       </div>
     </div>}
   </div>;
@@ -167,7 +167,7 @@ function TuViContent({ tuvi }: { tuvi: any }) {
       <div className="grid grid-cols-4 gap-2">
         {(["nam","thang","ngay","gio"] as const).map(k=>{const t=tuvi.tuTru[k]; if(!t) return null;
           const lb:Record<string,string>={nam:"Năm",thang:"Tháng",ngay:"Ngày",gio:"Giờ"};
-          return <div key={k} className="rounded-lg border border-border/20 bg-white/[0.02] p-2.5 text-center"><p className="text-[12px] text-muted-foreground">{lb[k]}</p><p className="text-sm font-bold">{t.fullName}</p><p className="text-[12px] text-muted-foreground">{t.can?.hanh||""} {t.can?.amDuong||""}</p></div>;
+          return <div key={k} className="rounded-lg border border-border/20 bg-white/[0.02] p-2.5 text-center"><p className="text-[11px] text-muted-foreground">{lb[k]}</p><p className="text-sm font-bold">{t.fullName}</p><p className="text-[11px] text-muted-foreground">{t.can?.hanh||""} {t.can?.amDuong||""}</p></div>;
         })}
       </div>
     </div>}
@@ -180,7 +180,7 @@ function TuViContent({ tuvi }: { tuvi: any }) {
     </div>
     {tuvi.daiHan?.length>0&&<div><h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1"><TrendingUp className="size-3"/>Đại hạn</h4>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {tuvi.daiHan.map((dh:any,i:number)=><div key={i} className="rounded-lg border border-border/20 bg-white/[0.02] p-2"><span className="text-[12px] text-muted-foreground">{dh.thoiGian}</span><p className="text-xs font-medium text-red-400 mt-0.5">{dh.cung?.fullName||dh.cung}</p></div>)}
+        {tuvi.daiHan.map((dh:any,i:number)=><div key={i} className="rounded-lg border border-border/20 bg-white/[0.02] p-2"><span className="text-[11px] text-muted-foreground">{dh.thoiGian}</span><p className="text-xs font-medium text-red-400 mt-0.5">{dh.cung?.fullName||dh.cung}</p></div>)}
       </div>
     </div>}
   </div>;
@@ -196,7 +196,7 @@ function AstrologyContent({ ast }: { ast: any }) {
     </div>
     {ast.planets?.length>0&&<div><h4 className="text-xs font-semibold text-muted-foreground mb-2">Hành tinh</h4>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-        {ast.planets.map((p:any,i:number)=><div key={i} className="rounded-lg border border-border/20 bg-white/[0.02] p-2 text-center"><p className="text-sm font-medium">{p.symbol||""} {p.planet}</p><p className="text-[12px] text-purple-400">{p.sign}</p><p className="text-[12px] text-muted-foreground">Nhà {p.house}{p.retrograde?" ℞":""}</p></div>)}
+        {ast.planets.map((p:any,i:number)=><div key={i} className="rounded-lg border border-border/20 bg-white/[0.02] p-2 text-center"><p className="text-sm font-medium">{p.symbol||""} {p.planet}</p><p className="text-[11px] text-purple-400">{p.sign}</p><p className="text-[11px] text-muted-foreground">Nhà {p.house}{p.retrograde?" ℞":""}</p></div>)}
       </div>
     </div>}
     <div className="flex flex-wrap gap-3">
@@ -206,13 +206,13 @@ function AstrologyContent({ ast }: { ast: any }) {
     {ast.interpretations&&<div className="space-y-2"><h4 className="text-xs font-semibold text-muted-foreground">Luận giải</h4>
       {(["tongQuan","tinhCach","suNghiep","tinhDuyen","sucKhoe"] as const).map(k=>{const v=ast.interpretations[k]; if(!v) return null;
         const lb:Record<string,string>={tongQuan:"Tổng quan",tinhCach:"Tính cách",suNghiep:"Sự nghiệp",tinhDuyen:"Tình duyên",sucKhoe:"Sức khoẻ"};
-        return <div key={k} className="rounded-lg border border-border/20 bg-white/[0.02] p-3"><p className="text-[12px] font-medium text-purple-400 mb-0.5">{lb[k]}</p><p className="text-xs text-muted-foreground leading-relaxed">{v}</p></div>;
+        return <div key={k} className="rounded-lg border border-border/20 bg-white/[0.02] p-3"><p className="text-[11px] font-medium text-purple-400 mb-0.5">{lb[k]}</p><p className="text-xs text-muted-foreground leading-relaxed">{v}</p></div>;
       })}
-      {ast.interpretations.loiKhuyen&&<div className="rounded-lg border border-primary/20 bg-primary/5 p-3"><p className="text-[12px] font-medium text-primary mb-0.5">💡 Lời khuyên</p><p className="text-xs text-muted-foreground">{ast.interpretations.loiKhuyen}</p></div>}
+      {ast.interpretations.loiKhuyen&&<div className="rounded-lg border border-primary/20 bg-primary/5 p-3"><p className="text-[11px] font-medium text-primary mb-0.5">💡 Lời khuyên</p><p className="text-xs text-muted-foreground">{ast.interpretations.loiKhuyen}</p></div>}
     </div>}
     {ast.aspects?.length>0&&<div><h4 className="text-xs font-semibold text-muted-foreground mb-2">Góc chiếu ({ast.aspects.length})</h4>
       <div className="flex flex-wrap gap-1.5">
-        {ast.aspects.map((a:any,i:number)=><span key={i} className={`text-[12px] px-1.5 py-0.5 rounded ${a.harmonious?"bg-emerald-500/10 text-emerald-400":"bg-red-500/10 text-red-400"}`}>{a.planet1} {a.typeVi||a.type} {a.planet2}</span>)}
+        {ast.aspects.map((a:any,i:number)=><span key={i} className={`text-[11px] px-1.5 py-0.5 rounded ${a.harmonious?"bg-emerald-500/10 text-emerald-400":"bg-red-500/10 text-red-400"}`}>{a.planet1} {a.typeVi||a.type} {a.planet2}</span>)}
       </div>
     </div>}
   </div>;
@@ -231,5 +231,5 @@ function Badge({ label, value, color }: { label: string; value: string; color: s
 }
 
 function ABig({ label, val, icon, color }: { label: string; val: string; icon: string; color: string }) {
-  return <div className="rounded-lg border border-border/20 bg-white/[0.02] p-3 text-center"><p className="text-lg mb-0.5">{icon}</p><p className={`text-sm font-bold ${color}`}>{val||"—"}</p><p className="text-[12px] text-muted-foreground">{label}</p></div>;
+  return <div className="rounded-lg border border-border/20 bg-white/[0.02] p-3 text-center"><p className="text-lg mb-0.5">{icon}</p><p className={`text-sm font-bold ${color}`}>{val||"—"}</p><p className="text-[11px] text-muted-foreground">{label}</p></div>;
 }

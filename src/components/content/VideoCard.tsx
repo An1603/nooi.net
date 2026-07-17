@@ -72,20 +72,20 @@ export function VideoCard({ video }: VideoCardProps) {
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              "text-[12px] font-medium px-2 py-0.5 rounded-full border",
+              "text-[11px] font-medium px-2 py-0.5 rounded-full border",
               STATUS_COLORS[status] || STATUS_COLORS.processing
             )}
           >
             {STATUS_LABELS[status] || status}
           </span>
           {duration > 0 && (
-            <span className="text-[12px] text-muted-foreground flex items-center gap-1">
+            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
               <Clock size={11} />
               {formatDuration(duration)}
             </span>
           )}
         </div>
-        <span className="text-[12px] text-muted-foreground flex items-center gap-1">
+        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
           <Calendar size={11} />
           {new Date(created_at).toLocaleDateString("vi-VN")}
         </span>

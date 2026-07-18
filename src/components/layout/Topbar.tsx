@@ -56,7 +56,7 @@ export default function Topbar() {
               "flex items-center justify-center w-8 h-8 rounded-full transition-colors",
               avatarUrl
                 ? "overflow-hidden border border-border hover:ring-2 hover:ring-primary/30"
-                : "bg-muted hover:bg-muted/80"
+                : "bg-white/10 hover:bg-white/15"
             )}
             title="Hồ sơ"
           >

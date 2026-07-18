@@ -4,31 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import NotificationDropdown from "@/components/notification/NotificationDropdown";
-import { CircleUser } from "lucide-react";
+import { User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
-
-function getInitials(email: string): string {
-  const name = email.split("@")[0] ?? "";
-  return (name.slice(0, 2) || "N").toUpperCase();
-}
+import Image from "next/image";
 
 export default function Topbar() {
-  const [initials, setInitials] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      const email = data.session?.user?.email;
-      if (email) setInitials(getInitials(email));
-      setLoaded(true);
-    });
-  }, []);
-
-  // Load avatar from profiles if available
+  // Load avatar từ profiles nếu có
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getSession().then(async ({ data }) => {
@@ -66,36 +50,28 @@ export default function Topbar() {
         </div>
         {/* Right */}
         <div className="flex items-center gap-1.5">
-          {!loaded ? (
-            <div className="w-8 h-8 rounded-full animate-pulse bg-muted" />
-          ) : (
-            <Link
-              href="/app/profile"
-              className={cn(
-                "flex items-center justify-center w-8 h-8 rounded-full transition-colors",
-                avatarUrl
-                  ? "overflow-hidden border border-border hover:ring-2 hover:ring-primary/30"
-                  : "bg-muted hover:bg-muted/80"
-              )}
-              title="Hồ sơ"
-            >
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt="Avatar"
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : initials ? (
-                <span className="text-xs font-semibold text-muted-foreground">
-                  {initials}
-                </span>
-              ) : (
-                <CircleUser className="w-5 h-5 text-muted-foreground" />
-              )}
-            </Link>
-          )}
+          <Link
+            href="/app/profile"
+            className={cn(
+              "flex items-center justify-center w-8 h-8 rounded-full transition-colors",
+              avatarUrl
+                ? "overflow-hidden border border-border hover:ring-2 hover:ring-primary/30"
+                : "bg-muted hover:bg-muted/80"
+            )}
+            title="Hồ sơ"
+          >
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt="Avatar"
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="w-5 h-5 text-muted-foreground" />
+            )}
+          </Link>
           <NotificationDropdown />
         </div>
       </div>

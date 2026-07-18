@@ -119,7 +119,7 @@ export default function EditVideoPage({
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="page-shell page-shell-narrow">
         <div className="animate-pulse space-y-6 p-6 rounded-xl border border-border bg-card">
           <div className="h-6 w-48 bg-muted rounded" />
           <div className="h-8 w-full bg-muted rounded-lg" />
@@ -132,7 +132,7 @@ export default function EditVideoPage({
 
   if (notFound) {
     return (
-      <div className="max-w-2xl mx-auto p-12 text-center">
+      <div className="page-shell page-shell-narrow text-center">
         <div className="text-4xl mb-4">🔍</div>
         <h2 className="text-lg font-semibold mb-2">Không tìm thấy video</h2>
         <p className="text-sm text-muted-foreground mb-6">
@@ -150,7 +150,7 @@ export default function EditVideoPage({
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="page-shell page-shell-narrow">
       <div className="flex items-center gap-3 mb-8">
         <Link
           href="/app/videos"

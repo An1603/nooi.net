@@ -46,17 +46,17 @@ export function ItemCard({ item, owned, userN, userLevel, onUnlock, onDownload, 
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold truncate">{item.name}</p>
             {item.description && (
-              <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
             )}
           </div>
           {/* Price / Status badge */}
           <div className="shrink-0">
             {owned ? (
-              <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <Check className="size-3" /> Đã mở
               </span>
             ) : item.price_n === 0 ? (
-              <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <span className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 <Sparkles className="size-3" /> Free
               </span>
             ) : (

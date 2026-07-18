@@ -55,7 +55,7 @@ export default async function ProjectDetailPage({
     .limit(5);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="page-shell page-shell-wide">
       {/* Back */}
       <Link
         href="/app/projects"

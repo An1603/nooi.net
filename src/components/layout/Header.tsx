@@ -57,7 +57,7 @@ export function Header({ initialSession = false }: { initialSession?: boolean })
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-5 py-2.5">
         {/* Logo */}
-        <Logo variant="horizontal" />
+        <Logo variant="horizontal" theme="dark" />
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">

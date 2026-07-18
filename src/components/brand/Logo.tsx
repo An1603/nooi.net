@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useBrandUrl } from '@/components/brand/BrandProvider';
 
 interface LogoProps {
   variant?: 'full' | 'horizontal' | 'icon' | 'circular';
@@ -12,30 +13,25 @@ interface LogoProps {
 }
 
 /* ==================================================================
-   NOOI Logo — sử dụng ảnh thiết kế gốc từ /public/
+   NOOI Logo — đọc URL từ BrandProvider (admin config).
+   Fallback về /public/brand/ nếu chưa có config.
    ================================================================== */
 
-/**
- * Logo đầy đủ dạng vuông: hexagon pyramid + NOOI + "Kết nối chuyển mình."
- * Dùng cho hero section, landing page
- */
-export function LogoFull({ className }: { className?: string }) {
+export function LogoFull({ className, theme = 'dark' }: { className?: string; theme?: 'light' | 'dark' }) {
+  const colorUrl = useBrandUrl('logo-square');
+  const whiteUrl = useBrandUrl('logo-square-white');
   return (
     <Image
-      src="/logo-512w.png"
-      alt="NOOI"
-      width={180}
-      height={180}
+      src={theme === 'dark' ? whiteUrl : colorUrl}
+      alt="NOOI — Kết nối chuyển mình"
+      width={163}
+      height={163}
       className={cn('w-auto h-auto', className)}
       priority
     />
   );
 }
 
-/**
- * Logo ngang: hexagon cluster bên trái + NOOI text + tagline
- * Dùng cho header. theme='light' → nền sáng, theme='dark' → nền tối
- */
 export function LogoHorizontal({
   className,
   theme = 'dark',
@@ -43,13 +39,15 @@ export function LogoHorizontal({
   className?: string;
   theme?: 'light' | 'dark';
 }) {
+  const colorUrl = useBrandUrl('logo-horizontal');
+  const whiteUrl = useBrandUrl('logo-horizontal-white');
   return (
     <Link href="/" className={cn('flex items-center gap-2 no-underline', className)}>
       <Image
-        src="/logo-icon-original.png"
-        alt="NOOI"
-        width={96}
-        height={32}
+        src={theme === 'dark' ? whiteUrl : colorUrl}
+        alt="NOOI — Kết nối chuyển mình"
+        width={163}
+        height={75}
         className="h-8 w-auto"
         priority
       />
@@ -57,28 +55,24 @@ export function LogoHorizontal({
   );
 }
 
-/**
- * Icon hình tròn (nền xám) — dùng cho dashboard sidebar
- */
 export function LogoCircular({ size = 40, className }: { size?: number; className?: string }) {
+  const iconUrl = useBrandUrl('logo-icon');
   return (
     <Image
-      src="/logo-c.png"
+      src={iconUrl}
       alt="NOOI"
       width={size}
       height={size}
-      className={cn('shrink-0 rounded-full', className)}
+      className={cn('shrink-0 rounded-full object-cover', className)}
     />
   );
 }
 
-/**
- * Icon hexagon pyramid (từ logo 512w50)
- */
 export function LogoIcon({ size = 32, className }: { size?: number; className?: string }) {
+  const iconUrl = useBrandUrl('logo-icon');
   return (
     <Image
-      src="/logo-512w50.png"
+      src={iconUrl}
       alt="NOOI"
       width={size}
       height={size}
@@ -87,18 +81,14 @@ export function LogoIcon({ size = 32, className }: { size?: number; className?: 
   );
 }
 
-/* ------------------------------------------------------------------
-   Main exported Logo component
-   ------------------------------------------------------------------ */
 export function Logo({ variant = 'horizontal', className, linkClassName, theme = 'dark' }: LogoProps) {
   if (variant === 'full') {
     return (
       <Link href="/" className={cn('flex items-center no-underline', linkClassName)}>
-        <LogoFull className={className} />
+        <LogoFull className={className} theme={theme} />
       </Link>
     );
   }
-
   if (variant === 'circular') {
     return (
       <Link href="/app" className={cn('flex items-center no-underline', linkClassName)}>
@@ -106,7 +96,6 @@ export function Logo({ variant = 'horizontal', className, linkClassName, theme =
       </Link>
     );
   }
-
   if (variant === 'icon') {
     return (
       <Link href="/" className={cn('flex items-center no-underline', linkClassName)}>
@@ -114,7 +103,5 @@ export function Logo({ variant = 'horizontal', className, linkClassName, theme =
       </Link>
     );
   }
-
-  // horizontal (default)
   return <LogoHorizontal className={className} theme={theme} />;
 }

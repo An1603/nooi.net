@@ -46,10 +46,10 @@ function CoreNumberCard({ icon: Icon, label, number, traits }: {
           {traits && (
             <div className="flex flex-wrap gap-1 mt-2">
               {traits.positive.map((t, i) => (
-                <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">✓ {t}</span>
+                <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">✓ {t}</span>
               ))}
               {traits.negative.map((t, i) => (
-                <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">△ {t}</span>
+                <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">△ {t}</span>
               ))}
             </div>
           )}
@@ -61,13 +61,13 @@ function CoreNumberCard({ icon: Icon, label, number, traits }: {
 
 function NumerologyReport({ result, fullName, dateOfBirth }: { result: NumerologyResult; fullName: string; dateOfBirth: string | null }) {
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-16">
+    <div className="page-shell page-shell-wide space-y-6 pb-16">
       <Link href="/app" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2">
         <ArrowLeft className="size-3" /> Về Dashboard
       </Link>
       <h1 className="text-2xl font-bold">Bản đồ Thần số học</h1>
       <p className="text-sm text-muted-foreground">{fullName}{dateOfBirth ? ` • ${new Date(dateOfBirth).toLocaleDateString("vi-VN")}` : ""}</p>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
           { label: "Đường đời", value: result.lifePath.value },
           { label: "Sứ mệnh", value: result.destiny.value },
@@ -75,7 +75,7 @@ function NumerologyReport({ result, fullName, dateOfBirth }: { result: Numerolog
           { label: "Nhân cách", value: result.personality.value },
         ].map((item) => (
           <div key={item.label} className="p-3 rounded-xl border border-border bg-card text-center">
-            <p className="text-[10px] text-muted-foreground">{item.label}</p>
+            <p className="text-[11px] text-muted-foreground">{item.label}</p>
             <p className="text-2xl font-bold text-primary">{item.value}</p>
           </div>
         ))}
@@ -86,7 +86,7 @@ function NumerologyReport({ result, fullName, dateOfBirth }: { result: Numerolog
       <CoreNumberCard icon={Star} label="Chỉ số Nhân cách" number={result.personality} traits={{ positive: result.personality.positive, negative: result.personality.negative }} />
       <CoreNumberCard icon={Star} label="Chỉ số Ngày sinh" number={result.birthDay} />
       <CoreNumberCard icon={Star} label="Chỉ số Trưởng thành" number={result.maturity} />
-      <p className="text-[10px] text-center text-muted-foreground">NOOI — Thần số học Pythagoras</p>
+      <p className="text-[11px] text-center text-muted-foreground">NOOI — Thần số học Pythagoras</p>
     </div>
   );
 }

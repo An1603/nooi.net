@@ -11,7 +11,7 @@
 
 @theme {
   --color-background: #1a0a2e;
-  --color-foreground: #f0f0f0;
+  --color-foreground: #f5f0f8;
   --color-primary: #C8943E;
   --color-primary-foreground: #ffffff;
   --color-secondary: #4aad6a;
@@ -41,11 +41,17 @@
   --color-glass: rgba(255,255,255,0.04);
   --color-glass-border: rgba(255,255,255,0.06);
   --color-glass-hover: rgba(255,255,255,0.08);
+
+  /* ── Larger text for readability (older users) ── */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: calc(1.25 / 0.875);
+  --text-sm: 1rem;
+  --text-sm--line-height: calc(1.375 / 1);
 }
 
 :root {
   --background: #1a0a2e;
-  --foreground: #f0f0f0;
+  --foreground: #f5f0f8;
   --card: #22163a;
   --card-foreground: #f0f0f0;
   --popover: #22163a;
@@ -114,8 +120,15 @@
 
 @layer base {
   * { @apply border-border outline-ring/50; }
-  body { @apply bg-background text-foreground; }
-  html { scroll-behavior: smooth; }
+  html {
+    font-size: 1.0625rem;  /* 17px — larger base for readability */
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-weight: 500;
+    line-height: 1.8;
+  }
 }
 
 /* ── Premium Gradients ── */
@@ -180,6 +193,59 @@
   box-shadow: 0 0 30px rgba(244,114,182,0.15), 0 0 60px rgba(167,139,250,0.1), 0 0 90px rgba(34,211,238,0.05);
 }
 
+/* ── Enhanced Depth Utilities ── */
+@utility glass-deep {
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+@utility card-elevated {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+@utility card-elevated-hover {
+  &:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06);
+    border-color: rgba(200,148,62,0.15);
+    transform: translateY(-1px);
+  }
+}
+
+/* ── Mesh Gradient Backgrounds ── */
+@utility mesh-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(167,139,250,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(200,148,62,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(74,173,106,0.04) 0%, transparent 50%),
+    #1a0a2e;
+}
+@utility mesh-bg-subtle {
+  background:
+    radial-gradient(ellipse at 15% 30%, rgba(167,139,250,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 70%, rgba(200,148,62,0.04) 0%, transparent 60%),
+    transparent;
+}
+
+/* ── Focus & Interaction States ── */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid rgba(200,148,62,0.5);
+    outline-offset: 2px;
+  }
+}
+@utility interactive {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  &:active { transform: scale(0.98); }
+}
+
+/* ── Subtle Separator Lines ── */
+@utility separator-glow {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,148,62,0.2), transparent);
+}
+
 /* ── Voice Visualizer Animations ── */
 @keyframes particle-drift-0 {
   0%, 100% { transform: translate(-50%, -50%) translate(0, 0); opacity: 0; }
@@ -237,6 +303,24 @@
   animation: fade-in-up 0.5s ease-out both;
 }
 
+/* ── Page shell: standardized horizontal padding ──
+   Relies on layout.tsx for outer padding (p-2 md:p-6).
+   Only manages max-width, centering, and vertical spacing. */
+@utility page-shell {
+  width: 100%;
+  max-width: 56rem; /* max-w-4xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+@utility page-shell-wide {
+  max-width: 64rem; /* max-w-5xl */
+}
+@utility page-shell-narrow {
+  max-width: 48rem; /* max-w-3xl */
+}
+
 /* ── Mobile improvements ── */
 @media (max-width: 640px) {
   .touch-target { min-height: 44px; }
@@ -244,3 +328,5 @@
 }
 .touch-target { min-height: 44px; }
 .touch-target-sm { min-height: 36px; }
+
+/* ── Larger text for readability ── */

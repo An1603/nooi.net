@@ -97,10 +97,10 @@ export default async function AdminActivityPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium">{item.user_name}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${cfg.color}`}>{cfg.label}</span>
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded ${cfg.color}`}>{cfg.label}</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.title}</p>
-                    <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
                       {new Date(item.created_at).toLocaleDateString("vi-VN", {
                         hour: "2-digit", minute: "2-digit",
                       })}

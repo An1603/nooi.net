@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Plus, Trash2, Eye, Shield, Loader2, Search, X, Mail, Lock, User, Pencil,
+  Plus, Trash2, Eye, EyeOff, Shield, Loader2, Search, X, Mail, Lock, User, Pencil,
   Sparkles, BarChart3, Hash, Users, Trophy, Layers,
 } from "lucide-react";
 import Link from "next/link";
@@ -39,6 +39,9 @@ interface AdminUser {
   n: number;
   level: number;
   level_name: string;
+  public_slug: string | null;
+  public_is_visible: boolean | null;
+  public_headline: string | null;
 }
 
 interface AdminStats {
@@ -219,7 +222,7 @@ export default function AdminUsersPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-2xl font-bold tabular-nums">{card.value}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{card.label}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{card.label}</p>
               </div>
             </div>
           ))}
@@ -283,6 +286,7 @@ export default function AdminUsersPage() {
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground hidden md:table-cell">N</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Journals</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Role</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden xl:table-cell">Public</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden xl:table-cell">Tham gia</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Hành động</th>
               </tr></thead>
@@ -291,17 +295,17 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     <Link href={`/admin/users/${u.id}`} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
                     <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{(u.full_name||"U")[0].toUpperCase()}</div>
-                    <div className="min-w-0"><p className="text-sm font-medium truncate hover:text-primary transition-colors">{u.full_name||"Chưa đặt tên"}</p><p className="text-[10px] text-muted-foreground truncate">{u.email??u.id.slice(0,8)+"..."}</p></div>
+                    <div className="min-w-0"><p className="text-sm font-medium truncate hover:text-primary transition-colors">{u.full_name||"Chưa đặt tên"}</p><p className="text-[11px] text-muted-foreground truncate">{u.email??u.id.slice(0,8)+"..."}</p></div>
                     </Link>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell"><div className="flex gap-1 flex-wrap">
-                    {u.has_numerology&&<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">TS</span>}
-                    {u.has_tuvi&&<span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">TV</span>}
-                    {u.has_astrology&&<span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">CT</span>}
-                    {!u.has_numerology&&!u.has_tuvi&&!u.has_astrology&&<span className="text-[10px] text-muted-foreground">—</span>}
+                    {u.has_numerology&&<span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">TS</span>}
+                    {u.has_tuvi&&<span className="text-[11px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">TV</span>}
+                    {u.has_astrology&&<span className="text-[11px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">CT</span>}
+                    {!u.has_numerology&&!u.has_tuvi&&!u.has_astrology&&<span className="text-[11px] text-muted-foreground">—</span>}
                   </div></td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <span className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded-full border ${LEVEL_COLORS[u.level] || "bg-gray-500/10 text-gray-400 border-gray-500/20"}`}>
+                    <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-full border ${LEVEL_COLORS[u.level] || "bg-gray-500/10 text-gray-400 border-gray-500/20"}`}>
                       L{u.level} {u.level_name}
                     </span>
                   </td>
@@ -313,6 +317,19 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     {u.role==="super_admin"||u.role==="admin"?<span className="inline-flex items-center gap-1 text-xs text-primary font-medium"><Shield className="size-3"/>{u.role==="super_admin"?"Super Admin":"Admin"}</span>:<span className="text-xs text-muted-foreground">User</span>}
+                  </td>
+                  <td className="px-4 py-3 hidden xl:table-cell">
+                    <span className={`inline-flex items-center gap-1 text-xs ${u.public_is_visible ? "text-emerald-400" : "text-muted-foreground"}`}>
+                      {u.public_is_visible ? (
+                        u.public_slug ? (
+                          <a href={`https://nooi.net/u/${u.public_slug}`} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                            <Eye className="size-3" /> {u.public_slug}
+                          </a>
+                        ) : <><EyeOff className="size-3" /> Visible</>
+                      ) : (
+                        <><EyeOff className="size-3" /> Ẩn</>
+                      )}
+                    </span>
                   </td>
                   <td className="px-4 py-3 hidden xl:table-cell text-xs text-muted-foreground">
                     <LocalTime iso={u.created_at} format="short" />

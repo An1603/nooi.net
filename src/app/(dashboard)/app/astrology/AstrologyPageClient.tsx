@@ -143,10 +143,10 @@ function PlanetCard({ p }: { p: PlanetPosition }) {
         <div>
           <p className="text-2xl">{p.symbol}</p>
           <p className="font-semibold text-sm mt-1">{p.planet}</p>
-          <p className="text-[10px] text-muted-foreground">{p.planetEn}</p>
+          <p className="text-[11px] text-muted-foreground">{p.planetEn}</p>
         </div>
         {p.retrograde && (
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-medium">
+          <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-medium">
             ℞ Nghịch hành
           </span>
         )}
@@ -196,14 +196,14 @@ function AspectCard({ a }: { a: Aspect }) {
         <span className="text-xs font-semibold">
           {a.planet1} <span className="opacity-60">{aspectSymbolMap[a.type] || "·"}</span> {a.planet2}
         </span>
-        <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${a.harmonious ? "bg-emerald-500/20" : "bg-red-500/20"}`}>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${a.harmonious ? "bg-emerald-500/20" : "bg-red-500/20"}`}>
           {a.harmonious ? "Hài hòa" : "Xung khắc"}
         </span>
       </div>
-      <p className="text-[10px] mt-1 opacity-80">
+      <p className="text-[11px] mt-1 opacity-80">
         {a.typeVi} ({a.typeEn}) · {a.angle}° · orb {a.orb}°
       </p>
-      <p className="text-[10px] mt-1.5 opacity-70 leading-relaxed">{a.meaning}</p>
+      <p className="text-[11px] mt-1.5 opacity-70 leading-relaxed">{a.meaning}</p>
     </div>
   );
 }
@@ -221,7 +221,7 @@ function HouseRow({ h }: { h: House }) {
         <span className="text-xs">{getZodiacEmoji(signIdx)} {h.sign}</span>
       </div>
       <p className="text-[11px] text-muted-foreground leading-relaxed">{h.meaning}</p>
-      <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
+      <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
         <span>Cusp: <span className="font-mono">{formatDegrees(((h.cusp % 360) + 360) % 360)}</span></span>
         {z && <span>· {z.element} · {z.quality}</span>}
       </div>
@@ -352,7 +352,7 @@ function AstrologySetupForm({ profile, onCalculated }: { profile: ProfileData; o
                   autoComplete="off"
                 />
               </div>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 Nhập tên tỉnh/thành phố — hệ thống tự tra toạ độ. Nếu không rõ, để mặc định Hà Nội.
               </p>
             </div>
@@ -406,11 +406,11 @@ function BigThreeCard({
   return (
     <div className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-purple-950/30 to-blue-950/20 p-4 text-center">
       <Icon className={`size-4 mx-auto mb-1 ${color}`} />
-      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{label}</p>
       <p className={`text-2xl ${color}`}>{emoji}</p>
       <p className={`text-base font-bold mt-0.5 ${color}`}>{value}</p>
-      <p className="text-[10px] text-muted-foreground">{sub}</p>
-      {meaning && <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed border-t border-border/50 pt-2">{meaning}</p>}
+      <p className="text-[11px] text-muted-foreground">{sub}</p>
+      {meaning && <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed border-t border-border/50 pt-2">{meaning}</p>}
     </div>
   );
 }
@@ -447,7 +447,7 @@ function ElementQualityCard({ result }: { result: AstrologyResult }) {
       {/* Element breakdown */}
       <div>
         <p className="text-xs font-medium text-muted-foreground mb-2">Phân bổ Nguyên tố</p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {Object.entries(elementCounts).map(([el, count]) => {
             const Icon = elementIcons[el];
             const isDominant = el === result.dominantElement;
@@ -460,8 +460,8 @@ function ElementQualityCard({ result }: { result: AstrologyResult }) {
               >
                 <Icon className={`size-4 mx-auto ${elementColors[el]}`} />
                 <p className={`text-xs font-semibold mt-1 ${isDominant ? elementColors[el] : ""}`}>{el}</p>
-                <p className="text-[10px] text-muted-foreground">{count}/{total}</p>
-                {isDominant && <p className="text-[9px] mt-0.5 text-blue-300 font-medium">★ Chủ đạo</p>}
+                <p className="text-[11px] text-muted-foreground">{count}/{total}</p>
+                {isDominant && <p className="text-[11px] mt-0.5 text-blue-300 font-medium">★ Chủ đạo</p>}
               </div>
             );
           })}
@@ -476,7 +476,7 @@ function ElementQualityCard({ result }: { result: AstrologyResult }) {
       {/* Quality breakdown */}
       <div>
         <p className="text-xs font-medium text-muted-foreground mb-2">Phân bổ Phẩm chất</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {Object.entries(qualityCounts).map(([q, count]) => {
             const isDominant = q === result.dominantQuality;
             return (
@@ -487,8 +487,8 @@ function ElementQualityCard({ result }: { result: AstrologyResult }) {
                 }`}
               >
                 <p className={`text-xs font-semibold ${isDominant ? "text-purple-300" : ""}`}>{q}</p>
-                <p className="text-[10px] text-muted-foreground">{count}/{total}</p>
-                {isDominant && <p className="text-[9px] mt-0.5 text-purple-300 font-medium">★ Chủ đạo</p>}
+                <p className="text-[11px] text-muted-foreground">{count}/{total}</p>
+                {isDominant && <p className="text-[11px] mt-0.5 text-purple-300 font-medium">★ Chủ đạo</p>}
               </div>
             );
           })}
@@ -654,7 +654,7 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
   const allPlanets = [sun, moon, ...planets];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16">
+    <div className="page-shell page-shell-wide space-y-8 pb-16">
       {/* HEADER */}
       <div>
         <Link href="/app" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">
@@ -677,10 +677,10 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
               </p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Cung Mọc</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Cung Mọc</p>
               <p className="text-2xl">{getZodiacEmoji(ascendant.signIndex)}</p>
               <p className="text-base font-bold text-blue-400">{ascendant.sign}</p>
-              <p className="text-[10px] text-muted-foreground">{ascendant.signEn}</p>
+              <p className="text-[11px] text-muted-foreground">{ascendant.signEn}</p>
             </div>
           </div>
         </div>
@@ -866,7 +866,7 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
                   {interpretations.diemManh.map((s, j) => (
                     <span
                       key={j}
-                      className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                     >
                       ✓ {s}
                     </span>
@@ -879,7 +879,7 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
                   {interpretations.diemYeu.map((w, j) => (
                     <span
                       key={j}
-                      className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
+                      className="text-[11px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
                     >
                       △ {w}
                     </span>
@@ -909,11 +909,11 @@ function AstrologyReport({ result, profile }: { result: AstrologyResult; profile
 
       {/* FOOTER */}
       <div className="text-center pt-4 border-t border-blue-500/20">
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           Bản đồ sao tính dựa trên thư viện <code className="font-mono">astronomy-engine</code> (thuật toán Jean Meeus,
           chuẩn NASA/JPL). Độ chính xác ±0.01°.
         </p>
-        <p className="text-[10px] text-muted-foreground mt-1">NOOI — Kết nối chuyển mình.</p>
+        <p className="text-[11px] text-muted-foreground mt-1">NOOI — Kết nối chuyển mình.</p>
       </div>
     </div>
   );

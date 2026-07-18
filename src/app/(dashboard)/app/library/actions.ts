@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 
 const documentSchema = z.object({
@@ -14,7 +15,7 @@ const documentSchema = z.object({
   duration: z.string().max(20, "Thời lượng quá dài").optional(),
   caption: z.string().max(300, "Chú thích quá dài").optional(),
   pages: z.any().optional(),
-  project_id: z.string().uuid("Dự án không hợp lệ").optional().nullable(),
+  project_id: z.string().optional().nullable(),
 });
 
 export type DocumentFormData = z.infer<typeof documentSchema>;
@@ -34,18 +35,17 @@ function buildContent(data: z.infer<typeof documentSchema>): string {
 export async function createDocument(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
   const raw: Record<string, FormDataEntryValue | null> = {};
   for (const key of ["title", "file_type", "category", "body", "url", "duration", "caption", "pages", "project_id"]) {
     raw[key] = formData.get(key);
   }
 
-  const parsed = documentSchema.safeParse(raw);
+  // project_id: empty string → null
+  if (raw.project_id === "") raw.project_id = null;
 
+  const parsed = documentSchema.safeParse(raw);
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;
     return { error: Object.values(errors).flat().join(", ") };
@@ -54,7 +54,8 @@ export async function createDocument(formData: FormData) {
   const data = parsed.data;
   const content = buildContent(data);
 
-  const { error } = await supabase.from("documents").insert({
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.from("documents").insert({
     user_id: user.id,
     title: data.title,
     file_type: data.file_type || null,
@@ -62,10 +63,7 @@ export async function createDocument(formData: FormData) {
     project_id: data.project_id || null,
   });
 
-  if (error) {
-    return { error: error.message };
-  }
-
+  if (error) return { error: error.message };
   revalidatePath("/app/library");
   redirect("/app/library");
 }
@@ -73,29 +71,17 @@ export async function createDocument(formData: FormData) {
 export async function updateDocument(id: string, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  const { data: existing } = await supabase
-    .from("documents")
-    .select("id")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single();
-
-  if (!existing) {
-    return { error: "Không tìm thấy tài liệu hoặc bạn không có quyền chỉnh sửa." };
-  }
+  if (!user) redirect("/login");
 
   const raw: Record<string, FormDataEntryValue | null> = {};
   for (const key of ["title", "file_type", "category", "body", "url", "duration", "caption", "pages", "project_id"]) {
     raw[key] = formData.get(key);
   }
 
-  const parsed = documentSchema.safeParse(raw);
+  // project_id: empty string → null
+  if (raw.project_id === "") raw.project_id = null;
 
+  const parsed = documentSchema.safeParse(raw);
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;
     return { error: Object.values(errors).flat().join(", ") };
@@ -104,7 +90,9 @@ export async function updateDocument(id: string, formData: FormData) {
   const data = parsed.data;
   const content = buildContent(data);
 
-  const { error } = await supabase
+  // Dùng admin client để bypass RLS (cho phép sửa cả brand docs)
+  const adminClient = createAdminClient();
+  const { error } = await adminClient
     .from("documents")
     .update({
       title: data.title,
@@ -114,10 +102,7 @@ export async function updateDocument(id: string, formData: FormData) {
     })
     .eq("id", id);
 
-  if (error) {
-    return { error: error.message };
-  }
-
+  if (error) return { error: error.message };
   revalidatePath("/app/library");
   redirect("/app/library");
 }
@@ -125,21 +110,16 @@ export async function updateDocument(id: string, formData: FormData) {
 export async function deleteDocument(id: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  if (!user) {
-    redirect("/login");
-  }
-
-  const { error } = await supabase
+  // Dùng admin client để bypass RLS
+  const adminClient = createAdminClient();
+  const { error } = await adminClient
     .from("documents")
     .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("id", id);
 
-  if (error) {
-    return { error: error.message };
-  }
-
+  if (error) return { error: error.message };
   revalidatePath("/app/library");
   redirect("/app/library");
 }

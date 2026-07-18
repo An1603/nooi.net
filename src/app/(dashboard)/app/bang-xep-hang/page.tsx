@@ -30,7 +30,7 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="page-shell page-shell-narrow space-y-6">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
           <Trophy className="w-5 h-5 text-primary" />
@@ -65,7 +65,7 @@ export default function LeaderboardPage() {
             </div>
             <div className="text-right">
               <p className="font-bold text-primary">{entry.n}</p>
-              <p className="text-[10px] text-muted-foreground">N</p>
+              <p className="text-[11px] text-muted-foreground">N</p>
             </div>
           </div>
         ))}

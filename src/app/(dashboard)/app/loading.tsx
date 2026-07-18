@@ -1,6 +1,6 @@
 export default function DashboardLoading() {
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8 animate-pulse">
+    <div className="page-shell page-shell-wide space-y-8 animate-pulse">
       {/* Welcome skeleton */}
       <div className="space-y-2">
         <div className="h-8 w-48 bg-muted/30 rounded-lg" />
@@ -35,6 +35,16 @@ export default function DashboardLoading() {
           <div key={i} className="h-24 rounded-xl border border-border/50 bg-card/50 p-4">
             <div className="h-6 w-12 bg-muted/30 rounded-lg mb-2" />
             <div className="h-3 w-16 bg-muted/20 rounded-lg" />
+          </div>
+        ))}
+      </div>
+
+      {/* Streak & Quest skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {[1, 2].map((i) => (
+          <div key={i} className="h-20 rounded-xl border border-border/50 bg-card/50 p-4">
+            <div className="h-5 w-28 bg-muted/30 rounded-lg mb-2" />
+            <div className="h-3 w-40 bg-muted/20 rounded-lg" />
           </div>
         ))}
       </div>

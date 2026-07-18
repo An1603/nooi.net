@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Users, Plus, UserPlus, Shield, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CommunityLeaderboard from "@/components/community/CommunityLeaderboard";
+import BuddyWidget from "@/components/community/BuddyWidget";
+import GroupQuizLeaderboard from "@/components/community/GroupQuizLeaderboard";
 
 interface Group {
   id: string; name: string; description: string; schedule: string; member_count: number;
@@ -98,7 +100,7 @@ export default function CommunityPage() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-wide space-y-8">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
           <Users className="w-5 h-5 text-primary" />
@@ -108,6 +110,9 @@ export default function CommunityPage() {
           <p className="text-muted-foreground text-sm mt-0.5">Cùng nhau thực hành và chuyển hóa</p>
         </div>
       </div>
+
+      {/* Bạn đồng hành */}
+      <BuddyWidget />
 
       {/* Hướng dẫn cấp độ nhóm */}
       <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2">
@@ -147,7 +152,7 @@ export default function CommunityPage() {
             <div key={g.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/10">
               <div>
                 <p className="text-sm font-medium">{g.name}</p>
-                <p className="text-[10px] text-muted-foreground"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên</p>
+                <p className="text-[11px] text-muted-foreground"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên</p>
               </div>
               {canManage && (
                 <div className="relative">
@@ -156,7 +161,7 @@ export default function CommunityPage() {
                   </button>
                   {addingTo === g.id && (
                     <div className="absolute right-0 top-full mt-1 w-64 bg-card border border-border rounded-xl shadow-2xl z-10 p-2 max-h-48 overflow-y-auto">
-                      <p className="text-[10px] text-muted-foreground px-2 py-1">Chọn user cấp thấp hơn để thêm:</p>
+                      <p className="text-[11px] text-muted-foreground px-2 py-1">Chọn user cấp thấp hơn để thêm:</p>
                       {eligibleUsers.map((u) => (
                         <button key={u.user_id} onClick={() => addMember(g.id, u.user_id)}
                           className="w-full text-left flex items-center gap-2 p-2 rounded-lg hover:bg-muted/20 text-xs">
@@ -183,7 +188,7 @@ export default function CommunityPage() {
             <div key={g.id} className="p-4 rounded-lg border border-border/50">
               <p className="text-sm font-medium">{g.name}</p>
               <p className="text-xs text-muted-foreground">{g.description}</p>
-              <p className="text-[10px] text-muted-foreground mt-1"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên · {g.schedule}</p>
+              <p className="text-[11px] text-muted-foreground mt-1"><Users className="w-3 h-3 inline" /> {g.member_count} thành viên · {g.schedule}</p>
               {canManage && (
                 <div className="relative mt-2">
                   <button onClick={() => setAddingTo(addingTo === g.id ? null : g.id)} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg flex items-center gap-1">
@@ -214,19 +219,22 @@ export default function CommunityPage() {
       {/* Bạn học */}
       <div className="rounded-xl border border-border bg-card p-5">
         <h2 className="font-semibold text-sm mb-4">Cộng đồng tu học</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
           {allUsers.slice(0, 12).map((u) => (
             <div key={u.user_id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{u.name.charAt(0)}</div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium truncate">{u.name}</p>
-                <p className="text-[10px] text-muted-foreground">Lv.{u.level} {LEVEL_NAMES[u.level]}</p>
+                <p className="text-[11px] text-muted-foreground">Lv.{u.level} {LEVEL_NAMES[u.level]}</p>
               </div>
               <Shield className={`w-3 h-3 ${u.level >= 5 ? "text-primary" : "text-muted-foreground/30"}`} />
             </div>
           ))}
         </div>
       </div>
+
+      {/* Thi đua nhóm */}
+      <GroupQuizLeaderboard />
 
       {/* Bảng xếp hạng */}
       <CommunityLeaderboard />

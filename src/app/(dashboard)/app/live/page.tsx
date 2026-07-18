@@ -23,7 +23,7 @@ function CountdownTimer({ target }: { target: string }) {
     return () => clearInterval(id);
   }, [target]);
 
-  return <span className="text-[10px] font-mono tabular-nums">{remaining}</span>;
+  return <span className="text-[11px] font-mono tabular-nums">{remaining}</span>;
 }
 
 // ─── ICS Generator ────────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ export default function LivePage() {
   const past = sessions.filter((s) => s.date < today || (s.date === today && s.time < currentTime));
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-wide space-y-8">
       {/* Toast notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-right
@@ -289,26 +289,26 @@ export default function LivePage() {
         <div className="rounded-xl border border-border bg-card p-5 space-y-3 animate-in fade-in">
           <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Tiêu đề buổi học *" className="w-full px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Mô tả nội dung buổi học" className="w-full px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm resize-none" rows={2} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
             <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} className="px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} placeholder="Link Zoom/Meet" className="px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
             <input value={form.max_participants} onChange={(e) => setForm({ ...form, max_participants: Number(e.target.value) })} type="number" min={2} max={100} className="px-3 py-2.5 rounded-lg bg-muted/20 border border-border text-sm" />
           </div>
           {/* Meeting info auto-generated */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-mono">ID:</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground font-mono">ID:</span>
               <input value={form.meeting_id} onChange={(e) => setForm({ ...form, meeting_id: e.target.value })} className="w-full px-9 py-2.5 rounded-lg bg-muted/20 border border-border text-sm font-mono tracking-wider" />
             </div>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-mono">🔑</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground font-mono">🔑</span>
               <input value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="w-full px-9 py-2.5 rounded-lg bg-muted/20 border border-border text-sm font-mono" />
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span>🔄 ID & mã đã tự động tạo — click vào để sửa</span>
           </div>
           <div className="flex gap-2">
@@ -340,24 +340,27 @@ export default function LivePage() {
             const icsUrl = generateICS({ title: s.title, description: s.description, date: s.date, time: s.time });
             return (
               <div key={s.id} className={`rounded-xl border ${isRegistered ? "border-primary/30 bg-primary/5" : "border-border bg-card"} p-5 transition-all hover:shadow-md`}>
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   {/* Left: Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Sắp tới</span>
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Sắp tới</span>
                       <CountdownTimer target={`${s.date}T${s.time}:00`} />
+                      {isRegistered && (
+                        <span className="text-xs text-green-400 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Đã đăng ký</span>
+                      )}
                     </div>
                     <h3 className="font-semibold text-base">{s.title}</h3>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{s.description}</p>
 
-                    {/* Thông tin chi tiết */}
-                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-muted-foreground">
+                    {/* Thông tin chi tiết — stack trên mobile */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {s.date}</span>
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {s.time}</span>
                       <span className="flex items-center gap-1"><User className="w-3 h-3" /> {s.mentor_name}</span>
                       <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {s.registered}/{s.max_participants}</span>
                       {s.meeting_id && (
-                        <span className="flex items-center gap-1 font-mono text-[10px] opacity-60">ID: {s.meeting_id}</span>
+                        <span className="flex items-center gap-1 font-mono text-[11px] opacity-60 col-span-2">ID: {s.meeting_id}</span>
                       )}
                     </div>
 
@@ -367,7 +370,7 @@ export default function LivePage() {
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-medium text-primary flex items-center gap-1"><Lock className="w-3 h-3" /> Thông tin phòng học</span>
                           <div className="flex gap-2">
-                            <a href={icsUrl} download={`nooi-${s.meeting_id || "live"}.ics`} className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
+                            <a href={icsUrl} download={`nooi-${s.meeting_id || "live"}.ics`} className="text-[11px] text-primary hover:underline flex items-center gap-0.5">
                               <Calendar className="w-3 h-3" /> Thêm vào lịch
                             </a>
                           </div>
@@ -395,12 +398,10 @@ export default function LivePage() {
                     )}
                   </div>
 
-                  {/* Right: Action */}
-                  <div className="shrink-0 flex flex-col items-end gap-2">
-                    {isRegistered ? (
-                      <span className="text-xs text-green-400 flex items-center gap-1"><CheckCircle className="w-4 h-4" /> Đã đăng ký</span>
-                    ) : (
-                      <button onClick={() => register(s.id)} className="text-sm bg-primary px-5 py-2 rounded-lg text-primary-foreground font-medium hover:brightness-110 transition-all">
+                  {/* Right: Action — desktop bên phải, mobile xuống dưới full-width */}
+                  <div className="flex sm:flex-col sm:items-end items-stretch gap-2 sm:gap-2 sm:shrink-0">
+                    {!isRegistered && (
+                      <button onClick={() => register(s.id)} className="flex-1 sm:flex-none text-sm bg-primary px-5 py-2.5 rounded-lg text-primary-foreground font-medium hover:brightness-110 transition-all">
                         Đăng ký
                       </button>
                     )}
@@ -414,7 +415,7 @@ export default function LivePage() {
                           }
                         }}
                         disabled={reminderSending === s.id}
-                        className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1 disabled:opacity-50"
+                        className="flex-1 sm:flex-none text-[11px] text-muted-foreground hover:text-primary flex items-center justify-center gap-1 disabled:opacity-50 sm:justify-end"
                       >
                         {reminderSending === s.id ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -441,13 +442,13 @@ export default function LivePage() {
               <div key={s.id} className="rounded-lg border border-border/50 bg-card/50 p-4 opacity-70">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground shrink-0">Đã kết thúc</span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground shrink-0">Đã kết thúc</span>
                     <h3 className="text-sm font-medium truncate">{s.title}</h3>
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0 ml-2">{s.date} · {s.time}</span>
+                  <span className="text-[11px] text-muted-foreground shrink-0 ml-2">{s.date} · {s.time}</span>
                 </div>
                 {s.registered > 0 && (
-                  <p className="text-[10px] text-muted-foreground mt-1">{s.registered} học viên đã tham gia</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{s.registered} học viên đã tham gia</p>
                 )}
               </div>
             ))}

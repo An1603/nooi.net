@@ -81,7 +81,7 @@ export default async function AdminVideosPage() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-medium truncate max-w-[200px]">{vid.title}</p>
-                            {vid.description && <p className="text-[10px] text-muted-foreground truncate max-w-[200px]">{vid.description}</p>}
+                            {vid.description && <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">{vid.description}</p>}
                           </div>
                         </div>
                       </td>
@@ -98,11 +98,11 @@ export default async function AdminVideosPage() {
                         {formatDuration(vid.duration ?? null)}
                       </td>
                       <td className="px-5 py-3 text-center hidden sm:table-cell">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColors[vid.status || ""] || "bg-muted/30 text-muted-foreground"}`}>
+                        <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${statusColors[vid.status || ""] || "bg-muted/30 text-muted-foreground"}`}>
                           {vid.status || "unknown"}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right text-[10px] text-muted-foreground">
+                      <td className="px-5 py-3 text-right text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1 justify-end"><Calendar className="size-3" />{new Date(vid.created_at).toLocaleDateString("vi-VN")}</span>
                       </td>
                     </tr>

@@ -94,24 +94,26 @@ export default function AIMentorPage() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
+    <div className="page-shell space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-          <Bot className="w-5 h-5 text-primary" />
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
+            <Bot className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">NOOI AI Mentor</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
+              Người đồng hành trên hành trình chuyển hóa
+            </p>
+          </div>
         </div>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight">NOOI AI Mentor</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            Người đồng hành trên hành trình chuyển hóa của bạn
-          </p>
-        </div>
-        {/* Mode toggle */}
+        {/* Mode toggle — full width on mobile */}
         <div className="flex bg-muted/30 rounded-lg p-0.5 border border-border">
-          <button onClick={() => setMode("chat")} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+          <button onClick={() => setMode("chat")} className={`flex-1 sm:flex-none px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${mode === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             <Keyboard className="w-4 h-4 inline mr-1" /> Chat
           </button>
-          <button onClick={() => setMode("voice")} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === "voice" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+          <button onClick={() => setMode("voice")} className={`flex-1 sm:flex-none px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${mode === "voice" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             <Mic className="w-4 h-4 inline mr-1" /> Voice
           </button>
         </div>

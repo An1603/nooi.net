@@ -98,17 +98,17 @@ export default function AdminMentorsPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Link href={`/admin/users/${u.id}`} className="text-sm font-medium hover:text-primary transition-colors">{u.full_name || "Chưa đặt tên"}</Link>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${LEVEL_COLORS[u.level] || "bg-primary/10 text-primary"}`}>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${LEVEL_COLORS[u.level] || "bg-primary/10 text-primary"}`}>
                         {u.level === 7 ? "🌟 Master Mentor" : "⭐ Mentor"}
                       </span>
                       {u.role !== "user" && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
                           {u.role === "super_admin" ? "Super Admin" : "Admin"}
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">{u.email || u.id.slice(0, 12)}...</p>
-                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
                       <span>📓 {u.journals || 0} nhật ký</span>
                       <span>🔢 {u.n || 0} N</span>
                       {u.has_numerology && <span className="px-1 py-0.5 rounded bg-amber-500/10 text-amber-400">TS</span>}
@@ -117,7 +117,7 @@ export default function AdminMentorsPage() {
                     </div>
                   </div>
                 </div>
-                <Link href={`/admin/users/${u.id}`} className="text-[10px] text-primary hover:underline shrink-0 flex items-center gap-1">
+                <Link href={`/admin/users/${u.id}`} className="text-[11px] text-primary hover:underline shrink-0 flex items-center gap-1">
                   <Edit3 className="size-3" /> Chi tiết
                 </Link>
               </div>

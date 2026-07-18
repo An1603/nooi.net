@@ -88,7 +88,7 @@ export default function PracticesPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-wide space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">⚡ Thực hành chuyển hóa</h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -106,7 +106,7 @@ export default function PracticesPage() {
             🧬
           </div>
           <div className="flex-1">
-            <p className="text-[10px] text-violet-400 font-medium uppercase tracking-wider mb-1">Tổng hợp 3 lớp đánh giá</p>
+            <p className="text-[11px] text-violet-400 font-medium uppercase tracking-wider mb-1">Tổng hợp 3 lớp đánh giá</p>
             <h3 className="text-lg font-bold group-hover:text-violet-300 transition-colors">
               NHÂN ẢNH
             </h3>

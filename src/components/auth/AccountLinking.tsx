@@ -119,7 +119,7 @@ export function AccountLinkingSection() {
 
       {providersToLink.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          <p className="text-[10px] text-muted-foreground w-full">Liên kết thêm tài khoản:</p>
+          <p className="text-[11px] text-muted-foreground w-full">Liên kết thêm tài khoản:</p>
           {providersToLink.map((p) => (
             <Button key={p} type="button" variant="outline" size="sm"
               onClick={() => handleLink(p as "google" | "github")}
@@ -136,7 +136,7 @@ export function AccountLinkingSection() {
       {success && <p className="text-[11px] text-emerald-400">{success}</p>}
       {error && <p className="text-[11px] text-red-400">{error}</p>}
 
-      <p className="text-[10px] text-muted-foreground">
+      <p className="text-[11px] text-muted-foreground">
         Liên kết nhiều tài khoản cho phép bạn đăng nhập bằng bất kỳ phương thức nào vào cùng một tài khoản NOOI.
       </p>
     </div>

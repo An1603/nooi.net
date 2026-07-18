@@ -16,6 +16,7 @@ import {
   Video,
   FolderOpen,
   TrendingUp,
+  Palette,
 } from "lucide-react";
 import { RouteLoader } from "@/components/Loading";
 
@@ -40,6 +41,8 @@ const NAV_ITEMS = [
   // Theo dõi & Cấu hình
   { href: "/admin/activity", label: "Hoạt động", icon: Activity },
   { href: "/admin/evaluate", label: "Đánh giá", icon: UserCheck },
+  { href: "/admin/brand", label: "Thương hiệu", icon: Palette },
+  { href: "/admin/brand/files", label: "Kho file", icon: FolderOpen },
   { href: "/admin/settings", label: "Cấu hình", icon: Settings },
 ];
 
@@ -114,11 +117,11 @@ export default async function AdminLayout({
             {user.email}
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-primary font-medium uppercase tracking-wider">
+            <span className="text-[11px] text-primary font-medium uppercase tracking-wider">
               {adminUser.role === "super_admin" ? "Super Admin" : adminUser.role === "admin" ? "Admin" : "Mod"}
             </span>
             {isSuperAdmin && (
-              <Link href="/admin/roles" className="text-[10px] text-primary hover:underline">Quản trị</Link>
+              <Link href="/admin/roles" className="text-[11px] text-primary hover:underline">Quản trị</Link>
             )}
           </div>
           <a

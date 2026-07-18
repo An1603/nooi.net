@@ -9,9 +9,18 @@ export default async function AdminProjectsPage() {
 
   const { data: projects, error } = await supabase
     .from("projects")
-    .select("*, profiles!inner(full_name)")
+    .select("*")
     .order("updated_at", { ascending: false })
     .limit(100);
+
+  const ownerNames = new Map<string,string>();
+  if (!error && (projects ?? []).length > 0) {
+    const userIds = Array.from(new Set((projects ?? []).map((p: { user_id: string }) => p.user_id)));
+    const { data: users } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+    (users ?? []).forEach((u: { user_id?: string; full_name?: string }) => {
+      if (u.user_id) ownerNames.set(u.user_id, u.full_name || u.user_id.slice(0, 8));
+    });
+  }
 
   if (error) return <div className="p-6 text-red-400">Lỗi: {error.message}</div>;
 
@@ -64,19 +73,19 @@ export default async function AdminProjectsPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium truncate">{p.title}</p>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColors[p.status] || statusColors.draft}`}>
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${statusColors[p.status] || statusColors.draft}`}>
                         {p.status === "in_progress" ? "Đang làm" : p.status}
                       </span>
                     </div>
                     {p.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{p.description}</p>}
-                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                      <span className="flex items-center gap-1"><Users className="size-3" /> {p.profiles?.full_name || p.user_id.slice(0, 8)}</span>
+                    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><Users className="size-3" /> {ownerNames.get(p.user_id) || p.user_id.slice(0, 8)}</span>
                       <span className="flex items-center gap-1"><Eye className="size-3" /> {videoMap.get(p.id) || 0} video · {docMap.get(p.id) || 0} tài liệu</span>
                       <span><Calendar className="size-3 inline" /> {new Date(p.created_at).toLocaleDateString("vi-VN")}</span>
                     </div>
                   </div>
                 </div>
-                <Link href={`/admin/users/${p.user_id}`} className="text-[10px] text-primary hover:underline shrink-0">Xem user</Link>
+                <Link href={`/admin/users/${p.user_id}`} className="text-[11px] text-primary hover:underline shrink-0">Xem user</Link>
               </div>
             </div>
           ))

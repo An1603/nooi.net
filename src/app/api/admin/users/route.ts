@@ -75,6 +75,9 @@ export async function GET() {
       n,
       level,
       level_name: LEVEL_NAMES[level - 1],
+      public_slug: p.public_slug,
+      public_is_visible: p.public_is_visible,
+      public_headline: p.public_headline,
     };
   });
 

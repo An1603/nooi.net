@@ -184,7 +184,7 @@ export default function GamePage() {
 
   if (!started) {
     return (
-      <div className="max-w-3xl mx-auto p-6 space-y-8 text-center">
+      <div className="page-shell page-shell-narrow space-y-8 text-center">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto border border-primary/20">
           <Sparkles className="w-8 h-8 text-primary" />
         </div>
@@ -206,7 +206,7 @@ export default function GamePage() {
 
   if (gameOver) {
     return (
-      <div className="max-w-3xl mx-auto p-6 space-y-6 text-center">
+      <div className="page-shell page-shell-narrow space-y-6 text-center">
         <div className="text-6xl mb-4">🏆</div>
         <h1 className="text-2xl font-bold">Kết thúc!</h1>
         <div className="text-4xl font-bold text-primary">{score} N</div>
@@ -221,7 +221,7 @@ export default function GamePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="page-shell page-shell-narrow space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

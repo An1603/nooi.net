@@ -9,7 +9,7 @@ interface Props {
   initialChatId: string | null;
 }
 
-const BOT_USERNAME = "NooiVNBot"; // Thay bằng bot username thật
+const BOT_USERNAME = "NOOI_Agent_Bot";
 
 export function TelegramConnect({ userId, initialChatId }: Props) {
   const supabase = createClient();
@@ -209,7 +209,7 @@ export function TelegramConnect({ userId, initialChatId }: Props) {
         )}
 
         {/* Info */}
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           💡 Sau khi kết nối, bạn sẽ nhận nhắc nhở trước 15 phút khi buổi học Live sắp bắt đầu.
         </p>
       </div>

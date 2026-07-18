@@ -18,6 +18,7 @@ import {
   Globe,
   ChevronRight,
   LogOut,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -318,7 +319,7 @@ export function ProfileClient({ user, profile }: Props) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="page-shell page-shell-wide">
       {/* Page Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -382,6 +383,48 @@ export function ProfileClient({ user, profile }: Props) {
 
       <SectionSeparator />
 
+      {/* ─── SECTION: Public Profile ─── */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <SectionHeader icon={<Globe className="size-5" />} title="Trang cá nhân" desc="Trang hồ sơ công khai của bạn trên NOOI" />
+        </div>
+        <div className="px-5 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Trang cá nhân công khai</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {profile.ref_code
+                  ? `nooi.net/u/${profile.ref_code.toLowerCase()}`
+                  : "Chưa có mã giới thiệu — liên hệ Admin để thiết lập"}
+              </p>
+            </div>
+            <Link
+              href="/app/settings"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-primary/20 bg-primary/5 text-sm text-primary hover:bg-primary/10 transition-all"
+            >
+              <ExternalLink className="size-3.5" />
+              Tùy chỉnh
+            </Link>
+          </div>
+          {profile.ref_code && (
+            <div className="mt-3 pt-3 border-t border-border/40">
+              <a
+                href={`/u/${profile.ref_code.toLowerCase()}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+              >
+                <ExternalLink className="size-3.5" />
+                Xem trang cá nhân
+                <ChevronRight className="size-3" />
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <SectionSeparator />
+
       {/* ─── SECTION: Level & NOOI ─── */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="px-5 py-4 border-b border-border">
@@ -404,7 +447,7 @@ export function ProfileClient({ user, profile }: Props) {
               </div>
             }
           />
-          <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border/50">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5 pt-4 border-t border-border/50">
             <div className="text-center p-3 rounded-lg bg-muted/20">
               <p className="text-lg font-bold text-primary">{journalCount ?? 0}</p>
               <p className="text-xs text-muted-foreground">Nhật ký</p>
@@ -662,7 +705,7 @@ export function ProfileClient({ user, profile }: Props) {
               <Users className="size-4 text-primary" />
               <span className="text-sm font-medium">Thống kê giới thiệu</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4">
               <div className="p-3 rounded-lg border border-border bg-muted/20 text-center">
                 <p className="text-2xl font-bold text-gradient-gold">{referralStats?.total_referred ?? 0}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Đã mời</p>
@@ -685,14 +728,14 @@ export function ProfileClient({ user, profile }: Props) {
                     >
                       <span className="text-sm font-medium truncate">{r.full_name || "Người dùng"}</span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-medium ${
                           r.has_onboarding
                             ? "bg-emerald-500/10 text-emerald-400"
                             : "bg-yellow-500/10 text-yellow-400"
                         }`}>
                           {r.has_onboarding ? "Đã thiết lập" : "Chưa hoàn tất"}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[11px] text-muted-foreground">
                           <LocalTime iso={r.created_at} format="short" />
                         </span>
                       </div>
@@ -752,7 +795,7 @@ export function ProfileClient({ user, profile }: Props) {
           <SectionHeader icon={<Calendar className="size-5" />} title="Lịch sử tài khoản" desc="Thông tin về tài khoản và hoạt động của bạn" />
         </div>
         <div className="px-5 py-2">
-          <InfoRow label="ID tài khoản" value={<code className="text-[10px] text-muted-foreground font-mono">{user.id}</code>} />
+          <InfoRow label="ID tài khoản" value={<code className="text-[11px] text-muted-foreground font-mono">{user.id}</code>} />
           <InfoRow label="Ngày tham gia" value={<LocalTime iso={user.created_at} format="full" />} />
           <InfoRow label="Trạng thái" value={
             <span className="inline-flex items-center gap-1 text-xs text-emerald-400">

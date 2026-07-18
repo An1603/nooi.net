@@ -143,7 +143,7 @@ export default function CardCollectionPage() {
   const unlocked = activeLevel <= userLevel;
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-wide space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
@@ -154,11 +154,18 @@ export default function CardCollectionPage() {
             <p className="text-muted-foreground text-sm mt-0.5">Bộ sưu tập khái niệm từ 7 cấp độ, từ Người mới đến Master Mentor</p>
           </div>
         </div>
-        <Link href="/app/game"
-          className="inline-flex items-center justify-center gap-1.5 bg-primary px-4 py-2.5 rounded-lg text-sm text-primary-foreground hover:bg-primary/80 transition-colors sm:w-auto"
-        >
-          🎮 Chơi game
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/app/game"
+            className="inline-flex items-center justify-center gap-1.5 bg-primary px-4 py-2.5 rounded-lg text-sm text-primary-foreground hover:bg-primary/80 transition-colors sm:w-auto"
+          >
+            🎮 Chơi game
+          </Link>
+          <Link href="/app/the-chuyen-hoa/7-tang"
+            className="inline-flex items-center justify-center gap-1.5 bg-orange-500 px-4 py-2.5 rounded-lg text-sm text-white font-medium hover:bg-orange-600 transition-colors sm:w-auto"
+          >
+            📖 7 Tầng Chuyển Hóa
+          </Link>
+        </div>
       </div>
 
       {/* Level tabs */}
@@ -178,7 +185,7 @@ export default function CardCollectionPage() {
             >
               {isUnlocked ? l.icon : <Lock className="w-3 h-3" />}
               <span>{l.icon} {l.name}</span>
-              <span className="text-[9px] opacity-70">— {l.role}</span>
+              <span className="text-[11px] opacity-70">— {l.role}</span>
             </button>
           );
         })}
@@ -204,12 +211,12 @@ export default function CardCollectionPage() {
               )}
               <div className="text-3xl mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">{card.icon}</div>
               <p className="text-sm font-semibold group-hover:text-primary transition-colors">{card.term}</p>
-              <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{card.def}</p>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{card.def}</p>
               <div className="flex items-center gap-1 mt-2">
                 {isUnlocked ? (
-                  <span className="text-[10px] text-green-400/70">✓ Đã mở khóa</span>
+                  <span className="text-[11px] text-green-400/70">✓ Đã mở khóa</span>
                 ) : (
-                  <span className="text-[10px] text-muted-foreground">🔒 Cần Lv.{card.level}</span>
+                  <span className="text-[11px] text-muted-foreground">🔒 Cần Lv.{card.level}</span>
                 )}
               </div>
             </div>

@@ -119,11 +119,11 @@ export default function NhanAnhPage() {
   }
 
   // ─── RENDER ───
-  if (loading) return <div className="max-w-3xl mx-auto p-6 flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="page-shell page-shell-narrow flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   if (!hasG1 && !hasG2) {
     return (
-      <div className="max-w-2xl mx-auto p-6 space-y-6 text-center">
+      <div className="page-shell page-shell-narrow space-y-6 text-center">
         <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center"><span className="text-3xl">🧬</span></div>
         <h1 className="text-2xl font-bold">NHÂN ẢNH</h1>
         <p className="text-muted-foreground text-sm max-w-md mx-auto">
@@ -142,7 +142,7 @@ export default function NhanAnhPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-narrow space-y-8">
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center"><span className="text-3xl">🧬</span></div>
@@ -165,7 +165,7 @@ export default function NhanAnhPage() {
       )}
 
       {/* Chỉ số */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "SAI", value: SAI, desc: "Tự Biết Mình", detail: "Khoảng cách giữa điều bạn nghĩ về mình và số mệnh" },
           { label: "SRI", value: SRI, desc: "Thực Chứng", detail: "Khoảng cách giữa lời nói và hành động thực tế" },
@@ -176,8 +176,8 @@ export default function NhanAnhPage() {
             <p className={`text-2xl font-bold ${value === null ? "text-muted-foreground/30" : value >= 60 ? "text-green-400" : value >= 40 ? "text-yellow-400" : "text-red-400"}`}>
               {value ?? "—"}
             </p>
-            <p className="text-[10px] text-muted-foreground leading-tight">{detail}</p>
-            <p className="text-[10px] text-muted-foreground/60">{levelLabel(value)}</p>
+            <p className="text-[11px] text-muted-foreground leading-tight">{detail}</p>
+            <p className="text-[11px] text-muted-foreground/60">{levelLabel(value)}</p>
           </div>
         ))}
       </div>

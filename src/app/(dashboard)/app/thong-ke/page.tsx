@@ -30,13 +30,13 @@ export default function StatsPage() {
     })();
   }, []);
 
-  if (loading) return <div className="max-w-4xl mx-auto p-6"><p className="text-muted-foreground">Đang tải...</p></div>;
-  if (!stats) return <div className="max-w-4xl mx-auto p-6"><p className="text-muted-foreground">Không có dữ liệu.</p></div>;
+   if (loading) return <div className="page-shell page-shell-narrow"><p className="text-muted-foreground">Đang tải...</p></div>;
+  if (!stats) return <div className="page-shell page-shell-narrow"><p className="text-muted-foreground">Không có dữ liệu.</p></div>;
 
   const maxWeekCount = Math.max(...stats.weeks.map((w) => w.count), 1);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="page-shell page-shell-wide space-y-8">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
@@ -83,7 +83,7 @@ export default function StatsPage() {
               }`}>
                 {day.active ? "✓" : "•"}
               </div>
-              <span className="text-[10px] text-muted-foreground">{day.label}</span>
+              <span className="text-[11px] text-muted-foreground">{day.label}</span>
             </div>
           ))}
         </div>
@@ -100,7 +100,7 @@ export default function StatsPage() {
                 className="w-full rounded-t-md bg-gradient-to-t from-primary to-primary/60 transition-all"
                 style={{ height: `${(week.count / maxWeekCount) * 100}%`, minHeight: week.count > 0 ? "8px" : "4px" }}
               />
-              <span className="text-[10px] text-muted-foreground">{week.label}</span>
+              <span className="text-[11px] text-muted-foreground">{week.label}</span>
             </div>
           ))}
         </div>

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { ArrowLeft, Edit3, Calendar, FileText, FolderOpen, File, Music } from "lucide-react";
 import { Thumbnail } from "@/components/content/Thumbnail";
@@ -56,11 +57,13 @@ export default async function DocumentDetailPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: doc } = await supabase
+  // Dùng admin client để query document — bypass RLS (cần cho brand docs)
+  const adminClient = createAdminClient();
+  const { data: doc } = await adminClient
     .from("documents")
     .select("*")
     .eq("id", id)
-    .eq("user_id", user?.id)
+    .or(`user_id.eq.${user?.id},user_id.eq.6d273d8b-800d-48da-bfce-d37033625e68`)
     .single();
 
   if (!doc) {
@@ -82,7 +85,7 @@ export default async function DocumentDetailPage({
   const ytThumb = parsed.url ? getYoutubeThumbnail(parsed.url) : null;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="page-shell page-shell-wide">
       <Link
         href="/app/library"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"

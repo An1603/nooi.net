@@ -1,13 +1,12 @@
 // NOOI — PWA Service Worker
-// Version: 2.1.0 — Fix: network-first cho app routes (tránh cache dashboard sau logout)
+// Version: 3.0.0 — Auto-update notify + new brand icons
 
-const CACHE_NAME = "nooi-v2";
+const CACHE_NAME = "nooi-v4";
 const APP_ROUTES = [
   "/",
   "/manifest.json",
   "/favicon.ico",
   "/favicon.png",
-  "/logo-icon.png",
   "/pwa/icon-192.png",
   "/pwa/icon-512.png",
 ];
@@ -24,28 +23,44 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// ── Activate: clean old caches ──
+// ── Activate: clean old caches + notify clients ──
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
+    (async () => {
+      // Clean old caches
+      const keys = await caches.keys();
+      await Promise.all(
         keys
           .filter((key) => key !== CACHE_NAME)
           .map((key) => caches.delete(key))
-      )
-    )
-  );
-  // Clear all cached app pages on activate (fresh start after logout)
-  caches.open(CACHE_NAME).then((cache) => {
-    cache.keys().then((keys) => {
-      keys.forEach((request) => {
-        if (request.url.includes("/app/")) {
-          cache.delete(request);
-        }
+      );
+
+      // Clear all cached app pages (fresh start)
+      const cache = await caches.open(CACHE_NAME);
+      const requests = await cache.keys();
+      await Promise.all(
+        requests.map((req) => {
+          if (new URL(req.url).pathname.startsWith("/app/")) {
+            return cache.delete(req);
+          }
+        })
+      );
+
+      // Notify all clients: new version available
+      const clients = await self.clients.matchAll({ type: "window" });
+      clients.forEach((client) => {
+        client.postMessage({ type: "SW_UPDATED", version: CACHE_NAME });
       });
-    });
-  });
+    })()
+  );
   self.clients.claim();
+});
+
+// ── Listen for SKIP_WAITING from client ──
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 // ── Fetch: network-first for app, cache-first for static ──
@@ -57,19 +72,15 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   // ── App routes: NETWORK-FIRST (critical for auth) ──
-  // Always fetch from network so middleware can redirect unauthenticated users.
-  // Only fall back to cache if network fails (offline).
   if (request.mode === "navigate" && url.pathname.startsWith("/app")) {
     event.respondWith(
       fetch(request).then((response) => {
-        // Only cache successful, non-redirect responses
         if (response.ok && response.status < 300) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return response;
       }).catch(() => {
-        // Offline: serve cached version (or root as fallback)
         return caches.match(request).then((cached) => cached || caches.match("/"));
       })
     );
@@ -86,7 +97,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // ── Static assets: cache-first (fast) ──
+  // ── Static assets: cache-first ──
   event.respondWith(
     caches.match(request).then((cached) => {
       return cached || fetch(request).then((response) => {

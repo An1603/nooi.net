@@ -5,6 +5,7 @@ import { AccountLinkingSection } from "@/components/auth/AccountLinking";
 import { ChangePasswordSection } from "@/components/auth/ChangePasswordSection";
 import { SetPasswordSection } from "@/components/auth/SetPasswordSection";
 import { TelegramConnect } from "@/components/telegram/TelegramConnect";
+import { PublicProfileSettings } from "@/components/profile/PublicProfileSettings";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -25,7 +26,7 @@ export default async function SettingsPage() {
   const hasEmailIdentity = identities.some((i) => i.provider === "email");
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="page-shell page-shell-narrow">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Cài đặt</h1>
         <p className="text-muted-foreground mt-1 text-sm">
@@ -51,6 +52,23 @@ export default async function SettingsPage() {
           numerology_report: profile.numerology_report !== null,
           tuvi_report: profile.tuvi_report !== null,
           chiem_tinh_report: profile.chiem_tinh_report !== null,
+        } : null}
+      />
+
+      {/* Public Profile Section */}
+      <PublicProfileSettings
+        userId={user.id}
+        profile={profile ? {
+          full_name: profile.full_name,
+          public_slug: profile.public_slug,
+          public_bio: profile.public_bio,
+          public_headline: profile.public_headline,
+          public_avatar_url: profile.public_avatar_url,
+          public_website: profile.public_website,
+          public_social_links: profile.public_social_links as Record<string, string> | null,
+          public_skills: profile.public_skills,
+          public_is_visible: profile.public_is_visible,
+          ref_code: profile.ref_code,
         } : null}
       />
 

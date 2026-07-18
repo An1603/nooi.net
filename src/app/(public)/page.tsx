@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import NextImage from 'next/image';
 import Link from 'next/link';
+import { useBrandUrl } from '@/components/brand/BrandProvider';
 import { createClient } from '@/lib/supabase/client';
 import { TechBackground } from '@/components/effects/TechBackground';
 import {
@@ -134,6 +135,7 @@ function TiltCard({ children, className = '' }: { children: React.ReactNode; cla
    ─────────────────────────────────────────────── */
 function HeroSection({ loggedIn }: { loggedIn: boolean }) {
   const { ref, visible } = useScrollReveal(0.1);
+  const logoWhiteUrl = useBrandUrl('logo-horizontal-white');
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-5 pt-24 pb-20 overflow-hidden">
@@ -147,11 +149,11 @@ function HeroSection({ loggedIn }: { loggedIn: boolean }) {
           <div className="relative">
             <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-pink-500/15 via-purple-500/10 to-blue-500/15 blur-2xl animate-pulse-glow" />
             <NextImage
-              src="/logo-icon-original.png"
-              alt="NOOI"
-              width={200}
-              height={70}
-              className="h-20 w-auto"
+              src={logoWhiteUrl}
+              alt="NOOI — Kết nối chuyển mình"
+              width={326}
+              height={150}
+              className="h-16 w-auto"
               priority
             />
           </div>
@@ -240,7 +242,7 @@ function HeroSection({ loggedIn }: { loggedIn: boolean }) {
 
       {/* Scroll indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-        <span className="text-[10px] text-muted-foreground/50">Cuộn xuống</span>
+        <span className="text-[11px] text-muted-foreground/50">Cuộn xuống</span>
         <div className="w-5 h-8 rounded-full border border-border flex items-start justify-center p-1 animate-bounce">
           <div className="w-1 h-2 rounded-full bg-muted-foreground/50" />
         </div>
@@ -460,6 +462,171 @@ function PillarsSection({ loggedIn }: { loggedIn: boolean }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/* ───────────────────────────────────────────────
+   7 Tầng Chuyển Hóa — Condensed for landing
+   ─────────────────────────────────────────────── */
+const TIERS = [
+  { n: 1, name: 'Ngủ Mê', keyword: 'MÊ', en: 'The Sleeper', color: '#a0745a', pop: '~60-70%', desc: 'Sống bằng phản xạ, bị dẫn dắt bởi bản năng mà không hay biết.' },
+  { n: 2, name: 'Thức Tỉnh', keyword: 'NGỜ', en: 'The Awakener', color: '#c49a2a', pop: '~15-20%', desc: 'Bắt đầu nghi ngờ, nhận ra mình đang lặp lại một khuôn mẫu.' },
+  { n: 3, name: 'Tìm Đường', keyword: 'KHÁT', en: 'The Seeker', color: '#d4a017', pop: '~8-12%', desc: 'Chủ động đi tìm — đọc sách, thiền, trị liệu. Dễ lạc trong kiến thức.' },
+  { n: 4, name: 'Làm Chủ', keyword: 'CHỦ', en: 'The Owner', color: '#3a8a42', pop: '~2-4%', desc: 'Nhận trách nhiệm 100%. Thấy rõ và tháo gỡ khuôn mẫu vô thức.' },
+  { n: 5, name: 'Dòng Chảy', keyword: 'TẠO', en: 'The Creator', color: '#2868a8', pop: 'Hiếm', desc: 'Sống từ bên trong ra. Nghĩ-nói-làm đồng nhất, không gồng mà mạnh.' },
+  { n: 6, name: 'Hòa Nhập', keyword: 'HÒA', en: 'The Connected', color: '#7a30a0', pop: 'Cực hiếm', desc: 'Ranh giới "tôi" tan. Từ bi tự chảy, phụng sự như tay phải giúp tay trái.' },
+  { n: 7, name: 'Giải Thoát', keyword: 'THOÁT', en: 'The Liberated', color: '#c8a45c', pop: 'Vài người/thế hệ', desc: 'Vượt khỏi tam giới. Niết Bàn — ngoài mọi khái niệm đối đãi.' },
+];
+
+function SevenTiersSection() {
+  const { ref, visible } = useScrollReveal(0.08);
+
+  return (
+    <section className="relative py-24 px-5 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.015] to-transparent" />
+      <div className="max-w-5xl mx-auto relative z-10" ref={ref}>
+        {/* Header */}
+        <div className={`text-center mb-14 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/25 bg-purple-500/8 text-purple-400 text-xs mb-4 backdrop-blur-sm">
+            <Sparkles size={12} />
+            Bản đồ chuyển hóa
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            7 Tầng{' '}
+            <span className="text-gradient-gold">Chuyển Hóa</span>{' '}
+            Con Người
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Từ ngủ mê đến giải thoát — bản đồ hành trình tỉnh thức
+            dựa trên triết học Phật giáo, Lão giáo và tâm lý học hiện đại.
+          </p>
+        </div>
+
+        {/* Timeline */}
+        <div className="relative">
+          {/* Center line */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 hidden md:block"
+            style={{ background: 'linear-gradient(to bottom, transparent, #a0745a40, #c49a2a40, #d4a01740, #3a8a4240, #2868a840, #7a30a040, #c8a45c40, transparent)' }}
+          />
+          {/* Mobile left line */}
+          <div className="absolute left-5 top-0 bottom-0 w-px md:hidden"
+            style={{ background: 'linear-gradient(to bottom, transparent, #a0745a40, #c49a2a40, #d4a01740, #3a8a4240, #2868a840, #7a30a040, #c8a45c40, transparent)' }}
+          />
+
+          {TIERS.map((tier, i) => {
+            const isLeft = i % 2 === 0;
+            return (
+              <div
+                key={tier.n}
+                className={`relative flex items-start gap-4 md:gap-0 mb-6 last:mb-0 transition-all duration-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+                style={{ transitionDelay: `${i * 80 + 200}ms` }}
+              >
+                {/* Mobile: dot on left line */}
+                <div className="md:hidden shrink-0 w-10 flex flex-col items-center">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 bg-background relative z-10"
+                    style={{ borderColor: tier.color, color: tier.color }}
+                  >
+                    {tier.n}
+                  </div>
+                </div>
+
+                {/* Desktop layout */}
+                <div className="hidden md:grid md:grid-cols-[1fr_48px_1fr] w-full items-start">
+                  {/* Left content (for odd) or Right content (for even) */}
+                  {isLeft ? (
+                    <>
+                      <div className="text-right pr-6">
+                        <TierCard tier={tier} align="right" />
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 bg-background relative z-10"
+                          style={{ borderColor: tier.color, color: tier.color }}
+                        >
+                          {tier.n}
+                        </div>
+                      </div>
+                      <div className="pl-6 flex items-start">
+                        <div className="flex items-center gap-2 mt-2">
+                          <span
+                            className="text-[11px] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-full"
+                            style={{ color: tier.color, background: `${tier.color}14`, border: `1px solid ${tier.color}26` }}
+                          >
+                            ◆ {tier.keyword}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{tier.pop}</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-right pr-6 flex items-start justify-end">
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-muted-foreground">{tier.pop}</span>
+                          <span
+                            className="text-[11px] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-full"
+                            style={{ color: tier.color, background: `${tier.color}14`, border: `1px solid ${tier.color}26` }}
+                          >
+                            ◆ {tier.keyword}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 bg-background relative z-10"
+                          style={{ borderColor: tier.color, color: tier.color }}
+                        >
+                          {tier.n}
+                        </div>
+                      </div>
+                      <div className="pl-6">
+                        <TierCard tier={tier} align="left" />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Mobile content */}
+                <div className="md:hidden flex-1 min-w-0">
+                  <TierCard tier={tier} align="left" />
+                  <span
+                    className="inline-block text-[11px] font-semibold tracking-widest uppercase px-2 py-0.5 rounded-full mt-1.5"
+                    style={{ color: tier.color, background: `${tier.color}14` }}
+                  >
+                    ◆ {tier.keyword} · {tier.pop}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* CTA */}
+        <div className={`text-center mt-14 transition-all duration-700 delay-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <Link
+            href="/app/the-chuyen-hoa/7-tang"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl border border-border text-foreground font-medium hover:bg-glass hover:border-muted-foreground/30 transition-all"
+          >
+            Khám phá chi tiết 7 tầng
+            <ArrowUpRight size={16} />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TierCard({ tier, align }: { tier: typeof TIERS[number]; align: 'left' | 'right' }) {
+  return (
+    <div className={align === 'right' ? 'text-right' : 'text-left'}>
+      <div className="text-[11px] tracking-widest uppercase font-semibold mb-0.5" style={{ color: tier.color }}>
+        Tầng {tier.n}
+      </div>
+      <h3 className="text-lg font-bold text-foreground leading-tight">{tier.name}</h3>
+      <p className="text-[11px] text-muted-foreground/70 italic mb-1.5">{tier.en}</p>
+      <p className="text-sm text-muted-foreground leading-relaxed">{tier.desc}</p>
+    </div>
   );
 }
 
@@ -717,6 +884,7 @@ function LandingPageInner({ loggedIn }: { loggedIn: boolean }) {
       <HeroSection loggedIn={loggedIn} />
       <FeaturesSection />
       <PillarsSection loggedIn={loggedIn} />
+      <SevenTiersSection />
       <HowSection />
       <CTASection loggedIn={loggedIn} />
       <FooterSection />

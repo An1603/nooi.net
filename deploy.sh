@@ -12,8 +12,9 @@ git add -A
 git commit -m "$1" || true
 git push
 
-echo "🔄 Reloading (zero-downtime)..."
-pm2 reload nooi --wait-ready --listen-timeout 5000
+echo "🔄 Restarting systemd service..."
+sudo systemctl restart nooi.service
+sleep 2
 
 echo "⏳ Waiting for health check..."
 for i in 1 2 3 4 5 6 7 8; do
@@ -39,5 +40,13 @@ done
 
 echo "🧹 Purging Cloudflare cache..."
 bash scripts/purge-cf-cache.sh
+
+echo "🔁 Creating CSS fallback for any hash mismatch..."
+NEW_CSS=$(ls .next/static/css/ | grep -v b496025 | head -1)
+OLD_CSS=$(curl -s https://nooi.net 2>/dev/null | grep -oP 'css/[a-f0-9]+\.css' | grep -v b496025 | head -1 | cut -d/ -f2)
+if [ -n "$OLD_CSS" ] && [ "$OLD_CSS" != "$NEW_CSS" ] && [ -f ".next/static/css/$NEW_CSS" ]; then
+  cp ".next/static/css/$NEW_CSS" ".next/static/css/$OLD_CSS"
+  echo "  ✅ Fallback: $OLD_CSS ← $NEW_CSS"
+fi
 
 echo "✅ Done — deploy successful!"

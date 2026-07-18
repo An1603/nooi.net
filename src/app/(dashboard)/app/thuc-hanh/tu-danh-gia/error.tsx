@@ -8,7 +8,7 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-4">
+    <div className="page-shell page-shell-narrow space-y-4">
       <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-6 space-y-3">
         <h2 className="text-lg font-bold text-red-400">Lỗi trang Tự Đánh Giá</h2>
         <p className="text-sm text-muted-foreground font-mono break-all">

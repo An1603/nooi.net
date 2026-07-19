@@ -23,7 +23,7 @@ export default async function PublicProjectsListPage() {
 
   // Get investment aggregates for visible projects
   const projectIds = (projects ?? []).map((p) => p.id);
-  let investmentMap = new Map<string, { total: number; count: number }>();
+  const investmentMap = new Map<string, { total: number; count: number }>();
 
   if (projectIds.length > 0) {
     const { data: investments } = await supabase

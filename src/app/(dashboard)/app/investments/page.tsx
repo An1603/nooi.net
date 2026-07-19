@@ -150,10 +150,10 @@ export default async function UserInvestmentsPage() {
                         </Link>
                         <span
                           className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
-                            STATUS_COLORS[investment.payment_status] || "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                            STATUS_COLORS[investment.payment_status as keyof typeof STATUS_COLORS] || "bg-gray-500/10 text-gray-400 border-gray-500/20"
                           }`}
                         >
-                          {STATUS_LABELS[investment.payment_status] || investment.payment_status}
+                          {STATUS_LABELS[investment.payment_status as keyof typeof STATUS_LABELS] || investment.payment_status}
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-400">

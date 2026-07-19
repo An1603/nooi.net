@@ -76,9 +76,9 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
     .eq("project_id", project.id)
     .order("progress_date", { ascending: true });
 
-  const latestProgress = progressData?.length > 0 
-    ? progressData[progressData.length - 1] 
-    : { progress_percent: 0, progress_date: null, milestones_completed: [], description: "" };
+  const latestProgress = (progressData?.length ?? 0) > 0 
+    ? progressData![progressData!.length - 1] 
+    : { progress_percent: 0, progress_date: null, milestones_completed: [] as string[], description: "" };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
@@ -97,10 +97,10 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
             </Link>
             <span 
               className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
-                STATUS_COLORS[project.status] || STATUS_COLORS.draft
+                STATUS_COLORS[project.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.draft
               }`}
             >
-              {STATUS_LABELS[project.status] || project.status}
+              {STATUS_LABELS[project.status as keyof typeof STATUS_LABELS] || project.status}
             </span>
           </div>
 

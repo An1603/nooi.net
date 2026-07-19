@@ -112,9 +112,9 @@ export default async function AdminInvestmentsPage() {
                         {item.project?.title || "Không xác định"}
                       </Link>
                       <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${
-                        STATUS_COLORS[item.payment_status] || "bg-gray-500/10 text-gray-400"
+                        STATUS_COLORS[item.payment_status as keyof typeof STATUS_COLORS] || "bg-gray-500/10 text-gray-400"
                       }`}>
-                        {STATUS_LABELS[item.payment_status] || item.payment_status}
+                        {STATUS_LABELS[item.payment_status as keyof typeof STATUS_LABELS] || item.payment_status}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground">

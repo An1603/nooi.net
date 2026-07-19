@@ -95,8 +95,8 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
     .eq("project_id", inv.project_id)
     .order("progress_date", { ascending: true });
 
-  const latestProgress = progressData?.length > 0 
-    ? progressData[progressData.length - 1] as ProgressItem
+  const latestProgress = (progressData?.length ?? 0) > 0 
+    ? progressData![progressData!.length - 1] as ProgressItem
     : null;
 
   // Calculate funding progress

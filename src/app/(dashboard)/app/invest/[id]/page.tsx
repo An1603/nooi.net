@@ -4,10 +4,10 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { ArrowLeft, DollarSign, CheckCircle2, Loader2, AlertCircle, TrendingUp, Calendar } from "lucide-react";
+import { ArrowLeft, DollarSign, CheckCircle2, Loader2, AlertCircle, TrendingUp } from "lucide-react";
 
-export default function InvestPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
+export default function InvestPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [project, setProject] = useState<{ id: string; title: string; description: string; investment_target: number; break_even: number } | null>(null);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
@@ -31,24 +31,24 @@ export default function InvestPage({ params }: { params: Promise<{ slug: string 
       if (u) {
         setUser(u);
         setForm((f) => ({ ...f, investorEmail: u.email || "" }));
+
+        // Load profile name
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", u.id)
+          .single();
+        if (profile?.full_name) {
+          setForm((f) => ({ ...f, investorName: profile.full_name }));
+        }
       }
 
-      // Try by id first, then by slug
-      let proj = null;
-      const { data: byId } = await supabase
+      // Load project
+      const { data: proj } = await supabase
         .from("projects")
         .select("*")
-        .eq("id", slug)
+        .eq("id", id)
         .single();
-      if (byId) proj = byId;
-      else {
-        const { data: bySlug } = await supabase
-          .from("projects")
-          .select("*")
-          .eq("slug", slug)
-          .single();
-        if (bySlug) proj = bySlug;
-      }
 
       if (!proj || proj.status !== "in_progress") {
         setLoading(false);
@@ -58,7 +58,7 @@ export default function InvestPage({ params }: { params: Promise<{ slug: string 
       setLoading(false);
     }
     load();
-  }, [slug]);
+  }, [id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,23 +106,6 @@ export default function InvestPage({ params }: { params: Promise<{ slug: string 
           <h1 className="text-2xl font-bold text-foreground mb-3">Dự án không tìm thấy</h1>
           <Link href="/app/projects" className="inline-flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-primary-foreground">
             Xem dự án khác
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-4">
-            <DollarSign size={32} className="text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground mb-3">Đăng nhập để đầu tư</h1>
-          <p className="text-muted-foreground mb-6">Bạn cần đăng nhập để đăng ký đầu tư vào dự án này.</p>
-          <Link href="/login" className="inline-flex items-center gap-2 px-6 py-3 bg-primary rounded-lg text-primary-foreground font-medium">
-            Đăng nhập
           </Link>
         </div>
       </div>

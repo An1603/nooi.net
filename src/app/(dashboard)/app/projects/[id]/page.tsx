@@ -116,7 +116,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 Đã đầu tư
               </Link>
             ) : (
-              <Link href={`/invest/${project.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-all">
+              <Link href={`/app/invest/${project.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-all">
                 <DollarSign size={16} />
                 Đăng ký đầu tư
               </Link>

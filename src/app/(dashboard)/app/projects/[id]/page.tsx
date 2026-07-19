@@ -44,14 +44,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-5">
             <div className="max-w-6xl mx-auto">
-              <Link href="/app/projects" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary mb-2 transition-colors">
-                <ArrowLeft size={12} /> Danh sách dự án
+              <Link href="/app/projects" className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary mb-2 transition-colors">
+                <ArrowLeft size={12} /> Dự án
               </Link>
               <h1 className="text-2xl md:text-3xl font-bold text-foreground">{project.title}</h1>
               <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-n-green/15 text-n-green border border-n-green/20">
-                  {project.status === "in_progress" ? "Đang mở đầu tư" : project.status}
-                </span>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-n-green/15 text-n-green border border-n-green/20">Đang mở đầu tư</span>
                 {project.location && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><MapPin size={11} /> {project.location}</span>}
               </div>
             </div>
@@ -59,10 +57,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
         {!project.cover_image && (
           <div>
-            <Link href="/app/projects" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary mb-2"><ArrowLeft size={12} /> Danh sách dự án</Link>
+            <Link href="/app/projects" className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary mb-2"><ArrowLeft size={12} /> Dự án</Link>
             <h1 className="text-2xl font-bold text-foreground">{project.title}</h1>
           </div>
         )}
@@ -90,16 +88,21 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tiến độ huy động</span>
-                <span className="text-lg font-bold text-n-gold">{percentage}%</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Tiến độ huy động</span>
+                  {percentage === 0 && totalRaised === 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-n-orange/15 text-n-orange border border-n-orange/20 font-medium">Sắp mở gọi vốn</span>
+                  )}
+                </div>
+                <span className="text-xl font-bold text-n-gold">{percentage}%</span>
               </div>
-              <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-n-gold to-n-green transition-all duration-500" style={{ width: `${Math.min(percentage, 100)}%` }} />
+              <div className="w-full bg-muted rounded-full h-4 overflow-hidden shadow-inner">
+                <div className="h-full rounded-full bg-gradient-to-r from-n-gold via-n-gold to-n-green transition-all duration-700" style={{ width: `${Math.min(percentage, 100)}%` }} />
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                <span>{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ</span>
-                <span>Target: {new Intl.NumberFormat("vi-VN").format(target)}đ</span>
+              <div className="flex items-center justify-between text-xs mt-2.5">
+                <span className="font-medium text-gray-300">{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ đã huy động</span>
+                <span className="text-muted-foreground">Mục tiêu: <span className="text-foreground font-medium">{new Intl.NumberFormat("vi-VN").format(target)}đ</span></span>
               </div>
             </div>
 
@@ -158,7 +161,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               {project.status === "in_progress" && target > 0 && (userInvestment ? (
                 <Link href={`/app/investments/${userInvestment.id}`} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-n-green/15 text-n-green font-medium text-sm hover:bg-n-green/25 transition-all"><CheckCircle2 size={14} /> Đã đầu tư</Link>
               ) : (
-                <Link href={`/app/invest/${project.id}`} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/80 transition-all"><DollarSign size={14} /> Đầu tư ngay</Link>
+                <Link href={`/app/invest/${project.id}`} className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/80 hover:shadow-lg hover:shadow-primary/20 active:scale-[0.98] transition-all"><DollarSign size={14} /> Đầu tư ngay</Link>
               ))}
             </div>
 
@@ -185,12 +188,21 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {progressData.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-5">
-              <h2 className="text-base font-semibold text-foreground mb-3">Tiến độ thực hiện</h2>
-              <div className="space-y-3">
+              <h2 className="text-base font-semibold text-foreground mb-4">Tiến độ thực hiện</h2>
+              <div className="relative space-y-4">
+                <div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-border" />
                 {progressData.map((p, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-n-purple/15 flex items-center justify-center shrink-0 mt-0.5"><CheckCircle2 size={14} className="text-n-purple" /></div>
-                    <div className="flex-1"><div className="flex items-center gap-2"><span className="text-sm font-semibold text-foreground">{p.progress_percent}%</span><span className="text-xs text-muted-foreground">{p.progress_date ? new Date(p.progress_date).toLocaleDateString("vi-VN") : ""}</span></div>{p.description && <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>}</div>
+                  <div key={i} className="flex items-start gap-4 relative">
+                    <div className="w-[28px] h-[28px] rounded-full bg-n-purple/15 border-2 border-n-purple/30 flex items-center justify-center shrink-0 mt-0.5 z-10">
+                      <CheckCircle2 size={14} className="text-n-purple" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">{p.progress_percent}%</span>
+                        <span className="text-xs text-gray-300">{p.progress_date ? new Date(p.progress_date).toLocaleDateString("vi-VN") : ""}</span>
+                      </div>
+                      {p.description && <p className="text-xs text-gray-300 mt-0.5">{p.description}</p>}
+                    </div>
                   </div>
                 ))}
               </div>

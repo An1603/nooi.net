@@ -35,7 +35,7 @@ export default async function DashboardLayout({
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Mobile topbar */}
         <Topbar />
-        <div className="flex-1 p-4 md:p-6 overflow-auto animate-fade-in mesh-bg-subtle">
+        <div className="flex-1 p-4 md:p-6 overflow-auto animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.05) 0%, transparent 60%), linear-gradient(315deg, rgba(200,148,62,0.04) 0%, transparent 60%), #1a0a2e' }}>
           {children}
         </div>
       </main>

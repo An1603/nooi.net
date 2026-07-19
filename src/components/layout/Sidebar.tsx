@@ -103,9 +103,10 @@ export function Sidebar() {
     <>
       {/* ── Desktop/Tablet sidebar (≥768px) ── */}
       <aside
-        className={`hidden md:flex shrink-0 min-h-screen border-r border-border bg-card flex-col relative transition-all duration-300 ${
+        className={`hidden md:flex shrink-0 min-h-screen border-r border-border flex-col relative transition-all duration-300 ${
           collapsed ? 'w-0 !overflow-hidden !border-0' : 'w-52'
         }`}
+        style={{ background: '#22163a' }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-primary/3 via-transparent to-accent/3 pointer-events-none" />
         <div className="relative flex flex-col h-full min-w-52">
@@ -117,7 +118,7 @@ export function Sidebar() {
       {mobileOpen && (
         <>
           <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
-          <aside className="md:hidden fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex flex-col shadow-2xl animate-slide-up">
+          <aside className="md:hidden fixed inset-y-0 left-0 z-50 w-64 border-r border-border flex flex-col shadow-2xl animate-slide-up" style={{ background: '#22163a' }}>
             <div className="relative flex flex-col h-full overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-primary/3 via-transparent to-accent/3 pointer-events-none" />
               <div className="relative flex flex-col h-full">{sidebarContent}</div>

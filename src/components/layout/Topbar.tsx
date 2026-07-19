@@ -31,7 +31,7 @@ export default function Topbar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-border bg-card/95 backdrop-blur-md">
+    <header className="sticky top-0 z-30 w-full border-b border-border backdrop-blur-md" style={{ background: 'rgba(34,22,58,0.95)' }}>
       <div className="flex items-center justify-between px-4 h-12">
         {/* Left */}
         <div className="flex items-center gap-2">

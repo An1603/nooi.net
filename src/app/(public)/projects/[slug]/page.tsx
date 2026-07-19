@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Calendar, DollarSign, ArrowUpRight, CheckCircle2 } from "lucide-react";
@@ -22,7 +22,7 @@ const STATUS_LABELS = {
 
 export default async function PublicProjectPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Query theo id trước (UUID từ URL), nếu không có thì thử theo slug
   interface ProjectRow {

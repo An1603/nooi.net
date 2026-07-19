@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 
@@ -12,7 +12,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default async function PublicProjectsListPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data: projects } = await supabase
     .from("projects")

@@ -4,167 +4,146 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { ArrowLeft, DollarSign, Shield, BanknoteIcon, CheckCircle2 } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowLeft, DollarSign, CheckCircle2, Loader2, AlertCircle, TrendingUp, Calendar } from "lucide-react";
 
-interface ProjectData {
-  id: string;
-  title: string;
-  description?: string;
-  investment_target?: number;
-  break_even?: number;
-  roi_estimate?: string;
-  status: string;
-  slug?: string;
-}
-
-interface InvestmentRecord {
-  id: string;
-  user_id: string;
-  amount: number;
-  payment_status: string;
-}
-
-export default function InvestRegisterPage({ params }: { params: Promise<{ slug: string }> }) {
+export default function InvestPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const router = useRouter();
-  const slug = use(params).slug;
-
-  const [project, setProject] = useState<ProjectData | null>(null);
+  const [project, setProject] = useState<{ id: string; title: string; description: string; investment_target: number; break_even: number } | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [investorName, setInvestorName] = useState("");
-  const [investorEmail, setInvestorEmail] = useState("");
-  const [investorPhone, setInvestorPhone] = useState("");
-  const [amount, setAmount] = useState("");
-  const [notes, setNotes] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
+  const [error, setError] = useState("");
+
+  const [form, setForm] = useState({
+    amount: "",
+    investorName: "",
+    investorEmail: "",
+    investorPhone: "",
+    notes: "",
+  });
 
   useEffect(() => {
-    let cancelled = false;
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || cancelled) {
-        if (!cancelled) setLoading(false);
-        return;
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (u) {
+        setUser(u);
+        setForm((f) => ({ ...f, investorEmail: u.email || "" }));
       }
 
-      const slugOrId = slug;
-      let { data: projectData } = await supabase
+      // Try by id first, then by slug
+      let proj = null;
+      const { data: byId } = await supabase
         .from("projects")
         .select("*")
-        .eq("slug", slugOrId)
+        .eq("id", slug)
         .single();
-
-      if (!projectData) {
-        ({ data: projectData } = await supabase
+      if (byId) proj = byId;
+      else {
+        const { data: bySlug } = await supabase
           .from("projects")
           .select("*")
-          .eq("id", slugOrId)
-          .single());
-      }
-
-      if (projectData && !cancelled) {
-        setProject(projectData as unknown as ProjectData);
-        setInvestorName(user.user_metadata?.full_name || "");
-        setInvestorEmail(user.email || "");
-        const { data: userProfile } = await supabase
-          .from("profiles")
-          .select("phone")
-          .eq("user_id", user.id)
+          .eq("slug", slug)
           .single();
-        if (userProfile?.phone) setInvestorPhone(userProfile.phone);
+        if (bySlug) proj = bySlug;
       }
-      if (!cancelled) setLoading(false);
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [slug]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const payload = {
-        project_id: project?.id,
-        investor_name: investorName,
-        investor_email: investorEmail,
-        investor_phone: investorPhone,
-        amount: parseInt(amount),
-        notes: notes || null,
-        payment_method: paymentMethod,
-        user_id: user?.id,
-      };
-
-      const { error } = await supabase
-        .from("investments")
-        .insert(payload)
-        .select()
-        .single();
-
-      if (error) {
-        toast.error(error.message);
-        setSubmitting(false);
+      if (!proj || proj.status !== "in_progress") {
+        setLoading(false);
         return;
       }
-
-      setSuccess(true);
-      toast.success("Đăng ký đầu tư thành công!");
-
-      setTimeout(() => {
-        router.push(`/invest/${slug}`);
-      }, 1500);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Có lỗi xảy ra";
-      toast.error(message);
-    } finally {
-      setSubmitting(false);
+      setProject(proj);
+      setLoading(false);
     }
-  };
+    load();
+  }, [slug]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!project || !user) return;
+
+    setSubmitting(true);
+    setError("");
+
+    const supabase = createClient();
+    const { error: insertError } = await supabase
+      .from("investments")
+      .insert({
+        project_id: project.id,
+        user_id: user.id,
+        amount: parseInt(form.amount),
+        investor_name: form.investorName,
+        investor_email: form.investorEmail,
+        investor_phone: form.investorPhone,
+        notes: form.notes,
+        payment_status: "pending",
+      });
+
+    if (insertError) {
+      setError(insertError.message || "Có lỗi xảy ra. Vui lòng thử lại.");
+      setSubmitting(false);
+      return;
+    }
+
+    setSuccess(true);
+    setSubmitting(false);
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-primary" />
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex flex-col items-center justify-center gap-4">
-        <div className="text-6xl">📭</div>
-        <h1 className="text-2xl font-bold mb-4">Dự án không tìm thấy</h1>
-        <Link href="/projects" className="px-6 py-3 bg-primary rounded-lg">
-          Xem dự án khác
-        </Link>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-3">Dự án không tìm thấy</h1>
+          <Link href="/app/projects" className="inline-flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-primary-foreground">
+            Xem dự án khác
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-4">
+            <DollarSign size={32} className="text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-3">Đăng nhập để đầu tư</h1>
+          <p className="text-muted-foreground mb-6">Bạn cần đăng nhập để đăng ký đầu tư vào dự án này.</p>
+          <Link href="/login" className="inline-flex items-center gap-2 px-6 py-3 bg-primary rounded-lg text-primary-foreground font-medium">
+            Đăng nhập
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <CheckCircle2 size={64} className="mx-auto text-emerald-400 mb-6" />
-          <h1 className="text-3xl font-bold mb-4">Đăng ký thành công!</h1>
-          <p className="text-gray-300 mb-2">
-            Cảm ơn bạn đã đăng ký đầu tư vào dự án <strong>{project.title}</strong>.
-          </p>
-          <p className="text-gray-400 mb-8 text-sm">
-            Chúng tôi sẽ liên hệ qua email <strong>{investorEmail}</strong> hoặc SĐT <strong>{investorPhone}</strong> để xác nhận.
-          </p>
-          <div className="mt-8 flex gap-4 justify-center">
-            <Link href={`/projects/${slug}`} className="px-6 py-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
-              Quay lại
+          <div className="w-16 h-16 rounded-2xl bg-n-green/15 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 size={32} className="text-n-green" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-3">Đăng ký thành công!</h1>
+          <p className="text-muted-foreground mb-6">Cảm ơn bạn đã đăng ký đầu tư. Chúng tôi sẽ liên hệ để xác nhận thanh toán.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/app/investments" className="inline-flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-primary-foreground font-medium">
+              Xem đầu tư của tôi
             </Link>
-            <Link href="/app/investments" className="px-6 py-3 bg-primary rounded-lg hover:bg-primary/80 transition-colors">
-              Dashboard
+            <Link href="/app/projects" className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-foreground hover:bg-muted transition-colors">
+              Quay lại dự án
             </Link>
           </div>
         </div>
@@ -173,99 +152,118 @@ export default function InvestRegisterPage({ params }: { params: Promise<{ slug:
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <Link href={`/projects/${slug}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
-          <ArrowLeft size={16} />
-          Quay lại dự án
+    <div className="min-h-screen bg-background">
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <Link href={`/app/projects/${project.id}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
+          <ArrowLeft size={14} />
+          {project.title}
         </Link>
 
-        <div className="grid md:grid-cols-5 gap-8">
-          <div className="md:col-span-3">
-            <h1 className="text-3xl font-bold mb-2">Đăng ký đầu tư</h1>
-            <p className="text-gray-400 mb-8">Điền thông tin để đăng ký đầu tư vào dự án</p>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-foreground">Đăng ký đầu tư</h1>
+          <p className="text-muted-foreground mt-1">Dự án: {project.title}</p>
+        </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Họ và tên *</label>
-                <input type="text" value={investorName} onChange={(e) => setInvestorName(e.target.value)} required placeholder="Nguyễn Văn A" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Email *</label>
-                <input type="email" value={investorEmail} onChange={(e) => setInvestorEmail(e.target.value)} required placeholder="email@example.com" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Số điện thoại *</label>
-                <input type="tel" value={investorPhone} onChange={(e) => setInvestorPhone(e.target.value)} required placeholder="0912345678" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Số tiền đầu tư (VNĐ) *</label>
-                <div className="relative">
-                  <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required min="1000000" step="100000" placeholder="10.000.000" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pl-10 text-sm focus:outline-none focus:border-primary transition-colors" />
-                  <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Tối thiểu: 1.000.000 VNĐ</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Phương thức thanh toán</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["bank_transfer", "credit_card", "crypto"] as const).map((m) => (
-                    <button key={m} type="button" onClick={() => setPaymentMethod(m)} className={`p-3 rounded-lg border text-sm transition-all ${paymentMethod === m ? "border-primary bg-primary/10 text-primary" : "border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-500"}`}>
-                      {m === "bank_transfer" ? "🏦 Chuyển khoản" : m === "credit_card" ? "💳 Thẻ" : "₿ Crypto"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Ghi chú (không bắt buộc)</label>
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Bất kỳ thông tin bổ sung nào..." className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors resize-none" />
-              </div>
-
-              <button type="submit" disabled={submitting} className="w-full py-4 bg-primary hover:bg-primary/90 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                {submitting ? (<><div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>Đang xử lý...</>) : (<><BanknoteIcon size={20} />Đăng ký đầu tư</>)}
-              </button>
-            </form>
-          </div>
-
-          <div className="md:col-span-2">
-            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700 sticky top-24">
-              <h3 className="font-semibold mb-4">{project.title}</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Mục tiêu</span>
-                  <span className="font-medium">{project.investment_target ? project.investment_target.toLocaleString("vi-VN") + " đ" : "Chưa công bố"}</span>
-                </div>
-                {project.break_even && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Điểm hòa vốn</span>
-                    <span className="font-medium">{project.break_even.toLocaleString("vi-VN")} đ</span>
-                  </div>
-                )}
-                {project.roi_estimate && (
-                  <div className="pt-3 mt-3 border-t border-gray-700">
-                    <p className="text-gray-400 mb-2">Dự kiến ROI</p>
-                    <div className="flex gap-4">
-                      {(JSON.parse(project.roi_estimate) as {year: number; rate: number}[]).map((roi, i) => (
-                        <div key={i} className="text-center">
-                          <div className="text-primary font-bold">{roi.rate}%</div>
-                          <div className="text-xs text-gray-500">Năm {roi.year}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="pt-3 mt-3 border-t border-gray-700">
-                  <p className="text-xs text-gray-500 flex items-center gap-1"><Shield size={12} />Bảo mật thông tin</p>
-                </div>
-              </div>
+        <div className="bg-card border border-border rounded-xl p-6 mb-6">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Thông tin dự án</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2 text-sm">
+              <DollarSign size={14} className="text-n-gold" />
+              <span className="text-muted-foreground">Mục tiêu:</span>
+              <span className="font-medium text-foreground">{new Intl.NumberFormat("vi-VN").format(project.investment_target)}đ</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <TrendingUp size={14} className="text-n-green" />
+              <span className="text-muted-foreground">Hòa vốn:</span>
+              <span className="font-medium text-foreground">{new Intl.NumberFormat("vi-VN").format(project.break_even)}đ</span>
             </div>
           </div>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
+            <AlertCircle size={18} className="text-destructive shrink-0 mt-0.5" />
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Thông tin đầu tư</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Số tiền đầu tư (VNĐ) *</label>
+              <input
+                type="number"
+                required
+                min="1000000"
+                value={form.amount}
+                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                placeholder="Tối thiểu 1.000.000 VNĐ"
+                className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Họ và tên *</label>
+              <input
+                type="text"
+                required
+                value={form.investorName}
+                onChange={(e) => setForm((f) => ({ ...f, investorName: e.target.value }))}
+                placeholder="Nguyễn Văn A"
+                className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Email *</label>
+              <input
+                type="email"
+                required
+                value={form.investorEmail}
+                onChange={(e) => setForm((f) => ({ ...f, investorEmail: e.target.value }))}
+                placeholder="email@example.com"
+                className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Số điện thoại</label>
+              <input
+                type="tel"
+                value={form.investorPhone}
+                onChange={(e) => setForm((f) => ({ ...f, investorPhone: e.target.value }))}
+                placeholder="0912345678"
+                className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Ghi chú</label>
+              <textarea
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                rows={3}
+                placeholder="Ghi chú thêm (nếu có)"
+                className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <DollarSign size={18} />
+                  Đăng ký đầu tư
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -3,60 +3,36 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, DollarSign, Calendar, TrendingUp, Users, CheckCircle2, Clock, XCircle } from "lucide-react";
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  paid: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  cancelled: "bg-red-500/10 text-red-400 border-red-500/20",
-  failed: "bg-gray-600/10 text-gray-400 border-gray-600/20",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Chờ xác nhận",
-  paid: "Đã thanh toán",
-  cancelled: "Đã hủy",
-  failed: "Thất bại",
-};
-
-const PAYMENT_METHODS: Record<string, string> = {
-  bank_transfer: "Chuyển khoản ngân hàng",
-  credit_card: "Thẻ tín dụng",
-  crypto: "Tiền điện tử",
-};
-
-interface ProgressItem {
-  progress_date: string;
-  progress_percent: number;
-  description?: string | null;
-  milestones_completed?: string[] | null;
-}
-
-interface InvestmentProject {
-  id: string;
-  title: string;
-  slug?: string | null;
-  description?: string | null;
-  investment_target: number;
-  break_even?: number | null;
-  roi_estimate?: string | null;
-  status: string;
-  updated_at: string;
-}
-
-interface InvestmentWithProject {
+interface InvestmentRow {
   id: string;
   project_id: string;
-  user_id?: string | null;
+  user_id: string;
   amount: number;
   investment_date: string;
   payment_status: string;
-  payment_method?: string | null;
-  investor_name?: string | null;
-  investor_email?: string | null;
-  investor_phone?: string | null;
-  notes?: string | null;
-  project?: InvestmentProject | null;
+  investor_name: string;
+  investor_email: string;
+  notes: string;
+  created_at: string;
+}
+
+interface ProjectRow {
+  id: string;
+  title: string;
+  description: string;
+  investment_target: number;
+  break_even: number;
+  roi_estimate: string;
+  revenue_share: string;
+}
+
+interface ProgressItem {
+  progress_percent: number;
+  progress_date: string | null;
+  milestones_completed: string[] | null;
+  description: string | null;
 }
 
 export default async function InvestmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -65,242 +41,161 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
 
   const { data: investment } = await supabase
     .from("investments")
-    .select(`
-      *,
-      project:project_id (
-        id,
-        title,
-        slug,
-        description,
-        investment_target,
-        break_even,
-        roi_estimate,
-        status,
-        updated_at
-      )
-    `)
-    .eq("id", id)
-    .single();
-
-  if (!investment) {
-    notFound();
-  }
-
-  const inv = investment as unknown as InvestmentWithProject;
-
-  // Get progress data
-  const { data: progressData } = await supabase
-    .from("project_progress")
     .select("*")
-    .eq("project_id", inv.project_id)
-    .order("progress_date", { ascending: true });
+    .eq("id", id)
+    .single() as { data: InvestmentRow | null };
 
-  const latestProgress = (progressData?.length ?? 0) > 0 
-    ? progressData![progressData!.length - 1] as ProgressItem
+  if (!investment) notFound();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", investment.project_id)
+    .single() as { data: ProjectRow | null };
+
+  let progressData: ProgressItem[] = [];
+  try {
+    const { data } = await supabase
+      .from("project_progress")
+      .select("*")
+      .eq("project_id", investment.project_id)
+      .order("progress_date", { ascending: true });
+    if (data) progressData = data;
+  } catch { /* table may not exist */ }
+
+  const latestProgress = (progressData?.length ?? 0) > 0
+    ? progressData![progressData!.length - 1]
     : null;
 
-  // Calculate funding progress
-  const { data: allInvestments } = await supabase
-    .from("investments")
-    .select("amount")
-    .eq("project_id", inv.project_id)
-    .eq("payment_status", "paid");
+  const roiData = project?.roi_estimate
+    ? JSON.parse(project.roi_estimate)
+    : [{ year: 1, rate: 5 }, { year: 2, rate: 7 }, { year: 3, rate: 10 }];
 
-  const totalRaised = allInvestments?.reduce((sum: number, i: Record<string, unknown>) => sum + (i.amount as number), 0) || 0;
-  const target = inv.project?.investment_target || 0;
-  const percentage = target > 0 ? Math.round((totalRaised / target) * 100) : 0;
+  const share = investment.amount / (project?.investment_target || 1);
+
+  const STATUS_LABELS: Record<string, string> = {
+    pending: "Chờ duyệt",
+    paid: "Đã duyệt",
+    cancelled: "Đã hủy",
+    failed: "Thất bại",
+  };
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending: "bg-n-orange/15 text-n-orange border-n-orange/20",
+    paid: "bg-n-green/15 text-n-green border-n-green/20",
+    cancelled: "bg-muted text-muted-foreground border-border",
+    failed: "bg-destructive/15 text-destructive border-destructive/20",
+  };
+
+  const STATUS_ICONS: Record<string, React.ReactNode> = {
+    pending: <Clock size={14} />,
+    paid: <CheckCircle2 size={14} />,
+    cancelled: <XCircle size={14} />,
+    failed: <XCircle size={14} />,
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <Link 
-          href="/app/investments"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-        >
-          <ArrowLeft size={16} />
-          Quay lại danh sách đầu tư
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <Link href="/app/investments" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
+          <ArrowLeft size={14} />
+          Đầu tư của tôi
         </Link>
 
-        <div className="grid md:grid-cols-5 gap-8">
-          <div className="md:col-span-3 space-y-6">
-            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-              <div className="flex items-start justify-between mb-4">
-                <h1 className="text-2xl font-bold">Chi tiết đầu tư</h1>
-                <Link 
-                  href={`/projects/${inv.project?.slug || inv.project_id}`}
-                  target="_blank"
-                  className="text-sm text-primary flex items-center gap-1 hover:underline"
-                >
-                  Xem dự án <ExternalLink size={14} />
-                </Link>
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{project?.title || "Dự án"}</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Chi tiết khoản đầu tư</p>
+          </div>
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${
+            STATUS_COLORS[investment.payment_status] || "bg-muted text-muted-foreground border-border"
+          }`}>
+            {STATUS_ICONS[investment.payment_status]}
+            {STATUS_LABELS[investment.payment_status] || investment.payment_status}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-n-gold/15 flex items-center justify-center">
+                <DollarSign size={20} className="text-n-gold" />
               </div>
-
-              <div className="space-y-4 text-sm">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="block text-gray-400 mb-1">Dự án</span>
-                    <span className="font-medium">{inv.project?.title || "Không xác định"}</span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-400 mb-1">Ngày đầu tư</span>
-                    <span className="font-medium">
-                      {new Date(inv.investment_date).toLocaleDateString("vi-VN")}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-400 mb-1">Số tiền</span>
-                    <span className="text-lg font-bold text-primary">
-                      {inv.amount.toLocaleString("vi-VN")} đ
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-400 mb-1">Trạng thái</span>
-                    <span className={`font-medium ${
-                      inv.payment_status === "paid" ? "text-emerald-400" :
-                      inv.payment_status === "pending" ? "text-amber-400" :
-                      "text-gray-400"
-                    }`}>
-                      {STATUS_LABELS[inv.payment_status] || inv.payment_status}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-400 mb-1">Phương thức</span>
-                    <span className="font-medium">
-                      {PAYMENT_METHODS[inv.payment_method || ""] || inv.payment_method}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-400 mb-1">ID đầu tư</span>
-                    <code className="text-xs bg-gray-900 px-2 py-1 rounded">{inv.id}</code>
-                  </div>
-                </div>
-
-                {inv.notes && (
-                  <div className="pt-4 border-t border-gray-700">
-                    <span className="block text-gray-400 mb-1">Ghi chú</span>
-                    <p className="text-sm italic">{inv.notes}</p>
-                  </div>
-                )}
+              <div>
+                <p className="text-xs text-muted-foreground">Số tiền đầu tư</p>
+                <p className="text-xl font-bold text-primary">{new Intl.NumberFormat("vi-VN").format(investment.amount)} VNĐ</p>
               </div>
             </div>
-
-            {inv.project && (
-              <>
-                <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                  <h2 className="text-xl font-bold mb-4">{inv.project.title}</h2>
-                  {inv.project.description && (
-                    <p className="text-sm text-gray-300 mb-4">{inv.project.description}</p>
-                  )}
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Mục tiêu</span>
-                      <span className="font-medium">{inv.project.investment_target.toLocaleString("vi-VN")} đ</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Đã huy động</span>
-                      <span className="font-medium text-emerald-400">{totalRaised.toLocaleString("vi-VN")} đ ({percentage}%)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Điểm hòa vốn</span>
-                      <span className="font-medium">
-                        {inv.project.break_even 
-                          ? inv.project.break_even.toLocaleString("vi-VN") + " đ" 
-                          : "Chưa công bố"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <div className="flex justify-between text-xs mb-2">
-                      <span className="text-gray-400">Tiến độ huy động vốn</span>
-                      <span className={percentage >= 100 ? "text-emerald-400" : "text-primary"}>{percentage}%</span>
-                    </div>
-                    <div className="w-full bg-gray-800 rounded-full h-3">
-                      <div className={`h-full rounded-full transition-all ${percentage >= 100 ? "bg-emerald-500" : "bg-primary"}`}
-                        style={{ width: `${Math.min(percentage, 100)}%` }} />
-                    </div>
-                  </div>
-                </div>
-
-                {inv.project.roi_estimate && (
-                  <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                    <h2 className="text-lg font-bold mb-4">Dự kiến ROI</h2>
-                    <div className="grid grid-cols-3 gap-4">
-                      {(JSON.parse(inv.project.roi_estimate) as {year: number; rate: number}[]).map((roi, i) => (
-                        <div key={i} className="text-center p-3 bg-gray-900/50 rounded-lg">
-                          <div className="text-2xl font-bold text-primary">{roi.rate}%</div>
-                          <div className="text-xs text-gray-500">Năm {roi.year}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {latestProgress && (
-              <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                <h2 className="text-lg font-bold mb-4">Tiến độ dự án</h2>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Cập nhật lần cuối</span>
-                    <span className="font-medium">
-                      {new Date(latestProgress.progress_date).toLocaleDateString("vi-VN")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Tiến độ hiện tại</span>
-                    <span className="font-medium">{latestProgress.progress_percent}%</span>
-                  </div>
-                </div>
-                {latestProgress.description && (
-                  <p className="text-sm text-gray-300 mt-3">{latestProgress.description}</p>
-                )}
-                {latestProgress.milestones_completed && latestProgress.milestones_completed.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-700">
-                    <span className="text-sm text-gray-400 block mb-2">Hoàn thành:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {latestProgress.milestones_completed.map((milestone, idx) => (
-                        <span key={idx} className="text-xs px-2 py-1 bg-blue-500/10 text-blue-400 rounded-full">{milestone}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
-
-          <div className="md:col-span-2 space-y-6">
-            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-              <h2 className="text-lg font-bold mb-4">Khoản đầu tư của bạn</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Số tiền</span>
-                  <span className="text-xl font-bold text-primary">{inv.amount.toLocaleString("vi-VN")} đ</span>
-                </div>
-                {inv.project?.investment_target && inv.project.investment_target > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">% trong dự án</span>
-                    <span className="text-xl font-bold">{Math.round((inv.amount / inv.project.investment_target) * 100)}%</span>
-                  </div>
-                )}
-                {inv.project?.roi_estimate && (
-                  <div className="pt-4 border-t border-gray-700">
-                    <span className="text-gray-400 block mb-2">Lợi nhuận dự kiến</span>
-                    <div className="space-y-1">
-                      {(JSON.parse(inv.project.roi_estimate) as {year: number; rate: number}[]).map((roi, i) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span className="text-gray-400">Năm {roi.year}</span>
-                          <span className="font-medium text-emerald-400">{Math.round(inv.amount * roi.rate / 100).toLocaleString("vi-VN")} đ</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-n-purple/15 flex items-center justify-center">
+                <TrendingUp size={20} className="text-n-purple" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Cổ phần dự kiến</p>
+                <p className="text-xl font-bold text-foreground">{(share * 100).toFixed(2)}%</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-n-teal/15 flex items-center justify-center">
+                <Calendar size={20} className="text-n-teal" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Ngày đầu tư</p>
+                <p className="text-sm font-semibold text-foreground">{investment.investment_date ? new Date(investment.investment_date).toLocaleDateString("vi-VN") : "N/A"}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-n-green/15 flex items-center justify-center">
+                <CheckCircle2 size={20} className="text-n-green" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tiến độ dự án</p>
+                <p className="text-sm font-semibold text-foreground">{latestProgress ? `${latestProgress.progress_percent}%` : "Chưa cập nhật"}</p>
               </div>
             </div>
           </div>
         </div>
+
+        {latestProgress && (
+          <div className="bg-card border border-border rounded-xl p-5 mb-6">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Tiến độ mới nhất</h3>
+            <div className="flex items-center gap-4 mb-2">
+              <div className="flex-1 bg-muted rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-n-gold to-n-green"
+                  style={{ width: `${Math.min(latestProgress.progress_percent, 100)}%` }}
+                />
+              </div>
+              <span className="text-sm font-bold text-n-gold">{latestProgress.progress_percent}%</span>
+            </div>
+            {latestProgress.description && <p className="text-sm text-muted-foreground">{latestProgress.description}</p>}
+          </div>
+        )}
+
+        <div className="bg-card border border-border rounded-xl p-5 mb-6">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Dự kiến lợi nhuận (ROI)</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {roiData.map((roi: { year: number; rate: number }, index: number) => (
+              <div key={index} className="text-center p-3 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground">Năm {roi.year}</p>
+                <p className="text-lg font-bold text-n-green">{roi.rate}%</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {project?.revenue_share && (
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-2">Cấu trúc chia lợi nhuận</h3>
+            <p className="text-sm text-muted-foreground">{project.revenue_share}</p>
+          </div>
+        )}
       </div>
     </div>
   );

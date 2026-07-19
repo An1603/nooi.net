@@ -4,40 +4,40 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Calendar, DollarSign, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Calendar, DollarSign, ArrowUpRight, CheckCircle2, TrendingUp, Users } from "lucide-react";
 
-const STATUS_COLORS = {
-  draft: "bg-muted text-muted-foreground border-muted-foreground/20",
-  in_progress: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  completed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  archived: "bg-red-500/10 text-red-400 border-red-500/20",
+interface ProjectRow {
+  id: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  investment_target?: number | null;
+  break_even?: number | null;
+  revenue_share?: string | null;
+  roi_estimate?: string | null;
+  slug?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Nháp",
+  in_progress: "Đang mở",
+  completed: "Hoàn thành",
+  archived: "Lưu trữ",
 };
 
-const STATUS_LABELS = {
-  draft: "Bản nháp",
-  in_progress: "Đang thực hiện",
-  completed: "Hoàn thành",
-  archived: "Đã lưu trữ",
+const STATUS_COLORS: Record<string, string> = {
+  draft: "bg-muted text-muted-foreground",
+  in_progress: "bg-n-green/15 text-n-green",
+  completed: "bg-n-teal/15 text-n-teal",
+  archived: "bg-muted text-muted-foreground",
 };
 
 export default async function PublicProjectPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = createAdminClient();
 
-  // Query theo id trước (UUID từ URL), nếu không có thì thử theo slug
-  interface ProjectRow {
-    id: string;
-    title: string;
-    description?: string | null;
-    status: string;
-    investment_target?: number | null;
-    break_even?: number | null;
-    revenue_share?: string | null;
-    roi_estimate?: string | null;
-    slug?: string | null;
-    created_at: string;
-    updated_at: string;
-  }
   let project: ProjectRow | null = null;
 
   // Thử theo id (UUID)
@@ -50,7 +50,7 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
   if (byId) {
     project = byId as unknown as ProjectRow;
   } else {
-    // Thử theo slug (nếu bảng có cột slug)
+    // Thử theo slug
     const { data: bySlug } = await supabase
       .from("projects")
       .select("*")
@@ -62,11 +62,11 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
   if (!project || project.status !== "in_progress") {
     if (project && project.status !== "in_progress") {
       return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center p-4">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
           <div className="max-w-2xl w-full text-center">
-            <h1 className="text-4xl font-bold text-red-400 mb-4">Dự án đã kết thúc</h1>
-            <p className="text-gray-300 text-lg">{String(project.title)}</p>
-            <Link href="/projects" className="mt-6 inline-block px-6 py-3 bg-primary rounded-lg">
+            <h1 className="text-4xl font-bold text-destructive mb-4">Dự án đã kết thúc</h1>
+            <p className="text-muted-foreground text-lg">{project.title}</p>
+            <Link href="/app/projects" className="mt-6 inline-block px-6 py-3 bg-primary rounded-lg text-primary-foreground">
               Quay lại danh sách dự án
             </Link>
           </div>
@@ -90,7 +90,7 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
   const totalRaised = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
   const target = project.investment_target || 0;
   const percentage = target > 0 ? Math.round((totalRaised / target) * 100) : 0;
-  const progressColor = percentage >= 100 ? "emerald" : percentage >= 75 ? "blue" : percentage >= 50 ? "amber" : "red";
+  const progressColor = percentage >= 100 ? "n-green" : percentage >= 75 ? "n-teal" : percentage >= 50 ? "n-gold" : "n-orange";
 
   const roiData = project.roi_estimate 
     ? JSON.parse(project.roi_estimate) 
@@ -111,176 +111,184 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
     : { progress_percent: 0, progress_date: null, milestones_completed: [] as string[], description: "" };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
-      {/* Hero Section */}
+    <div className="min-h-screen bg-background">
+      {/* Hero */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-500/20 blur-3xl opacity-30" />
-        
-        <div className="max-w-6xl mx-auto px-4 py-20 relative">
-          <div className="flex items-start gap-4 mb-8">
-            <Link 
-              href="/projects" 
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-n-purple/10 blur-3xl opacity-40" />
+        <div className="max-w-6xl mx-auto px-4 py-16 relative">
+          <Link href="/app/projects" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
+            <ArrowLeft size={14} />
+            Danh sách dự án
+          </Link>
+
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[project.status] || STATUS_COLORS.draft}`}>
+                {STATUS_LABELS[project.status] || project.status}
+              </span>
+              <h1 className="text-4xl font-bold text-foreground mt-3 mb-2">{project.title}</h1>
+              <p className="text-muted-foreground text-base max-w-2xl">{project.description}</p>
+            </div>
+            <Link
+              href={`/invest/${project.id}`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/80 transition-all hover:scale-105 shrink-0"
             >
-              <ArrowLeft size={16} />
-              Danh sách dự án
-            </Link>
-            <span 
-              className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
-                STATUS_COLORS[project.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.draft
-              }`}
-            >
-              {STATUS_LABELS[project.status as keyof typeof STATUS_LABELS] || project.status}
-            </span>
-          </div>
-
-          <h1 className="text-5xl font-bold mb-6 leading-tight">
-            {project.title}
-          </h1>
-          
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl">
-            {project.description || "Xem thêm thông tin chi tiết về dự án."}
-          </p>
-
-          {/* Investment Progress */}
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {/* Raised Amount */}
-            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign size={20} className="text-emerald-400" />
-                <span className="text-sm text-gray-400">Số tiền huy động</span>
-              </div>
-              <p className="text-3xl font-bold text-white">
-                {new Intl.NumberFormat("vi-VN").format(totalRaised).replace(/\s/g, "")} đ
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                {percentage}% mục tiêu ({target > 0 ? new Intl.NumberFormat("vi-VN").format(target).replace(/\s/g, "") + " đ" : "Chưa công bố"})
-              </p>
-            </div>
-
-            {/* Target */}
-            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-              <div className="flex items-center gap-2 mb-2">
-                <ArrowUpRight size={20} className="text-blue-400" />
-                <span className="text-sm text-gray-400">Mục tiêu</span>
-              </div>
-              <p className="text-3xl font-bold text-white">
-                {target > 0 ? new Intl.NumberFormat("vi-VN").format(target).replace(/\s/g, "") + " đ" : "TBD"}
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                {totalRaised > 0 ? `${investments?.length || 0} nhà đầu tư` : "Chưa công bố"}
-              </p>
-            </div>
-
-            {/* Break Even */}
-            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle2 size={20} className="text-purple-400" />
-                <span className="text-sm text-gray-400">Điểm hòa vốn</span>
-              </div>
-              <p className="text-3xl font-bold text-white">
-                {project.break_even ? new Intl.NumberFormat("vi-VN").format(project.break_even).replace(/\s/g, "") + " đ" : "TBD"}
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                {project.break_even && target > 0 
-                  ? `${Math.round((project.break_even / target) * 100)}% mục tiêu` 
-                  : "Chưa công bố"}
-              </p>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mb-12">
-            <div className="flex justify-between mb-2">
-              <span className="text-sm font-medium">Tiến độ tài chính</span>
-              <span className="text-sm font-medium text-primary">{percentage}%</span>
-            </div>
-            <div className="w-full bg-gray-800 rounded-full h-4 overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-1000 ${
-                  progressColor === "emerald" ? "bg-emerald-500" :
-                  progressColor === "blue" ? "bg-blue-500" :
-                  progressColor === "amber" ? "bg-amber-500" :
-                  "bg-red-500"
-                }`}
-                style={{ width: `${Math.min(percentage, 100)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          <div className="bg-primary/10 backdrop-blur-sm rounded-2xl p-8 border border-primary/30">
-            <h2 className="text-2xl font-bold mb-4 text-primary">Tham gia đầu tư ngay hôm nay</h2>
-            <p className="text-gray-300 mb-6">
-              {project.investment_target && project.investment_target - totalRaised > 0 
-                ? `Còn lại ${(project.investment_target - totalRaised).toLocaleString("vi-VN").replace(/\s/g, "")} đ để đạt mục tiêu`
-                : "Dự án đã hoàn thành mục tiêu"}
-            </p>
-            <Link 
-              href={`/invest/${slug}`}
-              className="inline-flex items-center gap-2 px-6 py-4 bg-primary hover:bg-primary/90 rounded-xl font-semibold transition-all text-white shadow-lg hover:shadow-xl"
-            >
-              <ExternalLink size={20} />
+              <DollarSign size={18} />
               Đăng ký đầu tư
             </Link>
           </div>
-        </div>
-      </div>
 
-      {/* ROI Section */}
-      <div className="max-w-4xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold mb-8 text-center">Dự kiến ROI</h2>
-        <div className="bg-gray-800/50 rounded-2xl p-8 border border-gray-700">
-          <div className="grid md:grid-cols-3 gap-8">
-            {roiData.map((roi: { year: number, rate: number }, idx: number) => (
-              <div key={idx} className="text-center">
-                <div className="text-4xl font-bold text-primary mb-2">{roi.rate}%</div>
-                <div className="text-gray-400 mb-1">Năm {roi.year}</div>
-                <div className="text-xs text-gray-500">Lợi nhuận trên vốn</div>
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+            <div className="bg-card/80 backdrop-blur-sm border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign size={16} className="text-n-gold" />
+                <span className="text-xs text-muted-foreground">Mục tiêu</span>
               </div>
-            ))}
+              <p className="text-lg font-bold text-foreground">{new Intl.NumberFormat("vi-VN").format(target)}đ</p>
+            </div>
+            <div className="bg-card/80 backdrop-blur-sm border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp size={16} className="text-n-green" />
+                <span className="text-xs text-muted-foreground">Đã huy động</span>
+              </div>
+              <p className="text-lg font-bold text-foreground">{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ</p>
+            </div>
+            <div className="bg-card/80 backdrop-blur-sm border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Users size={16} className="text-n-purple" />
+                <span className="text-xs text-muted-foreground">Nhà đầu tư</span>
+              </div>
+              <p className="text-lg font-bold text-foreground">{investments.length}</p>
+            </div>
+            <div className="bg-card/80 backdrop-blur-sm border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar size={16} className="text-n-teal" />
+                <span className="text-xs text-muted-foreground">Hòa vốn</span>
+              </div>
+              <p className="text-lg font-bold text-foreground">{new Intl.NumberFormat("vi-VN").format(project.break_even || 0)}đ</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Timeline Section */}
-      {progressData && progressData.length > 0 && (
-        <div className="max-w-4xl mx-auto px-4 py-16">
-          <h2 className="text-3xl font-bold mb-8 text-center">Lịch sử tiến độ</h2>
-          <div className="space-y-4">
-            {progressData.map((progress, idx) => (
-              <div key={idx} className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-lg">
-                    Tiến độ {progress.progress_percent}%
-                  </span>
-                  <span className="text-sm text-gray-400">
-                    {progress.progress_date ? new Date(progress.progress_date).toLocaleDateString("vi-VN") : ""}
-                  </span>
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Funding Progress */}
+            <div className="bg-card border border-border rounded-xl p-6">
+              <h2 className="text-base font-semibold text-foreground mb-4">Tiến độ huy động vốn</h2>
+              <div className="flex items-center gap-4 mb-2">
+                <div className="flex-1 bg-muted rounded-full h-4 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r from-n-gold to-${progressColor}`}
+                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                  />
                 </div>
-                {progress.description && (
-                  <p className="text-gray-300">{progress.description}</p>
-                )}
-                {progress.milestones_completed && progress.milestones_completed.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-700">
-                    <div className="text-sm font-medium mb-2">Hoàn thành:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {progress.milestones_completed.map((milestone: string, mIdx: number) => (
-                        <span 
-                          key={mIdx} 
-                          className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full"
-                        >
-                          {milestone}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <span className="text-lg font-bold text-n-gold">{percentage}%</span>
               </div>
-            ))}
+              <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
+                <span>{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ đã huy động</span>
+                <span>Mục tiêu: {new Intl.NumberFormat("vi-VN").format(target)}đ</span>
+              </div>
+            </div>
+
+            {/* ROI Estimate */}
+            <div className="bg-card border border-border rounded-xl p-6">
+              <h2 className="text-base font-semibold text-foreground mb-4">Dự kiến lợi nhuận (ROI)</h2>
+              <div className="grid grid-cols-3 gap-4">
+                {roiData.map((roi: { year: number; rate: number }, index: number) => (
+                  <div key={index} className="text-center p-4 bg-muted rounded-xl">
+                    <p className="text-xs text-muted-foreground">Năm {roi.year}</p>
+                    <p className="text-2xl font-bold text-n-green">{roi.rate}%</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Progress Timeline */}
+            {progressData.length > 0 && (
+              <div className="bg-card border border-border rounded-xl p-6">
+                <h2 className="text-base font-semibold text-foreground mb-4">Lịch trình tiến độ</h2>
+                <div className="space-y-4">
+                  {progressData.map((progress, index) => (
+                    <div key={index} className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-full bg-n-purple/15 flex items-center justify-center shrink-0 mt-1">
+                        <CheckCircle2 size={16} className="text-n-purple" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="text-sm font-semibold text-foreground">Tiến độ {progress.progress_percent}%</span>
+                          <span className="text-xs text-muted-foreground">
+                            {progress.progress_date ? new Date(progress.progress_date).toLocaleDateString("vi-VN") : ""}
+                          </span>
+                        </div>
+                        {progress.description && <p className="text-sm text-muted-foreground">{progress.description}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* ROI Quick View */}
+            <div className="bg-card border border-border rounded-xl p-6">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Chỉ số tài chính</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Điểm hòa vốn</span>
+                  <span className="text-sm font-medium text-foreground">{new Intl.NumberFormat("vi-VN").format(project.break_even || 0)}đ</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Cổ phần</span>
+                  <span className="text-sm font-medium text-foreground">{project.revenue_share || "60-40"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">ROI năm 1</span>
+                  <span className="text-sm font-medium text-n-green">{roiData[0]?.rate || 5}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="bg-gradient-to-br from-primary/10 to-n-purple/10 border border-primary/20 rounded-xl p-6">
+              <h3 className="text-base font-semibold text-foreground mb-2">Đăng ký đầu tư</h3>
+              <p className="text-sm text-muted-foreground mb-4">Tham gia đầu tư vào dự án này và nhận lợi nhuận hấp dẫn.</p>
+              <Link
+                href={`/invest/${project.id}`}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-all"
+              >
+                <DollarSign size={16} />
+                Đầu tư ngay
+              </Link>
+            </div>
+
+            {/* Recent investors */}
+            {investments.length > 0 && (
+              <div className="bg-card border border-border rounded-xl p-6">
+                <h3 className="text-sm font-semibold text-foreground mb-4">Nhà đầu tư gần đây</h3>
+                <div className="space-y-3">
+                  {investments.slice(0, 5).map((inv, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-full bg-n-gold/15 flex items-center justify-center">
+                        <span className="text-xs font-bold text-n-gold">{(inv.investor_name || "N")[0].toUpperCase()}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{inv.investor_name || "Nhà đầu tư"}</p>
+                        <p className="text-xs text-muted-foreground">{new Intl.NumberFormat("vi-VN").format(inv.amount)}đ</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

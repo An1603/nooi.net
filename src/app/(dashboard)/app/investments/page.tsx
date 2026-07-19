@@ -2,196 +2,143 @@
 
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, DollarSign, Calendar, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { TrendingUp, DollarSign, Calendar, CheckCircle2, XCircle, Clock, ExternalLink } from "lucide-react";
 
-const STATUS_COLORS = {
-  pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  paid: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  cancelled: "bg-red-500/10 text-red-400 border-red-500/20",
-  failed: "bg-gray-600/10 text-gray-400 border-gray-600/20",
-};
-
-const STATUS_LABELS = {
-  pending: "Chờ xác nhận",
-  paid: "Đã thanh toán",
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Chờ duyệt",
+  paid: "Đã duyệt",
   cancelled: "Đã hủy",
   failed: "Thất bại",
 };
 
-export default async function UserInvestmentsPage() {
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-n-orange/15 text-n-orange border-n-orange/20",
+  paid: "bg-n-green/15 text-n-green border-n-green/20",
+  cancelled: "bg-muted text-muted-foreground border-border",
+  failed: "bg-destructive/15 text-destructive border-destructive/20",
+};
+
+export default async function InvestmentsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex flex-col items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <h1 className="text-3xl font-bold mb-4">Vui lòng đăng nhập</h1>
-          <p className="text-gray-400 mb-6">Để xem danh sách đầu tư của bạn, vui lòng đăng nhập trước.</p>
-          <Link href="/login" className="px-6 py-3 bg-primary rounded-lg">
-            Đăng nhập
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  let investments: Array<{
+    id: string;
+    amount: number;
+    investment_date: string;
+    payment_status: string;
+    project_id: string;
+    project?: { title: string };
+  }> = [];
 
-  const { data: investments } = await supabase
-    .from("investments")
-    .select(`
-      *,
-      project:project_id (
-        id,
-        title,
-        slug
-      )
-    `)
-    .eq("user_id", user.id)
-    .order("investment_date", { ascending: false });
+  try {
+    const { data } = await supabase
+      .from("investments")
+      .select("*, project:projects(title)")
+      .eq("user_id", user?.id || "")
+      .order("created_at", { ascending: false });
+    if (data) investments = data;
+  } catch { /* table may not exist */ }
 
-  const { data: investmentsSummary } = await supabase
-    .rpc("get_investments_summary", { user_id: user.id });
-
-  const totalInvested = investments?.filter(i => i.payment_status === "paid").reduce((sum, i) => sum + i.amount, 0) || 0;
-  const pendingCount = investments?.filter(i => i.payment_status === "pending").length || 0;
+  const totalInvested = investments
+    .filter((inv) => inv.payment_status === "paid")
+    .reduce((sum, inv) => sum + inv.amount, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="mb-8">
-          <Link 
-            href="/app/projects"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-          >
-            <ArrowLeft size={16} />
-            Danh sách dự án
-          </Link>
-          <h1 className="text-3xl font-bold mb-2">Đầu tư của tôi</h1>
-          <p className="text-gray-400">Theo dõi tất cả các khoản đầu tư của bạn trong hệ sinh thái NOOI</p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <DollarSign size={20} className="text-emerald-400" />
-              <span className="text-sm text-gray-400">Tổng đầu tư</span>
-            </div>
-            <p className="text-2xl font-bold text-white">
-              {totalInvested.toLocaleString("vi-VN")} đ
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Tài khoản đã thanh toán</p>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <Link href="/app/projects" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-3 transition-colors">
+              <ExternalLink size={14} />
+              Danh sách dự án
+            </Link>
+            <h1 className="text-2xl font-bold text-foreground">Đầu tư của tôi</h1>
           </div>
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock size={20} className="text-amber-400" />
-              <span className="text-sm text-gray-400">Đang chờ</span>
-            </div>
-            <p className="text-2xl font-bold text-amber-400">{pendingCount}</p>
-            <p className="text-xs text-gray-500 mt-1">Yêu cầu đầu tư</p>
-          </div>
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp size={20} className="text-blue-400" />
-              <span className="text-sm text-gray-400">Dự án đã đầu tư</span>
-            </div>
-            <p className="text-2xl font-bold text-white">
-              {investments?.filter(i => i.payment_status === "paid").length || 0}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Dự án đã hoàn thành</p>
-          </div>
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
-              <CheckCircle2 size={20} className="text-purple-400" />
-              <span className="text-sm text-gray-400">Đã hoàn thành</span>
-            </div>
-            <p className="text-2xl font-bold text-purple-400">
-              {investments?.filter(i => i.payment_status === "paid" && 
-                i.project?.status === "completed").length || 0}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Dự án hoàn thành</p>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Tổng đầu tư</p>
+            <p className="text-2xl font-bold text-primary">{new Intl.NumberFormat("vi-VN").format(totalInvested)} VNĐ</p>
           </div>
         </div>
 
-        {/* Investments Table */}
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-700">
-            <h2 className="text-lg font-semibold">Danh sách đầu tư</h2>
-          </div>
-
-          <div className="divide-y divide-gray-700">
-            {(!investments || investments.length === 0) ? (
-              <div className="p-12 text-center">
-                <div className="text-4xl mb-4">📊</div>
-                <h3 className="text-lg font-semibold mb-2">Chưa có khoản đầu tư nào</h3>
-                <p className="text-sm text-gray-400 mb-6">
-                  Bạn chưa đầu tư vào dự án nào. Hãy khám phá các dự án đầu tư ngay hôm nay!
-                </p>
-                <Link 
-                  href="/projects"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  <TrendingUp size={16} />
-                  Khám phá dự án đầu tư
-                </Link>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-n-green/15 flex items-center justify-center">
+                <DollarSign size={20} className="text-n-green" />
               </div>
-            ) : (
-              investments.map((investment) => (
-                <div key={investment.id} className="p-6 hover:bg-gray-800/30 transition-colors">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Link 
-                          href={`/projects/${investment.project?.slug || investment.project_id}`}
-                          className="font-semibold group"
-                        >
-                          {investment.project?.title || "Dự án đã xóa"}
-                        </Link>
-                        <span
-                          className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
-                            STATUS_COLORS[investment.payment_status as keyof typeof STATUS_COLORS] || "bg-gray-500/10 text-gray-400 border-gray-500/20"
-                          }`}
-                        >
-                          {STATUS_LABELS[investment.payment_status as keyof typeof STATUS_LABELS] || investment.payment_status}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={12} />
-                          {new Date(investment.investment_date).toLocaleDateString("vi-VN")}
-                        </span>
-                        {investment.payment_method && (
-                          <span>
-                            {investment.payment_method === "bank_transfer" && "🏦 Chuyển khoản"}
-                            {investment.payment_method === "credit_card" && "💳 Thẻ"}
-                            {investment.payment_method === "crypto" && "₿ Crypto"}
-                          </span>
-                        )}
-                      </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tổng đầu tư</p>
+                <p className="text-lg font-bold text-foreground">{new Intl.NumberFormat("vi-VN").format(totalInvested)}đ</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-n-purple/15 flex items-center justify-center">
+                <TrendingUp size={20} className="text-n-purple" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Số khoản đầu tư</p>
+                <p className="text-lg font-bold text-foreground">{investments.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-n-teal/15 flex items-center justify-center">
+                <CheckCircle2 size={20} className="text-n-teal" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Đã duyệt</p>
+                <p className="text-lg font-bold text-foreground">{investments.filter((i) => i.payment_status === "paid").length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-border">
+            <h2 className="text-base font-semibold text-foreground">Danh sách đầu tư</h2>
+          </div>
+          {investments.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="w-12 h-12 rounded-xl bg-n-gold/10 flex items-center justify-center mx-auto mb-4">
+                <TrendingUp size={24} className="text-n-gold" />
+              </div>
+              <h3 className="text-base font-semibold text-foreground mb-1.5">Chưa có khoản đầu tư nào</h3>
+              <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">Khám phá các dự án đầu tư trong hệ sinh thái NOOI</p>
+              <Link href="/app/projects" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-all">
+                Khám phá dự án
+              </Link>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {investments.map((inv) => (
+                <Link key={inv.id} href={`/app/investments/${inv.id}`} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-lg bg-n-gold/15 flex items-center justify-center shrink-0">
+                      <DollarSign size={18} className="text-n-gold" />
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-primary">
-                        {investment.amount.toLocaleString("vi-VN")} đ
-                      </p>
-                      <Link 
-                        href={`/app/investments/${investment.id}`}
-                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        Xem chi tiết →
-                      </Link>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-foreground">{inv.project?.title || "Dự án"}</p>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
+                          STATUS_COLORS[inv.payment_status] || "bg-muted text-muted-foreground border-border"
+                        }`}>
+                          {STATUS_LABELS[inv.payment_status] || inv.payment_status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-0.5">
+                        <span>{new Intl.NumberFormat("vi-VN").format(inv.amount)}đ</span>
+                        <span>{inv.investment_date ? new Date(inv.investment_date).toLocaleDateString("vi-VN") : ""}</span>
+                      </div>
                     </div>
                   </div>
-
-                  {investment.notes && (
-                    <div className="mt-4 pt-4 border-t border-gray-700">
-                      <p className="text-sm text-gray-400 italic">{investment.notes}</p>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

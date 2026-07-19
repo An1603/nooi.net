@@ -3,11 +3,14 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { createInvestment } from "../actions";
 import Link from "next/link";
 import { ArrowLeft, DollarSign, Calendar, Shield, BanknoteIcon, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import Image from "next/image";
+
+// Define forms
+const investmentSchema = {
+  required: new Set(["projectId", "investorName", "investorEmail", "investorPhone", "amount"]),
+};
 
 export default function InvestRegisterPage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter();
@@ -84,20 +87,29 @@ export default function InvestRegisterPage({ params }: { params: Promise<{ slug:
     e.preventDefault();
     setSubmitting(true);
 
-    const formData = new FormData();
-    formData.append("projectId", project.id);
-    formData.append("investorName", investorName);
-    formData.append("investorEmail", investorEmail);
-    formData.append("investorPhone", investorPhone);
-    formData.append("amount", amount);
-    formData.append("notes", notes);
-    formData.append("paymentMethod", paymentMethod);
-
     try {
-      const result = await createInvestment(formData);
-      
-      if (result.error) {
-        toast.error(result.error);
+      const supabase = createClient();
+      const { data: { user: u } } = await supabase.auth.getUser();
+
+      const payload = {
+        project_id: project.id,
+        investor_name: investorName,
+        investor_email: investorEmail,
+        investor_phone: investorPhone,
+        amount: parseInt(amount),
+        notes: notes || null,
+        payment_method: paymentMethod,
+        user_id: u?.id,
+      };
+
+      const { data, error } = await supabase
+        .from("investments")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        toast.error(error.message);
         setSubmitting(false);
         return;
       }
@@ -105,9 +117,9 @@ export default function InvestRegisterPage({ params }: { params: Promise<{ slug:
       setSuccess(true);
       toast.success("Đăng ký đầu tư thành công!");
 
-      if (result.redirectUrl) {
-        setTimeout(() => router.push(result.redirectUrl), 1500);
-      }
+      setTimeout(() => {
+        router.push(`/invest/${slug}`);
+      }, 1500);
     } catch (err: any) {
       toast.error(err.message || "Có lỗi xảy ra");
     } finally {
@@ -197,7 +209,6 @@ export default function InvestRegisterPage({ params }: { params: Promise<{ slug:
   const hasActiveInvestment = investments.some(i => i.payment_status === "pending" || i.payment_status === "paid");
   const totalInvested = investments.filter(i => i.payment_status === "paid").reduce((sum, i) => sum + i.amount, 0);
 
-  const { data: investmentSum } = {} as any;
   let totalRaised = 0;
 
   return (

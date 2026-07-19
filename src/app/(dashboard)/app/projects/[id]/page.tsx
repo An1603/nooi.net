@@ -48,7 +48,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const isFullHtmlPage = project.html_content && (project.html_content.trim().toLowerCase().startsWith('<!doctype') || project.html_content.trim().toLowerCase().startsWith('<html'));
 
   return (
-    <div className="min-h-screen bg-background font-body relative overflow-hidden">
+    <div className="min-h-screen font-body relative overflow-hidden" style={{ background: '#1a0a2e' }}>
       <div className="absolute inset-0 z-0 pointer-events-none">
         {project.cover_image ? <img src={project.cover_image} alt="" className="w-full h-full object-cover opacity-[0.12]" />
           : <div className="w-full h-full bg-gradient-to-br from-n-green/8 to-background opacity-40"></div>}

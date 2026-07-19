@@ -24,7 +24,7 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
   const { slug } = await params;
   const supabase = await createClient();
 
-  // Query theo slug trước, nếu không có thì thử theo id (UUID)
+  // Query theo id trước (UUID từ URL), nếu không có thì thử theo slug
   interface ProjectRow {
     id: string;
     title: string;
@@ -39,21 +39,24 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
     updated_at: string;
   }
   let project: ProjectRow | null = null;
-  const { data: bySlug } = await supabase
+
+  // Thử theo id (UUID)
+  const { data: byId } = await supabase
     .from("projects")
     .select("*")
-    .eq("slug", slug)
+    .eq("id", slug)
     .single();
 
-  if (bySlug) {
-    project = bySlug as unknown as ProjectRow;
+  if (byId) {
+    project = byId as unknown as ProjectRow;
   } else {
-    const { data: byId } = await supabase
+    // Thử theo slug (nếu bảng có cột slug)
+    const { data: bySlug } = await supabase
       .from("projects")
       .select("*")
-      .eq("id", slug)
+      .eq("slug", slug)
       .single();
-    if (byId) project = byId as unknown as ProjectRow;
+    if (bySlug) project = bySlug as unknown as ProjectRow;
   }
 
   if (!project || project.status !== "in_progress") {
@@ -73,27 +76,35 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const { data: investments } = await supabase
-    .from("investments")
-    .select("amount, investment_date, investor_name, investor_email")
-    .eq("project_id", project.id)
-    .eq("payment_status", "paid")
-    .order("investment_date", { ascending: false });
+  let investments: Array<{amount: number; investment_date: string; investor_name: string; investor_email: string}> = [];
+  try {
+    const { data } = await supabase
+      .from("investments")
+      .select("amount, investment_date, investor_name, investor_email")
+      .eq("project_id", project.id)
+      .eq("payment_status", "paid")
+      .order("investment_date", { ascending: false });
+    if (data) investments = data;
+  } catch { /* investments table may not exist yet */ }
 
-  const totalRaised = investments?.reduce((sum, inv) => sum + (inv.amount || 0), 0) || 0;
+  const totalRaised = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
   const target = project.investment_target || 0;
   const percentage = target > 0 ? Math.round((totalRaised / target) * 100) : 0;
   const progressColor = percentage >= 100 ? "emerald" : percentage >= 75 ? "blue" : percentage >= 50 ? "amber" : "red";
 
   const roiData = project.roi_estimate 
-    ? JSON.parse(project.roi_estimate as string) 
+    ? JSON.parse(project.roi_estimate) 
     : [{ year: 1, rate: 5 }, { year: 2, rate: 7 }, { year: 3, rate: 10 }];
 
-  const { data: progressData } = await supabase
-    .from("project_progress")
-    .select("*")
-    .eq("project_id", project.id)
-    .order("progress_date", { ascending: true });
+  let progressData: Array<{progress_percent: number; progress_date: string | null; milestones_completed: string[] | null; description: string | null}> = [];
+  try {
+    const { data } = await supabase
+      .from("project_progress")
+      .select("*")
+      .eq("project_id", project.id)
+      .order("progress_date", { ascending: true });
+    if (data) progressData = data;
+  } catch { /* project_progress table may not exist yet */ }
 
   const latestProgress = (progressData?.length ?? 0) > 0 
     ? progressData![progressData!.length - 1] 
@@ -244,7 +255,7 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
                     Tiến độ {progress.progress_percent}%
                   </span>
                   <span className="text-sm text-gray-400">
-                    {new Date(progress.progress_date).toLocaleDateString("vi-VN")}
+                    {progress.progress_date ? new Date(progress.progress_date).toLocaleDateString("vi-VN") : ""}
                   </span>
                 </div>
                 {progress.description && (

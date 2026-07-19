@@ -109,7 +109,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 py-6">
         {!project.cover_image && (
           <div className="mb-6">
             <Link href="/app/projects" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary mb-2">
@@ -119,40 +119,42 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </div>
         )}
 
-        {/* Quick Stats Bar */}
+        {/* Full-width stats + progress */}
         {target > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <div className="bg-card border border-border rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Mục tiêu</p>
-              <p className="text-sm font-bold text-foreground">{new Intl.NumberFormat("vi-VN").format(target)}đ</p>
+          <div className="mb-6 space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-card border border-border rounded-lg p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Mục tiêu</p>
+                <p className="text-sm font-bold text-foreground">{new Intl.NumberFormat("vi-VN").format(target)}đ</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Đã huy động</p>
+                <p className="text-sm font-bold text-n-green">{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Hòa vốn</p>
+                <p className="text-sm font-bold text-foreground">{summary.breakeven_months ? `${summary.breakeven_months} tháng` : "N/A"}</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">ROI 3 năm</p>
+                <p className="text-sm font-bold text-n-green">{summary.roi_3year ? `${summary.roi_3year}%` : "N/A"}</p>
+              </div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Đã huy động</p>
-              <p className="text-sm font-bold text-n-green">{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ</p>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Hòa vốn</p>
-              <p className="text-sm font-bold text-foreground">{summary.breakeven_months ? `${summary.breakeven_months} tháng` : "N/A"}</p>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">ROI 3 năm</p>
-              <p className="text-sm font-bold text-n-green">{summary.roi_3year ? `${summary.roi_3year}%` : "N/A"}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Funding Progress Bar */}
-        {target > 0 && (
-          <div className="bg-card border border-border rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Tiến độ huy động</span>
-              <span className="text-sm font-bold text-n-gold">{percentage}%</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-n-gold to-n-green transition-all duration-500"
-                style={{ width: `${Math.min(percentage, 100)}%` }}
-              />
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground">Tiến độ huy động</span>
+                <span className="text-sm font-bold text-n-gold">{percentage}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-n-gold to-n-green transition-all duration-500"
+                  style={{ width: `${Math.min(percentage, 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1.5">
+                <span>{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ đã huy động</span>
+                <span>Mục tiêu: {new Intl.NumberFormat("vi-VN").format(target)}đ</span>
+              </div>
             </div>
           </div>
         )}

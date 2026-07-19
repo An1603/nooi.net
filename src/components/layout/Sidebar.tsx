@@ -8,6 +8,7 @@ import { Logo } from '@/components/brand/Logo';
 import {
   LayoutDashboard, FolderOpen, Video, BookOpen, Settings,
   Sparkles, Headphones, User, BookHeart, Users, Layers, Package,
+  TrendingUp,
 } from 'lucide-react';
 
 const NAV = [
@@ -24,6 +25,7 @@ const NAV = [
   { label: 'Video', href: '/app/videos', icon: Video },
   { label: 'Thư viện', href: '/app/library', icon: BookOpen },
   { label: 'Dự án', href: '/app/projects', icon: FolderOpen },
+  { label: 'Đầu tư', href: '/app/investments', icon: TrendingUp },
   { label: 'Hồ sơ', href: '/app/profile', icon: User },
   { label: 'Cài đặt', href: '/app/settings', icon: Settings },
 ];

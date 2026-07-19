@@ -7,6 +7,7 @@ import Link from "next/link";
 import ImageSlider from "@/components/projects/ImageSlider";
 import ProjectVideo from "@/components/projects/ProjectVideo";
 import FinancialReport from "@/components/projects/FinancialReport";
+import HtmlSlideViewer from "@/components/projects/HtmlSlideViewer";
 import { ArrowLeft, MapPin, CheckCircle2, DollarSign, TrendingUp, Clock } from "lucide-react";
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,11 +27,17 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const target = project.investment_target || 0;
   const percentage = target > 0 ? Math.round((totalRaised / target) * 100) : 0;
 
-  const galleryImages = project.gallery_images ? (typeof project.gallery_images === "string" ? JSON.parse(project.gallery_images) : project.gallery_images) : [];
-  const highlights = project.highlights ? (typeof project.highlights === "string" ? JSON.parse(project.highlights) : project.highlights) : [];
-  const timeline = project.timeline ? (typeof project.timeline === "string" ? JSON.parse(project.timeline) : project.timeline) : [];
-  const summary = project.financial_summary ? (typeof project.financial_summary === "string" ? JSON.parse(project.financial_summary) : project.financial_summary) : {};
-  const roiData = project.roi_estimate ? (typeof project.roi_estimate === "string" ? JSON.parse(project.roi_estimate) : project.roi_estimate) : [];
+  const safeParse = (val: unknown, fallback: unknown) => {
+    if (!val) return fallback;
+    if (typeof val !== "string") return val;
+    try { return JSON.parse(val); } catch { return fallback; }
+  };
+
+  const galleryImages = safeParse(project.gallery_images, []);
+  const highlights = safeParse(project.highlights, []);
+  const timeline = safeParse(project.timeline, []);
+  const summary = safeParse(project.financial_summary, {});
+  const roiData = safeParse(project.roi_estimate, []);
 
   const { data: { user } } = await userSupabase.auth.getUser();
   let userInvestment: { id: string } | null = null;
@@ -38,162 +45,173 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const showInvestCTA = project.status === "in_progress" && target > 0;
 
+  const isFullHtmlPage = project.html_content && (project.html_content.trim().toLowerCase().startsWith('<!doctype') || project.html_content.trim().toLowerCase().startsWith('<html'));
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero */}{project.cover_image && (
-        <div className="relative h-64 md:h-80 overflow-hidden">
-          <img src={project.cover_image} alt={project.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-5">
-            <div className="max-w-6xl mx-auto flex items-end justify-between gap-4">
-              <div>
-                <Link href="/app/projects" className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary mb-2 transition-colors"><ArrowLeft size={12} /> Dự án</Link>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">{project.title}</h1>
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-n-green/15 text-n-green border border-n-green/20">Đang mở đầu tư</span>
-                  {project.location && <span className="inline-flex items-center gap-1 text-xs text-gray-300"><MapPin size={11} /> {project.location}</span>}
-                </div>
-              </div>
-              {showInvestCTA && !userInvestment && (
-                <Link href={`/app/invest/${project.id}`} className="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/80 hover:shadow-lg hover:shadow-primary/20 active:scale-[0.98] transition-all">
-                  <DollarSign size={16} /> Đầu tư ngay
-                </Link>
+    <div className="min-h-screen bg-background font-body relative overflow-hidden">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        {project.cover_image ? <img src={project.cover_image} alt="" className="w-full h-full object-cover opacity-20" />
+          : <div className="w-full h-full bg-gradient-to-br from-n-green/15 to-background opacity-50"></div>}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-card/60 to-transparent"></div>
+      </div>
+
+      <div className="relative z-10 w-full h-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col min-h-screen">
+        
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 border-b border-glass-border pb-4 gap-4">
+          <div>
+            <Link href="/app/projects" className="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-primary/80 hover:text-primary mb-2 transition-colors">
+              <ArrowLeft size={12} /> Trở về danh sách
+            </Link>
+            <h1 className="text-3xl md:text-5xl font-bold text-foreground tracking-wide">{project.title}</h1>
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              {project.status === "in_progress" && (
+                <span className="text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-full bg-n-green/20 text-n-green border border-n-green/30 uppercase">Đang mở đầu tư</span>
+              )}
+              {project.location && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><MapPin size={12} /> {project.location}</span>
               )}
             </div>
           </div>
-        </div>
-      )}
+          
+          <div className="text-left md:text-right">
+            {target > 0 && (
+              <>
+                <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest mb-0.5">Mục tiêu gọi vốn</p>
+                <p className="text-xl md:text-3xl font-bold text-primary">
+                  {new Intl.NumberFormat("vi-VN").format(target)}<span className="text-sm font-medium text-primary/80 ml-1">VNĐ</span>
+                </p>
+              </>
+            )}
+            {showInvestCTA && !userInvestment && (
+              <Link href={`/app/invest/${project.id}`} className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/80 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all border border-primary/40">
+                <DollarSign size={16} /> Đầu tư ngay
+              </Link>
+            )}
+            {userInvestment && (
+              <Link href={`/app/investments/${userInvestment.id}`} className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-glass text-n-green text-sm font-medium border border-n-green/30 hover:bg-glass-hover transition-all">
+                <CheckCircle2 size={16} /> Đã đầu tư
+              </Link>
+            )}
+          </div>
+        </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
-        {!project.cover_image && (
-          <div><Link href="/app/projects" className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-primary mb-2"><ArrowLeft size={12} /> Dự án</Link><h1 className="text-2xl font-bold text-foreground">{project.title}</h1></div>
-        )}
-
-        {/* ======== SECTION 1: Key Metrics ======== */}
-        {target > 0 && (
-          <div className="bg-card border border-border/50 rounded-2xl p-5 md:p-6 space-y-5">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[{ l: "Mục tiêu", v: `${new Intl.NumberFormat("vi-VN").format(target)}đ`, c: "text-foreground" },
-                { l: "Đã huy động", v: `${new Intl.NumberFormat("vi-VN").format(totalRaised)}đ`, c: "text-n-green" },
-                { l: "Hòa vốn", v: summary.breakeven_months ? `${summary.breakeven_months} tháng` : "N/A", c: "text-foreground" },
-                { l: "ROI 3 năm", v: summary.roi_3year ? `${summary.roi_3year}%` : "N/A", c: "text-n-green" },
-              ].map((item, i) => (
-                <div key={i}><p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{item.l}</p><p className={`text-lg md:text-xl font-bold ${item.c}`}>{item.v}</p></div>
-              ))}
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Tiến độ huy động</span>
-                  {percentage === 0 && totalRaised === 0 && (<span className="text-[10px] px-1.5 py-0.5 rounded-full bg-n-orange/15 text-n-orange border border-n-orange/20 font-medium">Sắp mở gọi vốn</span>)}
-                </div>
-                <span className="text-xl font-bold text-n-gold">{percentage}%</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-grow pb-10">
+          <div className="lg:col-span-8 flex flex-col gap-5">
+            {isFullHtmlPage && (
+              <div className="rounded-xl overflow-hidden shadow-2xl border border-glass-border bg-card/50 backdrop-blur-sm">
+                <HtmlSlideViewer htmlContent={project.html_content} />
               </div>
-              <div className="w-full bg-muted rounded-full h-4 overflow-hidden shadow-inner"><div className="h-full rounded-full bg-gradient-to-r from-n-gold via-n-gold to-n-green transition-all duration-700" style={{ width: `${Math.min(percentage, 100)}%` }} /></div>
-              <div className="flex items-center justify-between text-xs mt-2.5"><span className="font-medium text-gray-300">{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ đã huy động</span><span className="text-muted-foreground">Mục tiêu: <span className="text-foreground font-medium">{new Intl.NumberFormat("vi-VN").format(target)}đ</span></span></div>
-            </div>
-            {summary.total_capex && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-border">
-                {[{ icon: <DollarSign size={13} className="text-n-gold" />, l: "Tổng vốn", v: `${new Intl.NumberFormat("vi-VN").format(summary.total_capex)}đ` },
-                  { icon: <TrendingUp size={13} className="text-n-green" />, l: "Doanh thu năm 1", v: `${new Intl.NumberFormat("vi-VN").format(summary.year1_revenue)}đ` },
-                  { icon: <TrendingUp size={13} className="text-n-purple" />, l: "Lợi nhuận năm 2", v: `${new Intl.NumberFormat("vi-VN").format(summary.year2_profit)}đ` },
-                  { icon: <Clock size={13} className="text-n-teal" />, l: "IRR 5 năm", v: `${summary.irr_5year}%` },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2"><span className="shrink-0">{item.icon}</span><div><p className="text-[10px] text-muted-foreground">{item.l}</p><p className="text-xs font-semibold text-foreground">{item.v}</p></div></div>
-                ))}
+            )}
+            {!isFullHtmlPage && project.html_content && (
+              <div className="bg-glass backdrop-blur-md border border-glass-border rounded-xl p-5 md:p-6 prose prose-invert prose-sm max-w-none prose-headings:font-serif prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-primary">
+                <div dangerouslySetInnerHTML={{ __html: project.html_content }} />
+              </div>
+            )}
+            {(galleryImages.length > 0 || project.video_url) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {galleryImages.length > 0 && (
+                  <div className="bg-glass backdrop-blur-md border border-glass-border rounded-xl p-1 overflow-hidden">
+                    <ImageSlider images={galleryImages} title={project.title} />
+                  </div>
+                )}
+                {project.video_url && (
+                  <div className="bg-glass backdrop-blur-md border border-glass-border rounded-xl p-1 overflow-hidden flex flex-col justify-center">
+                    <ProjectVideo url={project.video_url} poster={project.video_poster} />
+                  </div>
+                )}
+              </div>
+            )}
+            {highlights.length > 0 && (
+              <div className="bg-glass backdrop-blur-md border border-glass-border rounded-xl p-5">
+                <h3 className="text-lg text-primary mb-4 border-b border-glass-border pb-2 font-serif">Điểm Nổi Bật</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {highlights.map((item: { icon: string; title: string; desc: string }, i: number) => (
+                    <div key={i} className="flex gap-3 p-3 bg-glass rounded-lg border border-glass-border">
+                      <div className="w-10 h-10 shrink-0 rounded-full bg-glass flex items-center justify-center text-lg">{item.icon}</div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-foreground">{item.title}</h4>
+                        <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <FinancialReport project={project} />
+          </div>
+
+          <div className="lg:col-span-4 flex flex-col gap-5">
+            {target > 0 && (
+              <div className="bg-glass backdrop-blur-xl border border-glass-border rounded-xl p-5 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                <h3 className="text-sm text-muted-foreground mb-4 font-medium uppercase tracking-wider">Tiến Độ Gọi Vốn</h3>
+                <div className="flex items-end justify-between mb-2">
+                  <div className="text-3xl font-bold text-primary">{percentage}%</div>
+                  <div className="text-xs text-muted-foreground/80 mb-1">
+                    <span className="text-foreground font-medium">{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ</span> / {new Intl.NumberFormat("vi-VN").format(target)}đ
+                  </div>
+                </div>
+                <div className="w-full bg-muted/80 rounded-full h-2.5 mb-5 overflow-hidden border border-glass-border">
+                  <div className="h-full rounded-full bg-gradient-to-r from-n-gold via-primary to-n-green transition-all duration-1000" style={{ width: Math.min(percentage, 100) + "%" }}></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="p-3 bg-glass rounded-lg border border-glass-border">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Hoàn Vốn</div>
+                    <div className="font-bold text-foreground">{summary.breakeven_months ? summary.breakeven_months + " tháng" : "N/A"}</div>
+                  </div>
+                  <div className="p-3 bg-glass rounded-lg border border-glass-border">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">ROI 3 Năm</div>
+                    <div className="font-bold text-n-green">{summary.roi_3year ? summary.roi_3year + "%" : "N/A"}</div>
+                  </div>
+                  <div className="p-3 bg-glass rounded-lg border border-glass-border">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">IRR 5 Năm</div>
+                    <div className="font-bold text-primary">{summary.irr_5year ? summary.irr_5year + "%" : "N/A"}</div>
+                  </div>
+                  <div className="p-3 bg-glass rounded-lg border border-glass-border">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Cổ Đông</div>
+                    <div className="font-bold text-foreground">{investments.length}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {timeline.length > 0 && (
+              <div className="bg-glass backdrop-blur-md border border-glass-border rounded-xl p-5">
+                <h3 className="text-sm text-muted-foreground mb-4 font-medium uppercase tracking-wider">Lộ Trình Triển Khai</h3>
+                <div className="space-y-4 relative">
+                  <div className="absolute left-[15px] top-2 bottom-2 w-[1px] bg-glass-border"></div>
+                  {timeline.map((item: { date: string; title: string; desc: string; done: boolean }, i: number) => (
+                    <div key={i} className="flex gap-4 relative">
+                      <div className={'w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 z-10 ' + (item.done ? 'bg-n-green/30 border-n-green' : 'bg-muted border-glass-border')}>
+                        {item.done ? <CheckCircle2 size={14} className="text-n-green" /> : <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50"></div>}
+                      </div>
+                      <div className="pt-1">
+                        <div className="text-[10px] font-bold tracking-widest text-primary/80 mb-0.5">{item.date}</div>
+                        <h4 className={(item.done ? 'text-foreground' : 'text-muted-foreground') + ' text-sm font-semibold'}>{item.title}</h4>
+                        {item.desc && <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {progressData.length > 0 && (
+              <div className="bg-glass backdrop-blur-md border border-glass-border rounded-xl p-5">
+                <h3 className="text-sm text-muted-foreground mb-4 font-medium uppercase tracking-wider">Cập Nhật Gần Đây</h3>
+                <div className="space-y-3">
+                  {progressData.map((p, i) => (
+                    <div key={i} className="p-3 bg-glass rounded-lg border border-glass-border border-l-2 border-l-n-green">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-bold text-foreground">{p.progress_percent}%</span>
+                        <span className="text-[10px] text-muted-foreground">{p.progress_date ? new Date(p.progress_date).toLocaleDateString("vi-VN") : ""}</span>
+                      </div>
+                      {p.description && <p className="text-[11px] text-muted-foreground leading-relaxed">{p.description}</p>}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
-        )}
-
-        {/* ======== SECTION 2: Slide + Video (2 cột) ======== */}
-        {(galleryImages.length > 0 || project.video_url) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {galleryImages.length > 0 && <ImageSlider images={galleryImages} title={project.title} />}
-            {project.video_url && <ProjectVideo url={project.video_url} poster={project.video_poster} />}
-          </div>
-        )}
-
-        {/* ======== SECTION 3: Giới thiệu + Điểm nổi bật (Full Width) ======== */}
-        <div className="space-y-5">
-          {project.html_content && (
-            <div className="bg-card border border-border rounded-xl p-5 md:p-6 prose prose-invert prose-sm max-w-none prose-headings:text-foreground prose-p:text-gray-300 prose-li:text-gray-300 prose-strong:text-foreground prose-blockquote:border-n-gold prose-blockquote:text-gray-300">
-              <div dangerouslySetInnerHTML={{ __html: project.html_content }} />
-            </div>
-          )}
-          {highlights.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h2 className="text-base font-semibold text-foreground mb-3">Điểm nổi bật</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {highlights.map((item: { icon: string; title: string; desc: string }, i: number) => (
-                  <div key={i} className="flex items-start gap-3 p-3 bg-muted rounded-lg">
-                    <span className="text-xl shrink-0">{item.icon}</span>
-                    <div><h3 className="text-sm font-semibold text-foreground">{item.title}</h3><p className="text-xs text-gray-300 mt-0.5">{item.desc}</p></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ======== SECTION 4: Financial Report (Full Width) ======== */}
-        <FinancialReport project={project} />
-
-        {/* ======== SECTION 5: Progress + Timeline ======== */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {progressData.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h2 className="text-base font-semibold text-foreground mb-4">Tiến độ thực hiện</h2>
-              <div className="relative space-y-4"><div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-border" />
-                {progressData.map((p, i) => (
-                  <div key={i} className="flex items-start gap-4 relative">
-                    <div className="w-[28px] h-[28px] rounded-full bg-n-purple/15 border-2 border-n-purple/30 flex items-center justify-center shrink-0 mt-0.5 z-10"><CheckCircle2 size={14} className="text-n-purple" /></div>
-                    <div className="flex-1"><div className="flex items-center gap-2"><span className="text-sm font-semibold text-foreground">{p.progress_percent}%</span><span className="text-xs text-gray-300">{p.progress_date ? new Date(p.progress_date).toLocaleDateString("vi-VN") : ""}</span></div>{p.description && <p className="text-xs text-gray-300 mt-0.5">{p.description}</p>}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {timeline.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h2 className="text-base font-semibold text-foreground mb-3">Lộ trình dự án</h2>
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {timeline.map((item: { date: string; title: string; desc: string; done: boolean }, i: number) => (
-                  <div key={i} className={`shrink-0 w-40 p-3 rounded-lg border ${item.done ? "bg-n-green/5 border-n-green/20" : "bg-muted border-border"}`}>
-                    <p className="text-[10px] text-n-gold font-medium">{item.date}</p><p className="text-xs font-semibold text-foreground mt-0.5">{item.title}</p><p className="text-[10px] text-gray-300 mt-0.5">{item.desc}</p>{item.done && <CheckCircle2 size={12} className="text-n-green mt-1" />}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ======== SECTION 6: CTA + Investors (Full Width, Bottom) ======== */}
-        <div className="space-y-5">
-          {showInvestCTA && (
-            <div className="bg-gradient-to-r from-primary/10 to-n-purple/10 border border-primary/20 rounded-2xl p-6 md:p-8 text-center">
-              <h2 className="text-xl font-bold text-foreground mb-2">Sẵn sàng đầu tư?</h2>
-              <p className="text-sm text-gray-300 mb-5 max-w-xl mx-auto">Tham gia đầu tư vào {project.title} và nhận lợi nhuận hấp dẫn từ {roiData?.[0]?.rate || 8}% ngay năm đầu tiên.</p>
-              {userInvestment ? (
-                <Link href={`/app/investments/${userInvestment.id}`} className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-n-green/15 text-n-green font-semibold hover:bg-n-green/25 transition-all"><CheckCircle2 size={16} /> Đã đầu tư — Xem chi tiết</Link>
-              ) : (
-                <Link href={`/app/invest/${project.id}`} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-base hover:bg-primary/80 hover:shadow-xl hover:shadow-primary/20 active:scale-[0.98] transition-all"><DollarSign size={18} /> Đầu tư ngay</Link>
-              )}
-            </div>
-          )}
-          {investments.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-3">Nhà đầu tư ({investments.length})</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {investments.map((inv, i) => (
-                  <div key={i} className="flex items-center gap-2.5 p-2 bg-muted rounded-lg">
-                    <div className="w-8 h-8 rounded-full bg-n-gold/15 flex items-center justify-center"><span className="text-xs font-bold text-n-gold">{(inv.investor_name || "N")[0].toUpperCase()}</span></div>
-                    <div className="min-w-0"><p className="text-xs font-medium text-foreground truncate">{inv.investor_name || "Nhà đầu tư"}</p><p className="text-[10px] text-gray-300">{new Intl.NumberFormat("vi-VN").format(inv.amount)}đ</p></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

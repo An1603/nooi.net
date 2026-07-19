@@ -119,11 +119,34 @@ export default function ProjectForm({
           <div key={section.title} className="bg-card border border-border rounded-xl p-4 space-y-3">
             <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
             {section.fields.map((f) => {
-              const defVal = initialData ? String((initialData as Record<string, unknown>)[f.key] ?? "") : "";
+              let defVal = "";
+              if (initialData && initialData[f.key] !== undefined && initialData[f.key] !== null) {
+                const val = (initialData as Record<string, unknown>)[f.key];
+                defVal = typeof val === "object" ? JSON.stringify(val) : String(val);
+              }
               return (
                 <div key={f.key}>
                   <label className="block text-xs font-medium mb-1 text-muted-foreground">{f.label}</label>
-                  {f.type === "select" ? (
+                  {f.key === "html_content" && (
+    <div className="mb-2">
+      <input 
+        type="file" 
+        accept=".html" 
+        className="block w-full text-xs text-muted-foreground file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer" 
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const target = document.querySelector('textarea[name="html_content"]') as HTMLTextAreaElement;
+            if (target) target.value = ev.target?.result as string;
+          };
+          reader.readAsText(file);
+        }} 
+      />
+    </div>
+  )}
+  {f.type === "select" ? (
                     <select name={f.key} defaultValue={defVal || f.defaultValue || "draft"} className={inputClass}>
                       <option value="draft">Nháp</option>
                       <option value="in_progress">Đang mở đầu tư</option>

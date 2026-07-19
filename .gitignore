@@ -30,6 +30,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# hermes workspace
+.hermes/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

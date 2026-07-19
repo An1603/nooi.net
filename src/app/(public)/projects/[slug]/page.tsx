@@ -24,28 +24,47 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
   const { slug } = await params;
   const supabase = await createClient();
 
-  const { data: project } = await supabase
+  // Query theo slug trước, nếu không có thì thử theo id (UUID)
+  interface ProjectRow {
+    id: string;
+    title: string;
+    description?: string | null;
+    status: string;
+    investment_target?: number | null;
+    break_even?: number | null;
+    revenue_share?: string | null;
+    roi_estimate?: string | null;
+    slug?: string | null;
+    created_at: string;
+    updated_at: string;
+  }
+  let project: ProjectRow | null = null;
+  const { data: bySlug } = await supabase
     .from("projects")
     .select("*")
     .eq("slug", slug)
-    .eq("status", "in_progress")
     .single();
 
-  if (!project) {
-    const { data: archivedProject } = await supabase
+  if (bySlug) {
+    project = bySlug as unknown as ProjectRow;
+  } else {
+    const { data: byId } = await supabase
       .from("projects")
       .select("*")
-      .eq("slug", slug)
+      .eq("id", slug)
       .single();
+    if (byId) project = byId as unknown as ProjectRow;
+  }
 
-    if (archivedProject) {
+  if (!project || project.status !== "in_progress") {
+    if (project && project.status !== "in_progress") {
       return (
         <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center p-4">
           <div className="max-w-2xl w-full text-center">
             <h1 className="text-4xl font-bold text-red-400 mb-4">Dự án đã kết thúc</h1>
-            <p className="text-gray-300 text-lg">{archivedProject.title}</p>
-            <Link href="/" className="mt-6 inline-block px-6 py-3 bg-primary rounded-lg">
-              Quay lại trang chủ
+            <p className="text-gray-300 text-lg">{String(project.title)}</p>
+            <Link href="/projects" className="mt-6 inline-block px-6 py-3 bg-primary rounded-lg">
+              Quay lại danh sách dự án
             </Link>
           </div>
         </div>

@@ -50,10 +50,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="min-h-screen bg-background font-body relative overflow-hidden">
       <div className="absolute inset-0 z-0 pointer-events-none">
-        {project.cover_image ? <img src={project.cover_image} alt="" className="w-full h-full object-cover opacity-20" />
-          : <div className="w-full h-full bg-gradient-to-br from-n-green/15 to-background opacity-50"></div>}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-card/60 to-transparent"></div>
+        {project.cover_image ? <img src={project.cover_image} alt="" className="w-full h-full object-cover opacity-[0.12]" />
+          : <div className="w-full h-full bg-gradient-to-br from-n-green/8 to-background opacity-40"></div>}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[60vw] h-[40vh] bg-primary/[0.04] rounded-full blur-[120px]"></div>
       </div>
 
       <div className="relative z-10 w-full h-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col min-h-screen">
@@ -152,8 +152,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                     <span className="text-foreground font-medium">{new Intl.NumberFormat("vi-VN").format(totalRaised)}đ</span> / {new Intl.NumberFormat("vi-VN").format(target)}đ
                   </div>
                 </div>
-                <div className="w-full bg-muted/80 rounded-full h-2.5 mb-5 overflow-hidden border border-glass-border">
-                  <div className="h-full rounded-full bg-gradient-to-r from-n-gold via-primary to-n-green transition-all duration-1000" style={{ width: Math.min(percentage, 100) + "%" }}></div>
+                <div className="w-full bg-white/[0.10] rounded-full h-2.5 mb-5 overflow-hidden border border-white/[0.06]">
+                  <div className="h-full rounded-full bg-gradient-to-r from-n-gold via-primary to-n-green transition-all duration-1000 shadow-[0_0_8px_rgba(200,148,62,0.5)]" style={{ width: Math.min(percentage, 100) + "%" }}></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="p-3 bg-glass rounded-lg border border-glass-border">
@@ -182,7 +182,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   <div className="absolute left-[15px] top-2 bottom-2 w-[1px] bg-glass-border"></div>
                   {timeline.map((item: { date: string; title: string; desc: string; done: boolean }, i: number) => (
                     <div key={i} className="flex gap-4 relative">
-                      <div className={'w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 z-10 ' + (item.done ? 'bg-n-green/30 border-n-green' : 'bg-muted border-glass-border')}>
+                      <div className={'w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 z-10 transition-all ' + (item.done ? 'bg-n-green/20 border-n-green shadow-[0_0_8px_rgba(74,173,106,0.2)]' : 'bg-muted/80 border-white/[0.15]')}>
                         {item.done ? <CheckCircle2 size={14} className="text-n-green" /> : <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50"></div>}
                       </div>
                       <div className="pt-1">

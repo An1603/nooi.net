@@ -48,7 +48,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const percentage = target > 0 ? Math.round((totalRaised / target) * 100) : 0;
 
   const roiData = project.roi_estimate
-    ? JSON.parse(project.roi_estimate)
+    ? project.roi_estimate
     : [{ year: 1, rate: 5 }, { year: 2, rate: 7 }, { year: 3, rate: 10 }];
 
   const latestProgress = (progressData?.length ?? 0) > 0

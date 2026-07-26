@@ -1,9 +1,14 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, ExternalLink } from "lucide-react";
 
-export default function HtmlSlideViewer({ htmlContent }: { htmlContent: string }) {
+interface SlideViewerProps {
+  slideUrl?: string;
+  htmlContent?: string;
+}
+
+export default function HtmlSlideViewer({ slideUrl, htmlContent }: SlideViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -27,24 +32,39 @@ export default function HtmlSlideViewer({ htmlContent }: { htmlContent: string }
     };
   }, []);
 
+  const src = slideUrl || (htmlContent ? `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}` : "about:blank");
+
   return (
     <div 
       ref={containerRef} 
       className={`relative bg-card overflow-hidden mb-5 ${isFullscreen ? 'w-screen h-screen' : 'w-full aspect-video rounded-2xl border border-border/50'}`}
     >
       <iframe 
-        srcDoc={htmlContent} 
+        src={src}
         className="absolute inset-0 w-full h-full border-0"
         title="Project Presentation"
         sandbox="allow-scripts allow-same-origin"
       />
-      <button
-        onClick={toggleFullscreen}
-        className="absolute bottom-4 right-4 p-2 bg-background/80 hover:bg-background text-foreground backdrop-blur-sm rounded-lg border border-border shadow-lg transition-all z-50 flex items-center justify-center"
-        title={isFullscreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
-      >
-        {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-      </button>
+      <div className="absolute bottom-4 right-4 flex items-center gap-2">
+        {slideUrl && (
+          <a 
+            href={slideUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="p-2 bg-background/80 hover:bg-background text-foreground backdrop-blur-sm rounded-lg border border-border shadow-lg transition-all z-50 flex items-center justify-center"
+            title="Mở tại slides.nooi.net"
+          >
+            <ExternalLink size={20} />
+          </a>
+        )}
+        <button
+          onClick={toggleFullscreen}
+          className="p-2 bg-background/80 hover:bg-background text-foreground backdrop-blur-sm rounded-lg border border-border shadow-lg transition-all z-50 flex items-center justify-center"
+          title={isFullscreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
+        >
+          {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+        </button>
+      </div>
     </div>
   );
 }

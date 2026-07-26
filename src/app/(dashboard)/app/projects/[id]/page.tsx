@@ -46,6 +46,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const showInvestCTA = project.status === "in_progress" && target > 0;
 
   const isFullHtmlPage = project.html_content && (project.html_content.trim().toLowerCase().startsWith('<!doctype') || project.html_content.trim().toLowerCase().startsWith('<html'));
+  const projectSlug = project.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '';
 
   return (
     <div className="min-h-screen font-body relative overflow-hidden" style={{ background: '#1a0a2e' }}>
@@ -100,7 +101,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div className="lg:col-span-8 flex flex-col gap-5">
             {isFullHtmlPage && (
               <div className="rounded-xl overflow-hidden shadow-2xl border border-glass-border bg-card/50 backdrop-blur-sm">
-                <HtmlSlideViewer htmlContent={project.html_content} />
+                <HtmlSlideViewer slideUrl={`https://slides.nooi.net/${projectSlug}/`} />
               </div>
             )}
             {!isFullHtmlPage && project.html_content && (

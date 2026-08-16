@@ -21,7 +21,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen" style={{ background: '#1a0a2e' }}>
       {/* Route loading bar */}
       <RouteLoader />
 
@@ -32,10 +32,10 @@ export default async function DashboardLayout({
       <Sidebar />
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col" style={{ background: '#1a0a2e' }}>
         {/* Mobile topbar */}
         <Topbar />
-        <div className="flex-1 p-4 md:p-6 overflow-auto animate-fade-in mesh-bg-subtle">
+        <div className="flex-1 p-4 md:p-6 overflow-auto animate-fade-in" style={{ background: '#1a0a2e' }}>
           {children}
         </div>
       </main>

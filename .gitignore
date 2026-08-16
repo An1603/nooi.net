@@ -24,9 +24,15 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.morphllm
+.env.omniroute
+.env.modal
 
 # vercel
 .vercel
+
+# hermes workspace
+.hermes/
 
 # typescript
 *.tsbuildinfo

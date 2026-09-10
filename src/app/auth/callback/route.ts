@@ -23,7 +23,9 @@ export async function GET(request: NextRequest) {
               response.cookies.set(name, value, cookieOptions({
                 ...options,
                 maxAge: 60 * 60 * 24 * 365,
-                httpOnly: true,
+                // NOTE: do NOT set httpOnly — client-side supabase (createBrowserClient)
+                // must read the session via document.cookie. httpOnly would make
+                // supabase.auth.getUser() return null on client components (e.g. /app/setup).
                 path: "/",
               }))
             );

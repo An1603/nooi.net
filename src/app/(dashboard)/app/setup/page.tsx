@@ -65,17 +65,22 @@ export default function SetupPage() {
   // Pre-fill from existing profile
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
-      if (profile) {
-        if (profile.full_name) setFullName(profile.full_name);
-        if (profile.date_of_birth) setDateOfBirth(profile.date_of_birth.split("T")[0]);
-        if (profile.gio_sinh != null) setGioSinh(profile.gio_sinh);
-        if (profile.gioi_tinh) setGioiTinh(profile.gioi_tinh);
-        if (profile.noi_sinh) setNoiSinh(profile.noi_sinh);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+        if (profile) {
+          if (profile.full_name) setFullName(profile.full_name);
+          if (profile.date_of_birth) setDateOfBirth(profile.date_of_birth.split("T")[0]);
+          if (profile.gio_sinh != null) setGioSinh(profile.gio_sinh);
+          if (profile.gioi_tinh) setGioiTinh(profile.gioi_tinh);
+          if (profile.noi_sinh) setNoiSinh(profile.noi_sinh);
+        }
+      } catch (e) {
+        console.error("Setup preload failed:", e);
+      } finally {
+        setPreloading(false);
       }
-      setPreloading(false);
     })();
   }, [supabase]);
 

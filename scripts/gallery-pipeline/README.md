@@ -11,6 +11,11 @@
 >   "Cấu trúc" bên dưới, copy `boards.json` + `data/` vào, rồi chạy các script này trên
 >   máy có Chrome (đúng như README gốc). Sau đó đồng bộ vào `public/gallery/` bằng
 >   `bash scripts/sync-gallery.sh` (script tự thêm thẻ `<base href="/gallery/">`).
+> - ⚠️ **`index.html`, `styles.css`, `app.js` giờ CHỈ tồn tại ở `public/gallery/`** —
+>   bản gốc trong vault đã bị xoá cùng thư mục. Mọi chỉnh sửa giao diện thư viện phải
+>   làm trực tiếp trên `public/gallery/`. Khi dựng lại thư mục làm việc để refresh, nhớ
+>   copy 3 file này (và `assets/`) từ `public/gallery/` sang, để bản mới không ghi đè
+>   các thay đổi đã deploy (vd: logo góc trái là link về nooi.net, thẻ `<base>`).
 > - `data/pins-raw.json` (13MB dữ liệu thô) không được giữ — scrape lại được.
 
 Webapp quản lý & chia sẻ thư viện ảnh lấy từ các board Pinterest của

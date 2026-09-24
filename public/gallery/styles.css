@@ -79,7 +79,7 @@ body.is-locked { overflow: hidden; }
   gap: 18px;
 }
 
-.brand { display: flex; align-items: center; min-width: 0; }
+.brand { display: flex; align-items: center; min-width: 0; color: inherit; text-decoration: none; }
 
 /* Logo NOOI ở góc trên trái. Dùng logo khoá ngang (ký hiệu + chữ + tagline) nên
    đặt theo bề rộng; `object-fit: contain` giữ đúng tỉ lệ nếu file lệch.

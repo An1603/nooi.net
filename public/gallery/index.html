@@ -2,6 +2,12 @@
 <html lang="vi" data-theme="light">
 <head>
 <meta charset="UTF-8" />
+<!-- Bản deploy trên nooi.net: URL là /gallery (không có dấu / cuối) nên phải
+     khai báo base để mọi đường dẫn tương đối (styles.css, app.js, data/, images/)
+     trỏ đúng về /gallery/. Thẻ này do scripts/sync-gallery.sh tự thêm vào bản
+     trong public/gallery — bản gốc ở vault KHÔNG có, nhờ vậy vẫn nhấp đúp
+     index.html để chạy độc lập được. -->
+<base href="/gallery/" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Thư viện ảnh NOOI</title>
 <meta name="description" content="Thư viện ảnh NOOI — bộ sưu tập tác phẩm thiết kế." />

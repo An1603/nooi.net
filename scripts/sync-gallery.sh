@@ -42,6 +42,22 @@ echo "→ Đồng bộ ảnh (thumbs + full)…"
 rsync -a "${EXCLUDES[@]}" --exclude 'images/' $DELETE_FLAG "$SRC/images/" "$DST/images/"
 
 echo
+echo "→ Thêm <base href=\"/gallery/\"> cho bản deploy…"
+python3 - "$DST/index.html" <<'PY'
+import sys, re
+p = sys.argv[1]
+html = open(p, encoding='utf-8').read()
+if '<base ' not in html:
+    html = re.sub(r'(<meta charset="UTF-8" />)',
+                  r'\1\n<base href="/gallery/" />',
+                  html, count=1)
+    open(p, 'w', encoding='utf-8').write(html)
+    print("  ✓ đã thêm")
+else:
+    print("  · đã có, bỏ qua")
+PY
+
+echo
 echo "✓ Xong. Kiểm tra:"
 echo "  ảnh full : $(ls "$DST/images/full" | wc -l) file"
 echo "  ảnh thumb: $(ls "$DST/images/thumbs" | wc -l) file"

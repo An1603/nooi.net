@@ -1,0 +1,575 @@
+/* ============================================================
+   NOOI Work — Thư viện ảnh
+   ============================================================ */
+
+:root {
+  --bg:        #fafaf9;
+  --bg-elev:   rgba(250, 250, 249, 0.82);
+  --text:      #1c1917;
+  --text-soft: #57534e;
+  --muted:     #a8a29e;
+  --line:      rgba(28, 25, 23, 0.10);
+  --tile:      #f0efed;
+  --solid-bg:  #1c1917;
+  --solid-fg:  #fafaf9;
+  --shadow-sm: 0 1px 2px rgba(28,25,23,.06), 0 2px 8px rgba(28,25,23,.05);
+  --shadow-lg: 0 24px 70px rgba(28,25,23,.28);
+  --radius:    14px;
+  --gap:       16px;
+  --brand:     #6c2c9c;
+  --ease:      cubic-bezier(.22,.61,.36,1);
+}
+
+[data-theme="dark"] {
+  --bg:        #0c0a09;
+  --bg-elev:   rgba(12, 10, 9, 0.80);
+  --text:      #f5f5f4;
+  --text-soft: #d6d3d1;
+  --muted:     #78716c;
+  --line:      rgba(245, 245, 244, 0.12);
+  --tile:      #1c1917;
+  --solid-bg:  #fafaf9;
+  --solid-fg:  #1c1917;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.5), 0 2px 10px rgba(0,0,0,.35);
+  --shadow-lg: 0 24px 70px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
+               "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: background .3s var(--ease), color .3s var(--ease);
+}
+
+body.is-locked { overflow: hidden; }
+
+/* ---------- Topbar ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg-elev);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  border-bottom: 1px solid transparent;
+  transition: border-color .25s var(--ease), box-shadow .25s var(--ease);
+}
+.topbar.is-stuck {
+  border-bottom-color: var(--line);
+  box-shadow: 0 1px 20px rgba(28,25,23,.05);
+}
+
+.topbar__inner {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 14px clamp(16px, 3vw, 34px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.brand { display: flex; align-items: center; min-width: 0; }
+
+/* Logo NOOI ở góc trên trái. Dùng logo khoá ngang (ký hiệu + chữ + tagline) nên
+   đặt theo bề rộng; `object-fit: contain` giữ đúng tỉ lệ nếu file lệch.
+   Hai bản: màu cho nền sáng, trắng cho nền tối — bản gốc là bản trắng nên
+   không thể dùng chung một file cho cả hai chế độ. */
+.brand__logo {
+  flex: none;
+  width: 150px;
+  height: 63px;
+  object-fit: contain;
+  display: block;
+}
+.brand__logo--ondark { display: none; }
+[data-theme="dark"] .brand__logo--onlight { display: none; }
+[data-theme="dark"] .brand__logo--ondark { display: block; }
+
+/* Chữ "NOOI" chỉ để máy đọc (tiêu đề cấp 1 của trang); phần nhìn đã là logo. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.topbar__actions { display: flex; align-items: center; gap: 12px; flex: none; }
+
+/* Thống kê thư viện — góc trên phải, cạnh nút đổi chế độ sáng/tối. */
+.topbar__stat {
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Filter bar ---------- */
+
+.filters {
+  border-top: 1px solid var(--line);
+}
+
+.filters__inner {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 10px clamp(16px, 3vw, 34px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: nowrap;
+}
+
+/* Dải chip board: co lại và cuộn ngang khi có nhiều board, thay vì xuống dòng
+   làm thanh lọc cao lên. Fade ở mép để thấy là còn chip phía sau.
+
+   PHẢI là flex container: nếu để block thì #boardGroup (một .filters__group)
+   sẽ nhận width:100% thay vì co theo nội dung, khiến các chip bị flex-shrink
+   bóp lại và chữ xuống dòng. */
+.filters__scroll {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.filters__scroll::-webkit-scrollbar { display: none; }
+.filters__scroll[hidden] { display: none; }
+
+.filters__scroll.is-more-right {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+}
+.filters__scroll.is-more-left {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 30px);
+  mask-image: linear-gradient(to right, transparent, #000 30px);
+}
+.filters__scroll.is-more-left.is-more-right {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+}
+
+/* Phần còn lại (hướng + tông màu + bộ đếm).
+   `flex: 0 0 auto` — TUYỆT ĐỐI không cho co: nội dung ở đây (chip hướng, swatch)
+   không có cơ chế cuộn riêng, nếu để nó co lại thì nội dung tràn ra và đẩy cả
+   trang rộng thêm. Chỉ dải board được phép co (vì nó tự cuộn).
+   `margin-left: auto` đẩy cả cụm sang phải khi dải board còn ngắn. */
+.filters__rest {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.filters__group { display: flex; align-items: center; gap: 6px; flex: none; }
+
+/* `.filters__group` đặt display:flex nên đè mất `display:none` mặc định của
+   thuộc tính [hidden]. Phải khai báo lại, nếu không nhóm board rỗng vẫn
+   chiếm chỗ trong thanh lọc. */
+.filters__group[hidden],
+.filters__sep[hidden] { display: none; }
+
+.filters__sep {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+}
+
+.filters__count {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chip {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .18s var(--ease), color .18s var(--ease),
+              border-color .18s var(--ease);
+}
+.chip:hover { background: var(--tile); color: var(--text); }
+.chip.is-active {
+  background: var(--solid-bg);
+  color: var(--solid-fg);
+  border-color: transparent;
+}
+
+/* Số ảnh trong mỗi chip board */
+.chip__n {
+  margin-left: 6px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: .55;
+}
+.chip.is-active .chip__n { opacity: .7; }
+
+.swatch {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color .18s var(--ease), transform .15s var(--ease);
+}
+.swatch:hover { transform: scale(1.08); }
+.swatch.is-active {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--text);
+}
+
+.swatch__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: block;
+}
+.swatch__dot--all {
+  background: conic-gradient(#c98a4b, #6b8f5e, #5b7fa6, #8c8880, #c98a4b);
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .2s var(--ease), border-color .2s var(--ease),
+              color .2s var(--ease), transform .12s var(--ease);
+}
+.btn:hover { background: var(--tile); }
+.btn:active { transform: scale(.97); }
+
+.btn--ghost { color: var(--text-soft); }
+.btn--ghost:hover { color: var(--text); }
+
+.btn--solid {
+  background: var(--solid-bg);
+  color: var(--solid-fg);
+  border-color: transparent;
+}
+.btn--solid:hover { background: var(--solid-bg); opacity: .88; }
+
+.btn--icon { width: 38px; padding: 0; justify-content: center; }
+.btn--sm { height: 34px; padding: 0 13px; font-size: 13px; }
+.btn--sm.btn--icon { width: 34px; padding: 0; }
+
+#themeToggle .icon-moon { display: none; }
+[data-theme="dark"] #themeToggle .icon-sun  { display: none; }
+[data-theme="dark"] #themeToggle .icon-moon { display: block; }
+
+/* ---------- Masonry grid ---------- */
+
+.stage {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: clamp(18px, 2.4vw, 30px) clamp(16px, 3vw, 34px) 60px;
+}
+
+.grid { position: relative; }
+
+.tile {
+  position: absolute;
+  top: 0; left: 0;
+  margin: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--tile);
+  cursor: zoom-in;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .55s var(--ease), transform .55s var(--ease),
+              box-shadow .3s var(--ease);
+  will-change: transform, opacity;
+}
+
+.tile.is-in { opacity: 1; transform: translateY(0); }
+
+.tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .6s var(--ease), opacity .5s var(--ease);
+  opacity: 0;
+}
+.tile img.is-loaded { opacity: 1; }
+
+.tile:hover { box-shadow: var(--shadow-sm); }
+.tile:hover img { transform: scale(1.045); }
+
+/* Vòng focus rõ ràng khi điều hướng bằng bàn phím.
+   :focus-visible nên chỉ hiện với bàn phím, không hiện khi bấm chuột. */
+.tile:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+  z-index: 2;
+}
+
+.tile__veil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 11px;
+  background: linear-gradient(to top, rgba(0,0,0,.42), rgba(0,0,0,0) 46%);
+  opacity: 0;
+  transition: opacity .3s var(--ease);
+  pointer-events: none;
+}
+.tile:hover .tile__veil { opacity: 1; }
+
+.tile__zoom {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.92);
+  color: #1c1917;
+  backdrop-filter: blur(6px);
+  transform: translateY(4px) scale(.9);
+  transition: transform .3s var(--ease);
+}
+.tile:hover .tile__zoom { transform: translateY(0) scale(1); }
+
+/* ---------- Empty state ---------- */
+
+.empty {
+  padding: 90px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+.empty p { margin: 0 0 8px; }
+.empty__hint { font-size: 13px; }
+.empty code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--tile);
+  color: var(--text-soft);
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 34px) 46px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* Logo đầy đủ kèm tagline "Kết nối chuyển mình" — chữ ký thương hiệu ở chân trang */
+.footer__logo {
+  width: 132px;
+  height: 66px;
+  object-fit: contain;
+  object-position: left center;
+  display: block;
+}
+.footer__logo--ondark { display: none; }
+[data-theme="dark"] .footer__logo--onlight { display: none; }
+[data-theme="dark"] .footer__logo--ondark { display: block; }
+
+/* ---------- Lightbox ---------- */
+
+.lb {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(14px, 4vh, 54px) clamp(14px, 5vw, 84px) clamp(74px, 11vh, 96px);
+  animation: lbIn .28s var(--ease);
+}
+.lb[hidden] { display: none; }
+
+@keyframes lbIn { from { opacity: 0 } to { opacity: 1 } }
+
+.lb__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 10, 9, .86);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+[data-theme="dark"] .lb__backdrop { background: rgba(0,0,0,.92); }
+
+.lb__stage {
+  position: relative;
+  margin: 0;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lb__img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 190px);
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  background: var(--tile);
+  animation: lbImg .34s var(--ease);
+}
+@keyframes lbImg { from { opacity: 0; transform: scale(.97) } to { opacity: 1; transform: scale(1) } }
+
+.lb__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.10);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background .2s var(--ease), transform .2s var(--ease);
+}
+.lb__nav:hover { background: rgba(255,255,255,.22); }
+.lb__nav--prev { left: clamp(8px, 2vw, 26px); }
+.lb__nav--next { right: clamp(8px, 2vw, 26px); }
+
+.lb__bar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px clamp(16px, 3vw, 34px) calc(16px + env(safe-area-inset-bottom, 0px));
+  color: #f5f5f4;
+}
+
+.lb__counter {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255,255,255,.72);
+  letter-spacing: .02em;
+}
+
+.lb__tools { display: flex; align-items: center; gap: 9px; }
+
+.lb__bar .btn--ghost {
+  color: rgba(255,255,255,.86);
+  border-color: rgba(255,255,255,.22);
+}
+.lb__bar .btn--ghost:hover { background: rgba(255,255,255,.13); color: #fff; }
+
+.lb__bar .btn--solid {
+  background: #fafaf9;
+  color: #1c1917;
+}
+.lb__bar .btn--solid:hover { opacity: .9; }
+
+.lb__bar .btn--icon {
+  color: rgba(255,255,255,.86);
+  border-color: rgba(255,255,255,.22);
+}
+.lb__bar .btn--icon:hover { background: rgba(255,255,255,.13); color: #fff; }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+  .brand__logo { width: 120px; height: 50px; }
+  .topbar__stat { font-size: 11.5px; }
+
+  /* Trên mobile: thanh lọc thành 2 hàng — hàng 1 là board, hàng 2 là hướng +
+     tông màu + bộ đếm. Chỉ hàng nào tràn thì hàng đó cuộn, không lồng hai vùng
+     cuộn ngang vào nhau. */
+  .filters__inner {
+    flex-wrap: wrap;
+    padding: 8px 16px;
+    gap: 8px 10px;
+  }
+  .filters__scroll { flex: 1 0 100%; }
+  .filters__rest {
+    flex: 1 0 100%;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filters__rest::-webkit-scrollbar { display: none; }
+  .filters__sep { flex: none; }
+
+  /* Hàng 2 có thể tràn nhẹ -> ghim bộ đếm vào mép phải để lúc nào cũng thấy
+     số ảnh đang hiện. */
+  .filters__count {
+    position: sticky;
+    right: 0;
+    margin-left: auto;
+    padding-left: 12px;
+    flex: none;
+    background: var(--bg-elev);
+    backdrop-filter: saturate(180%) blur(18px);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+  }
+  .chip { height: 28px; padding: 0 11px; font-size: 12.5px; }
+  .swatch { width: 28px; height: 28px; }
+  .swatch__dot { width: 14px; height: 14px; }
+
+  .lb { padding: 12px 12px 78px; }
+  .lb__img { max-height: calc(100vh - 150px); border-radius: 8px; }
+  .lb__nav { width: 40px; height: 40px; }
+  .lb__bar { flex-direction: column; align-items: stretch; gap: 11px; }
+  .lb__counter { text-align: center; }
+  .lb__tools { justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  .tile { opacity: 1; transform: none; }
+}

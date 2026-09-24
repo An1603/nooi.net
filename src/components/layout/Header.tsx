@@ -10,6 +10,7 @@ import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react';
 const NAV_ITEMS = [
   { label: 'Tính năng', href: '#features' },
   { label: 'Công nghệ', href: '#tech' },
+  { label: 'Thư viện ảnh', href: '/gallery' },
   { label: 'Giới thiệu', href: '#about' },
   { label: 'Liên hệ', href: '#contact' },
 ];

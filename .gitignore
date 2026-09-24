@@ -34,6 +34,24 @@ yarn-error.log*
 # hermes workspace
 .hermes/
 
+# thư viện ảnh tĩnh — 447MB dữ liệu, không commit (đồng bộ từ ~/hermes-notes/dev/nooi-gallery)
+/public/gallery/images/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env.unikkey
+.env.apinex
+.env.inferx
+.env.bai
+.env.agentrouter
+.env.bynara
+.env.unorouter
+
+.env.kios
+
+.env.harbor
+
+.env.dahl
+.env.apmix
+.env.atria

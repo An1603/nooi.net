@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Thư viện ảnh NOOI</title>
+<meta name="description" content="Thư viện ảnh NOOI — bộ sưu tập tác phẩm thiết kế." />
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <div class="topbar__inner">
+    <!-- Góc trên trái: CHỈ logo, không kèm chữ.
+         Dùng logo khoá ngang (ký hiệu + chữ NOOI + tagline), không dùng ký hiệu trơ.
+         Hai bản: màu cho nền sáng, trắng cho nền tối — bản `_w` là bản trắng nên
+         không thể dùng chung một file cho cả hai chế độ (xem scripts/logo-assets.mjs). -->
+    <div class="brand">
+      <!-- Tiêu đề cấp 1 chỉ để máy đọc — phần nhìn đã là logo, nên ảnh để
+           aria-hidden để trình đọc màn hình không đọc tên thương hiệu hai lần. -->
+      <h1 class="sr-only" id="brandTitle">NOOI</h1>
+      <img class="brand__logo brand__logo--onlight" src="assets/nooi-header.png"
+           alt="" width="150" height="63" aria-hidden="true" />
+      <img class="brand__logo brand__logo--ondark" src="assets/nooi-header-white.png"
+           alt="" width="150" height="63" aria-hidden="true" />
+    </div>
+
+    <div class="topbar__actions">
+      <!-- Nút quay về nooi.net — thêm khi ghép thư viện vào hệ thống nooi.net.
+           Giữ nguyên toàn bộ style gốc của thư viện, chỉ thêm 1 liên kết. -->
+      <a class="btn btn--sm btn--ghost" href="/" title="Về nooi.net">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        nooi.net
+      </a>
+      <span class="topbar__stat" id="brandMeta">Đang tải thư viện…</span>
+      <button class="btn btn--icon" id="themeToggle" title="Đổi chế độ sáng/tối" aria-label="Đổi chế độ sáng/tối">
+        <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav class="filters" id="filters" aria-label="Lọc ảnh">
+  <div class="filters__inner">
+    <!-- Số board có thể lên tới hàng chục. Nếu để chip xuống dòng thì thanh lọc
+         (dính trên đầu trang) sẽ cao dần theo số board -> cho cuộn ngang thay vì xuống dòng. -->
+    <div class="filters__scroll" id="boardScroll" hidden>
+      <div class="filters__group" id="boardGroup" role="group" aria-label="Board"></div>
+    </div>
+
+    <div class="filters__rest">
+      <div class="filters__sep" id="boardSep" aria-hidden="true" hidden></div>
+
+      <div class="filters__group" role="group" aria-label="Hướng ảnh">
+        <button class="chip is-active" data-orient="all">Mọi hướng</button>
+        <button class="chip" data-orient="doc">Dọc</button>
+        <button class="chip" data-orient="ngang">Ngang</button>
+        <button class="chip" data-orient="vuong">Vuông</button>
+      </div>
+
+      <div class="filters__sep" aria-hidden="true"></div>
+
+      <div class="filters__group" role="group" aria-label="Tông màu">
+        <button class="swatch is-active" data-color="all" title="Mọi tông màu" aria-label="Mọi tông màu">
+          <span class="swatch__dot swatch__dot--all"></span>
+        </button>
+        <button class="swatch" data-color="am" title="Tông ấm" aria-label="Tông ấm">
+          <span class="swatch__dot" style="background:#c98a4b"></span>
+        </button>
+        <button class="swatch" data-color="la" title="Tông xanh lá" aria-label="Tông xanh lá">
+          <span class="swatch__dot" style="background:#6b8f5e"></span>
+        </button>
+        <button class="swatch" data-color="duong" title="Tông xanh dương" aria-label="Tông xanh dương">
+          <span class="swatch__dot" style="background:#5b7fa6"></span>
+        </button>
+        <button class="swatch" data-color="trungtinh" title="Tông trung tính / tối" aria-label="Tông trung tính hoặc tối">
+          <span class="swatch__dot" style="background:#8c8880"></span>
+        </button>
+      </div>
+
+      <span class="filters__count" id="filterCount"></span>
+    </div>
+  </div>
+  </nav>
+</header>
+
+<main class="stage">
+  <div class="grid" id="grid" aria-live="polite"></div>
+  <div class="empty" id="empty" hidden>
+    <p id="emptyMsg">Chưa có ảnh nào.</p>
+    <p class="empty__hint" id="emptyHint">Chạy <code>node scripts/scrape.mjs &amp;&amp; node scripts/download.mjs</code> để nạp thư viện.</p>
+  </div>
+</main>
+
+<footer class="footer">
+  <img class="footer__logo footer__logo--onlight" src="assets/nooi-logo.png"
+       alt="NOOI — Kết nối chuyển mình" width="132" height="66" />
+  <img class="footer__logo footer__logo--ondark" src="assets/nooi-logo-white.png"
+       alt="" width="132" height="66" aria-hidden="true" />
+  <span id="footerMeta"></span>
+</footer>
+
+<!-- Lightbox -->
+<div class="lb" id="lb" hidden>
+  <div class="lb__backdrop" data-close></div>
+
+  <button class="lb__nav lb__nav--prev" id="lbPrev" aria-label="Ảnh trước">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <button class="lb__nav lb__nav--next" id="lbNext" aria-label="Ảnh sau">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+
+  <figure class="lb__stage">
+    <img class="lb__img" id="lbImg" alt="" />
+  </figure>
+
+  <div class="lb__bar">
+    <span class="lb__counter" id="lbCounter"></span>
+    <div class="lb__tools">
+      <button class="btn btn--icon btn--sm" id="lbClose" aria-label="Đóng">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="data/gallery.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

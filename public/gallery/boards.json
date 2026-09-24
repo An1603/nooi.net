@@ -1,0 +1,22 @@
+{
+  "user": "NOOI_Net",
+  "boards": [
+    { "slug": "nooi-work", "path": "/NOOI_Net/nooi-work/" },
+    { "slug": "xuc-hut", "path": "/NOOI_Net/x%C3%BAc-h%C3%BAt/", "hidden": true },
+    { "slug": "cap-ray", "path": "/NOOI_Net/cap_ray/" },
+    { "slug": "camp-glamping", "path": "/NOOI_Net/camp-glamping/" },
+    { "slug": "home-mobile", "path": "/NOOI_Net/home-mobile/" },
+    { "slug": "home-villa-box", "path": "/NOOI_Net/home-villa-box/" },
+    { "slug": "toan-khu", "path": "/NOOI_Net/toan-khu/" },
+    { "slug": "nha-trung-tam", "path": "/NOOI_Net/nha-trung-tam/" },
+    { "slug": "san-luoi-lau", "path": "/NOOI_Net/san-luoi-lau/" },
+    { "slug": "be-boi", "path": "/NOOI_Net/be-boi/" },
+    { "slug": "vuichoi", "path": "/NOOI_Net/vuichoi/" },
+    { "slug": "hang-rao-chan", "path": "/NOOI_Net/hang-rao-chan/" },
+    { "slug": "trang-tri-nha-cua", "path": "/NOOI_Net/trang-tr%C3%AD-nh%C3%A0-c%E1%BB%ADa/" },
+    { "slug": "san-khau-hoi-truong", "path": "/NOOI_Net/s%C3%A2n-kh%E1%BA%A5u-h%E1%BB%99i-tr%C6%B0%E1%BB%9Dng/" },
+    { "slug": "trang-tri-canh-quan", "path": "/NOOI_Net/trang-tr%C3%AD-c%E1%BA%A3nh-quan/" },
+    { "slug": "duong-cong", "path": "/NOOI_Net/%C4%91%C6%B0%E1%BB%9Dng-c%E1%BB%95ng/" },
+    { "slug": "do-trang-tri-y-dao", "path": "/NOOI_Net/%C4%91%E1%BB%93-trang-tr%C3%AD-%C3%BD-%C4%91%E1%BA%A1o/" }
+  ]
+}

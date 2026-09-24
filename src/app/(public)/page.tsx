@@ -815,10 +815,16 @@ function FooterSection() {
           <div>
             <p className="text-sm font-semibold mb-3">Khám phá</p>
             <ul className="space-y-2">
-              {['Kho tri thức', 'Chuyên gia', 'Chương trình', 'Cộng đồng'].map((l) => (
-                <li key={l}>
-                  <Link href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                    {l}
+              {[
+                { label: 'Thư viện ảnh', href: '/gallery' },
+                { label: 'Kho tri thức', href: '#' },
+                { label: 'Chuyên gia', href: '#' },
+                { label: 'Chương trình', href: '#' },
+                { label: 'Cộng đồng', href: '#' },
+              ].map((l) => (
+                <li key={l.label}>
+                  <Link href={l.href} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    {l.label}
                   </Link>
                 </li>
               ))}

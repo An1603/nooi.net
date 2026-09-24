@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Thư viện ảnh tĩnh (public/gallery) — trỏ /gallery → index.html.
+  // Middleware đã whitelist "/gallery" nên xem được không cần đăng nhập.
+  async rewrites() {
+    return [
+      { source: "/gallery", destination: "/gallery/index.html" },
+      { source: "/gallery/", destination: "/gallery/index.html" },
+    ];
+  },
 };
 
 export default nextConfig;

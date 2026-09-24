@@ -22,11 +22,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
-.env.morphllm
-.env.omniroute
-.env.modal
+# local env files — KHÔNG BAO GIỜ commit (chỉ giữ .env.example làm mẫu)
+.env*
+!.env.example
 
 # vercel
 .vercel
@@ -34,24 +32,10 @@ yarn-error.log*
 # hermes workspace
 .hermes/
 
-# thư viện ảnh tĩnh — 447MB dữ liệu, không commit (đồng bộ từ ~/hermes-notes/dev/nooi-gallery)
+# Thư viện ảnh tĩnh — 447MB, không commit. Pipeline scrape ở scripts/gallery-pipeline/,
+# đồng bộ vào public/gallery/ bằng scripts/sync-gallery.sh
 /public/gallery/images/
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.env.unikkey
-.env.apinex
-.env.inferx
-.env.bai
-.env.agentrouter
-.env.bynara
-.env.unorouter
-
-.env.kios
-
-.env.harbor
-
-.env.dahl
-.env.apmix
-.env.atria

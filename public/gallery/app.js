@@ -418,14 +418,36 @@
     else if (e.key === 'ArrowRight') { show(current + 1); }
   });
 
-  // vuốt trên mobile
-  let touchX = null;
-  LB.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+  /* ---------- Vuốt trên mobile ---------- */
+
+  /* Trong màn hình xem ảnh chi tiết (lightbox), vuốt NGANG hoặc DỌC đều chuyển
+     sang ảnh khác:
+       - vuốt trái  / vuốt lên  -> ảnh sau
+       - vuốt phải / vuốt xuống -> ảnh trước
+     Chọn trục có biên độ lớn hơn để một cú vuốt chéo không kích hoạt 2 lần.
+     Ngưỡng dọc cao hơn ngang chút vì ngón tay thường lệch dọc khi vuốt ngang. */
+  const SWIPE_MIN_X = 55;
+  const SWIPE_MIN_Y = 60;
+
+  let touchStart = null;
+
+  LB.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    touchStart = { x: t.clientX, y: t.clientY };
+  }, { passive: true });
+
   LB.addEventListener('touchend', (e) => {
-    if (touchX === null) return;
-    const dx = e.changedTouches[0].clientX - touchX;
-    if (Math.abs(dx) > 55) show(dx < 0 ? current + 1 : current - 1);
-    touchX = null;
+    if (!touchStart) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.x;
+    const dy = t.clientY - touchStart.y;
+    touchStart = null;
+
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      if (Math.abs(dx) > SWIPE_MIN_X) show(dx < 0 ? current + 1 : current - 1);
+    } else if (Math.abs(dy) > SWIPE_MIN_Y) {
+      show(dy < 0 ? current + 1 : current - 1);
+    }
   }, { passive: true });
 
   /* ---------- Resize / scroll ---------- */

@@ -80,7 +80,7 @@ nhấp đúp `index.html` là xem được ngay, không cần cài gì và khôn
 | **Lightbox** | Bấm ảnh để xem bản lớn, tối đa 1600px; có ghi rõ ảnh thuộc board nào |
 | **Bàn phím** | `Tab` tới ảnh · `Enter`/`Space` mở · `←` `→` chuyển ảnh · `Esc` đóng và trả focus về ảnh vừa xem |
 | **Sáng / tối** | Nút góc phải, tự nhớ lựa chọn; mặc định theo hệ thống. Logo tự đổi bản màu ↔ trắng theo chế độ |
-| **Mobile** | Vuốt trái/phải chuyển ảnh; thanh lọc gộp thành 2 hàng cuộn ngang, bộ đếm ghim ở mép phải |
+| **Mobile** | Vuốt trái/phải **hoặc** lên/xuống đều chuyển ảnh (vuốt trái/lên → ảnh sau, vuốt phải/xuống → ảnh trước); thanh lọc gộp thành 2 hàng cuộn ngang, bộ đếm ghim ở mép phải |
 | **Không cần server** | Dữ liệu nhúng sẵn nên nhấp đúp `index.html` vẫn xem được |
 
 ## Thêm / bớt board

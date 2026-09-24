@@ -5,9 +5,16 @@
 # phục vụ bản mới. Ảnh KHÔNG commit vào Git (xem .gitignore) — script này là
 # cách duy nhất đưa ảnh lên production.
 #
+# ⚠️ 24/09/2026: thư mục nguồn ~/hermes-notes/dev/nooi-gallery đã được xoá khỏi
+# cả Mac lẫn VPS (Syncthing 2 chiều). Bộ pipeline scrape lại nằm ở
+# scripts/gallery-pipeline/. Nếu dựng lại thư mục nguồn ở đúng đường dẫn cũ thì
+# script này chạy lại bình thường; ngược lại có thể đặt biến GALLERY_SRC trỏ tới
+# thư mục mới.
+#
 # Cách dùng:
 #   bash scripts/sync-gallery.sh          # đồng bộ (chỉ copy thêm/cập nhật)
 #   bash scripts/sync-gallery.sh --delete # đồng bộ + xoá file đã bị bỏ ở nguồn
+#   GALLERY_SRC=/đường/dẫn/khác bash scripts/sync-gallery.sh
 set -euo pipefail
 
 SRC="${GALLERY_SRC:-$HOME/hermes-notes/dev/nooi-gallery}"

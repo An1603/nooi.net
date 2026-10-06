@@ -104,7 +104,12 @@ async function pickToken() {
       : fs.readFileSync(args.find((a) => !a.startsWith("--")), "utf8");
 
   let failed = 0;
-  for (const stmt of sql.split(";").map((s) => s.trim()).filter(Boolean)) {
+  // Tách câu lệnh CHỈ tại ';' ở cuối dòng — tránh cắt nhầm dấu ';' trong nội dung văn bản
+  const statements = sql
+    .split(/;\s*(?:\r?\n|$)/)
+    .map((s) => s.trim().replace(/;\s*$/, ""))
+    .filter(Boolean);
+  for (const stmt of statements) {
     const r = await api(chosen.token, stmt);
     if (r.ok) {
       console.log("✓", stmt.split("\n")[0].slice(0, 70));

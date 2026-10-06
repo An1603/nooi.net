@@ -2,7 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import ImageSlider from "@/components/projects/ImageSlider";
 import ProjectVideo from "@/components/projects/ProjectVideo";
@@ -16,8 +16,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const adminSupabase = createAdminClient();
   const userSupabase = await createClient();
-  const { data: project } = await adminSupabase.from("projects").select("*").eq("id", id).single();
+  // URL dễ nhớ: /app/projects/nooi-forest (slug) — vẫn chấp nhận id UUID cũ
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const { data: project } = isUuid
+    ? await adminSupabase.from("projects").select("*").eq("id", id).single()
+    : await adminSupabase.from("projects").select("*").eq("slug", id).single();
   if (!project) notFound();
+  // Luôn dùng một URL chuẩn duy nhất (slug) khi đã có
+  if (isUuid && project.slug) redirect(`/app/projects/${project.slug}`);
 
   let investments: Array<{ amount: number; investor_name: string; investment_date: string }> = [];
   try { const { data } = await adminSupabase.from("investments").select("amount, investor_name, investment_date").eq("project_id", project.id).eq("payment_status", "paid").order("investment_date", { ascending: false }); if (data) investments = data; } catch {}

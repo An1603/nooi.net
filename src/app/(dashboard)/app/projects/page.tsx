@@ -6,6 +6,7 @@ import { TrendingUp, DollarSign, ArrowUpRight } from "lucide-react";
 
 interface Project {
   id: string;
+  slug?: string | null;
   title: string;
   description: string;
   investment_target: number;
@@ -55,7 +56,7 @@ export default async function ProjectsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <Link key={project.id} href={`/app/projects/${project.id}`}
+              <Link key={project.id} href={`/app/projects/${project.slug || project.id}`}
                 className="group relative flex flex-col bg-glass backdrop-blur-xl border border-glass-border rounded-2xl overflow-hidden hover:bg-glass-hover hover:border-primary/40 hover:-translate-y-1 transition-all duration-300 shadow-xl"
               >
                 <div className="absolute top-4 left-4 z-20">

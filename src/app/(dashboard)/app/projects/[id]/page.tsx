@@ -167,18 +167,18 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   <div className="h-full rounded-full bg-gradient-to-r from-n-gold via-primary to-n-green transition-all duration-1000 shadow-[0_0_8px_rgba(200,148,62,0.5)]" style={{ width: Math.min(percentage, 100) + "%" }}></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="p-3 bg-glass rounded-lg border border-glass-border">
+                  {summary.breakeven_months && (<div className="p-3 bg-glass rounded-lg border border-glass-border">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Hoàn Vốn</div>
                     <div className="font-bold text-foreground">{summary.breakeven_months ? summary.breakeven_months + " tháng" : "N/A"}</div>
-                  </div>
-                  <div className="p-3 bg-glass rounded-lg border border-glass-border">
+                  </div>)}
+                  {summary.roi_3year && (<div className="p-3 bg-glass rounded-lg border border-glass-border">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">ROI 3 Năm</div>
                     <div className="font-bold text-n-green">{summary.roi_3year ? summary.roi_3year + "%" : "N/A"}</div>
-                  </div>
-                  <div className="p-3 bg-glass rounded-lg border border-glass-border">
+                  </div>)}
+                  {summary.irr_5year && (<div className="p-3 bg-glass rounded-lg border border-glass-border">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">IRR 5 Năm</div>
                     <div className="font-bold text-primary">{summary.irr_5year ? summary.irr_5year + "%" : "N/A"}</div>
-                  </div>
+                  </div>)}
                   <div className="p-3 bg-glass rounded-lg border border-glass-border">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Cổ Đông</div>
                     <div className="font-bold text-foreground">{investments.length}</div>

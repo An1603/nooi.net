@@ -78,19 +78,23 @@ export default function FinancialReport({ project }: { project: Record<string, u
         <Section id="summary" title="Tóm tắt" icon={<DollarSign size={14} className="text-n-gold" />}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3">
             {[
-              { label: "Tổng vốn đầu tư", value: fmt(summary.total_capex) + "đ", color: "text-n-gold" },
-              { label: "Hòa vốn", value: summary.breakeven_months + " tháng", color: "text-n-teal" },
-              { label: "ROI 3 năm", value: summary.roi_3year + "%", color: "text-n-green" },
-              { label: "IRR 5 năm", value: summary.irr_5year + "%", color: "text-n-purple" },
-            ].map((item, i) => (
-              <div key={i} className="text-center p-3 bg-muted rounded-lg">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.label}</p>
-                <p className={`text-lg font-bold ${item.color} mt-0.5`}>{item.value}</p>
-              </div>
-            ))}
+              summary.total_capex ? { label: "Tổng vốn đầu tư", value: fmt(summary.total_capex) + "đ", color: "text-n-gold" } : null,
+              summary.breakeven_months ? { label: "Hòa vốn", value: summary.breakeven_months + " tháng", color: "text-n-teal" } : null,
+              summary.roi_3year ? { label: "ROI 3 năm", value: summary.roi_3year + "%", color: "text-n-green" } : null,
+              summary.irr_5year ? { label: "IRR 5 năm", value: summary.irr_5year + "%", color: "text-n-purple" } : null,
+            ].filter(Boolean).map((item, i) => {
+              const it = item as { label: string; value: string; color: string };
+              return (
+                <div key={i} className="text-center p-3 bg-muted rounded-lg">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{it.label}</p>
+                  <p className={`text-lg font-bold ${it.color} mt-0.5`}>{it.value}</p>
+                </div>
+              );
+            })}
           </div>
 
           {/* Revenue vs Profit 3 years */}
+          {(summary.year1_revenue || summary.year2_revenue || summary.year3_revenue) && (
           <div className="grid grid-cols-3 gap-3 mt-3">
             {[
               { year: "Năm 1", rev: summary.year1_revenue, profit: summary.year1_profit },
@@ -117,6 +121,7 @@ export default function FinancialReport({ project }: { project: Record<string, u
               </div>
             ))}
           </div>
+          )}
         </Section>
       )}
 

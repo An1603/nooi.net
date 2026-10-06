@@ -9,7 +9,7 @@ import ProjectVideo from "@/components/projects/ProjectVideo";
 import FinancialReport from "@/components/projects/FinancialReport";
 import HtmlSlideViewer from "@/components/projects/HtmlSlideViewer";
 import ProjectDocuments from "@/components/projects/ProjectDocuments";
-import { resolveDeckUrl } from "@/lib/project-slides";
+import { resolveProjectDocs } from "@/lib/project-slides";
 import { ArrowLeft, MapPin, CheckCircle2, DollarSign, TrendingUp, Clock } from "lucide-react";
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,7 +55,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const isFullHtmlPage = project.html_content && (project.html_content.trim().toLowerCase().startsWith('<!doctype') || project.html_content.trim().toLowerCase().startsWith('<html'));
   // Tài liệu (slide) gắn tường minh: ưu tiên projects.slide_html_url, sau đó ánh xạ theo tên dự án
-  const deckUrl = resolveDeckUrl(project as { title?: string | null; slide_html_url?: string | null });
+  const projectDocs = resolveProjectDocs(project as { title?: string | null; slide_html_url?: string | null });
 
   return (
     <div className="min-h-screen font-body relative overflow-hidden" style={{ background: '#1a0a2e' }}>
@@ -108,8 +108,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-grow pb-10">
           <div className="lg:col-span-8 flex flex-col gap-5">
-            {deckUrl && <ProjectDocuments slideUrl={deckUrl} title={project.title} />}
-            {isFullHtmlPage && !deckUrl && (
+            {projectDocs.length > 0 && <ProjectDocuments docs={projectDocs} title={project.title} />}
+            {isFullHtmlPage && projectDocs.length === 0 && (
               <div className="rounded-xl overflow-hidden shadow-2xl border border-glass-border bg-card/50 backdrop-blur-sm">
                 <HtmlSlideViewer htmlContent={project.html_content} />
               </div>

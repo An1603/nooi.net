@@ -8,10 +8,10 @@ import { FileText, ExternalLink, Lock } from "lucide-react";
  * Nên chỉ hiển thị nút mở ở tab mới.
  */
 export default function ProjectDocuments({
-  slideUrl,
+  docs,
   title,
 }: {
-  slideUrl: string;
+  docs: Array<{ label: string; url: string }>;
   title: string;
 }) {
   return (
@@ -33,14 +33,23 @@ export default function ProjectDocuments({
             </p>
           </div>
         </div>
-        <a
-          href={slideUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/80 hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98] transition-all border border-primary/40 shrink-0"
-        >
-          <ExternalLink className="size-4" /> Mở tài liệu
-        </a>
+        <div className="flex flex-col gap-2 shrink-0">
+          {docs.map((d, i) => (
+            <a
+              key={d.url}
+              href={d.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={
+                i === 0
+                  ? "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/80 hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98] transition-all border border-primary/40 whitespace-nowrap"
+                  : "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-glass text-foreground text-sm font-medium border border-glass-border hover:bg-glass-hover transition-all whitespace-nowrap"
+              }
+            >
+              <ExternalLink className="size-4" /> {d.label}
+            </a>
+          ))}
+        </div>
       </div>
     </div>
   );

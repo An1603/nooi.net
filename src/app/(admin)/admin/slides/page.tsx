@@ -27,6 +27,7 @@ const DECK_LABELS: Record<string, string> = {
   "quan-chieu-hanh-su": "Quán chiếu hành sự",
   "cau-truc-doanh-nghiep": "Cấu trúc doanh nghiệp (link cũ)",
   "checkin-sanmay": "Check-in săn mây & F&B tại điểm (M01 — hạch toán & giá)",
+  "hoc-vien-chuyen-hoa": "Học viện & Chuyển hóa (M04 — hạch toán & giá)",
 };
 
 export default function AdminSlidesPage() {

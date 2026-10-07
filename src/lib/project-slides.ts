@@ -16,6 +16,7 @@ export const PROJECT_EXTRA_DOCS: Record<string, Array<{ label: string; url: stri
   "NOOI Forest": [
     { label: "Cấu trúc NOOI — Bản FINAL v5", url: "https://slides.nooi.net/cau-truc-nooi/" },
     { label: "OPC Center — DN 1 người", url: "https://slides.nooi.net/opc-center/" },
+    { label: "Hạch toán & giá — Check-in săn mây", url: "https://slides.nooi.net/checkin-sanmay/" },
   ],
 };
 

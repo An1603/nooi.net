@@ -22,7 +22,6 @@ const DECK_LABELS: Record<string, string> = {
   "cau-truc-nooi": "Cấu trúc NOOI — bản cổ đông (FINAL v5)",
   "opc-center": "OPC Center — Doanh nghiệp 1 người",
   "gop-von-theo-loi-ich": "Góp vốn theo lợi ích",
-  "hop-tac-ben-vung": "Hợp tác bền vững — 12 nguyên tắc (đã gộp vào Đối tác đồng hành, mục 09)",
   "nooi-forest": "NOOI Forest — Living Mountain",
   "quan-chieu-hanh-su": "Quán chiếu hành sự",
   "cau-truc-doanh-nghiep": "Cấu trúc doanh nghiệp (link cũ)",

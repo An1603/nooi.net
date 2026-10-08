@@ -28,6 +28,7 @@ const DECK_LABELS: Record<string, string> = {
   "cau-truc-doanh-nghiep": "Cấu trúc doanh nghiệp (link cũ)",
   "checkin-sanmay": "Check-in săn mây & F&B tại điểm (M01 — hạch toán & giá)",
   "hoc-vien-chuyen-hoa": "Học viện & Chuyển hóa (M04 — hạch toán & giá)",
+  "m05-luu-tru": "Lưu trú — Camping · Glamping · Homestay · Ở dài hạn (M05 — hạch toán & giá)",
   "tai-san-vo-hinh": "Tài sản vô hình (IP) & nền tảng công nghệ — bổ sung PHẦN 5",
 };
 

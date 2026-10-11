@@ -68,9 +68,6 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
 
-  // Tạo mã mời (chủ hồ sơ)
-  const [role, setRole] = useState("cha");
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Thêm người giám sát theo mã giới thiệu (chỉ chủ hồ sơ)
@@ -123,25 +120,6 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
       setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi cập nhật" });
     } finally {
       setBusyKey(null);
-    }
-  }
-
-  // Tạo mã mời (lời mời chờ) — chỉ chủ hồ sơ.
-  async function makeInviteCode() {
-    setMsg(null);
-    try {
-      const r = await fetch("/api/ekid/caregivers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kid_id: kidId, role }),
-      });
-      const d = await readJson(r);
-      if (!r.ok) throw new Error((d.error as string) || "Tạo mã thất bại");
-      const cg = d.caregiver as Caregiver | undefined;
-      setInviteCode(cg?.link_code ?? null);
-      await load();
-    } catch (e) {
-      setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi tạo mã" });
     }
   }
 
@@ -275,34 +253,6 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
       )}
 
       {/* Thêm người thân (chỉ chủ hồ sơ) */}
-      {isOwner && (
-        <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
-          <h2 className="text-sm font-semibold text-foreground">Thêm người thân</h2>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="space-y-1.5">
-              <Label htmlFor="rel-role">Vai trò</Label>
-              <Select id="rel-role" value={role} onChange={(e) => setRole(e.target.value)}>
-                <option value="cha">Cha</option>
-                <option value="me">Mẹ</option>
-                <option value="ong">Ông</option>
-                <option value="ba">Bà</option>
-                <option value="nguoi-giam-ho">Người giám hộ</option>
-              </Select>
-            </div>
-            <Button type="button" variant="outline" onClick={makeInviteCode}>
-              Tạo mã mời
-            </Button>
-            {inviteCode && (
-              <p className="text-sm text-muted-foreground sm:self-center">
-                Mã mời:{" "}
-                <span className="font-semibold tracking-widest text-primary">{inviteCode}</span>
-              </p>
-            )}
-          </div>
-        </section>
-      )}
-
       {/* Thêm người giám sát theo mã giới thiệu (chỉ chủ hồ sơ) */}
       {isOwner && (
         <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">

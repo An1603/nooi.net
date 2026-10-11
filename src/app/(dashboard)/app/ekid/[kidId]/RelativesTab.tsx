@@ -60,7 +60,7 @@ async function readJson(r: Response): Promise<Record<string, unknown>> {
 /**
  * Tab Người thân của MỘT con: danh sách người giám sát (quan hệ + quyền + trạng thái).
  * - Chủ hồ sơ (isOwner): thêm bằng **mã mời**, đổi quyền/quan hệ, gỡ liên kết.
- * - Người thân (non-owner): chỉ xem danh sách + nhập mã liên kết; không có thao tác quản trị.
+ * - Người thân (non-owner): CHỈ xem danh sách (v2.8 — ẩn khối nhập mã liên kết vì đã liên kết rồi).
  * KHÔNG còn luồng tìm theo tên (đã bỏ để tránh rò rỉ danh bạ) — chỉ còn mã mời.
  */
 export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boolean }) {
@@ -78,10 +78,6 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [adding, setAdding] = useState(false);
-
-  // Nhập mã liên kết (người được mời)
-  const [joinCode, setJoinCode] = useState("");
-  const [joining, setJoining] = useState(false);
 
   // Thao tác đang chạy trên một dòng: `${id}:${action}`.
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -180,30 +176,6 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
     }
   }
 
-  // Nhập mã liên kết để tự trở thành người thân (người được mời).
-  async function join() {
-    const code = joinCode.trim();
-    if (!code) return;
-    setJoining(true);
-    setMsg(null);
-    try {
-      const r = await fetch("/api/ekid/caregivers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
-      });
-      const d = await readJson(r);
-      if (!r.ok) throw new Error((d.error as string) || "Liên kết thất bại");
-      setMsg({ ok: true, text: "Liên kết thành công! Bạn đã là người thân của bé." });
-      setJoinCode("");
-      await load();
-    } catch (e) {
-      setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi liên kết" });
-    } finally {
-      setJoining(false);
-    }
-  }
-
   // Gỡ một liên kết/lời mời (chỉ chủ hồ sơ).
   async function remove(id: string) {
     setBusyKey(`${id}:remove`);
@@ -231,32 +203,6 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
         <p role="status" className={msg.ok ? "text-sm text-n-green" : "text-sm text-destructive"}>
           {msg.text}
         </p>
-      )}
-
-      {/* Người được mời: nhập mã liên kết */}
-      {!isOwner && (
-        <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
-          <h2 className="text-sm font-semibold text-foreground">Nhập mã liên kết</h2>
-          <p className="text-sm text-muted-foreground">
-            Nhập mã 6 ký tự mà chủ hồ sơ gửi cho bạn để trở thành người thân của bé.
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="VD: AB3D7K"
-              maxLength={6}
-              className="tracking-widest"
-            />
-            <Button
-              type="button"
-              onClick={join}
-              disabled={joining || joinCode.trim().length === 0}
-            >
-              {joining ? "Đang liên kết..." : "Liên kết"}
-            </Button>
-          </div>
-        </section>
       )}
 
       {/* Thêm người thân (chỉ chủ hồ sơ) */}

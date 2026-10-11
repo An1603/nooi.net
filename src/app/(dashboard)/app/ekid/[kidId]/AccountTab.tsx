@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { KidAvatar } from "@/components/ekid/KidAvatar";
 import { ResetChildPassword } from "@/components/ekid/ResetChildPassword";
 import { SetChildUsername } from "@/components/ekid/SetChildUsername";
 import { DAILY_LIMIT_MIN, DAILY_LIMIT_MAX } from "@/lib/ekid/ekid-system";
@@ -19,6 +20,30 @@ async function readError(r: Response, fallback: string): Promise<string> {
 /** Nhãn trạng thái thân thiện từ status. */
 function statusText(status?: string | null): string {
   return status === "khoa" ? "Đang khoá" : "Hoạt động";
+}
+
+/** Nhãn giới tính thân thiện. */
+function genderText(gender?: string | null): string {
+  if (gender === "nam") return "Nam";
+  if (gender === "nu") return "Nữ";
+  return "Không xác định";
+}
+
+/** Ngày sinh dạng dd/mm/yyyy (giữ nguyên nếu không parse được). */
+function dateText(value?: string | null): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("vi-VN");
+}
+
+/** Một dòng thông tin chỉ-đọc (nhãn + giá trị). */
+function InfoRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-sm font-medium text-foreground">{children}</dd>
+    </div>
+  );
 }
 
 /**
@@ -163,6 +188,39 @@ export function AccountTab({
       setDeleting(false);
       setConfirmDelete(false);
     }
+  }
+
+  // (v2.8) Người được cấp quyền "Xem" (viewer) chỉ được XEM: ẩn HẾT ô nhập/nút lưu,
+  // chỉ hiển thị bảng thông tin chỉ-đọc. Chủ hồ sơ / quản lý (canEdit) vẫn dùng form như cũ.
+  if (!canEdit) {
+    return (
+      <div className="space-y-4">
+        <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
+          <h2 className="text-sm font-semibold text-foreground">Hồ sơ của con</h2>
+          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <InfoRow label="Tên con">{kid.name || "—"}</InfoRow>
+            <InfoRow label="Ngày sinh">{dateText(kid.date_of_birth)}</InfoRow>
+            <InfoRow label="Avatar">
+              <span className="inline-flex items-center gap-2">
+                <KidAvatar emoji={kid.avatar_emoji || "🦊"} size={32} />
+                <span>{kid.avatar_emoji || "🦊"}</span>
+              </span>
+            </InfoRow>
+            <InfoRow label="Giờ sinh">{kid.birth_time || "—"}</InfoRow>
+            <InfoRow label="Giới tính">{genderText(kid.gender)}</InfoRow>
+            <InfoRow label="Nơi sinh">{kid.birth_place || "—"}</InfoRow>
+            <InfoRow label="Tên đăng nhập">
+              {kid.username ? `@${kid.username}` : "Chưa có tài khoản đăng nhập"}
+            </InfoRow>
+            <InfoRow label="Trạng thái">{statusText(kid.status)}</InfoRow>
+            <InfoRow label="Cấp">{kid.placement_level ?? 1}</InfoRow>
+          </dl>
+          <p className="text-sm text-muted-foreground">
+            Bạn là người thân được liên kết — chỉ xem được hồ sơ, không sửa được.
+          </p>
+        </section>
+      </div>
+    );
   }
 
   return (

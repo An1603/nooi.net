@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,16 @@ function parseMilestones(raw: string): number[] | null {
 function toggle(list: string[], value: string, on: boolean): string[] {
   if (on) return list.includes(value) ? list : [...list, value];
   return list.filter((x) => x !== value);
+}
+
+/** Một dòng cài đặt chỉ-đọc (nhãn + giá trị). */
+function SettingRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-sm font-medium text-foreground">{children}</dd>
+    </div>
+  );
 }
 
 /**
@@ -237,6 +247,82 @@ export function SettingsTab({
     } finally {
       setSaving(false);
     }
+  }
+
+  // (v2.8) Người được cấp quyền "Xem" (viewer) chỉ được XEM: ẩn HẾT ô nhập/nút lưu,
+  // chỉ hiển thị bảng cài đặt chỉ-đọc. Chủ hồ sơ / quản lý (canEdit) vẫn dùng form như cũ.
+  if (!canEdit) {
+    const windowText =
+      settings.rules.allowedFrom && settings.rules.allowedTo
+        ? `${settings.rules.allowedFrom} – ${settings.rules.allowedTo}`
+        : "Không giới hạn (học bất cứ lúc nào)";
+    const subjectsText =
+      settings.subjects.length > 0 ? settings.subjects.join(", ") : "Tất cả các môn";
+    const custom = settings.rewards.custom;
+
+    return (
+      <div className="space-y-4">
+        {/* Khối 1: Nguyên tắc học */}
+        <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
+          <h2 className="text-sm font-semibold text-foreground">Nguyên tắc học</h2>
+          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <SettingRow label="Giới hạn phút/ngày">
+              {kid.daily_limit_min != null ? `${kid.daily_limit_min} phút` : "Không giới hạn"}
+            </SettingRow>
+            <SettingRow label="Số bài tối đa/ngày">{settings.rules.maxLessonsPerDay}</SettingRow>
+            <SettingRow label="Khung giờ học">{windowText}</SettingRow>
+            <SettingRow label="Thi đạt mới sang bài">
+              {settings.rules.requirePassToAdvance ? "Bật" : "Tắt"}
+            </SettingRow>
+          </dl>
+        </section>
+
+        {/* Khối 2: Môn học */}
+        <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
+          <h2 className="text-sm font-semibold text-foreground">Môn học</h2>
+          <p className="text-sm font-medium text-foreground">{subjectsText}</p>
+          <p className="text-[11px] text-muted-foreground">
+            Danh sách trống ⇒ con học tất cả các môn.
+          </p>
+        </section>
+
+        {/* Khối 3: Phần thưởng */}
+        <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
+          <h2 className="text-sm font-semibold text-foreground">Phần thưởng</h2>
+          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <SettingRow label="Điểm cho mỗi bài đạt">
+              {settings.rewards.pointsPerPassedLesson}
+            </SettingRow>
+            <SettingRow label="Mốc huy hiệu (số bài đạt)">
+              {settings.rewards.badgeMilestones.join(", ")}
+            </SettingRow>
+          </dl>
+
+          <div className="space-y-2 border-t border-border pt-3">
+            <h3 className="text-sm font-semibold text-foreground">Phần thưởng tùy chỉnh</h3>
+            {custom.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Chưa có phần thưởng tùy chỉnh nào.</p>
+            ) : (
+              <ul className="space-y-1">
+                {custom.map((c, i) => (
+                  <li
+                    key={i}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-glass px-3 py-2 text-sm text-foreground"
+                  >
+                    <span>{c.label}</span>
+                    <span className="text-xs text-muted-foreground">{c.points} điểm</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            Bạn là người thân được liên kết — chỉ xem được cài đặt, không sửa được.
+          </p>
+        </section>
+      </div>
+    );
   }
 
   return (

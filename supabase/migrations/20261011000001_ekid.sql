@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.ekid_kids (
   daily_limit_min INT NOT NULL DEFAULT 25,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_ekid_kids_user ON public.ekid_kids(user_id);
+CREATE INDEX IF NOT EXISTS idx_ekid_kids_user ON public.ekid_kids(user_id);
 
 CREATE TABLE IF NOT EXISTS public.ekid_assessments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

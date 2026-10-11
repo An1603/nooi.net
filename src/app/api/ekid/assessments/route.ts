@@ -32,13 +32,36 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
+  // Điểm test đầu vào: dùng điểm vừa nộp nếu là bước 'dau-vao', ngược lại lấy dòng mới nhất đã lưu.
+  let entryTestPct: number | null = null;
+  if (step === "dau-vao") {
+    entryTestPct = score_pct ?? null;
+  } else {
+    const { data: entry } = await admin
+      .from("ekid_assessments")
+      .select("kid_result")
+      .eq("kid_id", kid_id)
+      .eq("step", "dau-vao")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    entryTestPct = (entry?.kid_result as { score_pct?: number | null } | null)?.score_pct ?? null;
+  }
+
+  // Kết quả học gần đây: đếm THẬT các phiên gần đây có score >= 70 (không suy từ placement_level
+  // hiện tại — trước đây là lỗi self-referential khiến level không bao giờ đổi).
+  const { data: recent } = await admin
+    .from("ekid_sessions")
+    .select("score")
+    .eq("kid_id", kid_id)
+    .order("started_at", { ascending: false })
+    .limit(5);
+  const recentGoodSessions = (recent ?? []).filter((s) => (s.score ?? 0) >= 70).length;
+
   const placement = resolvePlacement({
     dob: kid.date_of_birth,
-    // Test đầu vào chỉnh định vị theo điểm; các bước khác không truyền điểm.
-    entryTestPct: step === "dau-vao" ? score_pct ?? null : undefined,
-    // Kết quả học gần đây: suy ra số phiên tốt cần thiết để giữ cấp hiện tại.
-    recentGoodSessions:
-      step === "ngay" ? Math.max(0, (kid.placement_level ?? 1) - 1) * 3 + 1 : undefined,
+    entryTestPct,
+    recentGoodSessions,
   });
 
   const { error: insErr } = await admin.from("ekid_assessments").insert({

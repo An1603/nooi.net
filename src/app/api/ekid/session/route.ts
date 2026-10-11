@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { remainingMinutes } from "@/lib/ekid/ekid-system";
+import { remainingMinutes, resolvePlacement } from "@/lib/ekid/ekid-system";
 
 export const dynamic = "force-dynamic";
 
-// Kiểm tra quyền sở hữu: chỉ trả hồ sơ trẻ nếu thuộc chính user đang đăng nhập
-// (chống IDOR — user không thao tác được con của người khác).
+// Kiểm tra quyền SỞ HỮU: chỉ trả hồ sơ trẻ nếu thuộc chính user đang đăng nhập
+// (chống IDOR — caregiver KHÔNG ghi được). Dùng cho POST.
 async function ownsKid(userId: string, kidId: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("ekid_kids")
-    .select("id, daily_limit_min")
+    .select("id, daily_limit_min, date_of_birth")
     .eq("id", kidId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -21,6 +21,33 @@ async function ownsKid(userId: string, kidId: string) {
 // Ngày hôm nay dạng YYYY-MM-DD (khoá ngày của bảng ekid_daily).
 function todayStr() {
   return new Date().toISOString().split("T")[0];
+}
+
+// Tính lại định vị ĐỘNG từ dữ liệu THẬT: điểm test đầu vào mới nhất + số phiên tốt gần đây.
+async function recomputePlacement(kidId: string, dob: string) {
+  const admin = createAdminClient();
+  const [{ data: entry }, { data: recent }] = await Promise.all([
+    admin
+      .from("ekid_assessments")
+      .select("kid_result")
+      .eq("kid_id", kidId)
+      .eq("step", "dau-vao")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    admin
+      .from("ekid_sessions")
+      .select("score, started_at")
+      .eq("kid_id", kidId)
+      .order("started_at", { ascending: false })
+      .limit(5),
+  ]);
+
+  const entryTestPct =
+    (entry?.kid_result as { score_pct?: number | null } | null)?.score_pct ?? null;
+  const recentGoodSessions = (recent ?? []).filter((s) => (s.score ?? 0) >= 70).length;
+
+  return resolvePlacement({ dob, entryTestPct, recentGoodSessions });
 }
 
 // GET /api/ekid/session?kid_id=... — phiên gần đây + số phút còn lại hôm nay.
@@ -62,7 +89,8 @@ export async function GET(req: Request) {
 }
 
 // POST /api/ekid/session — lưu phiên học, cộng dồn số phút đã dùng trong ngày,
-// trả về số phút đã dùng + số phút còn lại (đối chiếu giới hạn phút/ngày).
+// TÍNH LẠI định vị động (placement) từ dữ liệu thật rồi trả về phút đã dùng + còn lại.
+// CHỈ chủ hồ sơ được ghi (caregiver KHÔNG ghi).
 export async function POST(req: Request) {
   const supabase = await createClient();
   const {
@@ -121,9 +149,22 @@ export async function POST(req: Request) {
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // (I2) Định vị ĐỘNG: tính lại placement từ điểm test đầu vào mới nhất + kết quả các
+  // phiên gần đây (5 phiên mới nhất, tốt = score >= 70), rồi cập nhật hồ sơ kid.
+  const placement = await recomputePlacement(kid_id, kid.date_of_birth);
+  const { error: updErr } = await admin
+    .from("ekid_kids")
+    .update({
+      placement_age_band: placement.ageBand,
+      placement_level: placement.level,
+    })
+    .eq("id", kid_id);
+  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+
   return NextResponse.json({
     ok: true,
     session: data,
+    placement,
     minutes_used: newUsed,
     remaining: remainingMinutes(kid.daily_limit_min, newUsed),
   });

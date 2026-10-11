@@ -25,20 +25,42 @@ const PATCH_ALLOWED_FIELDS = [
   "daily_limit_min",
 ] as const;
 
-// GET /api/ekid/kids — danh sách hồ sơ trẻ của user, sắp theo thời điểm tạo.
+// GET /api/ekid/kids — danh sách hồ sơ trẻ của user (chủ sở hữu), sắp theo thời điểm tạo.
+// Mỗi kid kèm `has_entry_test` (đã làm test đầu vào chưa) và `is_owner` (chủ hồ sơ).
 export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
   const admin = createAdminClient();
-  const { data, error } = await admin
+  const { data: owned, error: ownErr } = await admin
     .from("ekid_kids")
     .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true });
+    .eq("user_id", user.id);
+  if (ownErr) return NextResponse.json({ error: ownErr.message }, { status: 500 });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ kids: data ?? [] });
+  const allKids = (owned ?? []).sort((a, b) =>
+    a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0,
+  );
+
+  // (I2) has_entry_test: kid đã có dòng assessment step='dau-vao' (đã định vị đầu vào).
+  const kidIds = allKids.map((k) => k.id);
+  let withTest = new Set<string>();
+  if (kidIds.length) {
+    const { data: asmt } = await admin
+      .from("ekid_assessments")
+      .select("kid_id")
+      .eq("step", "dau-vao")
+      .in("kid_id", kidIds);
+    withTest = new Set((asmt ?? []).map((a) => a.kid_id as string));
+  }
+
+  const kids = allKids.map((k) => ({
+    ...k,
+    has_entry_test: withTest.has(k.id),
+    is_owner: k.user_id === user.id,
+  }));
+
+  return NextResponse.json({ kids });
 }
 
 // POST /api/ekid/kids — tạo hồ sơ trẻ mới, tự tính định vị ban đầu từ ngày sinh.

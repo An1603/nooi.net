@@ -14,6 +14,8 @@ export interface EkidKidLite {
   placement_level: number | null;
   avatar_emoji?: string | null;
   daily_limit_min?: number | null;
+  has_entry_test?: boolean;
+  is_owner?: boolean;
 }
 export interface EkidLessonLite {
   id: string;

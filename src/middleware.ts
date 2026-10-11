@@ -13,6 +13,22 @@ function isEkidHost(host: string): boolean {
 }
 
 /**
+ * (I-A) Sao chép toàn bộ cookie (refresh/clear phiên) từ response gốc `src`
+ * (supabaseResponse do `updateSession` trả về) sang một `NextResponse` MỚI.
+ *
+ * Lý do: khi middleware trả `NextResponse.redirect(...)` / `NextResponse.rewrite(...)`,
+ * `updateSession` đã ghi cookie phiên (đã refresh hoặc đã clear) lên `supabaseResponse`
+ * NHƯNG response mới KHÔNG tự kế thừa các cookie đó → refresh token bị nuốt → con có
+ * thể bị đăng xuất bất ngờ trên các request bị rewrite (vd `/` → `/ekid`, `/hoc/x` →
+ * `/ekid/hoc/x`). Bọc MỌI redirect/rewrite qua helper này để phiên được giữ bền.
+ */
+function withCookies(res: NextResponse, src: NextResponse): NextResponse {
+  const cookies = src.cookies?.getAll?.() ?? [];
+  cookies.forEach((c) => res.cookies.set(c));
+  return res;
+}
+
+/**
  * Kiểm tra user hiện tại có phải tài khoản CON không (ekid_kids.child_user_id = user.id).
  * Fail-safe (C2): nếu query lỗi/ngoại lệ → trả false (coi như KHÔNG phải con) để không
  * chặn nhầm NGƯỜI LỚN ở nhánh host nooi. RLS cho con đọc dòng của mình nằm ở migration
@@ -47,7 +63,7 @@ export async function middleware(request: NextRequest) {
     // (hoặc Next metadata) yêu cầu /manifest.json — GIỮ URL /manifest.json.
     // Đặt SỚM, trước mọi kiểm tra auth, để manifest luôn public (trình duyệt tải khi cài PWA).
     if (pathname === "/manifest.json") {
-      return NextResponse.rewrite(new URL("/ekid-manifest.json", request.url));
+      return withCookies(NextResponse.rewrite(new URL("/ekid-manifest.json", request.url)), supabaseResponse);
     }
     // Truy cập trực tiếp file manifest eKid → luôn cho qua (public, kể cả chưa đăng nhập).
     if (pathname === "/ekid-manifest.json") return supabaseResponse;
@@ -56,7 +72,7 @@ export async function middleware(request: NextRequest) {
     // (GIỮ URL /login trên thanh địa chỉ, KHÔNG redirect). Vẫn dùng trang đăng nhập
     // của con — KHÔNG hiện login người lớn (M3).
     if (pathname === "/login") {
-      return NextResponse.rewrite(new URL("/ekid/login", request.url));
+      return withCookies(NextResponse.rewrite(new URL("/ekid/login", request.url)), supabaseResponse);
     }
 
     // Trang đăng nhập của con (đường dẫn gốc, back-compat) → cho qua, không cần auth
@@ -80,7 +96,7 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
-      return NextResponse.redirect(loginUrl);
+      return withCookies(NextResponse.redirect(loginUrl), supabaseResponse);
     }
 
     // Đã đăng nhập: tài khoản CON
@@ -89,11 +105,11 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith("/ekid")) return supabaseResponse;
       // Path khác trên host ekid → rewrite nội bộ sang /ekid + path, GIỮ query string (M1)
       const target = "/ekid" + (pathname === "/" ? "" : pathname) + request.nextUrl.search;
-      return NextResponse.rewrite(new URL(target, request.url));
+      return withCookies(NextResponse.rewrite(new URL(target, request.url)), supabaseResponse);
     }
 
     // Người lớn → chuyển về app người lớn
-    return NextResponse.redirect(new URL("https://nooi.net/app/ekid"));
+    return withCookies(NextResponse.redirect(new URL("https://nooi.net/app/ekid")), supabaseResponse);
   }
 
   /* ── Admin subdomain guard ── */
@@ -106,13 +122,13 @@ export async function middleware(request: NextRequest) {
 
     // Admin login page — allow without auth, redirect /login to it
     if (pathname === "/login") {
-      return NextResponse.redirect(new URL("/admin-login", request.url));
+      return withCookies(NextResponse.redirect(new URL("/admin-login", request.url)), supabaseResponse);
     }
     if (pathname === "/admin-login") return supabaseResponse;
 
     // Not logged in → show admin login
     if (!user) {
-      return NextResponse.redirect(new URL("/admin-login", request.url));
+      return withCookies(NextResponse.redirect(new URL("/admin-login", request.url)), supabaseResponse);
     }
 
     // Check admin role
@@ -123,7 +139,8 @@ export async function middleware(request: NextRequest) {
       .maybeSingle();
 
     if (!adminUser) {
-      const resp = NextResponse.redirect(new URL("/admin-login", request.url));
+      const resp = withCookies(NextResponse.redirect(new URL("/admin-login", request.url)), supabaseResponse);
+      // Đặt sau khi sao chép để CÁC LỆNH CLEAR này THẮNG (đăng xuất phiên không phải admin).
       resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.0", "", { maxAge: 0, path: "/" });
       resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.1", "", { maxAge: 0, path: "/" });
       return resp;
@@ -131,7 +148,7 @@ export async function middleware(request: NextRequest) {
 
     // Admin confirmed — allow
     if (pathname === "/") {
-      return NextResponse.redirect(new URL("/admin", request.url));
+      return withCookies(NextResponse.redirect(new URL("/admin", request.url)), supabaseResponse);
     }
 
     return supabaseResponse;
@@ -140,20 +157,20 @@ export async function middleware(request: NextRequest) {
   /* ── Main site guard ── */
   // Con không vào app người lớn → chuyển sang phân hệ eKid
   if (user && (await isChildUser(supabase, user.id))) {
-    return NextResponse.redirect(new URL("https://ekid.nooi.net"));
+    return withCookies(NextResponse.redirect(new URL("https://ekid.nooi.net")), supabaseResponse);
   }
 
   if (pathname.startsWith("/admin")) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
   }
   if (pathname.startsWith("/admin-login")) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
   }
 
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
     // Nếu đã login mà vào login/signup → redirect về dashboard
     if ((pathname === "/login" || pathname === "/signup") && user) {
-      return NextResponse.redirect(new URL("/app", request.url));
+      return withCookies(NextResponse.redirect(new URL("/app", request.url)), supabaseResponse);
     }
     return supabaseResponse;
   }
@@ -162,7 +179,7 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     // Prevent caching of protected pages
-    const resp = NextResponse.redirect(loginUrl);
+    const resp = withCookies(NextResponse.redirect(loginUrl), supabaseResponse);
     resp.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     resp.headers.set("Pragma", "no-cache");
     resp.headers.set("Expires", "0");

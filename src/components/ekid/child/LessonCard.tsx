@@ -15,7 +15,7 @@ function stateStyle(status: string): string {
 export function LessonCard({ lesson }: { lesson: LibraryLesson }) {
   return (
     <Link
-      href={`/ekid/hoc/${lesson.id}`}
+      href={`/hoc/${lesson.id}`}
       className={`group flex flex-col items-center gap-2 rounded-3xl border-2 p-4 text-center shadow-lg shadow-sky-200/50 transition-transform hover:scale-[1.03] active:scale-95 ${stateStyle(
         lesson.progress.status,
       )}`}

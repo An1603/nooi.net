@@ -116,7 +116,7 @@ export default function EkidLessonPage() {
         <p className="text-xl font-bold text-[#e15a3a]">
           {error ?? "Không tìm thấy bài học"}
         </p>
-        <Link href="/ekid" className={`mt-4 ${KID.btnPrimary}`}>
+        <Link href="/" className={`mt-4 ${KID.btnPrimary}`}>
           ⬅ Về thư viện
         </Link>
       </div>
@@ -130,7 +130,7 @@ export default function EkidLessonPage() {
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className={KID.h1}>{lesson.core_topic}</h1>
-        <Link href="/ekid" className={KID.btnGhost}>
+        <Link href="/" className={KID.btnGhost}>
           ⬅ Thư viện
         </Link>
       </div>
@@ -151,7 +151,7 @@ export default function EkidLessonPage() {
 
       <EkidVoiceSession kid={kid} lesson={lesson} remaining={remaining} />
 
-      <Link href={`/ekid/thi/${lessonId}`} className={`self-center ${KID.btnHero}`}>
+      <Link href={`/thi/${lessonId}`} className={`self-center ${KID.btnHero}`}>
         Làm bài thi →
       </Link>
     </div>

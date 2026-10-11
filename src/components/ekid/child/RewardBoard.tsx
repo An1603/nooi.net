@@ -149,7 +149,7 @@ export function RewardBoard() {
         )}
       </section>
 
-      <Link href="/ekid" className={`self-center ${KID.btnPrimary}`}>
+      <Link href="/" className={`self-center ${KID.btnPrimary}`}>
         ⬅ Về thư viện
       </Link>
     </div>

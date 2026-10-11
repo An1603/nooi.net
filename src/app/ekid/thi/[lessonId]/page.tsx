@@ -62,7 +62,7 @@ export default function EkidQuizPage() {
     return (
       <div className="mx-auto max-w-md rounded-3xl border-2 border-[#ff7a59]/50 bg-white/85 p-6 text-center shadow-lg shadow-sky-200/60">
         <p className="text-xl font-bold text-[#e15a3a]">{error ?? "Không tìm thấy bài học"}</p>
-        <Link href="/ekid" className={`mt-4 ${KID.btnPrimary}`}>
+        <Link href="/" className={`mt-4 ${KID.btnPrimary}`}>
           ⬅ Về thư viện
         </Link>
       </div>
@@ -75,7 +75,7 @@ export default function EkidQuizPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className={KID.h1}>📝 {lesson.title}</h1>
-        <Link href={`/ekid/hoc/${lessonId}`} className={KID.btnGhost}>
+        <Link href={`/hoc/${lessonId}`} className={KID.btnGhost}>
           ⬅ Học lại
         </Link>
       </div>

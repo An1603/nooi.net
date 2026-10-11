@@ -98,7 +98,7 @@ export default function EkidLibraryPage() {
           </span>
           Thư viện của {kid?.name ?? "bé"}
         </h1>
-        <Link href="/ekid/thuong" className={KID.btnTeal}>
+        <Link href="/thuong" className={KID.btnTeal}>
           🏆 Thưởng
         </Link>
       </div>

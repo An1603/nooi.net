@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // Mock updateSession để không cần Supabase thật / mạng.
 const updateSessionMock = vi.fn();
@@ -127,5 +127,70 @@ describe("middleware eKid host — (C) API passthrough", () => {
     const res = await middleware(makeReq("/ekid/thi/abc"));
     expect(rewriteTarget(res)).toBeNull();
     expect(res.status).toBe(200);
+  });
+});
+
+describe("middleware — (I-A) sao chép cookie phiên sang response mới", () => {
+  const AUTH_COOKIE = "sb-ekid-auth-token";
+
+  function supabaseRespWithCookie(value = "refreshed") {
+    const r = NextResponse.next();
+    r.cookies.set(AUTH_COOKIE, value, { path: "/" });
+    return r;
+  }
+
+  it("REWRITE path của con (/hoc/abc → /ekid/hoc/abc) vẫn mang cookie refresh", async () => {
+    updateSessionMock.mockResolvedValue({
+      supabase: fakeSupabase([{ id: "kid1" }]),
+      supabaseResponse: supabaseRespWithCookie("tok-rw"),
+      user: { id: "child-user-1" },
+    });
+
+    const res = await middleware(makeReq("/hoc/abc"));
+    expect(rewriteTarget(res)).not.toBeNull();
+    expect(res.cookies.get(AUTH_COOKIE)?.value).toBe("tok-rw");
+  });
+
+  it("REWRITE '/' của con (→ /ekid) vẫn mang cookie refresh", async () => {
+    updateSessionMock.mockResolvedValue({
+      supabase: fakeSupabase([{ id: "kid1" }]),
+      supabaseResponse: supabaseRespWithCookie("tok-root"),
+      user: { id: "child-user-1" },
+    });
+
+    const res = await middleware(makeReq("/"));
+    const target = rewriteTarget(res);
+    expect(target).not.toBeNull();
+    expect(new URL(target!).pathname).toBe("/ekid");
+    expect(res.cookies.get(AUTH_COOKIE)?.value).toBe("tok-root");
+  });
+
+  it("REDIRECT (ekid host, chưa đăng nhập) vẫn mang cookie phiên", async () => {
+    updateSessionMock.mockResolvedValue({
+      supabase: fakeSupabase([]),
+      supabaseResponse: supabaseRespWithCookie("tok-clear"),
+      user: null,
+    });
+
+    const res = await middleware(makeReq("/app/dashboard"));
+    expect(res.status).toBe(307);
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/login");
+    expect(res.cookies.get(AUTH_COOKIE)?.value).toBe("tok-clear");
+  });
+
+  it("nhánh admin không phải admin: lệnh CLEAR cookie thắng cookie sao chép", async () => {
+    const src = NextResponse.next();
+    src.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.0", "stale", { path: "/" });
+    updateSessionMock.mockResolvedValue({
+      supabase: fakeSupabase([]), // không phải admin (admin_users trống)
+      supabaseResponse: src,
+      user: { id: "not-admin" },
+    });
+
+    const res = await middleware(makeReq("/", "admin.nooi.net"));
+    expect(res.status).toBe(307);
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/admin-login");
+    // Clear đặt SAU khi sao chép → giá trị rỗng, không bị ghi đè bởi "stale".
+    expect(res.cookies.get("sb-gsnuqrutiauhnsacgzym-auth-token.0")?.value).toBe("");
   });
 });

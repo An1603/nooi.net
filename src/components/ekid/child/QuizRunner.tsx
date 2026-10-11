@@ -47,7 +47,7 @@ export function QuizRunner({
         <p className="text-xl font-bold text-[#3b2a20]">
           Bài này chưa có câu hỏi nào. Bé quay lại thư viện nhé!
         </p>
-        <Link href="/ekid" className={`mt-4 ${KID.btnPrimary}`}>
+        <Link href="/" className={`mt-4 ${KID.btnPrimary}`}>
           ⬅ Về thư viện
         </Link>
       </div>
@@ -132,7 +132,7 @@ export function QuizRunner({
           <button onClick={retry} className={KID.btnGhost}>
             🔁 Thi lại
           </button>
-          <Link href="/ekid" className={KID.btnPrimary}>
+          <Link href="/" className={KID.btnPrimary}>
             🏠 Về thư viện
           </Link>
         </div>

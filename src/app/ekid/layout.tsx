@@ -60,7 +60,7 @@ export default async function EkidLayout({ children }: { children: ReactNode }) 
     <div className={`${KID.page} ekid-scope`}>
       <header className="flex items-center justify-between gap-2 border-b-2 border-[#bae6fd] bg-white/70 px-3 py-3 backdrop-blur">
         <Link
-          href="/ekid"
+          href="/"
           className="flex items-center gap-1.5 text-2xl font-extrabold text-[#ff7a59]"
         >
           <span aria-hidden>🎓</span>

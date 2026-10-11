@@ -5,6 +5,7 @@ import { KidAvatar } from "@/components/ekid/KidAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { BAND_LABEL, type AgeBand } from "@/lib/ekid/ekid-system";
 
 // Tên đăng nhập hợp lệ: 3–20 ký tự trong [a-z0-9._] — khớp isValidUsername() phía server.
@@ -45,6 +46,9 @@ export default function EkidPage() {
   const [fUsername, setFUsername] = useState("");
   const [fPassword, setFPassword] = useState("");
   const [fEmoji, setFEmoji] = useState("🦊");
+  const [fBirthTime, setFBirthTime] = useState("");
+  const [fBirthPlace, setFBirthPlace] = useState("");
+  const [fGender, setFGender] = useState("");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [createdUsername, setCreatedUsername] = useState<string | null>(null);
@@ -103,6 +107,9 @@ export default function EkidPage() {
           username,
           password: fPassword,
           avatar_emoji: fEmoji || "🦊",
+          birth_time: fBirthTime || null,
+          gender: fGender || null,
+          birth_place: fBirthPlace.trim() || null,
         }),
       });
       const d = await r.json().catch(() => null);
@@ -131,6 +138,9 @@ export default function EkidPage() {
     setFUsername("");
     setFPassword("");
     setFEmoji("🦊");
+    setFBirthTime("");
+    setFBirthPlace("");
+    setFGender("");
     setFormError(null);
     setCreatedUsername(null);
   }
@@ -226,6 +236,37 @@ export default function EkidPage() {
                   onChange={(e) => setFEmoji(e.target.value)}
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="kid-birthtime">Giờ sinh</Label>
+                <Input
+                  id="kid-birthtime"
+                  type="time"
+                  value={fBirthTime}
+                  onChange={(e) => setFBirthTime(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="kid-gender">Giới tính</Label>
+                <Select
+                  id="kid-gender"
+                  value={fGender}
+                  onChange={(e) => setFGender(e.target.value)}
+                >
+                  <option value="">Chưa đặt</option>
+                  <option value="nam">Nam</option>
+                  <option value="nu">Nữ</option>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="kid-birthplace">Nơi sinh</Label>
+                <Input
+                  id="kid-birthplace"
+                  type="text"
+                  placeholder="VD: Hà Nội"
+                  value={fBirthPlace}
+                  onChange={(e) => setFBirthPlace(e.target.value)}
+                />
+              </div>
             </div>
 
             {formError && (
@@ -247,7 +288,8 @@ export default function EkidPage() {
 
             <p className="text-[11px] text-muted-foreground">
               Tên đăng nhập 3–20 ký tự (chữ thường a–z, số, dấu chấm, gạch dưới). Con sẽ dùng tên đăng nhập + mật khẩu
-              này để đăng nhập tại ekid.nooi.net.
+              này để đăng nhập tại ekid.nooi.net. Giờ sinh, giới tính và nơi sinh là tuỳ chọn — phục vụ xem tử vi/chiêm
+              tinh cho con về sau.
             </p>
           </div>
         </section>

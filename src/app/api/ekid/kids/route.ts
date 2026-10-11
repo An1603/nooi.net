@@ -10,6 +10,9 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// Định dạng giờ sinh "HH:MM" (00:00–23:59) — dùng chung cho validate POST tạo hồ sơ.
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 // Lấy user hiện tại từ phiên đăng nhập (client server cần await).
 async function currentUser() {
   const supabase = await createClient();
@@ -91,7 +94,8 @@ export async function GET() {
 }
 
 // POST /api/ekid/kids — tạo hồ sơ trẻ + tài khoản đăng nhập (auth user con).
-// Nhận { name, date_of_birth, username, password, avatar_emoji? }.
+// Nhận { name, date_of_birth, username, password, avatar_emoji?,
+//         birth_time?, gender?, birth_place? } (3 trường cuối tuỳ chọn).
 // Tạo auth user với email nội bộ childEmail(username); nếu insert hồ sơ lỗi thì
 // xoá auth user vừa tạo (rollback) để tránh tài khoản mồ côi.
 export async function POST(req: Request) {
@@ -99,15 +103,27 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
   const body = (await req.json()) ?? {};
-  const { name, date_of_birth, username, password, avatar_emoji, favorite_voice } =
-    body as {
-      name?: string;
-      date_of_birth?: string;
-      username?: string;
-      password?: string;
-      avatar_emoji?: string;
-      favorite_voice?: string | null;
-    };
+  const {
+    name,
+    date_of_birth,
+    username,
+    password,
+    avatar_emoji,
+    favorite_voice,
+    birth_time,
+    gender,
+    birth_place,
+  } = body as {
+    name?: string;
+    date_of_birth?: string;
+    username?: string;
+    password?: string;
+    avatar_emoji?: string;
+    favorite_voice?: string | null;
+    birth_time?: string | null;
+    gender?: string | null;
+    birth_place?: string | null;
+  };
 
   if (!name || !date_of_birth || !username || !password) {
     return NextResponse.json(
@@ -120,6 +136,20 @@ export async function POST(req: Request) {
       { error: "Mật khẩu phải có ít nhất 6 ký tự" },
       { status: 400 },
     );
+  }
+
+  // Giới/giờ/nơi sinh là tuỳ chọn (phục vụ tử vi/chiêm tinh về sau) — validate khi có.
+  if (birth_time != null && (typeof birth_time !== "string" || !TIME_RE.test(birth_time))) {
+    return NextResponse.json(
+      { error: "Giờ sinh không hợp lệ (định dạng HH:MM)" },
+      { status: 400 },
+    );
+  }
+  if (gender != null && gender !== "nam" && gender !== "nu") {
+    return NextResponse.json({ error: "Giới tính không hợp lệ" }, { status: 400 });
+  }
+  if (birth_place != null && typeof birth_place !== "string") {
+    return NextResponse.json({ error: "Nơi sinh không hợp lệ" }, { status: 400 });
   }
 
   const normalized = normalizeUsername(username);
@@ -170,6 +200,9 @@ export async function POST(req: Request) {
       date_of_birth,
       avatar_emoji: avatar_emoji || "🦊",
       favorite_voice: favorite_voice || null,
+      birth_time: birth_time ?? null,
+      gender: gender ?? null,
+      birth_place: birth_place ? birth_place.trim() || null : null,
       placement_age_band: placement.ageBand,
       placement_level: placement.level,
     })

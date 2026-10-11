@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { ResetChildPassword } from "@/components/ekid/ResetChildPassword";
+import { SetChildUsername } from "@/components/ekid/SetChildUsername";
 import { DAILY_LIMIT_MIN, DAILY_LIMIT_MAX } from "@/lib/ekid/ekid-system";
 import type { ConsoleKid } from "./types";
 
@@ -197,13 +198,26 @@ export function AccountTab({
             <Label htmlFor="acc-birthplace">Nơi sinh</Label>
             <Input id="acc-birthplace" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} disabled={!isOwner} />
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="acc-username">Tên đăng nhập của con</Label>
-            <Input id="acc-username" value={kid.username ?? ""} readOnly disabled />
-            <p className="text-[11px] text-muted-foreground">
-              Con dùng tên đăng nhập này để vào ekid.nooi.net. Không thể sửa.
-            </p>
-          </div>
+          {kid.username ? (
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="acc-username">Tên đăng nhập của con</Label>
+              <Input id="acc-username" value={kid.username} readOnly disabled />
+              <p className="text-[11px] text-muted-foreground">
+                Con dùng tên đăng nhập này để vào ekid.nooi.net. Không thể sửa.
+              </p>
+            </div>
+          ) : isOwner ? (
+            <div className="sm:col-span-2">
+              <SetChildUsername kidId={kid.id} kidName={kid.name} onChanged={onChanged} />
+            </div>
+          ) : (
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Tên đăng nhập của con</Label>
+              <p className="text-[11px] text-muted-foreground">
+                Hồ sơ này chưa có tài khoản đăng nhập. Chỉ chủ hồ sơ mới đặt được.
+              </p>
+            </div>
+          )}
         </div>
 
         {msg && (
@@ -228,7 +242,7 @@ export function AccountTab({
         <section className="rounded-2xl border border-border bg-card/70 p-3 space-y-3">
           <h2 className="text-sm font-semibold text-foreground">Bảo mật &amp; trạng thái</h2>
 
-          <ResetChildPassword kidId={kid.id} kidName={kid.name} />
+          {kid.username && <ResetChildPassword kidId={kid.id} kidName={kid.name} />}
 
           <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3">
             <Button

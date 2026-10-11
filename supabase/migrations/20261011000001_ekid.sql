@@ -80,48 +80,68 @@ ALTER TABLE public.ekid_lessons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ekid_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ekid_daily ENABLE ROW LEVEL SECURITY;
 
+-- ⚠️ SECURITY DEFINER helpers: phá đệ quy RLS (policy không subquery trực tiếp sang bảng khác).
+-- Hai hàm này chạy với quyền owner → bypass RLS của bảng được query bên trong.
+CREATE OR REPLACE FUNCTION public.ekid_owns_kid(p_kid uuid)
+RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM public.ekid_kids k WHERE k.id = p_kid AND k.user_id = auth.uid());
+$$;
+
+CREATE OR REPLACE FUNCTION public.ekid_is_caregiver(p_kid uuid)
+RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM public.ekid_caregivers c
+                 WHERE c.kid_id = p_kid AND c.caregiver_user_id = auth.uid() AND c.status = 'linked');
+$$;
+
+GRANT EXECUTE ON FUNCTION public.ekid_owns_kid(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.ekid_is_caregiver(uuid) TO authenticated;
+
+-- ekid_kids: chủ sở hữu toàn quyền; caregiver đã linked CHỈ đọc
 DROP POLICY IF EXISTS "ekid_kids_owner" ON public.ekid_kids;
 CREATE POLICY "ekid_kids_owner" ON public.ekid_kids
   FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "ekid_kids_caregiver_read" ON public.ekid_kids;
+CREATE POLICY "ekid_kids_caregiver_read" ON public.ekid_kids
+  FOR SELECT TO authenticated USING (public.ekid_is_caregiver(id));
+
+-- ekid_lessons: mọi authenticated đọc
 DROP POLICY IF EXISTS "ekid_lessons_read" ON public.ekid_lessons;
 CREATE POLICY "ekid_lessons_read" ON public.ekid_lessons
   FOR SELECT TO authenticated USING (true);
 
--- caregiver đã linked đọc được dữ liệu con
-DROP POLICY IF EXISTS "ekid_kids_caregiver_read" ON public.ekid_kids;
-CREATE POLICY "ekid_kids_caregiver_read" ON public.ekid_kids
-  FOR SELECT TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.ekid_caregivers c
-            WHERE c.kid_id = ekid_kids.id AND c.caregiver_user_id = auth.uid() AND c.status = 'linked')
-  );
+-- ekid_sessions: chủ toàn quyền; caregiver CHỈ đọc
 DROP POLICY IF EXISTS "ekid_sessions_access" ON public.ekid_sessions;
-CREATE POLICY "ekid_sessions_access" ON public.ekid_sessions
-  FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.ekid_kids k WHERE k.id = ekid_sessions.kid_id AND k.user_id = auth.uid())
-    OR EXISTS (SELECT 1 FROM public.ekid_caregivers c
-               WHERE c.kid_id = ekid_sessions.kid_id AND c.caregiver_user_id = auth.uid() AND c.status = 'linked')
-  );
+DROP POLICY IF EXISTS "ekid_sessions_owner" ON public.ekid_sessions;
+DROP POLICY IF EXISTS "ekid_sessions_caregiver_read" ON public.ekid_sessions;
+CREATE POLICY "ekid_sessions_owner" ON public.ekid_sessions
+  FOR ALL TO authenticated USING (public.ekid_owns_kid(kid_id)) WITH CHECK (public.ekid_owns_kid(kid_id));
+CREATE POLICY "ekid_sessions_caregiver_read" ON public.ekid_sessions
+  FOR SELECT TO authenticated USING (public.ekid_is_caregiver(kid_id));
+
+-- ekid_daily: chủ toàn quyền; caregiver CHỈ đọc
 DROP POLICY IF EXISTS "ekid_daily_access" ON public.ekid_daily;
-CREATE POLICY "ekid_daily_access" ON public.ekid_daily
-  FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.ekid_kids k WHERE k.id = ekid_daily.kid_id AND k.user_id = auth.uid())
-    OR EXISTS (SELECT 1 FROM public.ekid_caregivers c
-               WHERE c.kid_id = ekid_daily.kid_id AND c.caregiver_user_id = auth.uid() AND c.status = 'linked')
-  );
+DROP POLICY IF EXISTS "ekid_daily_owner" ON public.ekid_daily;
+DROP POLICY IF EXISTS "ekid_daily_caregiver_read" ON public.ekid_daily;
+CREATE POLICY "ekid_daily_owner" ON public.ekid_daily
+  FOR ALL TO authenticated USING (public.ekid_owns_kid(kid_id)) WITH CHECK (public.ekid_owns_kid(kid_id));
+CREATE POLICY "ekid_daily_caregiver_read" ON public.ekid_daily
+  FOR SELECT TO authenticated USING (public.ekid_is_caregiver(kid_id));
+
+-- ekid_assessments: chủ toàn quyền; caregiver CHỈ đọc
 DROP POLICY IF EXISTS "ekid_assessments_access" ON public.ekid_assessments;
-CREATE POLICY "ekid_assessments_access" ON public.ekid_assessments
-  FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.ekid_kids k WHERE k.id = ekid_assessments.kid_id AND k.user_id = auth.uid())
-    OR EXISTS (SELECT 1 FROM public.ekid_caregivers c
-               WHERE c.kid_id = ekid_assessments.kid_id AND c.caregiver_user_id = auth.uid() AND c.status = 'linked')
-  );
--- caregivers: trẻ (chủ) và người thân liên quan đọc; ghi qua admin client
+DROP POLICY IF EXISTS "ekid_assessments_owner" ON public.ekid_assessments;
+DROP POLICY IF EXISTS "ekid_assessments_caregiver_read" ON public.ekid_assessments;
+CREATE POLICY "ekid_assessments_owner" ON public.ekid_assessments
+  FOR ALL TO authenticated USING (public.ekid_owns_kid(kid_id)) WITH CHECK (public.ekid_owns_kid(kid_id));
+CREATE POLICY "ekid_assessments_caregiver_read" ON public.ekid_assessments
+  FOR SELECT TO authenticated USING (public.ekid_is_caregiver(kid_id));
+
+-- ekid_caregivers: chủ toàn quyền (ghi qua admin client); người thân thấy dòng của mình
 DROP POLICY IF EXISTS "ekid_caregivers_owner" ON public.ekid_caregivers;
 CREATE POLICY "ekid_caregivers_owner" ON public.ekid_caregivers
   FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.ekid_kids k WHERE k.id = ekid_caregivers.kid_id AND k.user_id = auth.uid())
-    OR caregiver_user_id = auth.uid()
+    public.ekid_owns_kid(kid_id) OR caregiver_user_id = auth.uid()
   ) WITH CHECK (
-    EXISTS (SELECT 1 FROM public.ekid_kids k WHERE k.id = ekid_caregivers.kid_id AND k.user_id = auth.uid())
+    public.ekid_owns_kid(kid_id)
   );

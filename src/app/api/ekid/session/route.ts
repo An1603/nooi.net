@@ -5,29 +5,33 @@ import { remainingMinutes, resolvePlacement } from "@/lib/ekid/ekid-system";
 
 export const dynamic = "force-dynamic";
 
-// Kiểm tra quyền SỞ HỮU: chỉ trả hồ sơ trẻ nếu thuộc chính user đang đăng nhập
-// (chống IDOR — caregiver KHÔNG ghi được). Dùng cho POST.
-async function ownsKid(userId: string, kidId: string) {
+// Kiểm tra quyền GHI: chủ hồ sơ (cha/mẹ) HOẶC chính TÀI KHOẢN CON của hồ sơ đó.
+// (I-C1) Con đăng nhập và ghi phiên của CHÍNH mình — để ekid_daily cộng phút và
+// áp hạn mức ngày (spec §8). Caregiver KHÔNG ghi được (chống IDOR).
+async function writableKid(userId: string, kidId: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("ekid_kids")
-    .select("id, daily_limit_min, date_of_birth")
+    .select("id, daily_limit_min, date_of_birth, user_id, child_user_id")
     .eq("id", kidId)
-    .eq("user_id", userId)
     .maybeSingle();
-  return data;
+  if (!data) return null;
+  if (data.user_id === userId || data.child_user_id === userId) return data;
+  return null;
 }
 
-// Quyền ĐỌC: chủ hồ sơ HOẶC caregiver đã liên kết (status='linked'). Dùng cho GET.
+// Quyền ĐỌC: chủ hồ sơ HOẶC con của hồ sơ (tài khoản của bé) HOẶC caregiver đã
+// liên kết (status='linked'). Dùng cho GET.
 async function readableKid(userId: string, kidId: string) {
   const admin = createAdminClient();
   const { data: kid } = await admin
     .from("ekid_kids")
-    .select("id, daily_limit_min, user_id")
+    .select("id, daily_limit_min, user_id, child_user_id")
     .eq("id", kidId)
     .maybeSingle();
   if (!kid) return null;
-  if (kid.user_id === userId) return kid;
+  // (I2) Chủ hồ sơ hoặc chính tài khoản con → đọc được phiên của bé.
+  if (kid.user_id === userId || kid.child_user_id === userId) return kid;
 
   const { data: link } = await admin
     .from("ekid_caregivers")
@@ -112,7 +116,7 @@ export async function GET(req: Request) {
 
 // POST /api/ekid/session — lưu phiên học, cộng dồn số phút đã dùng trong ngày,
 // TÍNH LẠI định vị động (placement) từ dữ liệu thật rồi trả về phút đã dùng + còn lại.
-// CHỈ chủ hồ sơ được ghi (caregiver KHÔNG ghi).
+// Cho phép chủ hồ sơ HOẶC chính tài khoản con ghi (caregiver KHÔNG ghi).
 export async function POST(req: Request) {
   const supabase = await createClient();
   const {
@@ -131,7 +135,7 @@ export async function POST(req: Request) {
   };
   if (!kid_id) return NextResponse.json({ error: "Thiếu kid_id" }, { status: 400 });
 
-  const kid = await ownsKid(user.id, kid_id);
+  const kid = await writableKid(user.id, kid_id);
   if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
   const admin = createAdminClient();
@@ -170,6 +174,25 @@ export async function POST(req: Request) {
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // (I-C1) Khi con vừa học xong một bài có lesson_id: đánh dấu tiến độ 'da-hoc'
+  // — nhưng KHÔNG hạ cấp bài đã 'da-thi' xuống.
+  if (lesson_id) {
+    const { data: prog } = await admin
+      .from("ekid_progress")
+      .select("status")
+      .eq("kid_id", kid_id)
+      .eq("lesson_id", lesson_id)
+      .maybeSingle();
+    if (!prog || prog.status === "chua-hoc") {
+      await admin
+        .from("ekid_progress")
+        .upsert(
+          { kid_id, lesson_id, status: "da-hoc" },
+          { onConflict: "kid_id,lesson_id" },
+        );
+    }
+  }
 
   // (I2) Định vị ĐỘNG: tính lại placement từ điểm test đầu vào mới nhất + kết quả các
   // phiên gần đây (5 phiên mới nhất, tốt = score >= 70), rồi cập nhật hồ sơ kid.

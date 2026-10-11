@@ -1,14 +1,89 @@
 import { NextResponse, type NextRequest } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { updateSession } from "@/lib/supabase/middleware";
 
 const publicRoutes = ["/", "/login", "/signup", "/gallery", "/auth/callback", "/auth/confirm", "/auth/reset", "/auth/update-password", "/api/migrate", "/u"];
 
 const ADMIN_HOST = "admin.nooi.net";
+const EKID_HOST = "ekid.nooi.net";
+
+/** Host riêng cho phân hệ eKid của bé. */
+function isEkidHost(host: string): boolean {
+  return host === EKID_HOST;
+}
+
+/**
+ * Kiểm tra user hiện tại có phải tài khoản CON không (ekid_kids.child_user_id = user.id).
+ * Fail-safe (C2): nếu query lỗi/ngoại lệ → trả false (coi như KHÔNG phải con) để không
+ * chặn nhầm NGƯỜI LỚN ở nhánh host nooi. RLS cho con đọc dòng của mình nằm ở migration
+ * 20261011000011_ekid_child_read.sql.
+ */
+async function isChildUser(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from("ekid_kids")
+      .select("id")
+      .eq("child_user_id", userId)
+      .maybeSingle();
+    if (error) {
+      console.error("[middleware] isChildUser query lỗi:", error.message);
+      return false;
+    }
+    return !!data;
+  } catch (err) {
+    console.error("[middleware] isChildUser ngoại lệ:", err);
+    return false;
+  }
+}
 
 export async function middleware(request: NextRequest) {
   const { supabase, supabaseResponse, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
+
+  /* ── eKid subdomain guard (đặt trước admin để host ekid không bị admin/main chặn) ── */
+  if (isEkidHost(host)) {
+    // /login trên host ekid → luôn dùng trang đăng nhập của con (KHÔNG hiện login người lớn) (M3)
+    if (pathname === "/login") {
+      return NextResponse.redirect(new URL("/ekid/login", request.url));
+    }
+
+    // Trang đăng nhập của con → cho qua, không cần auth (anonymous OK)
+    if (pathname === "/ekid/login") return supabaseResponse;
+
+    // (C) Passthrough CHỈ những /api mà phân hệ con thực sự cần, KHÔNG rewrite
+    // sang /ekid+path (nếu không sẽ thành /ekid/api/... → 404):
+    //   - /api/ekid/*  → API riêng của phân hệ con
+    //   - /api/voice/* → endpoint token giọng nói (EkidVoiceSession → VoiceAssistant
+    //                    → useVoiceAssistant gọi /api/voice/token)
+    // Mọi /api KHÁC trên host ekid (ví dụ /api/ai-mentor/chat, /api/upload/avatar,
+    // /api/ref-code/change, /api/telegram/send — route của app người lớn) KHÔNG
+    // được passthrough: chúng rơi vào nhánh dưới (redirect login hoặc rewrite
+    // /ekid/... → 404) nên bị chặn, không lộ trên ekid.nooi.net.
+    if (pathname.startsWith("/api/ekid") || pathname.startsWith("/api/voice")) {
+      return supabaseResponse;
+    }
+
+    // Chưa đăng nhập → về /ekid/login (giữ nguyên path + query để quay lại sau login)
+    // LƯU Ý (I1): KHÔNG cho qua /ekid/* trước khi kiểm auth như bản cũ.
+    if (!user) {
+      const loginUrl = new URL("/ekid/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Đã đăng nhập: tài khoản CON
+    if (await isChildUser(supabase, user.id)) {
+      // Đã đúng path /ekid/* (đã qua auth) → để nguyên
+      if (pathname.startsWith("/ekid")) return supabaseResponse;
+      // Path khác trên host ekid → rewrite nội bộ sang /ekid + path, GIỮ query string (M1)
+      const target = "/ekid" + (pathname === "/" ? "" : pathname) + request.nextUrl.search;
+      return NextResponse.rewrite(new URL(target, request.url));
+    }
+
+    // Người lớn → chuyển về app người lớn
+    return NextResponse.redirect(new URL("https://nooi.net/app/ekid"));
+  }
 
   /* ── Admin subdomain guard ── */
   if (host === ADMIN_HOST) {
@@ -52,6 +127,11 @@ export async function middleware(request: NextRequest) {
   }
 
   /* ── Main site guard ── */
+  // Con không vào app người lớn → chuyển sang phân hệ eKid
+  if (user && (await isChildUser(supabase, user.id))) {
+    return NextResponse.redirect(new URL("https://ekid.nooi.net"));
+  }
+
   if (pathname.startsWith("/admin")) {
     return NextResponse.redirect(new URL("/", request.url));
   }

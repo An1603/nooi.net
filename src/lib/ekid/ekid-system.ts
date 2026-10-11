@@ -96,6 +96,51 @@ export function normalizeLinkCode(raw: string): string {
   return raw.trim().toUpperCase();
 }
 
+// ---------------------------------------------------------------------------
+// eKid v2 — username, email nội bộ cho bé, điểm & huy hiệu
+// ---------------------------------------------------------------------------
+
+/** Domain email nội bộ cấp cho tài khoản học sinh eKid. */
+export const CHILD_EMAIL_DOMAIN = "ekid.nooi.net";
+
+/** Chuẩn hoá tên đăng nhập: bỏ khoảng trắng hai đầu và chuyển về chữ thường. */
+export function normalizeUsername(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+/**
+ * Kiểm tra tên đăng nhập hợp lệ: 3–20 ký tự thuộc [a-z0-9._].
+ * Kiểm tra trên chuỗi gốc (không tự chuẩn hoá) — chữ hoa/khoảng trắng bị coi là không hợp lệ.
+ * Dùng normalizeUsername() trước nếu cần chuẩn hoá.
+ */
+export function isValidUsername(u: string): boolean {
+  return /^[a-z0-9._]{3,20}$/.test(u);
+}
+
+/** Ghép email nội bộ cho bé từ tên đăng nhập. */
+export function childEmail(username: string): string {
+  return `${normalizeUsername(username)}@${CHILD_EMAIL_DOMAIN}`;
+}
+
+/** Quy đổi điểm bài (thang 100) sang điểm thưởng: 10 điểm bài = 1 điểm, tối thiểu 0. */
+export function pointsForScore(score: number): number {
+  return Math.max(0, Math.round((Number.isFinite(score) ? score : 0) / 10));
+}
+
+const BADGE_MILESTONES = [
+  { at: 3, code: "hoc-sinh-cham-chi", label: "Chăm chỉ (3 bài đạt)" },
+  { at: 5, code: "hoc-sinh-gioi", label: "Giỏi giang (5 bài đạt)" },
+  { at: 10, code: "hoc-sinh-xuat-sac", label: "Xuất sắc (10 bài đạt)" },
+];
+
+/** Danh sách huy hiệu đạt được theo số bài đã hoàn thành (mốc 3/5/10). */
+export function badgesForProgress(passedLessons: number): { code: string; label: string }[] {
+  return BADGE_MILESTONES.filter((m) => passedLessons >= m.at).map((m) => ({
+    code: m.code,
+    label: m.label,
+  }));
+}
+
 export function buildSystemInstruction(params: {
   kidName: string;
   placement: Placement;

@@ -26,14 +26,15 @@ export interface KidDetail {
   is_admin_caregiver: boolean;
 }
 
-/** Bốn tab của console mỗi con. */
-export const CONSOLE_TABS = ["account", "relatives", "report", "settings"] as const;
+/** Năm tab của console mỗi con. */
+export const CONSOLE_TABS = ["account", "relatives", "destiny", "report", "settings"] as const;
 export type ConsoleTab = (typeof CONSOLE_TABS)[number];
 
 /** Nhãn hiển thị cho từng tab. */
 export const TAB_LABEL: Record<ConsoleTab, string> = {
   account: "Tài khoản",
   relatives: "Người thân",
+  destiny: "Bản đồ số mệnh",
   report: "Báo cáo",
   settings: "Cài đặt",
 };

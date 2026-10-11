@@ -5,6 +5,7 @@ import { KidAvatar } from "@/components/ekid/KidAvatar";
 import { BAND_LABEL, type AgeBand } from "@/lib/ekid/ekid-system";
 import { AccountTab } from "./AccountTab";
 import { RelativesTab } from "./RelativesTab";
+import { DestinyTab } from "./DestinyTab";
 import { ReportTab } from "./ReportTab";
 import { SettingsTab } from "./SettingsTab";
 import { CONSOLE_TABS, TAB_LABEL, type ConsoleTab, type KidDetail, type ConsoleKid } from "./types";
@@ -41,8 +42,8 @@ function AccessError({ status, message }: { status: number | null; message: stri
 }
 
 /**
- * Console của một con: tải chi tiết hồ sơ, hiện header + 4 tab (Tài khoản / Người thân /
- * Báo cáo / Cài đặt). Tab hiện tại do server truyền xuống qua query `?tab=`.
+ * Console của một con: tải chi tiết hồ sơ, hiện header + 5 tab (Tài khoản / Người thân /
+ * Bản đồ số mệnh / Báo cáo / Cài đặt). Tab hiện tại do server truyền xuống qua query `?tab=`.
  */
 export function KidConsole({ kidId, tab }: { kidId: string; tab: ConsoleTab }) {
   const [detail, setDetail] = useState<KidDetail | null>(null);
@@ -147,6 +148,8 @@ export function KidConsole({ kidId, tab }: { kidId: string; tab: ConsoleTab }) {
         <AccountTab kid={kid} isOwner={detail.is_owner} canEdit={canEdit} onChanged={load} />
       ) : tab === "relatives" ? (
         <RelativesTab kidId={kidId} isOwner={detail.is_owner} />
+      ) : tab === "destiny" ? (
+        <DestinyTab kidId={kidId} />
       ) : tab === "report" ? (
         <ReportTab kidId={kidId} kid={kid} />
       ) : (

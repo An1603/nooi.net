@@ -75,6 +75,7 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
   const [refPermission, setRefPermission] = useState("viewer");
   const [refCode, setRefCode] = useState("");
   const [resolvedName, setResolvedName] = useState<string | null>(null);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [adding, setAdding] = useState(false);
 
@@ -129,6 +130,7 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
     if (!code) return;
     setResolving(true);
     setResolvedName(null);
+    setResolvedUserId(null);
     setMsg(null);
     try {
       const r = await fetch("/api/ekid/caregivers/resolve-ref", {
@@ -139,6 +141,7 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
       const d = await readJson(r);
       if (!r.ok) throw new Error((d.error as string) || "Không tìm thấy mã giới thiệu");
       setResolvedName((d.full_name as string) ?? "Người dùng");
+      setResolvedUserId((d.user_id as string) ?? null);
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error ? e.message : "Không tìm thấy mã giới thiệu" });
     } finally {
@@ -168,6 +171,7 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
       setMsg({ ok: true, text: "Đã thêm người giám sát thành công." });
       setRefCode("");
       setResolvedName(null);
+      setResolvedUserId(null);
       await load();
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi thêm giám sát" });
@@ -217,6 +221,9 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
       setBusyKey(null);
     }
   }
+
+  const alreadyCaregiver =
+    resolvedUserId != null && caregivers.some((c) => c.caregiver_user_id === resolvedUserId);
 
   return (
     <div className="space-y-4">
@@ -282,6 +289,7 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
                 onChange={(e) => {
                   setRefCode(e.target.value.toUpperCase());
                   setResolvedName(null);
+                  setResolvedUserId(null);
                 }}
                 placeholder="VD: AB3D7K"
                 className="tracking-widest"
@@ -299,27 +307,38 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
           </div>
 
           {resolvedName && (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-              <p className="text-sm text-muted-foreground sm:self-center">
-                Đúng người cần thêm:{" "}
-                <span className="font-semibold text-primary">{resolvedName}</span>
-              </p>
+            <div className="space-y-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <p className="text-sm text-muted-foreground sm:self-center">
+                  Đúng người cần thêm:{" "}
+                  <span className="font-semibold text-primary">{resolvedName}</span>
+                </p>
 
-              <div className="space-y-1.5 sm:ml-auto">
-                <Label htmlFor="ref-permission">Quyền</Label>
-                <Select
-                  id="ref-permission"
-                  value={refPermission}
-                  onChange={(e) => setRefPermission(e.target.value)}
-                >
-                  <option value="admin">Quản lý</option>
-                  <option value="viewer">Xem</option>
-                </Select>
+                <div className="space-y-1.5 sm:ml-auto">
+                  <Label htmlFor="ref-permission">Quyền</Label>
+                  <Select
+                    id="ref-permission"
+                    value={refPermission}
+                    onChange={(e) => setRefPermission(e.target.value)}
+                  >
+                    <option value="admin">Quản lý</option>
+                    <option value="viewer">Xem</option>
+                  </Select>
+                </div>
+
+                <Button type="button" onClick={addByRefCode} disabled={adding || alreadyCaregiver}>
+                  {adding ? "Đang thêm..." : "Thêm giám sát"}
+                </Button>
               </div>
 
-              <Button type="button" onClick={addByRefCode} disabled={adding}>
-                {adding ? "Đang thêm..." : "Thêm giám sát"}
-              </Button>
+              {alreadyCaregiver && (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                >
+                  Đã thêm người này làm người giám sát.
+                </div>
+              )}
             </div>
           )}
         </section>

@@ -162,7 +162,7 @@ export default function EkidPage() {
               setFormError(null);
             }}
           >
-            {showCreate ? "Đóng" : "➕ Thêm con"}
+            {showCreate ? "Đóng" : "➕ Thêm học sinh"}
           </Button>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function EkidPage() {
       {/* Tạo tài khoản cho con (username + mật khẩu để con vào ekid.nooi.net). */}
       {showCreate && (
         <section className="rounded-2xl border border-border bg-card/70 p-3 space-y-3">
-          <h2 className="text-sm font-semibold text-foreground">Thêm con — tạo tài khoản đăng nhập</h2>
+          <h2 className="text-sm font-semibold text-foreground">Thêm học sinh — tạo tài khoản đăng nhập</h2>
 
           {createdUsername && (
             <p className="rounded-lg border border-border bg-glass px-3 py-2 text-sm text-n-green">
@@ -298,7 +298,7 @@ export default function EkidPage() {
       {/* Lưới danh sách con — mỗi thẻ mở console của con. */}
       {!kids.length ? (
         <p className="text-sm text-muted-foreground">
-          Chưa có hồ sơ bé nào. Dùng nút &quot;➕ Thêm con&quot; để tạo tài khoản cho con.
+          Chưa có hồ sơ bé nào. Dùng nút &quot;➕ Thêm học sinh&quot; để tạo tài khoản cho con.
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

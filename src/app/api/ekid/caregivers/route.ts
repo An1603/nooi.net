@@ -91,8 +91,14 @@ export async function POST(req: Request) {
   const admin = createAdminClient();
 
   // ── Dạng (c): chủ hồ sơ thêm người giám sát theo MÃ GIỚI THIỆU (ref_code) — liên kết ngay ──
-  if (typeof body.ref_code === "string" && body.ref_code.trim()) {
-    const refCode = body.ref_code.trim();
+  const rawRefCode =
+    typeof body.ref_code === "string" ? body.ref_code.trim() : "";
+  if (rawRefCode) {
+    // Chỉ chữ hoa + số (sinh bởi generate_ref_code). Chặn %/_ wildcard.
+    if (!/^[A-Za-z0-9]+$/.test(rawRefCode)) {
+      return NextResponse.json({ error: "Mã giới thiệu không hợp lệ" }, { status: 400 });
+    }
+    const refCode = rawRefCode.toUpperCase();
     const { kid_id, role, permission } = body as {
       kid_id?: string;
       role?: string;
@@ -119,11 +125,11 @@ export async function POST(req: Request) {
       .maybeSingle();
     if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
-    // Tra mã giới thiệu → user_id (khớp chính xác, không lộ danh sách).
+    // Tra mã giới thiệu → user_id (khớp CHÍNH XÁC bằng .eq, không lộ danh sách).
     const { data: owner } = await admin
       .from("profiles")
       .select("user_id")
-      .ilike("ref_code", refCode)
+      .eq("ref_code", refCode)
       .limit(1);
     const refUserId = (owner ?? [])[0]?.user_id as string | undefined;
     if (!refUserId) {

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/ekid/caregivers/resolve-ref
 //   { ref_code } → tra chủ sở hữu mã giới thiệu để hiển thị/xác nhận trước khi thêm làm người giám sát.
-// Dùng server client (phân quyền authenticated): chỉ đọc full_name/ref_code/user_id của profile khớp mã.
-// Chỉ khớp MÃ CHÍNH XÁC (ilike không ký tự đại diện) — không trả danh sách gợi ý, tránh rò rỉ danh tính.
+// Auth: dùng server client để kiểm đăng nhập (401 nếu chưa login). Việc đọc hồ sơ người KHÁC
+// chạy bằng admin client (bỏ RLS) vì profiles chỉ cho phép select_own_profile dưới RLS.
+// Chỉ khớp MÃ CHÍNH XÁC bằng .eq sau khi trim + uppercase + validate ^[A-Za-z0-9]+$ (loại %/_ wildcard).
 export async function POST(req: Request) {
   const supabase = await createClient();
   const {
@@ -15,13 +17,20 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
   const body = (await req.json()) ?? {};
-  const code = typeof body.ref_code === "string" ? body.ref_code.trim() : "";
-  if (!code) return NextResponse.json({ error: "Thiếu ref_code" }, { status: 400 });
+  const raw = typeof body.ref_code === "string" ? body.ref_code.trim() : "";
+  if (!raw) return NextResponse.json({ error: "Thiếu ref_code" }, { status: 400 });
 
-  const { data } = await supabase
+  // Chỉ chữ hoa + số (sinh bởi generate_ref_code). Chặn %/_ và mọi ký tự đại diện khác.
+  if (!/^[A-Za-z0-9]+$/.test(raw)) {
+    return NextResponse.json({ error: "Mã giới thiệu không hợp lệ" }, { status: 400 });
+  }
+  const normalized = raw.toUpperCase();
+
+  const admin = createAdminClient();
+  const { data } = await admin
     .from("profiles")
     .select("user_id, full_name, ref_code")
-    .ilike("ref_code", code)
+    .eq("ref_code", normalized)
     .limit(1);
 
   const owner = (data ?? [])[0];
@@ -32,6 +41,6 @@ export async function POST(req: Request) {
   return NextResponse.json({
     user_id: owner.user_id,
     full_name: owner.full_name ?? "Người dùng",
-    ref_code: owner.ref_code ?? code,
+    ref_code: owner.ref_code ?? normalized,
   });
 }

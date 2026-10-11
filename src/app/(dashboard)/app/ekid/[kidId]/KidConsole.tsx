@@ -4,6 +4,8 @@ import Link from "next/link";
 import { KidAvatar } from "@/components/ekid/KidAvatar";
 import { BAND_LABEL, type AgeBand } from "@/lib/ekid/ekid-system";
 import { AccountTab } from "./AccountTab";
+import { RelativesTab } from "./RelativesTab";
+import { ReportTab } from "./ReportTab";
 import { CONSOLE_TABS, TAB_LABEL, type ConsoleTab, type KidDetail, type ConsoleKid } from "./types";
 
 /** Nhãn lứa tuổi từ placement_age_band. */
@@ -150,9 +152,9 @@ export function KidConsole({ kidId, tab }: { kidId: string; tab: ConsoleTab }) {
       {tab === "account" ? (
         <AccountTab kid={kid} isOwner={detail.is_owner} onChanged={load} />
       ) : tab === "relatives" ? (
-        <Placeholder title="Người thân" note="Danh sách người theo dõi và quản lý lời mời sẽ có ở bước tiếp theo." />
+        <RelativesTab kidId={kidId} isOwner={detail.is_owner} />
       ) : tab === "report" ? (
-        <Placeholder title="Báo cáo" note="Tiến độ học, thời gian học và phần thưởng sẽ có ở bước tiếp theo." />
+        <ReportTab kidId={kidId} kid={kid} />
       ) : (
         <Placeholder title="Cài đặt" note="Nguyên tắc học, môn học và phần thưởng sẽ có ở bước tiếp theo." />
       )}

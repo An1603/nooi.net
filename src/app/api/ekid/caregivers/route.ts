@@ -273,3 +273,37 @@ export async function PATCH(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ caregiver: data });
 }
+
+// DELETE /api/ekid/caregivers?id=<id> — gỡ một liên kết/lời mời của hồ sơ trẻ.
+// Chỉ CHỦ hồ sơ (owner của kid_id) được xoá; caregiver đã liên kết KHÔNG có quyền.
+export async function DELETE(req: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Thiếu id" }, { status: 400 });
+
+  const admin = createAdminClient();
+  // Chống IDOR: tra kid_id của liên kết trước, rồi xác nhận hồ sơ thuộc chính user.
+  const { data: cg } = await admin
+    .from("ekid_caregivers")
+    .select("id, kid_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!cg) return NextResponse.json({ error: "Không tìm thấy" }, { status: 404 });
+
+  const { data: kid } = await admin
+    .from("ekid_kids")
+    .select("id")
+    .eq("id", cg.kid_id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
+
+  const { error } = await admin.from("ekid_caregivers").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}

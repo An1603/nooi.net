@@ -176,19 +176,54 @@ export async function POST(req: Request) {
       ? caregiver_user_id.trim()
       : null;
 
-  const { data, error } = await admin
-    .from("ekid_caregivers")
-    .insert({
-      kid_id,
-      caregiver_user_id: invited,
-      role: role || "nguoi-giam-ho",
-      status: "pending",
-      link_code: generateLinkCode(),
-    })
-    .select("*")
-    .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ caregiver: data });
+  // Chèn lời mời với RETRY chống va chạm link_code.
+  // Partial unique index `idx_ekid_caregivers_linkcode_pending` ràng buộc
+  // link_code của mọi dòng status='pending' → trùng mã sẽ vi phạm 23505.
+  // Khi đó (và CHỈ khi đó) sinh mã mới rồi thử lại, tối đa 5 lần; hết lượt → 500.
+  const MAX_LINK_CODE_ATTEMPTS = 5;
+  let inserted: unknown = null;
+  let lastError: { code?: string; message?: string; details?: string; hint?: string } | null = null;
+  let retriesExhausted = false;
+
+  for (let attempt = 1; attempt <= MAX_LINK_CODE_ATTEMPTS; attempt++) {
+    const { data: row, error: insErr } = await admin
+      .from("ekid_caregivers")
+      .insert({
+        kid_id,
+        caregiver_user_id: invited,
+        role: role || "nguoi-giam-ho",
+        status: "pending",
+        link_code: generateLinkCode(),
+      })
+      .select("*")
+      .single();
+    if (!insErr) {
+      inserted = row;
+      lastError = null;
+      break;
+    }
+    lastError = insErr;
+    const err = insErr as { code?: string; message?: string; details?: string; hint?: string };
+    // Chỉ retry khi va chạm UNIQUE (23505) TRÊN link_code; nếu 23505 là do ràng
+    // buộc khác (vd trùng kid_id+caregiver_user_id) hoặc lỗi không phải 23505 thì
+    // dừng ngay — sinh lại mã sẽ vô ích và làm mất thông điệp lỗi gốc.
+    const onLinkCode = `${err.message ?? ""} ${err.details ?? ""} ${err.hint ?? ""}`.includes(
+      "link_code"
+    );
+    if (err.code !== "23505" || !onLinkCode) {
+      retriesExhausted = false;
+      break;
+    }
+    if (attempt === MAX_LINK_CODE_ATTEMPTS) retriesExhausted = true;
+  }
+
+  if (inserted === null) {
+    const message = retriesExhausted
+      ? `Không sinh được mã liên kết duy nhất sau ${MAX_LINK_CODE_ATTEMPTS} lần thử, vui lòng thử lại`
+      : lastError?.message ?? "Không tạo được lời mời";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+  return NextResponse.json({ caregiver: inserted });
 }
 
 // PATCH /api/ekid/caregivers — chấp nhận (`linked`) hoặc từ chối (`rejected`) lời mời.

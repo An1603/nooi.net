@@ -103,7 +103,7 @@ export function TuViDetail({ result }: { result: TuViResult | null }) {
           />
           <InfoCard
             title="Cục"
-            subtitle="Cục của lá số"
+            subtitle={`Cục số ${result.cuc.value}`}
             value={result.cuc.name}
             meta={`Hành ${hanhName(result.cuc.hanh)}`}
             meaning={result.cuc.meaning}
@@ -125,6 +125,7 @@ export function TuViDetail({ result }: { result: TuViResult | null }) {
             title="Cung Thân"
             subtitle="Chi phối nửa sau cuộc đời"
             value={result.cungThan.name}
+            meta={`Hành ${hanhName(result.cungThan.hanh)}`}
             meaning={result.cungThan.meaning}
           />
         </div>

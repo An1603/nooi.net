@@ -95,7 +95,7 @@ export function AstrologyDetail({ result }: { result: AstrologyResult | null }) 
           <DominanceCard
             title="Tính chất nổi trội"
             value={dominantQuality}
-            hint={QUALITY_MEANING[dominantQuality] ? "" : ""}
+            hint=""
             meaning={QUALITY_MEANING[dominantQuality] ?? ""}
           />
         </div>

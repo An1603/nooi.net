@@ -2,12 +2,14 @@
 import { useEffect, useState } from "react";
 import { KidAvatar } from "@/components/ekid/KidAvatar";
 import { KidProgress, type EkidSessionLite } from "@/components/ekid/KidProgress";
+import { ResetChildPassword } from "@/components/ekid/ResetChildPassword";
 import { statusLabel, lessonEmoji, type LessonProgress } from "@/components/ekid/child/types";
 
 interface Kid {
   id: string;
   name: string;
   avatar_emoji?: string | null;
+  is_owner?: boolean;
 }
 
 interface Badge {
@@ -157,6 +159,12 @@ export default function EkidReportPage() {
               <KidProgress sessions={sessions} />
             </div>
           </div>
+
+          {kid.is_owner && (
+            <div className="border-t border-border pt-3">
+              <ResetChildPassword kidId={kid.id} kidName={kid.name} />
+            </div>
+          )}
         </section>
       ))}
     </div>

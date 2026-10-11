@@ -146,6 +146,12 @@ export async function POST(req: Request) {
     email_confirm: true,
   });
   if (created.error || !created.data?.user) {
+    // Race: hai request cùng username vượt qua bước kiểm tra trùng → auth user đã tồn
+    // tại (email nội bộ trùng). Trả 409 thay vì 500 để client xử lý như lỗi trùng tên.
+    const msg = created.error?.message ?? "";
+    if (/already|exist|registered|duplicate/i.test(msg)) {
+      return NextResponse.json({ error: "Tên đăng nhập đã tồn tại" }, { status: 409 });
+    }
     return NextResponse.json(
       { error: created.error?.message ?? "Không tạo được tài khoản đăng nhập" },
       { status: 500 },

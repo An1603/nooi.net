@@ -145,9 +145,9 @@ export function badgesForProgress(passedLessons: number): { code: string; label:
 // eKid v2.2 — Cài đặt riêng cho từng con (KidSettings, cột JSONB `settings`)
 // ---------------------------------------------------------------------------
 
-/** Nguyên tắc học tập: giới hạn phút, khung giờ, số bài/ngày, thi đạt mới sang bài. */
+/** Nguyên tắc học tập: khung giờ, số bài/ngày, thi đạt mới sang bài.
+ * Giới hạn phút/ngày dùng DUY NHẤT cột `ekid_kids.daily_limit_min` (không lặp trong đây). */
 export interface KidRules {
-  dailyLimitMin: number;
   allowedFrom: string | null; // "HH:MM" hoặc null = không giới hạn
   allowedTo: string | null;
   maxLessonsPerDay: number;
@@ -177,7 +177,6 @@ export interface KidSettings {
 /** Giá trị mặc định khi hồ sơ chưa có cài đặt (cột `settings` = `{}`). */
 export const DEFAULT_SETTINGS: KidSettings = {
   rules: {
-    dailyLimitMin: 30,
     allowedFrom: null,
     allowedTo: null,
     maxLessonsPerDay: 5,
@@ -253,11 +252,6 @@ export function normalizeKidSettings(raw: unknown): KidSettings {
 
   return {
     rules: {
-      dailyLimitMin: numOr(
-        rawRules.dailyLimitMin,
-        DEFAULT_SETTINGS.rules.dailyLimitMin,
-        0,
-      ),
       allowedFrom: timeOr(rawRules.allowedFrom, DEFAULT_SETTINGS.rules.allowedFrom),
       allowedTo: timeOr(rawRules.allowedTo, DEFAULT_SETTINGS.rules.allowedTo),
       maxLessonsPerDay: intOr(

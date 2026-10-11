@@ -24,10 +24,9 @@ describe("normalizeKidSettings", () => {
 
   it("merge một phần: chỉ ghi đè trường hợp lệ, giữ mặc định phần còn lại", () => {
     const out = normalizeKidSettings({
-      rules: { dailyLimitMin: 45, allowedFrom: "07:30" },
+      rules: { allowedFrom: "07:30" },
       subjects: ["toan", "tieng-viet"],
     });
-    expect(out.rules.dailyLimitMin).toBe(45);
     expect(out.rules.allowedFrom).toBe("07:30");
     // Giữ mặc định các trường không truyền
     expect(out.rules.allowedTo).toBe(DEFAULT_SETTINGS.rules.allowedTo);
@@ -40,7 +39,6 @@ describe("normalizeKidSettings", () => {
   it("chặn giá trị sai kiểu → rơi về mặc định", () => {
     const out = normalizeKidSettings({
       rules: {
-        dailyLimitMin: "ba mươi" as unknown as number,
         allowedFrom: "7h30" as unknown as string, // sai định dạng HH:MM
         maxLessonsPerDay: -5 as unknown as number,
         requirePassToAdvance: "có" as unknown as boolean,
@@ -52,7 +50,6 @@ describe("normalizeKidSettings", () => {
         custom: [{ label: "kem", points: 10 }, { bad: true } as unknown as { label: string; points: number }],
       },
     });
-    expect(out.rules.dailyLimitMin).toBe(DEFAULT_SETTINGS.rules.dailyLimitMin);
     expect(out.rules.allowedFrom).toBeNull();
     expect(out.rules.maxLessonsPerDay).toBe(DEFAULT_SETTINGS.rules.maxLessonsPerDay);
     expect(out.rules.requirePassToAdvance).toBe(DEFAULT_SETTINGS.rules.requirePassToAdvance);

@@ -19,6 +19,25 @@ async function currentUser() {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+/**
+ * Deep-merge `patch` lên `base`: object lồng nhau được gộp đệ quy, mảng/giá trị
+ * nguyên thuỷ do `patch` ghi đè. Dùng để PATCH cài đặt chỉ gửi một phần mà KHÔNG
+ * xoá các trường còn lại của row hiện có.
+ */
+function deepMerge(base: unknown, patch: unknown): unknown {
+  if (!isRecord(base) || !isRecord(patch)) return patch;
+  const out: Record<string, unknown> = { ...base };
+  for (const key of Object.keys(patch)) {
+    out[key] = deepMerge(base[key], patch[key]);
+  }
+  return out;
+}
 
 // GET /api/ekid/kids/[kidId] — chi tiết một hồ sơ trẻ.
 // Quyền: OWNER (user_id = auth.uid()) HOẶC caregiver đã liên kết → do RLS
@@ -29,6 +48,9 @@ export async function GET(
   { params }: { params: Promise<{ kidId: string }> },
 ) {
   const { kidId } = await params;
+  if (!UUID_RE.test(kidId)) {
+    return NextResponse.json({ error: "Không tìm thấy hồ sơ" }, { status: 404 });
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -50,10 +72,13 @@ export async function GET(
 // Kiểm tra OWNER của hồ sơ. Trả kid (kèm child_user_id) nếu user là chủ hồ sơ,
 // ngược lại trả NextResponse lỗi (404 nếu không tồn tại, 403 nếu không phải chủ).
 async function requireOwner(userId: string, kidId: string) {
+  if (!UUID_RE.test(kidId)) {
+    return { error: NextResponse.json({ error: "Không tìm thấy hồ sơ" }, { status: 404 }) };
+  }
   const admin = createAdminClient();
   const { data: kid, error } = await admin
     .from("ekid_kids")
-    .select("id, user_id, child_user_id")
+    .select("id, user_id, child_user_id, settings")
     .eq("id", kidId)
     .maybeSingle();
 

@@ -90,6 +90,81 @@ export async function POST(req: Request) {
   const body = (await req.json()) ?? {};
   const admin = createAdminClient();
 
+  // ── Dạng (c): chủ hồ sơ thêm người giám sát theo MÃ GIỚI THIỆU (ref_code) — liên kết ngay ──
+  if (typeof body.ref_code === "string" && body.ref_code.trim()) {
+    const refCode = body.ref_code.trim();
+    const { kid_id, role, permission } = body as {
+      kid_id?: string;
+      role?: string;
+      permission?: string;
+    };
+    if (!kid_id) return NextResponse.json({ error: "Thiếu kid_id" }, { status: 400 });
+
+    // Validate role + permission theo constraint migration (giá trị rỗng → mặc định).
+    const finalRole = role || "nguoi-giam-ho";
+    if (!(CAREGIVER_ROLES as readonly string[]).includes(finalRole)) {
+      return NextResponse.json({ error: "role không hợp lệ" }, { status: 400 });
+    }
+    const finalPermission = permission || "viewer";
+    if (!(CAREGIVER_PERMISSIONS as readonly string[]).includes(finalPermission)) {
+      return NextResponse.json({ error: "permission không hợp lệ" }, { status: 400 });
+    }
+
+    // Chống IDOR: chỉ OWNER (kid.user_id === user.id) được thêm người giám sát.
+    const { data: kid } = await admin
+      .from("ekid_kids")
+      .select("id")
+      .eq("id", kid_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
+
+    // Tra mã giới thiệu → user_id (khớp chính xác, không lộ danh sách).
+    const { data: owner } = await admin
+      .from("profiles")
+      .select("user_id")
+      .ilike("ref_code", refCode)
+      .limit(1);
+    const refUserId = (owner ?? [])[0]?.user_id as string | undefined;
+    if (!refUserId) {
+      return NextResponse.json({ error: "Không tìm thấy mã giới thiệu" }, { status: 404 });
+    }
+    if (refUserId === user.id) {
+      return NextResponse.json({ error: "Không thể thêm chính mình" }, { status: 400 });
+    }
+
+    // Kiểm tra trùng (kid_id + caregiver_user_id).
+    const { data: dup } = await admin
+      .from("ekid_caregivers")
+      .select("id")
+      .eq("kid_id", kid_id)
+      .eq("caregiver_user_id", refUserId)
+      .limit(1);
+    if ((dup ?? []).length) {
+      return NextResponse.json({ error: "Người này đã là người giám sát của con" }, { status: 409 });
+    }
+
+    const { data: row, error } = await admin
+      .from("ekid_caregivers")
+      .insert({
+        kid_id,
+        caregiver_user_id: refUserId,
+        role: finalRole,
+        permission: finalPermission,
+        status: "linked",
+      })
+      .select("*")
+      .single();
+    if (error) {
+      // 23505 = đã tồn tại (kid_id + caregiver_user_id) — do race khi hai yêu cầu cùng thêm.
+      if ((error as { code?: string }).code === "23505") {
+        return NextResponse.json({ error: "Người này đã là người giám sát của con" }, { status: 409 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ caregiver: row });
+  }
+
   // ── Dạng (a): người nhận nhập mã liên kết ──
   if (typeof body.code === "string" && body.code.trim()) {
     const code = normalizeLinkCode(body.code);

@@ -65,6 +65,14 @@ export async function POST(req: Request) {
   const total = exercises.length;
   const given = answers as number[];
 
+  // (M) Số câu trả lời phải khớp đúng số câu hỏi của bài.
+  if (given.length !== total) {
+    return NextResponse.json(
+      { error: "Số câu trả lời không khớp với số câu hỏi" },
+      { status: 400 },
+    );
+  }
+
   let correct = 0;
   const exercisesDone: ExerciseDone[] = exercises.map((e, i) => {
     const pick = typeof given[i] === "number" ? given[i] : null;

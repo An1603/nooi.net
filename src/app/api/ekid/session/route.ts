@@ -18,16 +18,18 @@ async function ownsKid(userId: string, kidId: string) {
   return data;
 }
 
-// Quyền ĐỌC: chủ hồ sơ HOẶC caregiver đã liên kết (status='linked'). Dùng cho GET.
+// Quyền ĐỌC: chủ hồ sơ HOẶC con của hồ sơ (tài khoản của bé) HOẶC caregiver đã
+// liên kết (status='linked'). Dùng cho GET.
 async function readableKid(userId: string, kidId: string) {
   const admin = createAdminClient();
   const { data: kid } = await admin
     .from("ekid_kids")
-    .select("id, daily_limit_min, user_id")
+    .select("id, daily_limit_min, user_id, child_user_id")
     .eq("id", kidId)
     .maybeSingle();
   if (!kid) return null;
-  if (kid.user_id === userId) return kid;
+  // (I2) Chủ hồ sơ hoặc chính tài khoản con → đọc được phiên của bé.
+  if (kid.user_id === userId || kid.child_user_id === userId) return kid;
 
   const { data: link } = await admin
     .from("ekid_caregivers")

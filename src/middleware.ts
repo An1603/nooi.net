@@ -51,6 +51,11 @@ export async function middleware(request: NextRequest) {
     // Trang đăng nhập của con → cho qua, không cần auth (anonymous OK)
     if (pathname === "/ekid/login") return supabaseResponse;
 
+    // (C) API trên host ekid → cho qua, KHÔNG rewrite sang /ekid+path.
+    // Mọi route /api tự guard auth của nó (401 khi chưa đăng nhập), nên không
+    // được bọc thêm tiền tố /ekid (nếu không sẽ thành /ekid/api/... → 404).
+    if (pathname.startsWith("/api")) return supabaseResponse;
+
     // Chưa đăng nhập → về /ekid/login (giữ nguyên path + query để quay lại sau login)
     // LƯU Ý (I1): KHÔNG cho qua /ekid/* trước khi kiểm auth như bản cũ.
     if (!user) {

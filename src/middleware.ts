@@ -43,6 +43,15 @@ export async function middleware(request: NextRequest) {
 
   /* ── eKid subdomain guard (đặt trước admin để host ekid không bị admin/main chặn) ── */
   if (isEkidHost(host)) {
+    // Manifest RIÊNG của eKid: host ekid phục vụ /ekid-manifest.json khi trình duyệt
+    // (hoặc Next metadata) yêu cầu /manifest.json — GIỮ URL /manifest.json.
+    // Đặt SỚM, trước mọi kiểm tra auth, để manifest luôn public (trình duyệt tải khi cài PWA).
+    if (pathname === "/manifest.json") {
+      return NextResponse.rewrite(new URL("/ekid-manifest.json", request.url));
+    }
+    // Truy cập trực tiếp file manifest eKid → luôn cho qua (public, kể cả chưa đăng nhập).
+    if (pathname === "/ekid-manifest.json") return supabaseResponse;
+
     // URL ngắn /login trên host ekid → REWRITE nội bộ sang /ekid/login
     // (GIỮ URL /login trên thanh địa chỉ, KHÔNG redirect). Vẫn dùng trang đăng nhập
     // của con — KHÔNG hiện login người lớn (M3).

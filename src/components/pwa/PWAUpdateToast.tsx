@@ -19,7 +19,15 @@ const CURRENT_VERSION = "nooi-v4";
 export function PWAUpdateToast() {
   const [dismissed, setDismissed] = useState(false);
   const [needsUpdate, setNeedsUpdate] = useState(false);
+  // null = CHƯA BIẾT (SSR / trước mount) → ẩn để tránh nháy toast; sau mount mới xác định.
+  const [isEkidHost, setIsEkidHost] = useState<boolean | null>(null);
   const pathname = usePathname();
+
+  // Phân hệ con (ekid.nooi.net) dùng PWA/manifest RIÊNG → KHÔNG hiện toast của NOOI.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setIsEkidHost(window.location.host === "ekid.nooi.net");
+  }, []);
 
   const checkVersion = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -75,7 +83,8 @@ export function PWAUpdateToast() {
     window.location.reload();
   }
 
-  if (!needsUpdate || dismissed) return null;
+  // Ẩn trên host ekid (dùng manifest riêng). null (chưa biết) cũng ẩn để tránh nháy.
+  if (isEkidHost !== false || !needsUpdate || dismissed) return null;
 
   return (
     <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] animate-slide-up">

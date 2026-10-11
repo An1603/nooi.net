@@ -84,6 +84,38 @@
   --sidebar-ring: #C8943E;
 }
 
+/*
+ * ── .ekid-scope — tông SÁNG cho phân hệ con (eKid) ──────────────
+ * Chỉ override BIẾN CSS trong cây con (không đụng host nooi/admin).
+ * Nhờ @theme inline, các utility (text-foreground, bg-card, text-muted-foreground…)
+ * đọc trực tiếp var(--foreground)/var(--card)… nên override ở scope là đủ để
+ * VoiceAssistant/ExerciseCard (dùng CHUNG với app người lớn) hiển thị rõ trên nền sáng.
+ * KHÔNG sửa component dùng chung — chỉ đổi biến theo phạm vi.
+ */
+.ekid-scope {
+  --background: #fffbeb;
+  --foreground: #3b2a20;
+  --card: #ffffff;
+  --card-foreground: #3b2a20;
+  --popover: #ffffff;
+  --popover-foreground: #3b2a20;
+  --muted: #fff7e6;
+  --muted-foreground: #7c6a5a;
+  --border: rgba(59, 42, 32, 0.12);
+  --input: rgba(59, 42, 32, 0.12);
+  --primary: #ff7a59;
+  --primary-foreground: #ffffff;
+  --secondary: #4ecdc4;
+  --secondary-foreground: #0f3d39;
+  --accent: #ffd93d;
+  --accent-foreground: #3b2a20;
+  /* Dải pastel 400 vốn dành cho nền tối → hạ đậm để đọc rõ trên nền sáng. */
+  --color-amber-400: #b45309;
+  --color-red-400: #dc2626;
+  --color-green-400: #15803d;
+  --color-purple-400: #7c3aed;
+}
+
 @theme inline {
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);

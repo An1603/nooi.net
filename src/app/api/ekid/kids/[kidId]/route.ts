@@ -190,8 +190,11 @@ export async function PATCH(
   }
 
   if (has("settings")) {
-    // Chuẩn hoá an toàn (merge mặc định) trước khi lưu.
-    patch.settings = normalizeKidSettings(body.settings);
+    // Gộp SÂU lên cài đặt HIỆN CÓ của hồ sơ (không chỉ merge mặc định) để patch
+    // một phần không xoá các trường còn lại; sau đó chuẩn hoá an toàn.
+    patch.settings = normalizeKidSettings(
+      deepMerge(owned.kid.settings ?? {}, body.settings),
+    );
   }
 
   // Nếu đổi ngày sinh thì tính lại định vị (server tự quyết, không nhận từ client).

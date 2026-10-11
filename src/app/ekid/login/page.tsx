@@ -36,7 +36,7 @@ export default function EkidLoginPage() {
       return;
     }
 
-    router.push("/ekid");
+    router.push("/");
     router.refresh();
   }
 

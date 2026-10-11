@@ -10,6 +10,11 @@ const COOKIE_NAMES = [
 export const updateSession = async (request: NextRequest) => {
   let supabaseResponse = NextResponse.next({ request });
 
+  // Phiên eKid (ekid.nooi.net) là host-only → cookie KHÔNG dùng domain=.nooi.net,
+  // tách biệt hoàn toàn với phiên nooi.net/app/admin.
+  const host = request.headers.get("host") || "";
+  const hostOnly = host === "ekid.nooi.net";
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -30,7 +35,7 @@ export const updateSession = async (request: NextRequest) => {
               sameSite: "lax",
               secure: process.env.NODE_ENV === "production",
               path: "/",
-            }))
+            }, { hostOnly }))
           );
         },
       },
@@ -47,7 +52,7 @@ export const updateSession = async (request: NextRequest) => {
       const cookie = request.cookies.get(name);
       if (cookie) {
         supabaseResponse.cookies.set(name, "", {
-          ...cookieOptions({ path: "/", maxAge: 0 }),
+          ...cookieOptions({ path: "/", maxAge: 0 }, { hostOnly }),
           maxAge: 0,
         });
       }

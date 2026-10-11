@@ -89,7 +89,7 @@ describe("middleware eKid host — (C) API passthrough", () => {
     expect(new URL(target!).pathname).toBe("/ekid/api/ai-mentor/chat");
   });
 
-  it("KHÔNG passthrough /api không nằm whitelist khi anonymous: chuyển về /ekid/login, không cho qua", async () => {
+  it("KHÔNG passthrough /api không nằm whitelist khi anonymous: chuyển về /login, không cho qua", async () => {
     updateSessionMock.mockResolvedValue({
       supabase: fakeSupabase([]),
       supabaseResponse: new Response(null, { status: 200 }),
@@ -98,8 +98,10 @@ describe("middleware eKid host — (C) API passthrough", () => {
 
     const res = await middleware(makeReq("/api/upload/avatar"));
     expect(rewriteTarget(res)).toBeNull();
-    expect(res.status).toBe(307); // redirect → /ekid/login
-    expect(res.headers.get("location")).toContain("/ekid/login");
+    expect(res.status).toBe(307); // redirect → /login
+    const loc = res.headers.get("location")!;
+    expect(new URL(loc).pathname).toBe("/login");
+    expect(loc).not.toContain("/ekid/login");
   });
 
   it("vẫn rewrite path web thường của con: /hoc/abc → /ekid/hoc/abc", async () => {

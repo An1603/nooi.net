@@ -43,12 +43,14 @@ export async function middleware(request: NextRequest) {
 
   /* ── eKid subdomain guard (đặt trước admin để host ekid không bị admin/main chặn) ── */
   if (isEkidHost(host)) {
-    // /login trên host ekid → luôn dùng trang đăng nhập của con (KHÔNG hiện login người lớn) (M3)
+    // URL ngắn /login trên host ekid → REWRITE nội bộ sang /ekid/login
+    // (GIỮ URL /login trên thanh địa chỉ, KHÔNG redirect). Vẫn dùng trang đăng nhập
+    // của con — KHÔNG hiện login người lớn (M3).
     if (pathname === "/login") {
-      return NextResponse.redirect(new URL("/ekid/login", request.url));
+      return NextResponse.rewrite(new URL("/ekid/login", request.url));
     }
 
-    // Trang đăng nhập của con → cho qua, không cần auth (anonymous OK)
+    // Trang đăng nhập của con (đường dẫn gốc, back-compat) → cho qua, không cần auth
     if (pathname === "/ekid/login") return supabaseResponse;
 
     // (C) Passthrough CHỈ những /api mà phân hệ con thực sự cần, KHÔNG rewrite
@@ -64,10 +66,10 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse;
     }
 
-    // Chưa đăng nhập → về /ekid/login (giữ nguyên path + query để quay lại sau login)
+    // Chưa đăng nhập → về URL ngắn /login (giữ nguyên path + query để quay lại sau login)
     // LƯU Ý (I1): KHÔNG cho qua /ekid/* trước khi kiểm auth như bản cũ.
     if (!user) {
-      const loginUrl = new URL("/ekid/login", request.url);
+      const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
       return NextResponse.redirect(loginUrl);
     }

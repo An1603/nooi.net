@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { resolveChildKidId } from "@/lib/ekid/child";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,9 @@ export async function GET(req: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
-  const kidId = new URL(req.url).searchParams.get("kid_id");
+  // kid_id không bắt buộc: con đang đăng nhập thì server tự suy ra hồ sơ của bé.
+  let kidId = new URL(req.url).searchParams.get("kid_id");
+  if (!kidId) kidId = await resolveChildKidId(user.id);
   if (!kidId) return NextResponse.json({ error: "Thiếu kid_id" }, { status: 400 });
 
   const kid = await accessibleKid(user.id, kidId);
@@ -70,7 +73,9 @@ export async function GET(req: Request) {
   if (band) {
     const { data, error } = await admin
       .from("ekid_lessons")
-      .select("*")
+      // KHÔNG select system_prompt — không đưa chỉ dẫn nội bộ ra client.
+      // KHÔNG select answer_index bên trong exercises — chấm điểm chỉ ở server (quiz route).
+      .select("id, age_band, title, part, core_topic, exercises, difficulty, status, video_url, sort_order")
       .eq("status", "active")
       .eq("age_band", band)
       .order("sort_order", { ascending: true })
@@ -91,10 +96,19 @@ export async function GET(req: Request) {
     for (const p of (prog ?? []) as ProgressRow[]) progressMap.set(p.lesson_id, p);
   }
 
+  // Ẩn đáp án phía client: chỉ giữ {question, options} — bỏ answer_index/type/image_url.
   const withProgress = lessons.map((l) => {
     const p = progressMap.get(l.id as string);
+    const raw = Array.isArray(l.exercises)
+      ? (l.exercises as { question?: unknown; options?: unknown }[])
+      : [];
+    const exercises = raw.map((e) => ({
+      question: typeof e.question === "string" ? e.question : "",
+      options: Array.isArray(e.options) ? (e.options as unknown[]).map((o) => String(o)) : [],
+    }));
     return {
       ...l,
+      exercises,
       progress: {
         status: p?.status ?? "chua-hoc",
         best_score: p?.best_score ?? null,

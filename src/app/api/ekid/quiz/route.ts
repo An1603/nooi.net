@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { badgesForProgress, pointsForScore } from "@/lib/ekid/ekid-system";
 import type { EkidExercise } from "@/lib/ekid/ekid-system";
+import { resolveChildKidId } from "@/lib/ekid/child";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +25,19 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
   const body = (await req.json()) ?? {};
-  const { kid_id, lesson_id, answers } = body as {
-    kid_id?: string;
+  const parsed = body as {
+    kid_id?: string | null;
     lesson_id?: string;
     answers?: unknown;
   };
-  if (!kid_id || !lesson_id || !Array.isArray(answers)) {
-    return NextResponse.json({ error: "Thiếu kid_id/lesson_id/answers" }, { status: 400 });
+  let kid_id = parsed.kid_id ?? null;
+  const { lesson_id, answers } = parsed;
+  if (!lesson_id || !Array.isArray(answers)) {
+    return NextResponse.json({ error: "Thiếu lesson_id/answers" }, { status: 400 });
   }
+  // kid_id không bắt buộc: con đang đăng nhập thì server tự suy ra hồ sơ của bé.
+  if (!kid_id) kid_id = await resolveChildKidId(user.id);
+  if (!kid_id) return NextResponse.json({ error: "Thiếu kid_id" }, { status: 400 });
 
   const admin = createAdminClient();
 

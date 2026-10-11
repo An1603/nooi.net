@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { resolveChildKidId } from "@/lib/ekid/child";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,9 @@ export async function GET(req: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
-  const kidId = new URL(req.url).searchParams.get("kid_id");
+  // kid_id không bắt buộc: con đang đăng nhập thì server tự suy ra hồ sơ của bé.
+  let kidId = new URL(req.url).searchParams.get("kid_id");
+  if (!kidId) kidId = await resolveChildKidId(user.id);
   if (!kidId) return NextResponse.json({ error: "Thiếu kid_id" }, { status: 400 });
 
   const ok = await canRead(user.id, kidId);

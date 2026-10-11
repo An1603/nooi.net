@@ -296,6 +296,32 @@ export function isWithinAllowedHours(settings: KidSettings, now: Date): boolean 
   return from <= to ? m >= from && m <= to : m >= from || m <= to;
 }
 
+/** Điểm tối thiểu để coi là ĐẠT một bài (thang 100). */
+export const PASS_SCORE = 70;
+
+/**
+ * Xác định các bài bị KHOÁ theo nguyên tắc "thi đạt mới sang bài".
+ *
+ * `orderedLessonIds` phải theo ĐÚNG thứ tự học (sort_order tăng, rồi difficulty).
+ * Khi `requirePassToAdvance = false` ⇒ không khoá bài nào (trả Set rỗng).
+ * Khi bật: bài ở vị trí i bị khoá nếu bài NGAY TRƯỚC (i-1) chưa đạt
+ * (best_score null hoặc < {@link PASS_SCORE}). Bài đầu tiên không bao giờ bị khoá.
+ */
+export function lockedLessonsByOrder(
+  orderedLessonIds: string[],
+  bestScoreByLesson: Map<string, number | null>,
+  requirePassToAdvance: boolean,
+): Set<string> {
+  const locked = new Set<string>();
+  if (!requirePassToAdvance) return locked;
+  for (let i = 1; i < orderedLessonIds.length; i++) {
+    const prevScore = bestScoreByLesson.get(orderedLessonIds[i - 1]) ?? null;
+    const passed = prevScore != null && prevScore >= PASS_SCORE;
+    if (!passed) locked.add(orderedLessonIds[i]);
+  }
+  return locked;
+}
+
 export function buildSystemInstruction(params: {
   kidName: string;
   placement: Placement;

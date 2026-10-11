@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { resolveChildKidId } from "@/lib/ekid/child";
+import { normalizeKidSettings, lockedLessonsByOrder } from "@/lib/ekid/ekid-system";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ interface KidRow {
   daily_limit_min: number;
   user_id: string;
   child_user_id: string | null;
+  settings: unknown;
 }
 
 interface ProgressRow {
@@ -31,7 +33,7 @@ async function accessibleKid(userId: string, kidId: string): Promise<KidRow | nu
   const { data: kid } = await admin
     .from("ekid_kids")
     .select(
-      "id, name, username, avatar_emoji, favorite_voice, placement_age_band, placement_level, daily_limit_min, user_id, child_user_id",
+      "id, name, username, avatar_emoji, favorite_voice, placement_age_band, placement_level, daily_limit_min, user_id, child_user_id, settings",
     )
     .eq("id", kidId)
     .maybeSingle();
@@ -96,6 +98,20 @@ export async function GET(req: Request) {
     for (const p of (prog ?? []) as ProgressRow[]) progressMap.set(p.lesson_id, p);
   }
 
+  // (3.3) "Thi đạt mới sang bài": khi bật, mỗi bài bị KHOÁ nếu bài NGAY TRƯỚC (theo
+  // thứ tự học: sort_order tăng, rồi difficulty) chưa đạt (best_score < 70 / chưa có).
+  // `lessons` đã đúng thứ tự do query .order(sort_order).order(difficulty).
+  const settings = normalizeKidSettings(kid.settings);
+  const bestScoreByLesson = new Map<string, number | null>();
+  for (const id of lessonIds) {
+    bestScoreByLesson.set(id, progressMap.get(id)?.best_score ?? null);
+  }
+  const lockedIds = lockedLessonsByOrder(
+    lessonIds,
+    bestScoreByLesson,
+    settings.rules.requirePassToAdvance,
+  );
+
   // Ẩn đáp án phía client: chỉ giữ {question, options} — bỏ answer_index/type/image_url.
   const withProgress = lessons.map((l) => {
     const p = progressMap.get(l.id as string);
@@ -109,6 +125,7 @@ export async function GET(req: Request) {
     return {
       ...l,
       exercises,
+      locked: lockedIds.has(l.id as string),
       progress: {
         status: p?.status ?? "chua-hoc",
         best_score: p?.best_score ?? null,
@@ -117,10 +134,12 @@ export async function GET(req: Request) {
     };
   });
 
-  // Không trả các trường nội bộ (user_id, child_user_id).
-  const { user_id: _uid, child_user_id: _cuid, ...safeKid } = kid;
+  // Không trả các trường nội bộ (user_id, child_user_id), và không lộ `settings`
+  // (đã dùng nội bộ để tính `locked`; console quản lý có API riêng).
+  const { user_id: _uid, child_user_id: _cuid, settings: _settings, ...safeKid } = kid;
   void _uid;
   void _cuid;
+  void _settings;
 
   return NextResponse.json({ kid: safeKid, lessons: withProgress });
 }

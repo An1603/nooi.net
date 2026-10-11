@@ -29,27 +29,39 @@ function withCookies(res: NextResponse, src: NextResponse): NextResponse {
 }
 
 /**
+ * Lấy hồ sơ bé gắn với TÀI KHOẢN CON (ekid_kids.child_user_id = user.id).
+ * Trả `{ id, status }` hoặc null. Fail-safe (C2): query lỗi/ngoại lệ → null
+ * (coi như KHÔNG phải con) để không chặn nhầm NGƯỜI LỚN ở nhánh host nooi.
+ */
+async function getChildKid(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{ id: string; status: string | null } | null> {
+  try {
+    const { data, error } = await supabase
+      .from("ekid_kids")
+      .select("id, status")
+      .eq("child_user_id", userId)
+      .maybeSingle();
+    if (error) {
+      console.error("[middleware] getChildKid query lỗi:", error.message);
+      return null;
+    }
+    return (data as { id: string; status: string | null } | null) ?? null;
+  } catch (err) {
+    console.error("[middleware] getChildKid ngoại lệ:", err);
+    return null;
+  }
+}
+
+/**
  * Kiểm tra user hiện tại có phải tài khoản CON không (ekid_kids.child_user_id = user.id).
  * Fail-safe (C2): nếu query lỗi/ngoại lệ → trả false (coi như KHÔNG phải con) để không
  * chặn nhầm NGƯỜI LỚN ở nhánh host nooi. RLS cho con đọc dòng của mình nằm ở migration
  * 20261011000011_ekid_child_read.sql.
  */
 async function isChildUser(supabase: SupabaseClient, userId: string): Promise<boolean> {
-  try {
-    const { data, error } = await supabase
-      .from("ekid_kids")
-      .select("id")
-      .eq("child_user_id", userId)
-      .maybeSingle();
-    if (error) {
-      console.error("[middleware] isChildUser query lỗi:", error.message);
-      return false;
-    }
-    return !!data;
-  } catch (err) {
-    console.error("[middleware] isChildUser ngoại lệ:", err);
-    return false;
-  }
+  return !!(await getChildKid(supabase, userId));
 }
 
 export async function middleware(request: NextRequest) {
@@ -100,7 +112,13 @@ export async function middleware(request: NextRequest) {
     }
 
     // Đã đăng nhập: tài khoản CON
-    if (await isChildUser(supabase, user.id)) {
+    const child = await getChildKid(supabase, user.id);
+    if (child) {
+      // (3.1) Tài khoản con bị KHOÁ → rewrite sang trang tạm khoá /ekid/khoa.
+      // Cho chính /ekid/khoa đi qua để tránh vòng lặp rewrite vô hạn.
+      if (child.status === "khoa" && !pathname.startsWith("/ekid/khoa")) {
+        return withCookies(NextResponse.rewrite(new URL("/ekid/khoa", request.url)), supabaseResponse);
+      }
       // Đã đúng path /ekid/* (đã qua auth) → để nguyên
       if (pathname.startsWith("/ekid")) return supabaseResponse;
       // Path khác trên host ekid → rewrite nội bộ sang /ekid + path, GIỮ query string (M1)

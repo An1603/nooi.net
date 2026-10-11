@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { remainingMinutes, resolvePlacement } from "@/lib/ekid/ekid-system";
+import { remainingMinutes, resolvePlacement, normalizeKidSettings, isWithinAllowedHours } from "@/lib/ekid/ekid-system";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ async function writableKid(userId: string, kidId: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("ekid_kids")
-    .select("id, daily_limit_min, date_of_birth, user_id, child_user_id")
+    .select("id, daily_limit_min, date_of_birth, user_id, child_user_id, settings")
     .eq("id", kidId)
     .maybeSingle();
   if (!data) return null;
@@ -139,6 +139,38 @@ export async function POST(req: Request) {
   if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
   const admin = createAdminClient();
+
+  // (3.2) Thực thi NGUYÊN TẮC học tập của ba/mẹ (server-side).
+  const settings = normalizeKidSettings(kid.settings);
+
+  // (a) Khung giờ cho phép học — ngoài khung → chặn.
+  if (!isWithinAllowedHours(settings, new Date())) {
+    const { allowedFrom, allowedTo } = settings.rules;
+    return NextResponse.json(
+      {
+        error: `Ngoài khung giờ học cho phép (${allowedFrom}–${allowedTo}). Con quay lại đúng giờ ba mẹ đặt nhé!`,
+      },
+      { status: 403 },
+    );
+  }
+
+  // (b) Số buổi học tối đa trong ngày — đếm số phiên đã tạo hôm nay (theo ngày UTC,
+  //     khớp khoá ngày của ekid_daily/todayStr). Đã đủ → chặn mở buổi mới.
+  const maxLessons = settings.rules.maxLessonsPerDay;
+  const { count: todayCount } = await admin
+    .from("ekid_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("kid_id", kid_id)
+    .gte("started_at", `${todayStr()}T00:00:00.000Z`);
+  if ((todayCount ?? 0) >= maxLessons) {
+    return NextResponse.json(
+      {
+        error: `Hôm nay con đã học đủ ${maxLessons} buổi rồi. Nghỉ ngơi một chút, mai mình học tiếp nhé!`,
+      },
+      { status: 403 },
+    );
+  }
+
   const dur = Math.max(0, Math.round(duration_min ?? 0));
 
   // Cộng dồn số phút đã dùng trong ngày (upsert theo khoá (kid_id, day)).

@@ -12,7 +12,7 @@ import { middleware } from "@/middleware";
 const EKID_HOST = "ekid.nooi.net";
 
 /** Supabase giả: mọi truy vấn .from().select().eq().maybeSingle() trả dữ liệu cho sẵn. */
-function fakeSupabase(childRows: { id: string }[] = []) {
+function fakeSupabase(childRows: { id: string; status?: string | null }[] = []) {
   return {
     from: () => ({
       select: () => ({
@@ -192,5 +192,52 @@ describe("middleware — (I-A) sao chép cookie phiên sang response mới", () 
     expect(new URL(res.headers.get("location")!).pathname).toBe("/admin-login");
     // Clear đặt SAU khi sao chép → giá trị rỗng, không bị ghi đè bởi "stale".
     expect(res.cookies.get("sb-gsnuqrutiauhnsacgzym-auth-token.0")?.value).toBe("");
+  });
+});
+
+describe("middleware eKid host — (3.1) khoá tài khoản con", () => {
+  function loggedInChild(status: string | null) {
+    updateSessionMock.mockResolvedValue({
+      supabase: fakeSupabase([{ id: "kid1", status }]),
+      supabaseResponse: new Response(null, { status: 200 }),
+      user: { id: "child-user-1" },
+    });
+  }
+
+  it("con bị khoá vào path học → rewrite sang /ekid/khoa", async () => {
+    loggedInChild("khoa");
+    const res = await middleware(makeReq("/ekid/hoc/abc"));
+    const target = rewriteTarget(res);
+    expect(target).not.toBeNull();
+    expect(new URL(target!).pathname).toBe("/ekid/khoa");
+  });
+
+  it("con bị khoá vào '/' → rewrite sang /ekid/khoa", async () => {
+    loggedInChild("khoa");
+    const res = await middleware(makeReq("/"));
+    const target = rewriteTarget(res);
+    expect(target).not.toBeNull();
+    expect(new URL(target!).pathname).toBe("/ekid/khoa");
+  });
+
+  it("CHO QUA chính /ekid/khoa (tránh vòng lặp rewrite) dù con đang bị khoá", async () => {
+    loggedInChild("khoa");
+    const res = await middleware(makeReq("/ekid/khoa"));
+    expect(rewriteTarget(res)).toBeNull();
+    expect(res.status).toBe(200);
+  });
+
+  it("con đang active → KHÔNG bị rewrite sang /ekid/khoa", async () => {
+    loggedInChild("active");
+    const res = await middleware(makeReq("/ekid/hoc/abc"));
+    expect(rewriteTarget(res)).toBeNull();
+    expect(res.status).toBe(200);
+  });
+
+  it("con bị khoá vẫn passthrough /api/ekid/* (route tự lo phía API)", async () => {
+    loggedInChild("khoa");
+    const res = await middleware(makeReq("/api/ekid/session?kid_id=x"));
+    expect(rewriteTarget(res)).toBeNull();
+    expect(res.status).toBe(200);
   });
 });

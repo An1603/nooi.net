@@ -3,6 +3,8 @@ import {
   DEFAULT_SETTINGS,
   normalizeKidSettings,
   isWithinAllowedHours,
+  lockedLessonsByOrder,
+  PASS_SCORE,
   type KidSettings,
 } from "@/lib/ekid/ekid-system";
 
@@ -119,5 +121,50 @@ describe("isWithinAllowedHours", () => {
     expect(isWithinAllowedHours(s, new Date(2026, 0, 1, 5, 30))).toBe(true); // sáng sớm
     expect(isWithinAllowedHours(s, new Date(2026, 0, 1, 12, 0))).toBe(false); // giữa trưa
     expect(isWithinAllowedHours(s, new Date(2026, 0, 1, 19, 0))).toBe(false);
+  });
+});
+
+describe("lockedLessonsByOrder", () => {
+  const ids = ["l1", "l2", "l3", "l4"];
+  function scores(pairs: Record<string, number | null>) {
+    return new Map(Object.entries(pairs));
+  }
+
+  it("requirePassToAdvance = false → không khoá bài nào", () => {
+    const out = lockedLessonsByOrder(ids, scores({}), false);
+    expect(out.size).toBe(0);
+  });
+
+  it("bài đầu tiên KHÔNG bao giờ bị khoá", () => {
+    const out = lockedLessonsByOrder(ids, scores({ l1: null }), true);
+    expect(out.has("l1")).toBe(false);
+    expect(out.has("l2")).toBe(true); // bài trước (l1) chưa đạt
+  });
+
+  it("bài sau mở khi bài NGAY TRƯỚC đã đạt", () => {
+    const out = lockedLessonsByOrder(ids, scores({ l1: 80, l2: 75 }), true);
+    expect(out.has("l1")).toBe(false);
+    expect(out.has("l2")).toBe(false); // l1 đạt
+    expect(out.has("l3")).toBe(false); // l2 đạt (75 ≥ 70)
+    expect(out.has("l4")).toBe(true); // l3 chưa có điểm
+  });
+
+  it("ngưỡng đạt = PASS_SCORE (70): 69 chưa đạt, 70 đạt", () => {
+    const below = lockedLessonsByOrder(ids, scores({ l1: PASS_SCORE - 1 }), true);
+    expect(below.has("l2")).toBe(true);
+    const at = lockedLessonsByOrder(ids, scores({ l1: PASS_SCORE }), true);
+    expect(at.has("l2")).toBe(false);
+  });
+
+  it("dây chuyền: l1 đạt, l2 chưa có → l3, l4 khoá", () => {
+    const out = lockedLessonsByOrder(ids, scores({ l1: 90 }), true);
+    expect(out.has("l1")).toBe(false);
+    expect(out.has("l2")).toBe(false); // l1 đạt
+    expect(out.has("l3")).toBe(true); // l2 chưa đạt
+    expect(out.has("l4")).toBe(true); // l3 chưa đạt
+  });
+
+  it("danh sách rỗng → Set rỗng", () => {
+    expect(lockedLessonsByOrder([], scores({}), true).size).toBe(0);
   });
 });

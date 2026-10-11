@@ -144,18 +144,6 @@ export default function EkidPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-lg font-semibold text-foreground">eKid — Quản lý con</h1>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href="/app/ekid/report"
-            className="inline-flex items-center rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            📊 Tiến độ
-          </Link>
-          <Link
-            href="/app/ekid/relatives"
-            className="inline-flex items-center rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            👨‍👩‍👧 Người thân
-          </Link>
           <Button
             type="button"
             className="bg-primary text-primary-foreground"

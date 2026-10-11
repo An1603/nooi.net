@@ -12,6 +12,8 @@ export interface EkidKidLite {
   favorite_voice: string | null;
   placement_age_band: AgeBand | null;
   placement_level: number | null;
+  avatar_emoji?: string | null;
+  daily_limit_min?: number | null;
 }
 export interface EkidLessonLite {
   id: string;

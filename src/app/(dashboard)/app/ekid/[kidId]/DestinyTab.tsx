@@ -5,6 +5,7 @@ import type { TuViResult } from "@/lib/tuvi";
 import type { AstrologyResult } from "@/lib/astrology";
 import { NumerologyDetail } from "./destiny/NumerologyDetail";
 import { TuViDetail } from "./destiny/TuViDetail";
+import { AstrologyDetail } from "./destiny/AstrologyDetail";
 
 /** Payload GET /api/ekid/kids/[kidId]/destiny. */
 interface DestinyData {
@@ -130,21 +131,8 @@ export function DestinyTab({ kidId }: { kidId: string }) {
       ) : active === "tuvi" ? (
         <TuViDetail result={data.tuvi} />
       ) : (
-        <ComingSoon label="Chiêm tinh" icon="🌌" />
+        <AstrologyDetail result={data.astrology} />
       )}
-    </div>
-  );
-}
-
-/** Placeholder cho sub-tab chưa dựng (Tử vi / Chiêm tinh — nối ở Task 2/3). */
-function ComingSoon({ label, icon }: { label: string; icon: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card/70 p-8 text-center">
-      <p className="text-2xl" aria-hidden>
-        {icon}
-      </p>
-      <p className="mt-2 text-sm font-semibold text-foreground">{label}</p>
-      <p className="mt-1 text-sm text-muted-foreground">Bản đồ {label} đang được cập nhật.</p>
     </div>
   );
 }

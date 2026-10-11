@@ -167,19 +167,28 @@ export default function SetupPage() {
       setKidMsg("Vui lòng nhập tên và ngày sinh của con.");
       return;
     }
-    const r = await fetch("/api/ekid/kids", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: kidName.trim(), date_of_birth: kidDob, avatar_emoji: kidEmoji || "🦊" }),
-    });
-    const d = await r.json();
-    if (r.ok && d.kid) {
-      setKidName("");
-      setKidDob("");
-      setKidEmoji("🦊");
-      setKidMsg("Đã tạo hồ sơ bé! 🎉");
-    } else {
-      setKidMsg(d.error ?? "Có lỗi khi tạo hồ sơ bé.");
+    try {
+      const r = await fetch("/api/ekid/kids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: kidName.trim(), date_of_birth: kidDob, avatar_emoji: kidEmoji || "🦊" }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => null);
+        setKidMsg(d?.error ?? "Có lỗi khi tạo hồ sơ bé.");
+        return;
+      }
+      const d = await r.json();
+      if (d.kid) {
+        setKidName("");
+        setKidDob("");
+        setKidEmoji("🦊");
+        setKidMsg("Đã tạo hồ sơ bé! 🎉");
+      } else {
+        setKidMsg(d.error ?? "Có lỗi khi tạo hồ sơ bé.");
+      }
+    } catch {
+      setKidMsg("Không kết nối được máy chủ. Vui lòng thử lại.");
     }
   }
 

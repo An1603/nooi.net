@@ -1,8 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { authCookieName } from "@/lib/supabase/cookies";
 
 export const createClient = async () => {
   const cookieStore = await cookies();
+  const headerStore = await headers();
+  const host = headerStore.get("host") || "";
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +26,8 @@ export const createClient = async () => {
           }
         },
       },
+      // storageKey = tên cookie theo host (ekid dùng tên riêng).
+      cookieOptions: { name: authCookieName(host) },
     }
   );
 };

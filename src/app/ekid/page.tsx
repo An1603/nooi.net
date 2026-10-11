@@ -84,7 +84,7 @@ export default function EkidLibraryPage() {
             Thử lại
           </button>
           <Link
-            href="/ekid/login"
+            href="/login"
             className="rounded-full border-2 border-primary px-6 py-3 text-lg font-extrabold text-primary"
           >
             Đăng nhập

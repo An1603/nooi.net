@@ -27,6 +27,17 @@ async function handleLogout(request: NextRequest) {
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net";
+
+  // eKid host → về trang đăng nhập CỦA CON + xóa cookie phiên RIÊNG của ekid
+  // (tên sb-ekid-auth-token), không đụng phiên người lớn.
+  if (host === "ekid.nooi.net") {
+    const resp = NextResponse.redirect(new URL("/login", "https://ekid.nooi.net"));
+    for (const n of ["sb-ekid-auth-token", "sb-ekid-auth-token.0", "sb-ekid-auth-token.1"]) {
+      resp.cookies.set(n, "", { maxAge: 0, path: "/" });
+    }
+    return resp;
+  }
+
   const resp = NextResponse.redirect(new URL("/", siteUrl));
   // Clear auth cookies
   resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.0", "", { maxAge: 0, path: "/" });

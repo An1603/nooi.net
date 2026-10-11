@@ -103,6 +103,13 @@ export default function EkidLibraryPage() {
         </Link>
       </div>
 
+      {/* Lối vào chính: NÓI CHUYỆN LIVE với bạn AI (phiên voice nằm trong trang học). */}
+      {lessons.length > 0 ? (
+        <Link href={`/hoc/${lessons[0].id}`} className={`${KID.btnHero} w-full text-center`}>
+          🎙️ Nói chuyện &amp; học cùng bạn AI
+        </Link>
+      ) : null}
+
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           type="text"

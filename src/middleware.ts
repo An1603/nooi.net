@@ -103,6 +103,12 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse;
     }
 
+    // Đăng xuất (form POST trong layout con gọi /auth/logout) — phải đi qua nguyên vẹn,
+    // nếu không sẽ bị rewrite thành /ekid/auth/logout → 404.
+    if (pathname.startsWith("/auth/logout")) {
+      return supabaseResponse;
+    }
+
     // Chưa đăng nhập → về URL ngắn /login (giữ nguyên path + query để quay lại sau login)
     // LƯU Ý (I1): KHÔNG cho qua /ekid/* trước khi kiểm auth như bản cũ.
     if (!user) {

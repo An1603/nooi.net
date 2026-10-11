@@ -18,6 +18,27 @@ async function ownsKid(userId: string, kidId: string) {
   return data;
 }
 
+// Quyền ĐỌC: chủ hồ sơ HOẶC caregiver đã liên kết (status='linked'). Dùng cho GET.
+async function readableKid(userId: string, kidId: string) {
+  const admin = createAdminClient();
+  const { data: kid } = await admin
+    .from("ekid_kids")
+    .select("id, daily_limit_min, user_id")
+    .eq("id", kidId)
+    .maybeSingle();
+  if (!kid) return null;
+  if (kid.user_id === userId) return kid;
+
+  const { data: link } = await admin
+    .from("ekid_caregivers")
+    .select("id")
+    .eq("kid_id", kidId)
+    .eq("caregiver_user_id", userId)
+    .eq("status", "linked")
+    .maybeSingle();
+  return link ? kid : null;
+}
+
 // Ngày hôm nay dạng YYYY-MM-DD (khoá ngày của bảng ekid_daily).
 function todayStr() {
   return new Date().toISOString().split("T")[0];
@@ -51,6 +72,7 @@ async function recomputePlacement(kidId: string, dob: string) {
 }
 
 // GET /api/ekid/session?kid_id=... — phiên gần đây + số phút còn lại hôm nay.
+// Cho phép cả caregiver đã linked đọc (chỉ đọc).
 export async function GET(req: Request) {
   const supabase = await createClient();
   const {
@@ -61,7 +83,7 @@ export async function GET(req: Request) {
   const kidId = new URL(req.url).searchParams.get("kid_id");
   if (!kidId) return NextResponse.json({ error: "Thiếu kid_id" }, { status: 400 });
 
-  const kid = await ownsKid(user.id, kidId);
+  const kid = await readableKid(user.id, kidId);
   if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
   const admin = createAdminClient();

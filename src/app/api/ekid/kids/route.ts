@@ -25,20 +25,42 @@ const PATCH_ALLOWED_FIELDS = [
   "daily_limit_min",
 ] as const;
 
-// GET /api/ekid/kids — danh sách hồ sơ trẻ của user (chủ sở hữu), sắp theo thời điểm tạo.
-// Mỗi kid kèm `has_entry_test` (đã làm test đầu vào chưa) và `is_owner` (chủ hồ sơ).
+// GET /api/ekid/kids — hồ sơ trẻ mà user SỞ HỮU + hồ sơ user là caregiver đã liên kết.
+// Mỗi kid kèm `has_entry_test` (đã làm test đầu vào chưa) và `is_owner` (có phải chủ hồ sơ).
 export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
   const admin = createAdminClient();
-  const { data: owned, error: ownErr } = await admin
-    .from("ekid_kids")
-    .select("*")
-    .eq("user_id", user.id);
+
+  // (I3) Con của chính user + con mà user là caregiver đã linked.
+  const [{ data: owned, error: ownErr }, { data: links }] = await Promise.all([
+    admin.from("ekid_kids").select("*").eq("user_id", user.id),
+    admin
+      .from("ekid_caregivers")
+      .select("kid_id")
+      .eq("caregiver_user_id", user.id)
+      .eq("status", "linked"),
+  ]);
   if (ownErr) return NextResponse.json({ error: ownErr.message }, { status: 500 });
 
-  const allKids = (owned ?? []).sort((a, b) =>
+  const ownedKids = owned ?? [];
+  const ownedIds = new Set(ownedKids.map((k) => k.id));
+  const caregiverKidIds = Array.from(
+    new Set(
+      (links ?? [])
+        .map((l) => l.kid_id as string)
+        .filter((id) => !ownedIds.has(id)),
+    ),
+  );
+
+  let caregiverKids: typeof ownedKids = [];
+  if (caregiverKidIds.length) {
+    const { data } = await admin.from("ekid_kids").select("*").in("id", caregiverKidIds);
+    caregiverKids = data ?? [];
+  }
+
+  const allKids = [...ownedKids, ...caregiverKids].sort((a, b) =>
     a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0,
   );
 

@@ -5,10 +5,17 @@ import { generateLinkCode, normalizeLinkCode } from "@/lib/ekid/ekid-system";
 
 export const dynamic = "force-dynamic";
 
+// Giá trị hợp lệ cho quan hệ (role) và quyền (permission) của người giám sát.
+// Phải khớp CHECK constraint trong migration 20261011000021.
+const CAREGIVER_ROLES = ["cha", "me", "ong", "ba", "nguoi-giam-ho"] as const;
+const CAREGIVER_PERMISSIONS = ["admin", "viewer"] as const;
+type CaregiverRole = (typeof CAREGIVER_ROLES)[number];
+type CaregiverPermission = (typeof CAREGIVER_PERMISSIONS)[number];
+
 // GET /api/ekid/caregivers
-//   ?q=<từ khoá>  → tìm người dùng theo tên (để mời liên kết)
-//   ?kid_id=<id>  → danh sách người thân của hồ sơ trẻ (chủ hồ sơ HOẶC người thân đã liên kết đọc)
+//   ?kid_id=<id>  → danh sách người giám sát của hồ sơ trẻ (chủ hồ sơ HOẶC người thân đã liên kết đọc)
 //   (không tham số) → danh sách lời mời/liên kết GỬI ĐẾN chính user (caregiver_user_id = user)
+// Không còn tham số `?q=` (tìm theo tên) — tránh rò rỉ danh tính người dùng.
 export async function GET(req: Request) {
   const supabase = await createClient();
   const {
@@ -18,30 +25,9 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const kidId = searchParams.get("kid_id");
-  const q = searchParams.get("q");
   const admin = createAdminClient();
 
-  if (q !== null) {
-    // Tìm user theo tên hiển thị (profiles.full_name) để mời liên kết.
-    // Chống enumeration/rò rỉ danh bạ: bắt buộc từ khoá >= 3 ký tự, nếu ngắn hơn
-    // trả rỗng luôn (không truy vấn). Không phân biệt hoa/thường.
-    const keyword = q.trim();
-    if (keyword.length < 3) return NextResponse.json({ users: [] });
-
-    // Escape ký tự đại diện của LIKE (`\`, `%`, `_`) để `q` chỉ khớp theo nghĩa
-    // chuỗi con nguyên văn, không cho phép `%`/`_` liệt kê toàn bộ bảng.
-    const escaped = keyword.replace(/[\\%_]/g, "\\$&");
-
-    // Chỉ trả 2 trường tối thiểu (user_id + full_name), giới hạn 10 kết quả.
-    const { data: profiles } = await admin
-      .from("profiles")
-      .select("user_id, full_name")
-      .ilike("full_name", `%${escaped}%`)
-      .limit(10);
-    return NextResponse.json({ users: profiles ?? [] });
-  }
-
-  // Không có q và không có kid_id → lời mời/liên kết gửi đến CHÍNH user.
+  // Không có kid_id → lời mời/liên kết gửi đến CHÍNH user.
   // Để người được mời thấy lời mời của mình và bấm Chấp nhận/Từ chối.
   if (!kidId) {
     const { data: mine } = await admin
@@ -176,6 +162,12 @@ export async function POST(req: Request) {
       ? caregiver_user_id.trim()
       : null;
 
+  // Validate role theo enum (gồm 'ong'/'ba' mới). role rỗng → mặc định 'nguoi-giam-ho'.
+  const finalRole = role || "nguoi-giam-ho";
+  if (!(CAREGIVER_ROLES as readonly string[]).includes(finalRole)) {
+    return NextResponse.json({ error: "role không hợp lệ" }, { status: 400 });
+  }
+
   // Chèn lời mời với RETRY chống va chạm link_code.
   // Partial unique index `idx_ekid_caregivers_linkcode_pending` ràng buộc
   // link_code của mọi dòng status='pending' → trùng mã sẽ vi phạm 23505.
@@ -191,7 +183,7 @@ export async function POST(req: Request) {
       .insert({
         kid_id,
         caregiver_user_id: invited,
-        role: role || "nguoi-giam-ho",
+        role: finalRole,
         status: "pending",
         link_code: generateLinkCode(),
       })
@@ -226,7 +218,11 @@ export async function POST(req: Request) {
   return NextResponse.json({ caregiver: inserted });
 }
 
-// PATCH /api/ekid/caregivers — chấp nhận (`linked`) hoặc từ chối (`rejected`) lời mời.
+// PATCH /api/ekid/caregivers — hai nhánh, phân biệt theo body:
+//   (a) { id, permission?, role? } — CHỦ hồ sơ (owner) đổi quyền/quan hệ của một liên kết.
+//       permission ∈ ('admin'|'viewer'), role ∈ ('cha','me','ong','ba','nguoi-giam-ho').
+//   (b) { id, status } — chấp nhận ('linked') / từ chối ('rejected') lời mời (luồng cũ, giữ nguyên).
+// `id` nhận qua body (ưu tiên) hoặc query `?id=`.
 export async function PATCH(req: Request) {
   const supabase = await createClient();
   const {
@@ -234,11 +230,10 @@ export async function PATCH(req: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
-  const { id, status } = (await req.json()) ?? {};
+  const body = (await req.json()) ?? {};
+  const bodyId = typeof body.id === "string" ? body.id : "";
+  const id = bodyId.trim() || new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Thiếu id" }, { status: 400 });
-  if (status !== "linked" && status !== "rejected") {
-    return NextResponse.json({ error: "status không hợp lệ" }, { status: 400 });
-  }
 
   const admin = createAdminClient();
   // Chống IDOR: tra bản ghi để lấy kid_id + caregiver_user_id trước khi update.
@@ -249,7 +244,55 @@ export async function PATCH(req: Request) {
     .maybeSingle();
   if (!cg) return NextResponse.json({ error: "Không tìm thấy" }, { status: 404 });
 
-  // Quyền được accept/reject: (a) người gọi là CHỦ hồ sơ trẻ (owner của kid_id),
+  const permission = body.permission as unknown;
+  const role = body.role as unknown;
+  const status = body.status as unknown;
+
+  // ── Nhánh (a): đổi permission/role — chỉ OWNER (kid.user_id === user.id). ──
+  if (permission !== undefined || role !== undefined) {
+    if (
+      permission !== undefined &&
+      !(CAREGIVER_PERMISSIONS as readonly string[]).includes(permission as string)
+    ) {
+      return NextResponse.json({ error: "permission không hợp lệ" }, { status: 400 });
+    }
+    if (
+      role !== undefined &&
+      !(CAREGIVER_ROLES as readonly string[]).includes(role as string)
+    ) {
+      return NextResponse.json({ error: "role không hợp lệ" }, { status: 400 });
+    }
+
+    // Chỉ owner đổi quyền/quan hệ của người giám sát (admin caregiver KHÔNG được).
+    const { data: kid } = await admin
+      .from("ekid_kids")
+      .select("id")
+      .eq("id", cg.kid_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
+
+    const patch: { permission?: CaregiverPermission; role?: CaregiverRole } = {};
+    if (permission !== undefined) patch.permission = permission as CaregiverPermission;
+    if (role !== undefined) patch.role = role as CaregiverRole;
+
+    const { data, error } = await admin
+      .from("ekid_caregivers")
+      .update(patch)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ caregiver: data });
+  }
+
+  // ── Nhánh (b): accept/reject lời mời (luồng cũ, giữ nguyên). ──
+  if (status !== "linked" && status !== "rejected") {
+    return NextResponse.json({ error: "status không hợp lệ" }, { status: 400 });
+  }
+  const newStatus = status as "linked" | "rejected";
+
+  // Quyền accept/reject: (a) người gọi là CHỦ hồ sơ trẻ (owner của kid_id),
   // HOẶC (b) người gọi chính là người được mời (caregiver_user_id) → tự accept/từ chối
   // lời mời của mình. Không cho phép người khác đổi trạng thái lời mời không phải của mình.
   let allowed = cg.caregiver_user_id === user.id;
@@ -266,7 +309,7 @@ export async function PATCH(req: Request) {
 
   const { data, error } = await admin
     .from("ekid_caregivers")
-    .update({ status })
+    .update({ status: newStatus })
     .eq("id", id)
     .select("*")
     .single();

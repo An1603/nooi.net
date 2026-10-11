@@ -73,6 +73,14 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+  // Thêm người giám sát theo mã giới thiệu (chỉ chủ hồ sơ)
+  const [refRole, setRefRole] = useState("cha");
+  const [refPermission, setRefPermission] = useState("viewer");
+  const [refCode, setRefCode] = useState("");
+  const [resolvedName, setResolvedName] = useState<string | null>(null);
+  const [resolving, setResolving] = useState(false);
+  const [adding, setAdding] = useState(false);
+
   // Nhập mã liên kết (người được mời)
   const [joinCode, setJoinCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -134,6 +142,59 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
       await load();
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi tạo mã" });
+    }
+  }
+
+  // Tra cứu mã giới thiệu để xác nhận đúng người (chỉ chủ hồ sơ).
+  async function resolveRefCode() {
+    const code = refCode.trim();
+    if (!code) return;
+    setResolving(true);
+    setResolvedName(null);
+    setMsg(null);
+    try {
+      const r = await fetch("/api/ekid/caregivers/resolve-ref", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ref_code: code }),
+      });
+      const d = await readJson(r);
+      if (!r.ok) throw new Error((d.error as string) || "Không tìm thấy mã giới thiệu");
+      setResolvedName((d.full_name as string) ?? "Người dùng");
+    } catch (e) {
+      setMsg({ ok: false, text: e instanceof Error ? e.message : "Không tìm thấy mã giới thiệu" });
+    } finally {
+      setResolving(false);
+    }
+  }
+
+  // Thêm người giám sát theo mã giới thiệu (liên kết ngay) — chỉ chủ hồ sơ.
+  async function addByRefCode() {
+    const code = refCode.trim();
+    if (!code || !resolvedName) return;
+    setAdding(true);
+    setMsg(null);
+    try {
+      const r = await fetch("/api/ekid/caregivers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kid_id: kidId,
+          ref_code: code,
+          role: refRole,
+          permission: refPermission,
+        }),
+      });
+      const d = await readJson(r);
+      if (!r.ok) throw new Error((d.error as string) || "Thêm giám sát thất bại");
+      setMsg({ ok: true, text: "Đã thêm người giám sát thành công." });
+      setRefCode("");
+      setResolvedName(null);
+      await load();
+    } catch (e) {
+      setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi thêm giám sát" });
+    } finally {
+      setAdding(false);
     }
   }
 
@@ -239,6 +300,78 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
               </p>
             )}
           </div>
+        </section>
+      )}
+
+      {/* Thêm người giám sát theo mã giới thiệu (chỉ chủ hồ sơ) */}
+      {isOwner && (
+        <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
+          <h2 className="text-sm font-semibold text-foreground">Thêm người giám sát bằng mã giới thiệu</h2>
+          <p className="text-sm text-muted-foreground">
+            Nhập mã giới thiệu của người dùng khác để thêm họ vào theo dõi con. Mã giúp xác nhận
+            đúng người trước khi thêm.
+          </p>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="space-y-1.5">
+              <Label htmlFor="ref-role">Quan hệ</Label>
+              <Select id="ref-role" value={refRole} onChange={(e) => setRefRole(e.target.value)}>
+                <option value="cha">Cha</option>
+                <option value="me">Mẹ</option>
+                <option value="ong">Ông</option>
+                <option value="ba">Bà</option>
+                <option value="nguoi-giam-ho">Người giám hộ</option>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5 sm:flex-1">
+              <Label htmlFor="ref-code">Mã giới thiệu</Label>
+              <Input
+                id="ref-code"
+                value={refCode}
+                onChange={(e) => {
+                  setRefCode(e.target.value.toUpperCase());
+                  setResolvedName(null);
+                }}
+                placeholder="VD: AB3D7K"
+                className="tracking-widest"
+              />
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resolveRefCode}
+              disabled={resolving || refCode.trim().length === 0}
+            >
+              {resolving ? "Đang tra cứu..." : "Tra cứu"}
+            </Button>
+          </div>
+
+          {resolvedName && (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <p className="text-sm text-muted-foreground sm:self-center">
+                Đúng người cần thêm:{" "}
+                <span className="font-semibold text-primary">{resolvedName}</span>
+              </p>
+
+              <div className="space-y-1.5 sm:ml-auto">
+                <Label htmlFor="ref-permission">Quyền</Label>
+                <Select
+                  id="ref-permission"
+                  value={refPermission}
+                  onChange={(e) => setRefPermission(e.target.value)}
+                >
+                  <option value="admin">Quản lý</option>
+                  <option value="viewer">Xem</option>
+                </Select>
+              </div>
+
+              <Button type="button" onClick={addByRefCode} disabled={adding}>
+                {adding ? "Đang thêm..." : "Thêm giám sát"}
+              </Button>
+            </div>
+          )}
         </section>
       )}
 

@@ -133,6 +133,8 @@ export const BAND_VOICE: Record<AgeBand, VoiceOption> = {
 
 - [ ] **Step 1: Viết file migration**
 
+> ⚠️ **SỬA SAU REVIEW (Critical):** bản SQL gốc bên dưới có RLS **đệ quy vô hạn** (policy bảng này subquery trực tiếp sang bảng kia → Postgres 42P17) và cấp thừa quyền ghi cho caregiver. Bản CHÍNH THỨC đã sửa nằm ở file `supabase/migrations/20261011000001_ekid.sql` — dùng **SECURITY DEFINER function** `ekid_owns_kid(uuid)` + `ekid_is_caregiver(uuid)` và tách policy caregiver thành `FOR SELECT` (chỉ đọc). Khi tạo migration, luôn COPY từ file đó, KHÔNG copy khối SQL cũ bên dưới.
+
 ```sql
 -- eKid: AI live voice cho trẻ em
 CREATE TABLE IF NOT EXISTS public.ekid_kids (

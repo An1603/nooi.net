@@ -91,6 +91,11 @@ export function generateLinkCode(): string {
   return out;
 }
 
+/** Chuẩn hoá mã liên kết người dùng nhập: bỏ khoảng trắng hai đầu và viết hoa. */
+export function normalizeLinkCode(raw: string): string {
+  return raw.trim().toUpperCase();
+}
+
 export function buildSystemInstruction(params: {
   kidName: string;
   placement: Placement;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   calcAge, initialBand, resolvePlacement, remainingMinutes,
-  canStartSession, generateLinkCode, BAND_VOICE,
+  canStartSession, generateLinkCode, normalizeLinkCode, BAND_VOICE,
 } from "@/lib/ekid/ekid-system";
 
 describe("ekid — calcAge", () => {
@@ -49,6 +49,15 @@ describe("ekid — generateLinkCode", () => {
   it("6 ký tự, chỉ A-Z0-9, không ký tự dễ nhầm", () => {
     const code = generateLinkCode();
     expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+  });
+});
+
+describe("ekid — normalizeLinkCode", () => {
+  it("bỏ khoảng trắng và viết hoa", () => {
+    expect(normalizeLinkCode("  ab3d7k ")).toBe("AB3D7K");
+  });
+  it("giữ nguyên mã đã chuẩn hoá", () => {
+    expect(normalizeLinkCode("XY9Z42")).toBe("XY9Z42");
   });
 });
 

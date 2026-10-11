@@ -32,6 +32,9 @@ yarn-error.log*
 # hermes workspace
 .hermes/
 
+# superpowers SDD workspace (scratch: ledger, briefs, reports, review packages)
+.superpowers/
+
 # Thư viện ảnh tĩnh — 447MB, không commit. Pipeline scrape ở scripts/gallery-pipeline/,
 # đồng bộ vào public/gallery/ bằng scripts/sync-gallery.sh
 /public/gallery/images/

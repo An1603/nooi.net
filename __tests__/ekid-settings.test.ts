@@ -5,6 +5,9 @@ import {
   isWithinAllowedHours,
   lockedLessonsByOrder,
   PASS_SCORE,
+  isValidDailyLimitMin,
+  DAILY_LIMIT_MIN,
+  DAILY_LIMIT_MAX,
   type KidSettings,
 } from "@/lib/ekid/ekid-system";
 
@@ -166,5 +169,26 @@ describe("lockedLessonsByOrder", () => {
 
   it("danh sách rỗng → Set rỗng", () => {
     expect(lockedLessonsByOrder([], scores({}), true).size).toBe(0);
+  });
+});
+
+describe("isValidDailyLimitMin", () => {
+  it("nhận số nguyên trong [MIN, MAX]", () => {
+    expect(isValidDailyLimitMin(DAILY_LIMIT_MIN)).toBe(true);
+    expect(isValidDailyLimitMin(30)).toBe(true);
+    expect(isValidDailyLimitMin(DAILY_LIMIT_MAX)).toBe(true);
+  });
+
+  it("từ chối 0 (chặn con hoàn toàn) và số ngoài khoảng", () => {
+    expect(isValidDailyLimitMin(0)).toBe(false);
+    expect(isValidDailyLimitMin(DAILY_LIMIT_MIN - 1)).toBe(false);
+    expect(isValidDailyLimitMin(DAILY_LIMIT_MAX + 1)).toBe(false);
+  });
+
+  it("từ chối giá trị không phải số nguyên / không phải số", () => {
+    expect(isValidDailyLimitMin(10.5)).toBe(false);
+    expect(isValidDailyLimitMin("30")).toBe(false);
+    expect(isValidDailyLimitMin(null)).toBe(false);
+    expect(isValidDailyLimitMin(NaN)).toBe(false);
   });
 });

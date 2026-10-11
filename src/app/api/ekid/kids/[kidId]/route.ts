@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import {
   normalizeKidSettings,
   resolvePlacement,
+  isValidDailyLimitMin,
+  DAILY_LIMIT_MIN,
+  DAILY_LIMIT_MAX,
 } from "@/lib/ekid/ekid-system";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +62,11 @@ export async function GET(
 
   const { data: kid, error } = await supabase
     .from("ekid_kids")
-    .select("*")
+    // Cột tường minh (khớp ConsoleKid) — với caregiver chỉ trả dữ liệu cần thiết,
+    // KHÔNG lộ `child_user_id` hay các cột nội bộ không dùng cho UI giám sát.
+    .select(
+      "id, name, username, date_of_birth, avatar_emoji, favorite_voice, daily_limit_min, placement_age_band, placement_level, status, birth_time, gender, birth_place, user_id, settings",
+    )
     .eq("id", kidId)
     .maybeSingle();
 
@@ -148,9 +155,13 @@ export async function PATCH(
 
   if (has("daily_limit_min")) {
     const v = body.daily_limit_min;
-    if (typeof v !== "number" || !Number.isInteger(v) || v < 0) {
+    // (FIX C) Chỉ nhận số nguyên trong khoảng hợp lệ [MIN, MAX]. Giá trị 0 (chặn con
+    // hoàn toàn) bị từ chối để tránh ba/mẹ đặt nhầm khiến con không học được.
+    if (!isValidDailyLimitMin(v)) {
       return NextResponse.json(
-        { error: "Giới hạn phút/ngày không hợp lệ" },
+        {
+          error: `Giới hạn phút/ngày phải là số nguyên từ ${DAILY_LIMIT_MIN} đến ${DAILY_LIMIT_MAX}.`,
+        },
         { status: 400 },
       );
     }

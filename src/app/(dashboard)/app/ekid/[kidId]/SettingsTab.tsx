@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { KidCustomReward, KidSettings } from "@/lib/ekid/ekid-system";
+import { DAILY_LIMIT_MIN, DAILY_LIMIT_MAX } from "@/lib/ekid/ekid-system";
 import type { ConsoleKid } from "./types";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -63,7 +64,7 @@ export function SettingsTab({
 
   // Khối Nguyên tắc
   const [dailyLimit, setDailyLimit] = useState(
-    kid.daily_limit_min != null ? String(kid.daily_limit_min) : "0",
+    kid.daily_limit_min != null ? String(kid.daily_limit_min) : String(DAILY_LIMIT_MIN),
   );
   const [allowedFrom, setAllowedFrom] = useState(settings.rules.allowedFrom ?? "");
   const [allowedTo, setAllowedTo] = useState(settings.rules.allowedTo ?? "");
@@ -126,8 +127,16 @@ export function SettingsTab({
     setMsg(null);
 
     const limitNum = Number(dailyLimit);
-    if (dailyLimit.trim() === "" || !Number.isInteger(limitNum) || limitNum < 0) {
-      setMsg({ ok: false, text: "Giới hạn phút/ngày phải là số nguyên không âm." });
+    if (
+      dailyLimit.trim() === "" ||
+      !Number.isInteger(limitNum) ||
+      limitNum < DAILY_LIMIT_MIN ||
+      limitNum > DAILY_LIMIT_MAX
+    ) {
+      setMsg({
+        ok: false,
+        text: `Giới hạn phút/ngày phải là số nguyên từ ${DAILY_LIMIT_MIN} đến ${DAILY_LIMIT_MAX}.`,
+      });
       return;
     }
 
@@ -224,7 +233,8 @@ export function SettingsTab({
             <Input
               id="set-limit"
               type="number"
-              min={0}
+              min={DAILY_LIMIT_MIN}
+              max={DAILY_LIMIT_MAX}
               step={1}
               inputMode="numeric"
               value={dailyLimit}

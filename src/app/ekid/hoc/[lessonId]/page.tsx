@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { EkidVoiceSession } from "@/components/ekid/EkidVoiceSession";
 import type { EkidKidLite, EkidLessonLite } from "@/components/ekid/EkidVoiceSession";
-import type { LibraryKid } from "@/components/ekid/child/types";
+import type { LibraryKid, LibraryLesson } from "@/components/ekid/child/types";
 import { KID } from "@/components/ekid/child/kid-theme";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
 
@@ -48,6 +48,7 @@ export default function EkidLessonPage() {
 
   const [kid, setKid] = useState<EkidKidLite | null>(null);
   const [lesson, setLesson] = useState<FullLesson | null>(null);
+  const [locked, setLocked] = useState(false);
   const [remaining, setRemaining] = useState(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +74,12 @@ export default function EkidLessonPage() {
         daily_limit_min: libKid.daily_limit_min ?? null,
       };
       setKid(kidLite);
+
+      // 1b) Bài này có bị KHOÁ theo nguyên tắc "thi đạt mới sang bài" không?
+      //     Cờ `locked` đã được server tính sẵn trong danh sách thư viện.
+      const libLessons = (ld.lessons as LibraryLesson[]) ?? [];
+      const libLesson = libLessons.find((l) => l.id === lessonId) ?? null;
+      setLocked(libLesson?.locked === true);
 
       // 2) Chi tiết bài học (đầy đủ, phục vụ phiên luyện giọng nói).
       const er = await fetch(`/api/ekid/lessons?band=${encodeURIComponent(libKid.placement_age_band ?? "")}`);
@@ -115,6 +122,23 @@ export default function EkidLessonPage() {
       <div className="mx-auto max-w-md rounded-3xl border-2 border-[#ff7a59]/50 bg-white/85 p-6 text-center shadow-lg shadow-sky-200/60">
         <p className="text-xl font-bold text-[#e15a3a]">
           {error ?? "Không tìm thấy bài học"}
+        </p>
+        <Link href="/" className={`mt-4 ${KID.btnPrimary}`}>
+          ⬅ Về thư viện
+        </Link>
+      </div>
+    );
+  }
+
+  // Bài bị KHOÁ theo nguyên tắc "thi đạt mới sang bài": KHÔNG cho học.
+  if (locked) {
+    return (
+      <div className="mx-auto max-w-md rounded-3xl border-2 border-[#ffd93d] bg-white/85 p-6 text-center shadow-lg shadow-sky-200/60">
+        <p className="text-5xl" aria-hidden>
+          🔒
+        </p>
+        <p className="mt-3 text-xl font-bold text-[#3b2a20]">
+          Con cần hoàn thành bài trước đã nhé!
         </p>
         <Link href="/" className={`mt-4 ${KID.btnPrimary}`}>
           ⬅ Về thư viện

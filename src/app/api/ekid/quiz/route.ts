@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { badgesForProgress, pointsForScore } from "@/lib/ekid/ekid-system";
+import {
+  badgesForProgress,
+  pointsForScore,
+  normalizeKidSettings,
+  isWithinAllowedHours,
+} from "@/lib/ekid/ekid-system";
 import type { EkidExercise } from "@/lib/ekid/ekid-system";
 import { resolveChildKidId } from "@/lib/ekid/child";
+import { computeLockedLessonIds } from "@/lib/ekid/lesson-lock";
 
 export const dynamic = "force-dynamic";
 
@@ -44,12 +50,48 @@ export async function POST(req: Request) {
   // Chống IDOR: chỉ chủ hồ sơ hoặc tài khoản con của hồ sơ đó được ghi.
   const { data: kid } = await admin
     .from("ekid_kids")
-    .select("id, user_id, child_user_id")
+    .select("id, user_id, child_user_id, status, settings, placement_age_band")
     .eq("id", kid_id)
     .maybeSingle();
   if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const allowed = kid.user_id === user.id || kid.child_user_id === user.id;
   if (!allowed) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
+
+  // (FIX B) Áp NGUYÊN TẮC học tập của ba/mẹ cho luồng thi tĩnh — không để lách qua quiz.
+  // (B1) Hồ sơ bị khoá → không cho thi.
+  if (kid.status === "khoa") {
+    return NextResponse.json(
+      { error: "Tài khoản của con đang tạm khoá. Con nhờ ba mẹ mở lại nhé!" },
+      { status: 403 },
+    );
+  }
+  // (B2) Ngoài khung giờ học cho phép → không cho thi.
+  const settings = normalizeKidSettings(kid.settings);
+  if (!isWithinAllowedHours(settings, new Date())) {
+    const { allowedFrom, allowedTo } = settings.rules;
+    return NextResponse.json(
+      {
+        error: `Ngoài khung giờ học cho phép (${allowedFrom}–${allowedTo}). Con quay lại đúng giờ ba mẹ đặt nhé!`,
+      },
+      { status: 403 },
+    );
+  }
+
+  // (FIX A3) Nguyên tắc "thi đạt mới sang bài": bài đang KHOÁ → không cho thi.
+  if (settings.rules.requirePassToAdvance) {
+    const lockedIds = await computeLockedLessonIds(
+      admin,
+      kid_id,
+      kid.placement_age_band as string | null,
+      true,
+    );
+    if (lockedIds.has(lesson_id)) {
+      return NextResponse.json(
+        { error: "Con cần hoàn thành bài trước đã nhé!" },
+        { status: 403 },
+      );
+    }
+  }
 
   // Lấy đề bài để chấm điểm.
   const { data: lesson } = await admin

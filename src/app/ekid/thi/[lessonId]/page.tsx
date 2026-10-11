@@ -69,6 +69,23 @@ export default function EkidQuizPage() {
     );
   }
 
+  // Bài bị KHOÁ theo nguyên tắc "thi đạt mới sang bài": KHÔNG cho làm bài thi.
+  if (lesson.locked) {
+    return (
+      <div className="mx-auto max-w-md rounded-3xl border-2 border-[#ffd93d] bg-white/85 p-6 text-center shadow-lg shadow-sky-200/60">
+        <p className="text-5xl" aria-hidden>
+          🔒
+        </p>
+        <p className="mt-3 text-xl font-bold text-[#3b2a20]">
+          Con cần hoàn thành bài trước đã nhé!
+        </p>
+        <Link href="/" className={`mt-4 ${KID.btnPrimary}`}>
+          ⬅ Về thư viện
+        </Link>
+      </div>
+    );
+  }
+
   const exercises: PublicExercise[] = lesson.exercises ?? [];
 
   return (

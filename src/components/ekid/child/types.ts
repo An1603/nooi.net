@@ -22,6 +22,8 @@ export interface LibraryLesson {
   difficulty?: number | null;
   video_url?: string | null;
   exercises?: PublicExercise[];
+  /** Khoá theo nguyên tắc "thi đạt mới sang bài" (server tính). Không có ⇒ không khoá. */
+  locked?: boolean;
   progress: LessonProgress;
 }
 

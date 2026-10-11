@@ -10,9 +10,46 @@ function stateStyle(status: string): string {
 
 /**
  * Thẻ bài học trong thư viện — ô lớn, emoji, tên bài, trạng thái.
- * Bấm vào thẻ → vào trang học của bài.
+ *
+ * - Bài bình thường: bấm vào thẻ → vào trang học của bài.
+ * - Bài `locked` (thi đạt mới sang bài): hiện mờ + 🔒 và KHÔNG cho bấm vào.
  */
 export function LessonCard({ lesson }: { lesson: LibraryLesson }) {
+  const locked = lesson.locked === true;
+
+  const inner = (
+    <>
+      <span className="relative text-5xl" aria-hidden>
+        {lessonEmoji(lesson)}
+        {locked ? <span className="absolute -right-3 -top-2 text-2xl">🔒</span> : null}
+      </span>
+      <span className="text-lg font-extrabold leading-tight text-[#3b2a20]">
+        {lesson.title}
+      </span>
+      {locked ? (
+        <span className="rounded-full bg-[#e2e8f0] px-3 py-1 text-sm font-bold text-[#64748b]">
+          Chưa mở
+        </span>
+      ) : (
+        <span className="rounded-full bg-[#e0f2fe] px-3 py-1 text-sm font-bold text-[#6b5648]">
+          {statusLabel(lesson.progress)}
+        </span>
+      )}
+    </>
+  );
+
+  if (locked) {
+    return (
+      <div
+        aria-disabled="true"
+        title="Con cần hoàn thành bài trước đã nhé!"
+        className="flex cursor-not-allowed flex-col items-center gap-2 rounded-3xl border-2 border-dashed border-[#cbd5e1] bg-white/60 p-4 text-center opacity-70 grayscale"
+      >
+        {inner}
+      </div>
+    );
+  }
+
   return (
     <Link
       href={`/hoc/${lesson.id}`}
@@ -20,15 +57,7 @@ export function LessonCard({ lesson }: { lesson: LibraryLesson }) {
         lesson.progress.status,
       )}`}
     >
-      <span className="text-5xl" aria-hidden>
-        {lessonEmoji(lesson)}
-      </span>
-      <span className="text-lg font-extrabold leading-tight text-[#3b2a20]">
-        {lesson.title}
-      </span>
-      <span className="rounded-full bg-[#e0f2fe] px-3 py-1 text-sm font-bold text-[#6b5648]">
-        {statusLabel(lesson.progress)}
-      </span>
+      {inner}
     </Link>
   );
 }

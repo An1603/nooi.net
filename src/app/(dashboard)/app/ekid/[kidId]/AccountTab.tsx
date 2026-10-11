@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { ResetChildPassword } from "@/components/ekid/ResetChildPassword";
+import { DAILY_LIMIT_MIN, DAILY_LIMIT_MAX } from "@/lib/ekid/ekid-system";
 import type { ConsoleKid } from "./types";
 
 /** Đọc JSON an toàn, kèm thông điệp lỗi tiếng Việt nhất quán. */
@@ -69,8 +70,16 @@ export function AccountTab({
       return;
     }
     const limitNum = limit.trim() === "" ? NaN : Number(limit);
-    if (Number.isNaN(limitNum) || !Number.isInteger(limitNum) || limitNum < 0) {
-      setMsg({ ok: false, text: "Giới hạn phút/ngày phải là số nguyên không âm." });
+    if (
+      Number.isNaN(limitNum) ||
+      !Number.isInteger(limitNum) ||
+      limitNum < DAILY_LIMIT_MIN ||
+      limitNum > DAILY_LIMIT_MAX
+    ) {
+      setMsg({
+        ok: false,
+        text: `Giới hạn phút/ngày phải là số nguyên từ ${DAILY_LIMIT_MIN} đến ${DAILY_LIMIT_MAX}.`,
+      });
       return;
     }
 
@@ -163,7 +172,8 @@ export function AccountTab({
             <Input
               id="acc-limit"
               type="number"
-              min={0}
+              min={DAILY_LIMIT_MIN}
+              max={DAILY_LIMIT_MAX}
               step={1}
               inputMode="numeric"
               value={limit}

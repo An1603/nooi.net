@@ -325,6 +325,21 @@ export function isWithinAllowedHours(settings: KidSettings, now: Date): boolean 
 /** Điểm tối thiểu để coi là ĐẠT một bài (thang 100). */
 export const PASS_SCORE = 70;
 
+/** Khoảng hợp lệ cho giới hạn phút/ngày của một hồ sơ (cột `ekid_kids.daily_limit_min`).
+ * Cận dưới > 0 để tránh đặt 0 khiến con bị chặn hoàn toàn mà ba/mẹ không nhận ra. */
+export const DAILY_LIMIT_MIN = 5;
+export const DAILY_LIMIT_MAX = 120;
+
+/** Giới hạn phút/ngày hợp lệ: số nguyên trong [DAILY_LIMIT_MIN, DAILY_LIMIT_MAX]. */
+export function isValidDailyLimitMin(v: unknown): v is number {
+  return (
+    typeof v === "number" &&
+    Number.isInteger(v) &&
+    v >= DAILY_LIMIT_MIN &&
+    v <= DAILY_LIMIT_MAX
+  );
+}
+
 /**
  * Xác định các bài bị KHOÁ theo nguyên tắc "thi đạt mới sang bài".
  *

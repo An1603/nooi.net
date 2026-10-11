@@ -30,6 +30,8 @@ export function SetChildUsername({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
@@ -111,31 +113,55 @@ export function SetChildUsername({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="set-password">Mật khẩu (≥6 ký tự)</Label>
-          <Input
-            id="set-password"
-            type="password"
-            placeholder="Ít nhất 6 ký tự"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setMessage(null);
-            }}
-          />
+          <div className="relative">
+            <Input
+              id="set-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Ít nhất 6 ký tự"
+              autoComplete="new-password"
+              className="pr-11"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setMessage(null);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              className="absolute right-1.5 top-1/2 flex h-8 w-9 -translate-y-1/2 items-center justify-center rounded-md text-base transition-colors hover:bg-muted"
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
+          </div>
         </div>
         <div className="space-y-1.5 sm:col-span-2">
           <Label htmlFor="set-confirm">Xác nhận mật khẩu</Label>
-          <Input
-            id="set-confirm"
-            type="password"
-            placeholder="Nhập lại mật khẩu"
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(e) => {
-              setConfirm(e.target.value);
-              setMessage(null);
-            }}
-          />
+          <div className="relative">
+            <Input
+              id="set-confirm"
+              type={showConfirm ? "text" : "password"}
+              placeholder="Nhập lại mật khẩu"
+              autoComplete="new-password"
+              className="pr-11"
+              value={confirm}
+              onChange={(e) => {
+                setConfirm(e.target.value);
+                setMessage(null);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((v) => !v)}
+              aria-label={showConfirm ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              title={showConfirm ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              className="absolute right-1.5 top-1/2 flex h-8 w-9 -translate-y-1/2 items-center justify-center rounded-md text-base transition-colors hover:bg-muted"
+            >
+              {showConfirm ? "🙈" : "👁️"}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import { KID } from "@/components/ekid/child/kid-theme";
 export default function EkidLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -80,14 +81,25 @@ export default function EkidLoginPage() {
 
         <label className="flex flex-col gap-1.5">
           <span className={KID.label}>Mật khẩu</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            placeholder="Mật khẩu của bé"
-            className={KID.input}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              placeholder="Mật khẩu của bé"
+              className={`${KID.input} w-full pr-20`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              className="absolute right-2 top-1/2 flex h-12 w-14 -translate-y-1/2 items-center justify-center rounded-2xl bg-[#4ecdc4]/15 text-3xl transition-transform hover:scale-105 active:scale-95"
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
+          </div>
         </label>
 
         {error ? (

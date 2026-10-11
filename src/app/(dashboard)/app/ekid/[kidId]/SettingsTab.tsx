@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { KidCustomReward, KidSettings } from "@/lib/ekid/ekid-system";
-import { DAILY_LIMIT_MIN, DAILY_LIMIT_MAX } from "@/lib/ekid/ekid-system";
+import { DAILY_LIMIT_MIN, DAILY_LIMIT_MAX, normalizeKidSettings } from "@/lib/ekid/ekid-system";
 import type { ConsoleKid } from "./types";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -212,6 +212,23 @@ export function SettingsTab({
         body: JSON.stringify({ daily_limit_min: limitNum, settings: payloadSettings }),
       });
       if (!r.ok) throw new Error(await readError(r, "Không lưu được cài đặt."));
+      // (I-UI2) Đồng bộ lại state hiển thị từ dữ liệu server trả về ngay sau khi lưu.
+      const data = (await r.json().catch(() => ({}))) as {
+        kid?: { daily_limit_min?: number | null; settings?: unknown };
+      };
+      const k = data.kid;
+      if (k) {
+        if (k.daily_limit_min != null) setDailyLimit(String(k.daily_limit_min));
+        const s = normalizeKidSettings(k.settings);
+        setAllowedFrom(s.rules.allowedFrom ?? "");
+        setAllowedTo(s.rules.allowedTo ?? "");
+        setMaxLessons(String(s.rules.maxLessonsPerDay));
+        setRequirePass(s.rules.requirePassToAdvance);
+        setSubjects(s.subjects);
+        setPointsPer(String(s.rewards.pointsPerPassedLesson));
+        setMilestones(s.rewards.badgeMilestones.join(", "));
+        setCustom(s.rewards.custom);
+      }
       setMsg({ ok: true, text: "Đã lưu cài đặt cho con." });
       onChanged();
     } catch (e) {

@@ -100,6 +100,18 @@ export function AccountTab({
         }),
       });
       if (!r.ok) throw new Error(await readError(r, "Không lưu được thay đổi."));
+      // (I-UI2) Dùng kid server trả về để set lại state hiển thị ngay (đã trim/chuẩn hoá).
+      const data = (await r.json().catch(() => ({}))) as { kid?: Partial<ConsoleKid> };
+      const k = data.kid;
+      if (k) {
+        if (typeof k.name === "string") setName(k.name);
+        if (typeof k.date_of_birth === "string") setDob(k.date_of_birth);
+        if (typeof k.avatar_emoji === "string") setEmoji(k.avatar_emoji);
+        if (k.daily_limit_min != null) setLimit(String(k.daily_limit_min));
+        setBirthTime(k.birth_time ?? "");
+        setGender(k.gender ?? "");
+        setBirthPlace(k.birth_place ?? "");
+      }
       setMsg({ ok: true, text: "Đã lưu thay đổi hồ sơ của con." });
       onChanged();
     } catch (e) {
@@ -189,7 +201,7 @@ export function AccountTab({
           <div className="space-y-1.5">
             <Label htmlFor="acc-gender">Giới tính</Label>
             <Select id="acc-gender" value={gender} onChange={(e) => setGender(e.target.value)} disabled={!isOwner}>
-              <option value="">Chưa đặt</option>
+              <option value="">Không xác định</option>
               <option value="nam">Nam</option>
               <option value="nu">Nữ</option>
             </Select>

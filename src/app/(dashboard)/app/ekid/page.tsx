@@ -252,7 +252,7 @@ export default function EkidPage() {
                   value={fGender}
                   onChange={(e) => setFGender(e.target.value)}
                 >
-                  <option value="">Chưa đặt</option>
+                  <option value="">Không xác định</option>
                   <option value="nam">Nam</option>
                   <option value="nu">Nữ</option>
                 </Select>

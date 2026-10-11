@@ -22,6 +22,8 @@ export interface KidDetail {
   kid: ConsoleKid;
   settings: KidSettings;
   is_owner: boolean;
+  /** (v2.4) true khi user là CAREGIVER QUẢN LÝ đã liên kết (sửa hồ sơ/cài đặt, không đổi status). */
+  is_admin_caregiver: boolean;
 }
 
 /** Bốn tab của console mỗi con. */

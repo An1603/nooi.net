@@ -47,17 +47,18 @@ function toggle(list: string[], value: string, on: boolean): string[] {
  *   các cài đặt còn lại gửi trong `settings` đúng shape {@link KidSettings}.
  * - Môn học lấy từ các `core_topic` của LỨA con (GET /api/ekid/lessons?band=);
  *   `subjects` rỗng ⇒ học tất cả các môn.
- * - Chỉ chủ hồ sơ (isOwner) mới sửa được (khớp quyền server: PATCH chỉ OWNER).
+ * - Chỉ chủ hồ sơ hoặc quản lý (canEdit) mới sửa được (khớp quyền server: PATCH owner/admin).
  */
 export function SettingsTab({
   kid,
   settings,
-  isOwner,
+  canEdit,
   onChanged,
 }: {
   kid: ConsoleKid;
   settings: KidSettings;
-  isOwner: boolean;
+  /** (v2.4) Cho phép sửa cài đặt (chủ hoặc quản lý). */
+  canEdit: boolean;
   onChanged: () => void;
 }) {
   const band = kid.placement_age_band ?? "";
@@ -256,7 +257,7 @@ export function SettingsTab({
               inputMode="numeric"
               value={dailyLimit}
               onChange={(e) => setDailyLimit(e.target.value)}
-              disabled={!isOwner}
+              disabled={!canEdit}
             />
           </div>
           <div className="space-y-1.5">
@@ -269,7 +270,7 @@ export function SettingsTab({
               inputMode="numeric"
               value={maxLessons}
               onChange={(e) => setMaxLessons(e.target.value)}
-              disabled={!isOwner}
+              disabled={!canEdit}
             />
           </div>
           <div className="space-y-1.5">
@@ -279,7 +280,7 @@ export function SettingsTab({
               type="time"
               value={allowedFrom}
               onChange={(e) => setAllowedFrom(e.target.value)}
-              disabled={!isOwner}
+              disabled={!canEdit}
             />
           </div>
           <div className="space-y-1.5">
@@ -289,7 +290,7 @@ export function SettingsTab({
               type="time"
               value={allowedTo}
               onChange={(e) => setAllowedTo(e.target.value)}
-              disabled={!isOwner}
+              disabled={!canEdit}
             />
           </div>
         </div>
@@ -304,7 +305,7 @@ export function SettingsTab({
             className="size-4"
             checked={requirePass}
             onChange={(e) => setRequirePass(e.target.checked)}
-            disabled={!isOwner}
+            disabled={!canEdit}
           />
           <span>Thi đạt mới sang bài (phải đạt bài trước mới mở bài kế tiếp)</span>
         </label>
@@ -335,7 +336,7 @@ export function SettingsTab({
                     className="size-4"
                     checked={subjects.includes(t)}
                     onChange={(e) => setSubjects((prev) => toggle(prev, t, e.target.checked))}
-                    disabled={!isOwner}
+                    disabled={!canEdit}
                   />
                   <span>{t}</span>
                 </label>
@@ -363,7 +364,7 @@ export function SettingsTab({
               inputMode="numeric"
               value={pointsPer}
               onChange={(e) => setPointsPer(e.target.value)}
-              disabled={!isOwner}
+              disabled={!canEdit}
             />
           </div>
           <div className="space-y-1.5">
@@ -373,7 +374,7 @@ export function SettingsTab({
               value={milestones}
               onChange={(e) => setMilestones(e.target.value)}
               placeholder="3, 5, 10"
-              disabled={!isOwner}
+              disabled={!canEdit}
             />
             <p className="text-[11px] text-muted-foreground">Cách nhau bởi dấu phẩy. Mặc định 3/5/10.</p>
           </div>
@@ -394,7 +395,7 @@ export function SettingsTab({
                     value={c.label}
                     onChange={(e) => updateCustom(i, { label: e.target.value })}
                     placeholder="VD: Đi công viên"
-                    disabled={!isOwner}
+                    disabled={!canEdit}
                   />
                 </div>
                 <div className="w-28 space-y-1.5">
@@ -411,10 +412,10 @@ export function SettingsTab({
                         points: e.target.value === "" ? 0 : Number(e.target.value),
                       })
                     }
-                    disabled={!isOwner}
+                    disabled={!canEdit}
                   />
                 </div>
-                {isOwner && (
+                {canEdit && (
                   <Button
                     type="button"
                     variant="destructive"
@@ -427,7 +428,7 @@ export function SettingsTab({
               </li>
             ))}
           </ul>
-          {isOwner && (
+          {canEdit && (
             <Button
               type="button"
               variant="outline"
@@ -446,7 +447,7 @@ export function SettingsTab({
         </p>
       )}
 
-      {isOwner ? (
+      {canEdit ? (
         <Button type="button" onClick={save} disabled={saving} className="bg-primary text-primary-foreground">
           {saving ? "Đang lưu..." : "Lưu cài đặt"}
         </Button>

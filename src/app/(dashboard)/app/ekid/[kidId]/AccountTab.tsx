@@ -23,15 +23,19 @@ function statusText(status?: string | null): string {
 
 /**
  * Tab Tài khoản — sửa hồ sơ con, đổi mật khẩu con, khoá/mở khoá và xoá hồ sơ.
- * Chỉ chủ hồ sơ (isOwner) mới thấy các thao tác ghi (khớp quyền server: PATCH/DELETE chỉ OWNER).
+ * Chỉ chủ hồ sơ (isOwner) mới thấy các thao tác quản trị (khoá/mở, xoá, đặt username/mật khẩu);
+ * sửa hồ sơ cơ bản mở cho cả người quản lý (canEdit) — khớp quyền server.
  */
 export function AccountTab({
   kid,
   isOwner,
+  canEdit,
   onChanged,
 }: {
   kid: ConsoleKid;
   isOwner: boolean;
+  /** (v2.4) Cho phép sửa hồ sơ (chủ hoặc quản lý). Thao tác bảo mật/trạng thái vẫn theo isOwner. */
+  canEdit: boolean;
   onChanged: () => void;
 }) {
   const router = useRouter();
@@ -170,15 +174,15 @@ export function AccountTab({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="acc-name">Tên con</Label>
-            <Input id="acc-name" value={name} onChange={(e) => setName(e.target.value)} disabled={!isOwner} />
+            <Input id="acc-name" value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acc-dob">Ngày sinh</Label>
-            <Input id="acc-dob" type="date" max={today} value={dob} onChange={(e) => setDob(e.target.value)} disabled={!isOwner} />
+            <Input id="acc-dob" type="date" max={today} value={dob} onChange={(e) => setDob(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acc-emoji">Biểu tượng</Label>
-            <Input id="acc-emoji" className="w-20 text-center" value={emoji} onChange={(e) => setEmoji(e.target.value)} disabled={!isOwner} />
+            <Input id="acc-emoji" className="w-20 text-center" value={emoji} onChange={(e) => setEmoji(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acc-limit">Giới hạn phút/ngày</Label>
@@ -191,16 +195,16 @@ export function AccountTab({
               inputMode="numeric"
               value={limit}
               onChange={(e) => setLimit(e.target.value)}
-              disabled={!isOwner}
+              disabled={!canEdit}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acc-birthtime">Giờ sinh</Label>
-            <Input id="acc-birthtime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} disabled={!isOwner} />
+            <Input id="acc-birthtime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="acc-gender">Giới tính</Label>
-            <Select id="acc-gender" value={gender} onChange={(e) => setGender(e.target.value)} disabled={!isOwner}>
+            <Select id="acc-gender" value={gender} onChange={(e) => setGender(e.target.value)} disabled={!canEdit}>
               <option value="">Không xác định</option>
               <option value="nam">Nam</option>
               <option value="nu">Nữ</option>
@@ -208,7 +212,7 @@ export function AccountTab({
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="acc-birthplace">Nơi sinh</Label>
-            <Input id="acc-birthplace" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} disabled={!isOwner} />
+            <Input id="acc-birthplace" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} disabled={!canEdit} />
           </div>
           {kid.username ? (
             <div className="space-y-1.5 sm:col-span-2">
@@ -238,7 +242,7 @@ export function AccountTab({
           </p>
         )}
 
-        {isOwner ? (
+        {canEdit ? (
           <Button type="button" onClick={save} disabled={saving} className="bg-primary text-primary-foreground">
             {saving ? "Đang lưu..." : "Lưu thay đổi"}
           </Button>

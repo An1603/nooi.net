@@ -7,7 +7,7 @@ ALTER TABLE public.ekid_caregivers
   CHECK (permission IN ('admin', 'viewer'));
 
 ALTER TABLE public.ekid_caregivers
-  DROP CONSTRAINT ekid_caregivers_role_check;
+  DROP CONSTRAINT IF EXISTS ekid_caregivers_role_check;
 
 ALTER TABLE public.ekid_caregivers
   ADD CONSTRAINT ekid_caregivers_role_check

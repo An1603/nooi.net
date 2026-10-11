@@ -307,7 +307,10 @@ export async function PATCH(
     .from("ekid_kids")
     .update(patch)
     .eq("id", kidId)
-    .select("*")
+    // (FIX e) Cột tường minh, giống GET — KHÔNG lộ `child_user_id` cho admin caregiver.
+    .select(
+      "id, name, username, date_of_birth, avatar_emoji, favorite_voice, daily_limit_min, placement_age_band, placement_level, status, birth_time, gender, birth_place, user_id, settings",
+    )
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -86,6 +86,9 @@ export function KidConsole({ kidId, tab }: { kidId: string; tab: ConsoleTab }) {
 
   const kid: ConsoleKid = detail.kid;
   const locked = kid.status === "khoa";
+  // (v2.4) Quyền sửa hồ sơ/cài đặt = chủ hồ sơ HOẶC caregiver quản lý. Các thao tác
+  // quản trị (khoá/mở, đổi quyền người thân, xoá hồ sơ…) vẫn chỉ dành cho chủ (is_owner).
+  const canEdit = detail.is_owner || detail.is_admin_caregiver;
 
   return (
     <div className="p-2 md:p-4 space-y-4" style={{ background: "#1a0a2e" }}>
@@ -141,13 +144,13 @@ export function KidConsole({ kidId, tab }: { kidId: string; tab: ConsoleTab }) {
 
       {/* Nội dung tab */}
       {tab === "account" ? (
-        <AccountTab kid={kid} isOwner={detail.is_owner} onChanged={load} />
+        <AccountTab kid={kid} isOwner={detail.is_owner} canEdit={canEdit} onChanged={load} />
       ) : tab === "relatives" ? (
         <RelativesTab kidId={kidId} isOwner={detail.is_owner} />
       ) : tab === "report" ? (
         <ReportTab kidId={kidId} kid={kid} />
       ) : (
-        <SettingsTab kid={kid} settings={detail.settings} isOwner={detail.is_owner} onChanged={load} />
+        <SettingsTab kid={kid} settings={detail.settings} canEdit={canEdit} onChanged={load} />
       )}
     </div>
   );

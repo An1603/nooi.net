@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * Liên kết người thân với bé (eKid). Ba khối:
+ * Liên kết người thân với bé (eKid). Hai khối:
  *  (K1) Nhập mã liên kết — luôn hiển thị, để người thân tự liên kết bằng mã.
- *  (K2) Mời người thân — chỉ khi có hồ sơ bé: chọn vai trò, tìm theo tên, hoặc tạo mã mời.
+ *  (K2) Mời người thân — chỉ khi có hồ sơ bé: chọn vai trò, tạo mã mời.
  *  (K3) Người thân hiện tại — danh sách người thân của bé + lời mời gửi đến chính user.
+ * KHÔNG còn luồng tìm theo tên (đã bỏ để tránh rò rỉ danh bạ) — chỉ còn mã mời.
  */
 
 type Caregiver = {
@@ -14,16 +15,17 @@ type Caregiver = {
   kid_id: string;
   caregiver_user_id: string | null;
   role: string;
+  permission: string;
   status: string;
   link_code: string | null;
   kid_name?: string | null;
 };
 
-type UserResult = { user_id: string; full_name: string };
-
 const ROLE_LABEL: Record<string, string> = {
   cha: "Cha",
   me: "Mẹ",
+  ong: "Ông",
+  ba: "Bà",
   "nguoi-giam-ho": "Người giám hộ",
 };
 
@@ -56,11 +58,8 @@ export function RelativeLink({ kidId }: { kidId: string | null }) {
   const [joinMsg, setJoinMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [joining, setJoining] = useState(false);
 
-  // K2 — mời người thân
+  // K2 — mời người thân (tạo mã mời)
   const [role, setRole] = useState("cha");
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<UserResult[]>([]);
-  const [searching, setSearching] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteMsg, setInviteMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -117,44 +116,6 @@ export function RelativeLink({ kidId }: { kidId: string | null }) {
       setJoinMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi liên kết" });
     } finally {
       setJoining(false);
-    }
-  }
-
-  // K2 — tìm người dùng theo tên để mời liên kết.
-  async function search() {
-    if (!kidId) return;
-    setSearching(true);
-    setInviteMsg(null);
-    try {
-      const r = await fetch(
-        `/api/ekid/caregivers?q=${encodeURIComponent(q)}&kid_id=${encodeURIComponent(kidId)}`,
-      );
-      const d = await readJson(r);
-      if (!r.ok) throw new Error((d.error as string) || "Tìm kiếm thất bại");
-      setResults((d.users as UserResult[]) ?? []);
-    } catch (e) {
-      setInviteMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi tìm kiếm" });
-    } finally {
-      setSearching(false);
-    }
-  }
-
-  // K2 — mời trực tiếp một người dùng đã tìm thấy.
-  async function inviteUser(u: UserResult) {
-    if (!kidId) return;
-    setInviteMsg(null);
-    try {
-      const r = await fetch("/api/ekid/caregivers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kid_id: kidId, caregiver_user_id: u.user_id, role }),
-      });
-      const d = await readJson(r);
-      if (!r.ok) throw new Error((d.error as string) || "Mời thất bại");
-      setInviteMsg({ ok: true, text: `Đã gửi lời mời tới ${u.full_name}.` });
-      await loadLists();
-    } catch (e) {
-      setInviteMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi mời" });
     }
   }
 
@@ -230,49 +191,21 @@ export function RelativeLink({ kidId }: { kidId: string | null }) {
       {kidId && (
         <section className="space-y-3 rounded-xl border border-border bg-card p-4">
           <h2 className="text-sm font-semibold text-foreground">Mời người thân</h2>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-            >
-              <option value="cha">Cha</option>
-              <option value="me">Mẹ</option>
-              <option value="nguoi-giam-ho">Người giám hộ</option>
-            </select>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Tìm theo tên người thân..."
-              className="flex-1 rounded-lg border border-border bg-glass px-3 py-2 text-sm text-foreground"
-            />
-            <button
-              onClick={search}
-              disabled={searching || q.trim().length < 3}
-              className="rounded-lg border border-border px-4 py-2 text-sm text-foreground disabled:opacity-50"
-            >
-              {searching ? "Đang tìm..." : "Tìm"}
-            </button>
-          </div>
-
-          <ul className="space-y-1">
-            {results.map((u) => (
-              <li
-                key={u.user_id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-border bg-glass px-3 py-2 text-sm text-foreground"
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground">Vai trò</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
               >
-                <span>{u.full_name}</span>
-                <button
-                  onClick={() => inviteUser(u)}
-                  className="rounded-lg bg-primary px-3 py-1 text-xs text-primary-foreground"
-                >
-                  Liên kết
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center">
+                <option value="cha">Cha</option>
+                <option value="me">Mẹ</option>
+                <option value="ong">Ông</option>
+                <option value="ba">Bà</option>
+                <option value="nguoi-giam-ho">Người giám hộ</option>
+              </select>
+            </div>
             <button
               onClick={makeInviteCode}
               className="rounded-lg border border-primary px-4 py-2 text-sm text-primary"
@@ -280,7 +213,7 @@ export function RelativeLink({ kidId }: { kidId: string | null }) {
               Tạo mã mời
             </button>
             {inviteCode && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground sm:self-center">
                 Mã mời: <span className="font-semibold tracking-widest text-primary">{inviteCode}</span>
               </p>
             )}

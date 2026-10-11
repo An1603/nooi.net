@@ -10,16 +10,24 @@ type Caregiver = {
   kid_id: string;
   caregiver_user_id: string | null;
   role: string;
+  permission: string;
   status: string;
   link_code: string | null;
 };
 
-type UserResult = { user_id: string; full_name: string };
-
 const ROLE_LABEL: Record<string, string> = {
   cha: "Cha",
   me: "Mẹ",
+  ong: "Ông",
+  ba: "Bà",
   "nguoi-giam-ho": "Người giám hộ",
+};
+
+const ROLE_OPTIONS = ["cha", "me", "ong", "ba", "nguoi-giam-ho"] as const;
+
+const PERMISSION_LABEL: Record<string, string> = {
+  admin: "Quản lý",
+  viewer: "Xem",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -30,6 +38,10 @@ const STATUS_LABEL: Record<string, string> = {
 
 function roleLabel(role: string): string {
   return ROLE_LABEL[role] ?? role;
+}
+
+function permissionLabel(permission: string): string {
+  return PERMISSION_LABEL[permission] ?? permission;
 }
 
 function statusLabel(status: string): string {
@@ -46,25 +58,27 @@ async function readJson(r: Response): Promise<Record<string, unknown>> {
 }
 
 /**
- * Tab Người thân của MỘT con: danh sách người theo dõi (vai trò + trạng thái),
- * thêm người thân bằng **mã mời** hoặc **tìm theo tên**, và **gỡ liên kết**.
- * Chỉ chủ hồ sơ (isOwner) mới thêm/gỡ; người thân chỉ xem (khớp quyền server).
+ * Tab Người thân của MỘT con: danh sách người giám sát (quan hệ + quyền + trạng thái).
+ * - Chủ hồ sơ (isOwner): thêm bằng **mã mời**, đổi quyền/quan hệ, gỡ liên kết.
+ * - Người thân (non-owner): chỉ xem danh sách + nhập mã liên kết; không có thao tác quản trị.
+ * KHÔNG còn luồng tìm theo tên (đã bỏ để tránh rò rỉ danh bạ) — chỉ còn mã mời.
  */
 export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boolean }) {
   const [caregivers, setCaregivers] = useState<Caregiver[]>([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
 
-  // Thêm người thân
+  // Tạo mã mời (chủ hồ sơ)
   const [role, setRole] = useState("cha");
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<UserResult[]>([]);
-  const [searching, setSearching] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  // Gỡ liên kết
-  const [busyId, setBusyId] = useState<string | null>(null);
+  // Nhập mã liên kết (người được mời)
+  const [joinCode, setJoinCode] = useState("");
+  const [joining, setJoining] = useState(false);
+
+  // Thao tác đang chạy trên một dòng: `${id}:${action}`.
+  const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setListError(null);
@@ -84,43 +98,27 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
     void load();
   }, [load]);
 
-  // Tìm người dùng theo tên để mời liên kết.
-  async function search() {
-    setSearching(true);
-    setMsg(null);
-    try {
-      const r = await fetch(
-        `/api/ekid/caregivers?q=${encodeURIComponent(q)}&kid_id=${encodeURIComponent(kidId)}`,
-      );
-      const d = await readJson(r);
-      if (!r.ok) throw new Error((d.error as string) || "Tìm kiếm thất bại");
-      setResults((d.users as UserResult[]) ?? []);
-    } catch (e) {
-      setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi tìm kiếm" });
-    } finally {
-      setSearching(false);
-    }
-  }
-
-  // Mời trực tiếp một người dùng đã tìm thấy.
-  async function inviteUser(u: UserResult) {
+  // PATCH một liên kết (đổi quyền / đổi quan hệ) — chỉ chủ hồ sơ.
+  async function patchCaregiver(id: string, body: { permission?: string; role?: string }) {
+    setBusyKey(`${id}:patch`);
     setMsg(null);
     try {
       const r = await fetch("/api/ekid/caregivers", {
-        method: "POST",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kid_id: kidId, caregiver_user_id: u.user_id, role }),
+        body: JSON.stringify({ id, ...body }),
       });
       const d = await readJson(r);
-      if (!r.ok) throw new Error((d.error as string) || "Mời thất bại");
-      setMsg({ ok: true, text: `Đã gửi lời mời tới ${u.full_name}.` });
+      if (!r.ok) throw new Error((d.error as string) || "Cập nhật thất bại");
       await load();
     } catch (e) {
-      setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi mời" });
+      setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi cập nhật" });
+    } finally {
+      setBusyKey(null);
     }
   }
 
-  // Tạo mã mời (lời mời chờ) để gửi thủ công cho người thân.
+  // Tạo mã mời (lời mời chờ) — chỉ chủ hồ sơ.
   async function makeInviteCode() {
     setMsg(null);
     try {
@@ -139,9 +137,33 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
     }
   }
 
+  // Nhập mã liên kết để tự trở thành người thân (người được mời).
+  async function join() {
+    const code = joinCode.trim();
+    if (!code) return;
+    setJoining(true);
+    setMsg(null);
+    try {
+      const r = await fetch("/api/ekid/caregivers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const d = await readJson(r);
+      if (!r.ok) throw new Error((d.error as string) || "Liên kết thất bại");
+      setMsg({ ok: true, text: "Liên kết thành công! Bạn đã là người thân của bé." });
+      setJoinCode("");
+      await load();
+    } catch (e) {
+      setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi liên kết" });
+    } finally {
+      setJoining(false);
+    }
+  }
+
   // Gỡ một liên kết/lời mời (chỉ chủ hồ sơ).
   async function remove(id: string) {
-    setBusyId(id);
+    setBusyKey(`${id}:remove`);
     setMsg(null);
     try {
       const r = await fetch(`/api/ekid/caregivers?id=${encodeURIComponent(id)}`, {
@@ -153,12 +175,44 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error ? e.message : "Có lỗi khi gỡ liên kết" });
     } finally {
-      setBusyId(null);
+      setBusyKey(null);
     }
   }
 
   return (
     <div className="space-y-4">
+      {msg && (
+        <p role="status" className={msg.ok ? "text-sm text-n-green" : "text-sm text-destructive"}>
+          {msg.text}
+        </p>
+      )}
+
+      {/* Người được mời: nhập mã liên kết */}
+      {!isOwner && (
+        <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
+          <h2 className="text-sm font-semibold text-foreground">Nhập mã liên kết</h2>
+          <p className="text-sm text-muted-foreground">
+            Nhập mã 6 ký tự mà chủ hồ sơ gửi cho bạn để trở thành người thân của bé.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              placeholder="VD: AB3D7K"
+              maxLength={6}
+              className="tracking-widest"
+            />
+            <Button
+              type="button"
+              onClick={join}
+              disabled={joining || joinCode.trim().length === 0}
+            >
+              {joining ? "Đang liên kết..." : "Liên kết"}
+            </Button>
+          </div>
+        </section>
+      )}
+
       {/* Thêm người thân (chỉ chủ hồ sơ) */}
       {isOwner && (
         <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
@@ -170,61 +224,21 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
               <Select id="rel-role" value={role} onChange={(e) => setRole(e.target.value)}>
                 <option value="cha">Cha</option>
                 <option value="me">Mẹ</option>
+                <option value="ong">Ông</option>
+                <option value="ba">Bà</option>
                 <option value="nguoi-giam-ho">Người giám hộ</option>
               </Select>
             </div>
-            <div className="flex-1 space-y-1.5">
-              <Label htmlFor="rel-q">Tìm theo tên</Label>
-              <Input
-                id="rel-q"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="VD: Nguyễn Văn A"
-              />
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={search}
-              disabled={searching || q.trim().length < 3}
-            >
-              {searching ? "Đang tìm..." : "Tìm"}
-            </Button>
-          </div>
-
-          {results.length > 0 && (
-            <ul className="space-y-1">
-              {results.map((u) => (
-                <li
-                  key={u.user_id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border bg-glass px-3 py-2 text-sm text-foreground"
-                >
-                  <span>{u.full_name}</span>
-                  <Button type="button" size="sm" onClick={() => inviteUser(u)}>
-                    Mời liên kết
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3">
             <Button type="button" variant="outline" onClick={makeInviteCode}>
               Tạo mã mời
             </Button>
             {inviteCode && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground sm:self-center">
                 Mã mời:{" "}
                 <span className="font-semibold tracking-widest text-primary">{inviteCode}</span>
               </p>
             )}
           </div>
-
-          {msg && (
-            <p role="status" className={msg.ok ? "text-sm text-n-green" : "text-sm text-destructive"}>
-              {msg.text}
-            </p>
-          )}
         </section>
       )}
 
@@ -239,37 +253,83 @@ export function RelativesTab({ kidId, isOwner }: { kidId: string; isOwner: boole
           <p className="text-sm text-muted-foreground">Chưa có người thân nào theo dõi con.</p>
         ) : (
           <ul className="space-y-1">
-            {caregivers.map((c) => (
-              <li
-                key={c.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-glass px-3 py-2 text-sm text-foreground"
-              >
-                <span className="font-medium">{roleLabel(c.role)}</span>
-                <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  {c.status === "pending" && c.link_code && (
-                    <span className="tracking-widest text-primary">Mã: {c.link_code}</span>
-                  )}
-                  <span>{statusLabel(c.status)}</span>
-                  {isOwner && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => remove(c.id)}
-                      disabled={busyId === c.id}
+            {caregivers.map((c) => {
+              const patchBusy = busyKey === `${c.id}:patch`;
+              const removeBusy = busyKey === `${c.id}:remove`;
+              return (
+                <li
+                  key={c.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-glass px-3 py-2 text-sm text-foreground"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="font-medium">{roleLabel(c.role)}</span>
+                    <span
+                      className={
+                        c.permission === "admin"
+                          ? "rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs text-primary"
+                          : "rounded-full border border-border bg-glass px-2 py-0.5 text-xs text-muted-foreground"
+                      }
                     >
-                      {busyId === c.id ? "Đang gỡ..." : "Gỡ liên kết"}
-                    </Button>
+                      {permissionLabel(c.permission)}
+                    </span>
+                    {c.status === "pending" && c.link_code && (
+                      <span className="tracking-widest text-primary">Mã: {c.link_code}</span>
+                    )}
+                    <span className="text-xs text-muted-foreground">{statusLabel(c.status)}</span>
+                  </span>
+
+                  {isOwner && (
+                    <span className="flex flex-wrap items-center gap-2">
+                      {/* Đổi quan hệ (role) */}
+                      <Select
+                        aria-label="Đổi quan hệ"
+                        value={c.role}
+                        disabled={patchBusy}
+                        onChange={(e) => patchCaregiver(c.id, { role: e.target.value })}
+                        className="h-8 w-auto"
+                      >
+                        {ROLE_OPTIONS.map((r) => (
+                          <option key={r} value={r}>
+                            {ROLE_LABEL[r]}
+                          </option>
+                        ))}
+                      </Select>
+
+                      {/* Đổi quyền (toggle Quản lý ↔ Xem) */}
+                      <Button
+                        type="button"
+                        variant={c.permission === "admin" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() =>
+                          patchCaregiver(c.id, {
+                            permission: c.permission === "admin" ? "viewer" : "admin",
+                          })
+                        }
+                        disabled={patchBusy}
+                      >
+                        {patchBusy ? "Đang lưu..." : c.permission === "admin" ? "Quản lý" : "Xem"}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => remove(c.id)}
+                        disabled={removeBusy}
+                      >
+                        {removeBusy ? "Đang gỡ..." : "Gỡ liên kết"}
+                      </Button>
+                    </span>
                   )}
-                </span>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
 
         {!isOwner && (
           <p className="text-sm text-muted-foreground">
-            Bạn là người thân được liên kết — chỉ xem được danh sách, không thêm/gỡ được.
+            Bạn là người thân được liên kết — chỉ xem được danh sách, không thay đổi được.
           </p>
         )}
       </section>

@@ -12,14 +12,28 @@ function isEkidHost(host: string): boolean {
   return host === EKID_HOST;
 }
 
-/** Kiểm tra user hiện tại có phải tài khoản CON không (ekid_kids.child_user_id = user.id). */
+/**
+ * Kiểm tra user hiện tại có phải tài khoản CON không (ekid_kids.child_user_id = user.id).
+ * Fail-safe (C2): nếu query lỗi/ngoại lệ → trả false (coi như KHÔNG phải con) để không
+ * chặn nhầm NGƯỜI LỚN ở nhánh host nooi. RLS cho con đọc dòng của mình nằm ở migration
+ * 20261011000011_ekid_child_read.sql.
+ */
 async function isChildUser(supabase: SupabaseClient, userId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from("ekid_kids")
-    .select("id")
-    .eq("child_user_id", userId)
-    .maybeSingle();
-  return !!data;
+  try {
+    const { data, error } = await supabase
+      .from("ekid_kids")
+      .select("id")
+      .eq("child_user_id", userId)
+      .maybeSingle();
+    if (error) {
+      console.error("[middleware] isChildUser query lỗi:", error.message);
+      return false;
+    }
+    return !!data;
+  } catch (err) {
+    console.error("[middleware] isChildUser ngoại lệ:", err);
+    return false;
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -29,22 +43,28 @@ export async function middleware(request: NextRequest) {
 
   /* ── eKid subdomain guard (đặt trước admin để host ekid không bị admin/main chặn) ── */
   if (isEkidHost(host)) {
-    // Đã đúng path /ekid/* → để nguyên
-    if (pathname.startsWith("/ekid")) return supabaseResponse;
+    // /login trên host ekid → luôn dùng trang đăng nhập của con (KHÔNG hiện login người lớn) (M3)
+    if (pathname === "/login") {
+      return NextResponse.redirect(new URL("/ekid/login", request.url));
+    }
 
-    // Trang đăng nhập → cho qua
-    if (pathname === "/login") return supabaseResponse;
+    // Trang đăng nhập của con → cho qua, không cần auth (anonymous OK)
+    if (pathname === "/ekid/login") return supabaseResponse;
 
-    // Chưa đăng nhập → về /ekid/login
+    // Chưa đăng nhập → về /ekid/login (giữ nguyên path + query để quay lại sau login)
+    // LƯU Ý (I1): KHÔNG cho qua /ekid/* trước khi kiểm auth như bản cũ.
     if (!user) {
       const loginUrl = new URL("/ekid/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
+      loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
       return NextResponse.redirect(loginUrl);
     }
 
-    // Đã đăng nhập: tài khoản CON → rewrite nội bộ mọi path dưới /ekid/*
+    // Đã đăng nhập: tài khoản CON
     if (await isChildUser(supabase, user.id)) {
-      const target = "/ekid" + (pathname === "/" ? "" : pathname);
+      // Đã đúng path /ekid/* (đã qua auth) → để nguyên
+      if (pathname.startsWith("/ekid")) return supabaseResponse;
+      // Path khác trên host ekid → rewrite nội bộ sang /ekid + path, GIỮ query string (M1)
+      const target = "/ekid" + (pathname === "/" ? "" : pathname) + request.nextUrl.search;
       return NextResponse.rewrite(new URL(target, request.url));
     }
 

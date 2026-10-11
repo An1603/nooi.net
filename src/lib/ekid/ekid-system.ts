@@ -141,6 +141,167 @@ export function badgesForProgress(passedLessons: number): { code: string; label:
   }));
 }
 
+// ---------------------------------------------------------------------------
+// eKid v2.2 — Cài đặt riêng cho từng con (KidSettings, cột JSONB `settings`)
+// ---------------------------------------------------------------------------
+
+/** Nguyên tắc học tập: giới hạn phút, khung giờ, số bài/ngày, thi đạt mới sang bài. */
+export interface KidRules {
+  dailyLimitMin: number;
+  allowedFrom: string | null; // "HH:MM" hoặc null = không giới hạn
+  allowedTo: string | null;
+  maxLessonsPerDay: number;
+  requirePassToAdvance: boolean;
+}
+
+/** Phần thưởng tuỳ chỉnh do cha/mẹ đặt (tên + điểm quy đổi). */
+export interface KidCustomReward {
+  label: string;
+  points: number;
+}
+
+/** Phần thưởng: điểm/bài đạt, mốc huy hiệu, danh sách tuỳ chỉnh. */
+export interface KidRewards {
+  pointsPerPassedLesson: number;
+  badgeMilestones: number[];
+  custom: KidCustomReward[];
+}
+
+/** Cài đặt đầy đủ của một hồ sơ trẻ. `subjects` rỗng ⇒ không lọc theo môn. */
+export interface KidSettings {
+  rules: KidRules;
+  subjects: string[];
+  rewards: KidRewards;
+}
+
+/** Giá trị mặc định khi hồ sơ chưa có cài đặt (cột `settings` = `{}`). */
+export const DEFAULT_SETTINGS: KidSettings = {
+  rules: {
+    dailyLimitMin: 30,
+    allowedFrom: null,
+    allowedTo: null,
+    maxLessonsPerDay: 5,
+    requirePassToAdvance: false,
+  },
+  subjects: [],
+  rewards: {
+    pointsPerPassedLesson: 1,
+    badgeMilestones: [3, 5, 10],
+    custom: [],
+  },
+};
+
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function numOr(v: unknown, fallback: number, min: number): number {
+  return typeof v === "number" && Number.isFinite(v) && v >= min ? v : fallback;
+}
+
+function intOr(v: unknown, fallback: number, min: number): number {
+  return typeof v === "number" && Number.isInteger(v) && v >= min ? v : fallback;
+}
+
+function boolOr(v: unknown, fallback: boolean): boolean {
+  return typeof v === "boolean" ? v : fallback;
+}
+
+function timeOr(v: unknown, fallback: string | null): string | null {
+  return typeof v === "string" && TIME_RE.test(v) ? v : fallback;
+}
+
+function stringArrayOr(v: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(v)) return fallback;
+  const out = v.filter((x): x is string => typeof x === "string" && x.trim() !== "");
+  return out;
+}
+
+function milestonesOr(v: unknown): number[] {
+  if (!Array.isArray(v) || v.length === 0) return DEFAULT_SETTINGS.rewards.badgeMilestones;
+  const out = v.filter(
+    (x): x is number => typeof x === "number" && Number.isInteger(x) && x > 0,
+  );
+  return out.length === v.length ? out : DEFAULT_SETTINGS.rewards.badgeMilestones;
+}
+
+function customRewardsOr(v: unknown): KidCustomReward[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter(isRecord)
+    .map((x) => ({ label: x.label, points: x.points }))
+    .filter(
+      (x): x is KidCustomReward =>
+        typeof x.label === "string" &&
+        x.label.trim() !== "" &&
+        typeof x.points === "number" &&
+        Number.isFinite(x.points) &&
+        x.points >= 0,
+    );
+}
+
+/**
+ * Chuẩn hoá cài đặt con đọc từ cột JSONB: merge an toàn với mặc định.
+ * Giá trị sai kiểu/không hợp lệ bị thay bằng mặc định tương ứng (không ném lỗi).
+ */
+export function normalizeKidSettings(raw: unknown): KidSettings {
+  const r = isRecord(raw) ? raw : {};
+  const rawRules = isRecord(r.rules) ? r.rules : {};
+  const rawRewards = isRecord(r.rewards) ? r.rewards : {};
+
+  return {
+    rules: {
+      dailyLimitMin: numOr(
+        rawRules.dailyLimitMin,
+        DEFAULT_SETTINGS.rules.dailyLimitMin,
+        0,
+      ),
+      allowedFrom: timeOr(rawRules.allowedFrom, DEFAULT_SETTINGS.rules.allowedFrom),
+      allowedTo: timeOr(rawRules.allowedTo, DEFAULT_SETTINGS.rules.allowedTo),
+      maxLessonsPerDay: intOr(
+        rawRules.maxLessonsPerDay,
+        DEFAULT_SETTINGS.rules.maxLessonsPerDay,
+        0,
+      ),
+      requirePassToAdvance: boolOr(
+        rawRules.requirePassToAdvance,
+        DEFAULT_SETTINGS.rules.requirePassToAdvance,
+      ),
+    },
+    subjects: stringArrayOr(r.subjects, DEFAULT_SETTINGS.subjects),
+    rewards: {
+      pointsPerPassedLesson: numOr(
+        rawRewards.pointsPerPassedLesson,
+        DEFAULT_SETTINGS.rewards.pointsPerPassedLesson,
+        0,
+      ),
+      badgeMilestones: milestonesOr(rawRewards.badgeMilestones),
+      custom: customRewardsOr(rawRewards.custom),
+    },
+  };
+}
+
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Kiểm tra `now` có nằm trong khung giờ được học không.
+ * Nếu thiếu một trong hai đầu (null) ⇒ không giới hạn (luôn true).
+ * Khung giờ qua nửa đêm (from > to, vd 20:00–06:00) được xử lý đúng.
+ */
+export function isWithinAllowedHours(settings: KidSettings, now: Date): boolean {
+  const { allowedFrom, allowedTo } = settings.rules;
+  if (!allowedFrom || !allowedTo) return true;
+  const m = now.getHours() * 60 + now.getMinutes();
+  const from = toMinutes(allowedFrom);
+  const to = toMinutes(allowedTo);
+  return from <= to ? m >= from && m <= to : m >= from || m <= to;
+}
+
 export function buildSystemInstruction(params: {
   kidName: string;
   placement: Placement;

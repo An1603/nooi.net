@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { resolvePlacement } from "@/lib/ekid/ekid-system";
+import {
+  childEmail,
+  isValidUsername,
+  normalizeUsername,
+  resolvePlacement,
+} from "@/lib/ekid/ekid-system";
 
 export const dynamic = "force-dynamic";
 
@@ -85,29 +90,76 @@ export async function GET() {
   return NextResponse.json({ kids });
 }
 
-// POST /api/ekid/kids — tạo hồ sơ trẻ mới, tự tính định vị ban đầu từ ngày sinh.
+// POST /api/ekid/kids — tạo hồ sơ trẻ + tài khoản đăng nhập (auth user con).
+// Nhận { name, date_of_birth, username, password, avatar_emoji? }.
+// Tạo auth user với email nội bộ childEmail(username); nếu insert hồ sơ lỗi thì
+// xoá auth user vừa tạo (rollback) để tránh tài khoản mồ côi.
 export async function POST(req: Request) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
   const body = (await req.json()) ?? {};
-  const { name, date_of_birth, avatar_emoji, favorite_voice } = body as {
-    name?: string;
-    date_of_birth?: string;
-    avatar_emoji?: string;
-    favorite_voice?: string | null;
-  };
+  const { name, date_of_birth, username, password, avatar_emoji, favorite_voice } =
+    body as {
+      name?: string;
+      date_of_birth?: string;
+      username?: string;
+      password?: string;
+      avatar_emoji?: string;
+      favorite_voice?: string | null;
+    };
 
-  if (!name || !date_of_birth) {
-    return NextResponse.json({ error: "Thiếu tên hoặc ngày sinh" }, { status: 400 });
+  if (!name || !date_of_birth || !username || !password) {
+    return NextResponse.json(
+      { error: "Thiếu tên, ngày sinh, tên đăng nhập hoặc mật khẩu" },
+      { status: 400 },
+    );
+  }
+  if (password.length < 6) {
+    return NextResponse.json(
+      { error: "Mật khẩu phải có ít nhất 6 ký tự" },
+      { status: 400 },
+    );
   }
 
-  const placement = resolvePlacement({ dob: date_of_birth });
+  const normalized = normalizeUsername(username);
+  if (!isValidUsername(normalized)) {
+    return NextResponse.json({ error: "Tên đăng nhập không hợp lệ" }, { status: 400 });
+  }
+
   const admin = createAdminClient();
+
+  // Kiểm tra trùng tên đăng nhập (so khớp không phân biệt hoa/thường).
+  const { data: existing } = await admin
+    .from("ekid_kids")
+    .select("id")
+    .eq("username", normalized)
+    .maybeSingle();
+  if (existing) {
+    return NextResponse.json({ error: "Tên đăng nhập đã tồn tại" }, { status: 409 });
+  }
+
+  // Tạo tài khoản auth cho bé với email nội bộ.
+  const created = await admin.auth.admin.createUser({
+    email: childEmail(normalized),
+    password,
+    email_confirm: true,
+  });
+  if (created.error || !created.data?.user) {
+    return NextResponse.json(
+      { error: created.error?.message ?? "Không tạo được tài khoản đăng nhập" },
+      { status: 500 },
+    );
+  }
+  const childUserId = created.data.user.id;
+
+  const placement = resolvePlacement({ dob: date_of_birth });
   const { data, error } = await admin
     .from("ekid_kids")
     .insert({
       user_id: user.id,
+      child_user_id: childUserId,
+      username: normalized,
       name,
       date_of_birth,
       avatar_emoji: avatar_emoji || "🦊",
@@ -118,7 +170,11 @@ export async function POST(req: Request) {
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    // Rollback: xoá auth user vừa tạo nếu không ghi được hồ sơ.
+    await admin.auth.admin.deleteUser(childUserId);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ kid: data });
 }
 

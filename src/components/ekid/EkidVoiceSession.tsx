@@ -20,6 +20,24 @@ export interface EkidLessonLite {
   system_prompt: string;
 }
 
+// 10 giọng Gemini Live hợp lệ (khớp `VoiceOption` trong gemini-live.ts).
+const VALID_VOICES: readonly VoiceOption[] = [
+  "Puck",
+  "Charon",
+  "Kore",
+  "Fenrir",
+  "Aoede",
+  "Zephyr",
+  "Leda",
+  "Orus",
+  "Callirrhoe",
+  "Sulafat",
+];
+
+function isVoiceOption(value: string | null): value is VoiceOption {
+  return value !== null && (VALID_VOICES as readonly string[]).includes(value);
+}
+
 /**
  * Phiên học eKid — ghép trợ lý giọng nói (Gemini Live) với các thẻ bài tập,
  * tổng hợp kết quả và lưu phiên qua `/api/ekid/session`.
@@ -33,12 +51,13 @@ export function EkidVoiceSession({
   lesson?: EkidLessonLite;
   remaining: number;
 }) {
-  const exercises: EkidExercise[] = lesson?.exercises ?? [];
+  const exercises: EkidExercise[] = useMemo(() => lesson?.exercises ?? [], [lesson]);
   const [results, setResults] = useState<{ i: number; correct: boolean }[]>([]);
   const startedRef = useMemo(() => Date.now(), []);
 
-  const voice =
-    (kid.favorite_voice as VoiceOption) || BAND_VOICE[kid.placement_age_band ?? "mam-non"];
+  const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
+    ? kid.favorite_voice
+    : BAND_VOICE[kid.placement_age_band ?? "mam-non"];
   const systemInstruction = useMemo(
     () =>
       buildSystemInstruction({
@@ -74,15 +93,19 @@ export function EkidVoiceSession({
 
   return (
     <div className="flex flex-col gap-5">
-      <VoiceAssistant
-        voice={voice}
-        systemInstruction={systemInstruction}
-        title={`Cùng học với ${kid.name}`}
-      />
-      {remaining <= 0 && (
-        <p className="text-sm text-destructive">
-          Hôm nay bé đã học đủ thời gian. Hẹn bé ngày mai nhé! 🌙
-        </p>
+      {remaining > 0 ? (
+        <VoiceAssistant
+          voice={voice}
+          systemInstruction={systemInstruction}
+          title={`Cùng học với ${kid.name}`}
+        />
+      ) : (
+        <div
+          role="status"
+          className="rounded-xl bg-secondary p-4 text-center text-sm text-secondary-foreground"
+        >
+          Hôm nay mình học đủ rồi, hẹn bé ngày mai nhé! 🌙
+        </div>
       )}
       {exercises.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2">

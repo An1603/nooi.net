@@ -20,12 +20,22 @@ export async function GET(req: Request) {
   const q = searchParams.get("q");
   const admin = createAdminClient();
 
-  if (q) {
-    // Tìm user theo tên hiển thị (profiles.full_name), giới hạn 10 kết quả.
+  if (q !== null) {
+    // Tìm user theo tên hiển thị (profiles.full_name) để mời liên kết.
+    // Chống enumeration/rò rỉ danh bạ: bắt buộc từ khoá >= 3 ký tự, nếu ngắn hơn
+    // trả rỗng luôn (không truy vấn). Không phân biệt hoa/thường.
+    const keyword = q.trim();
+    if (keyword.length < 3) return NextResponse.json({ users: [] });
+
+    // Escape ký tự đại diện của LIKE (`\`, `%`, `_`) để `q` chỉ khớp theo nghĩa
+    // chuỗi con nguyên văn, không cho phép `%`/`_` liệt kê toàn bộ bảng.
+    const escaped = keyword.replace(/[\\%_]/g, "\\$&");
+
+    // Chỉ trả 2 trường tối thiểu (user_id + full_name), giới hạn 10 kết quả.
     const { data: profiles } = await admin
       .from("profiles")
       .select("user_id, full_name")
-      .ilike("full_name", `%${q}%`)
+      .ilike("full_name", `%${escaped}%`)
       .limit(10);
     return NextResponse.json({ users: profiles ?? [] });
   }
@@ -96,21 +106,28 @@ export async function PATCH(req: Request) {
   }
 
   const admin = createAdminClient();
-  // Chống IDOR: tra bản ghi để lấy kid_id rồi xác minh hồ sơ trẻ thuộc user.
+  // Chống IDOR: tra bản ghi để lấy kid_id + caregiver_user_id trước khi update.
   const { data: cg } = await admin
     .from("ekid_caregivers")
-    .select("id, kid_id")
+    .select("id, kid_id, caregiver_user_id")
     .eq("id", id)
     .maybeSingle();
   if (!cg) return NextResponse.json({ error: "Không tìm thấy" }, { status: 404 });
 
-  const { data: kid } = await admin
-    .from("ekid_kids")
-    .select("id")
-    .eq("id", cg.kid_id)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
+  // Quyền được accept/reject: (a) người gọi là CHỦ hồ sơ trẻ (owner của kid_id),
+  // HOẶC (b) người gọi chính là người được mời (caregiver_user_id) → tự accept/từ chối
+  // lời mời của mình. Không cho phép người khác đổi trạng thái lời mời không phải của mình.
+  let allowed = cg.caregiver_user_id === user.id;
+  if (!allowed) {
+    const { data: kid } = await admin
+      .from("ekid_kids")
+      .select("id")
+      .eq("id", cg.kid_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    allowed = !!kid;
+  }
+  if (!allowed) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
   const { data, error } = await admin
     .from("ekid_caregivers")

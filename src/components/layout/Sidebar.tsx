@@ -8,12 +8,13 @@ import { Logo } from '@/components/brand/Logo';
 import {
   LayoutDashboard, FolderOpen, Video, BookOpen, Settings,
   Sparkles, Headphones, User, BookHeart, Users, Layers, Package,
-  TrendingUp, Images,
+  TrendingUp, Images, GraduationCap,
 } from 'lucide-react';
 
 const NAV = [
   { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
   { label: 'Học tập', href: '/app/hoc-tap', icon: BookOpen },
+  { label: 'eKid', href: '/app/ekid', icon: GraduationCap },
   { label: 'Lớp Live', href: '/app/live', icon: Video },
   { label: 'Nhật ký', href: '/app/journal', icon: BookHeart },
   { label: 'Thực hành', href: '/app/thuc-hanh', icon: Sparkles },

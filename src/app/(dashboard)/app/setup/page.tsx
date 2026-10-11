@@ -62,6 +62,12 @@ export default function SetupPage() {
   const [doneCount, setDoneCount] = useState(0);
   const [preloading, setPreloading] = useState(true);
 
+  // Tạo tài khoản cho con (eKid)
+  const [kidName, setKidName] = useState("");
+  const [kidDob, setKidDob] = useState("");
+  const [kidEmoji, setKidEmoji] = useState("🦊");
+  const [kidMsg, setKidMsg] = useState<string | null>(null);
+
   // Pre-fill from existing profile
   useEffect(() => {
     (async () => {
@@ -155,6 +161,28 @@ export default function SetupPage() {
     }
   }, [fullName, dateOfBirth, gioSinh, gioiTinh, noiSinh, supabase]);
 
+  async function createKid() {
+    setKidMsg(null);
+    if (!kidName.trim() || !kidDob) {
+      setKidMsg("Vui lòng nhập tên và ngày sinh của con.");
+      return;
+    }
+    const r = await fetch("/api/ekid/kids", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: kidName.trim(), date_of_birth: kidDob, avatar_emoji: kidEmoji || "🦊" }),
+    });
+    const d = await r.json();
+    if (r.ok && d.kid) {
+      setKidName("");
+      setKidDob("");
+      setKidEmoji("🦊");
+      setKidMsg("Đã tạo hồ sơ bé! 🎉");
+    } else {
+      setKidMsg(d.error ?? "Có lỗi khi tạo hồ sơ bé.");
+    }
+  }
+
   if (preloading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -207,6 +235,48 @@ export default function SetupPage() {
                 <p className="text-xs font-medium mt-1">{item.label}</p>
               </button>
             ))}
+          </div>
+          <div className="rounded-2xl border border-border bg-card/80 p-4 text-left space-y-3">
+            <div>
+              <h2 className="text-base font-semibold">Tạo tài khoản cho con</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Thêm hồ sơ bé để bắt đầu học cùng AI Mentor (eKid).
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+              <div className="relative">
+                <User className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Tên con"
+                  value={kidName}
+                  onChange={(e) => { setKidName(e.target.value); setKidMsg(null); }}
+                  className="pl-8"
+                />
+              </div>
+              <div className="relative">
+                <Calendar className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={kidDob}
+                  onChange={(e) => { setKidDob(e.target.value); setKidMsg(null); }}
+                  className="pl-8"
+                  max={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+              <Input
+                type="text"
+                placeholder="🦊"
+                value={kidEmoji}
+                onChange={(e) => setKidEmoji(e.target.value)}
+                className="w-16 text-center"
+                aria-label="Biểu tượng của bé"
+              />
+            </div>
+            {kidMsg && <p className="text-sm text-muted-foreground">{kidMsg}</p>}
+            <Button onClick={createKid} className="w-full bg-primary text-primary-foreground">
+              <Users className="size-4" /> Tạo hồ sơ bé
+            </Button>
           </div>
           <Button onClick={() => router.push("/app")} className="w-full bg-primary text-primary-foreground">
             Vào Dashboard

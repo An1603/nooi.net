@@ -112,8 +112,21 @@
   /* Dải pastel 400 vốn dành cho nền tối → hạ đậm để đọc rõ trên nền sáng. */
   --color-amber-400: #b45309;
   --color-red-400: #dc2626;
+  --color-red-300: #dc2626;
   --color-green-400: #15803d;
   --color-purple-400: #7c3aed;
+  --ring: #ff7a59;
+}
+
+/* @utility glass/glass-hover hardcode nền trắng mờ (dành cho tông tối) →
+   override theo scope để nút đáp án quiz vẫn hiện rõ trên nền sáng của eKid. */
+.ekid-scope .glass {
+  background: rgba(59, 42, 32, 0.05);
+  border-color: rgba(59, 42, 32, 0.12);
+}
+.ekid-scope .glass-hover:hover {
+  background: rgba(59, 42, 32, 0.09);
+  border-color: rgba(59, 42, 32, 0.18);
 }
 
 @theme inline {

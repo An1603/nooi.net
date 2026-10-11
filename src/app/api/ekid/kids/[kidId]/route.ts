@@ -66,7 +66,13 @@ export async function GET(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!kid) return NextResponse.json({ error: "Không tìm thấy hồ sơ" }, { status: 404 });
 
-  return NextResponse.json({ kid, settings: normalizeKidSettings(kid.settings) });
+  return NextResponse.json({
+    kid,
+    settings: normalizeKidSettings(kid.settings),
+    // Additive: UI giám sát cần biết user có phải CHỦ hồ sơ để hiện/ẩn thao tác ghi
+    // (PATCH/DELETE chỉ cho OWNER). Không phá vỡ API cũ — chỉ thêm một trường.
+    is_owner: kid.user_id === user.id,
+  });
 }
 
 // Kiểm tra OWNER của hồ sơ. Trả kid (kèm child_user_id) nếu user là chủ hồ sơ,

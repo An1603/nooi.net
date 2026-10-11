@@ -1,25 +1,40 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { KidAvatar } from "@/components/ekid/KidAvatar";
-import { DailyLimitBadge } from "@/components/ekid/DailyLimitBadge";
-import { AssessmentIntro } from "@/components/ekid/AssessmentIntro";
-import { EkidVoiceSession, type EkidKidLite, type EkidLessonLite } from "@/components/ekid/EkidVoiceSession";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BAND_LABEL, type AgeBand } from "@/lib/ekid/ekid-system";
 
-const DEFAULT_LIMIT = 25;
 // Tên đăng nhập hợp lệ: 3–20 ký tự trong [a-z0-9._] — khớp isValidUsername() phía server.
 const USERNAME_RE = /^[a-z0-9._]{3,20}$/;
 
+/** Hồ sơ bé rút gọn dùng cho lưới danh sách con. */
+interface KidListItem {
+  id: string;
+  name: string;
+  avatar_emoji?: string | null;
+  placement_age_band?: string | null;
+  placement_level?: number | null;
+  daily_limit_min?: number | null;
+  status?: string | null;
+  is_owner?: boolean;
+}
+
+/** Nhãn lứa tuổi từ placement_age_band (fallback: giá trị gốc). */
+function bandLabel(band?: string | null): string {
+  if (!band) return "Chưa định vị";
+  return BAND_LABEL[band as AgeBand] ?? band;
+}
+
+/** Con đang bị khoá hay đang hoạt động (mặc định: hoạt động khi status trống). */
+function isLocked(k: KidListItem): boolean {
+  return k.status === "khoa";
+}
+
 export default function EkidPage() {
-  const [kids, setKids] = useState<EkidKidLite[]>([]);
-  const [selected, setSelected] = useState<EkidKidLite | null>(null);
-  const [intro, setIntro] = useState<EkidKidLite | null>(null);
-  const [lesson, setLesson] = useState<EkidLessonLite | null>(null);
-  const [remaining, setRemaining] = useState(DEFAULT_LIMIT);
-  const [limit, setLimit] = useState(DEFAULT_LIMIT);
+  const [kids, setKids] = useState<KidListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,15 +49,15 @@ export default function EkidPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [createdUsername, setCreatedUsername] = useState<string | null>(null);
 
-  // Nạp danh sách hồ sơ bé (chủ sở hữu + caregiver đã liên kết) và trả về mảng mới nhất.
-  async function loadKids(): Promise<EkidKidLite[]> {
+  // Nạp danh sách hồ sơ bé (chủ sở hữu + caregiver đã liên kết).
+  const loadKids = useCallback(async (): Promise<KidListItem[]> => {
     const r = await fetch("/api/ekid/kids");
     if (!r.ok) throw new Error("Không tải được hồ sơ bé");
     const d = await r.json();
-    const list: EkidKidLite[] = d.kids ?? [];
+    const list: KidListItem[] = d.kids ?? [];
     setKids(list);
     return list;
-  }
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -54,54 +69,7 @@ export default function EkidPage() {
         setLoading(false);
       }
     })();
-  }, []);
-
-  // Mở phiên voice cho bé: tải bài học theo lứa + số phút còn lại hôm nay.
-  async function openSession(kid: EkidKidLite) {
-    setError(null);
-    const lim = kid.daily_limit_min ?? DEFAULT_LIMIT;
-    try {
-      const [lr, sr] = await Promise.all([
-        fetch(`/api/ekid/lessons?band=${kid.placement_age_band ?? "mam-non"}`),
-        fetch(`/api/ekid/session?kid_id=${kid.id}`),
-      ]);
-      if (!lr.ok || !sr.ok) {
-        throw new Error("Không tải được bài học hoặc phiên học của bé");
-      }
-      const [l, s] = await Promise.all([lr.json(), sr.json()]);
-      setLesson((l.lessons ?? [])[0] ?? null);
-      setLimit(lim);
-      setRemaining(s.remaining ?? lim);
-      setSelected(kid);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Có lỗi khi mở phiên học");
-    }
-  }
-
-  // Chọn con: nếu là con của mình và CHƯA làm test đầu vào → hiện bài kiểm tra trước.
-  // Con của caregiver (is_owner === false) không có quyền nộp test → vào thẳng phiên.
-  function pick(kid: EkidKidLite) {
-    setError(null);
-    if (kid.is_owner !== false && !kid.has_entry_test) {
-      setIntro(kid);
-      return;
-    }
-    void openSession(kid);
-  }
-
-  // Xong test đầu vào → nạp lại hồ sơ (lấy placement mới) rồi vào phiên voice.
-  async function onIntroDone() {
-    const k = intro;
-    setIntro(null);
-    let fresh: EkidKidLite | null = k;
-    try {
-      const list = await loadKids();
-      fresh = list.find((x) => x.id === k?.id) ?? k;
-    } catch {
-      // Nếu nạp lại lỗi thì vẫn dùng hồ sơ cũ để vào phiên.
-    }
-    if (fresh) await openSession(fresh);
-  }
+  }, [loadKids]);
 
   // Tạo tài khoản con: kiểm tra hợp lệ phía client rồi POST kèm username + mật khẩu.
   // Lỗi trùng tên (409) / sai định dạng (400) hiện thông báo tiếng Việt rõ ràng.
@@ -173,48 +141,48 @@ export default function EkidPage() {
 
   return (
     <div className="p-2 md:p-4 space-y-4" style={{ background: "#1a0a2e" }}>
-      <h1 className="text-lg font-semibold text-foreground">eKid — Học cùng AI</h1>
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href="/app/ekid/report"
-          className="inline-flex items-center rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-        >
-          📊 Tiến độ
-        </Link>
-        <Link
-          href="/app/ekid/relatives"
-          className="inline-flex items-center rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-        >
-          👨‍👩‍👧 Người thân
-        </Link>
-      </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-
-      {/* Tạo tài khoản cho con (username + mật khẩu để con vào ekid.nooi.net). */}
-      <section className="rounded-2xl border border-border bg-card/70 p-3 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-foreground">Tạo tài khoản cho con</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-lg font-semibold text-foreground">eKid — Quản lý con</h1>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/app/ekid/report"
+            className="inline-flex items-center rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            📊 Tiến độ
+          </Link>
+          <Link
+            href="/app/ekid/relatives"
+            className="inline-flex items-center rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            👨‍👩‍👧 Người thân
+          </Link>
           <Button
             type="button"
-            variant="ghost"
-            className="h-8 px-3 text-sm"
+            className="bg-primary text-primary-foreground"
             onClick={() => {
               setShowCreate((v) => !v);
               setFormError(null);
             }}
           >
-            {showCreate ? "Đóng" : "➕ Tạo"}
+            {showCreate ? "Đóng" : "➕ Thêm con"}
           </Button>
         </div>
+      </div>
 
-        {createdUsername && (
-          <p className="rounded-lg border border-border bg-glass px-3 py-2 text-sm text-n-green">
-            Đã tạo tài khoản cho con với tên đăng nhập <b className="font-semibold">{createdUsername}</b>. Đưa tên
-            đăng nhập + mật khẩu này cho con để vào ekid.nooi.net.
-          </p>
-        )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {showCreate && (
+      {/* Tạo tài khoản cho con (username + mật khẩu để con vào ekid.nooi.net). */}
+      {showCreate && (
+        <section className="rounded-2xl border border-border bg-card/70 p-3 space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Thêm con — tạo tài khoản đăng nhập</h2>
+
+          {createdUsername && (
+            <p className="rounded-lg border border-border bg-glass px-3 py-2 text-sm text-n-green">
+              Đã tạo tài khoản cho con với tên đăng nhập <b className="font-semibold">{createdUsername}</b>. Đưa tên
+              đăng nhập + mật khẩu này cho con để vào ekid.nooi.net.
+            </p>
+          )}
+
           <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="space-y-1.5">
@@ -294,34 +262,43 @@ export default function EkidPage() {
               này để đăng nhập tại ekid.nooi.net.
             </p>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
+      {/* Lưới danh sách con — mỗi thẻ mở console của con. */}
       {!kids.length ? (
         <p className="text-sm text-muted-foreground">
-          Chưa có hồ sơ bé nào. Dùng nút &quot;Tạo&quot; phía trên để tạo tài khoản cho con.
+          Chưa có hồ sơ bé nào. Dùng nút &quot;➕ Thêm con&quot; để tạo tài khoản cho con.
         </p>
-      ) : intro ? (
-        <AssessmentIntro
-          key={intro.id}
-          kidId={intro.id}
-          band={intro.placement_age_band ?? "mam-non"}
-          onDone={onIntroDone}
-        />
-      ) : !selected ? (
-        <div className="flex flex-wrap gap-3">
-          {kids.map((k) => (
-            <button key={k.id} onClick={() => pick(k)}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card/70 px-5 py-4">
-              <KidAvatar emoji={k.avatar_emoji || "🦊"} />
-              <span className="text-sm font-medium text-foreground">{k.name}</span>
-            </button>
-          ))}
-        </div>
       ) : (
-        <div className="space-y-4">
-          <DailyLimitBadge remaining={remaining} limit={limit} />
-          <EkidVoiceSession kid={selected} lesson={lesson ?? undefined} remaining={remaining} />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {kids.map((k) => (
+            <Link
+              key={k.id}
+              href={`/app/ekid/${k.id}`}
+              className="flex items-center gap-3 rounded-2xl border border-border bg-card/70 p-3 transition-colors hover:border-primary/60"
+            >
+              <KidAvatar emoji={k.avatar_emoji || "🦊"} />
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="truncate text-sm font-semibold text-foreground">{k.name}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {bandLabel(k.placement_age_band)} · Cấp {k.placement_level ?? 1}
+                </p>
+                <span
+                  className={
+                    isLocked(k)
+                      ? "inline-flex items-center rounded-full border border-destructive/50 bg-destructive/10 px-2 py-0.5 text-xs text-destructive"
+                      : "inline-flex items-center rounded-full border border-border bg-glass px-2 py-0.5 text-xs text-n-green"
+                  }
+                >
+                  {isLocked(k) ? "🔒 Đang khoá" : "✅ Hoạt động"}
+                </span>
+              </div>
+              <span className="shrink-0 text-muted-foreground" aria-hidden>
+                ›
+              </span>
+            </Link>
+          ))}
         </div>
       )}
     </div>

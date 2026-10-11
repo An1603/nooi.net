@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { childEmail, normalizeUsername } from "@/lib/ekid/ekid-system";
 import { KID } from "@/components/ekid/child/kid-theme";
 
 export default function EkidLoginPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,20 +23,27 @@ export default function EkidLoginPage() {
     }
 
     setLoading(true);
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: childEmail(normalized),
-      password,
-    });
+    try {
+      const supabase = createClient();
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: childEmail(normalized),
+        password,
+      });
 
-    if (signInError) {
+      if (signInError || !data.session) {
+        setLoading(false);
+        setError("Tên đăng nhập hoặc mật khẩu chưa đúng. Bé thử lại nhé!");
+        return;
+      }
+    } catch {
       setLoading(false);
-      setError("Tên đăng nhập hoặc mật khẩu chưa đúng. Bé thử lại nhé!");
+      setError("Chưa kết nối được. Bé thử lại nhé!");
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    // Điều hướng FULL-LOAD để chắc chắn đi qua middleware phân hệ con
+    // (rewrite "/" → "/ekid"), tránh trường hợp client-router không mở được.
+    window.location.assign("/");
   }
 
   return (

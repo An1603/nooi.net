@@ -6,22 +6,13 @@ import { BAND_LABEL, type AgeBand } from "@/lib/ekid/ekid-system";
 import { AccountTab } from "./AccountTab";
 import { RelativesTab } from "./RelativesTab";
 import { ReportTab } from "./ReportTab";
+import { SettingsTab } from "./SettingsTab";
 import { CONSOLE_TABS, TAB_LABEL, type ConsoleTab, type KidDetail, type ConsoleKid } from "./types";
 
 /** Nhãn lứa tuổi từ placement_age_band. */
 function bandLabel(band?: string | null): string {
   if (!band) return "Chưa định vị";
   return BAND_LABEL[band as AgeBand] ?? band;
-}
-
-/** Khung placeholder cho các tab sẽ hoàn thiện ở bước sau. */
-function Placeholder({ title, note }: { title: string; note: string }) {
-  return (
-    <section className="rounded-2xl border border-dashed border-border bg-card/40 p-6 text-center">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{note}</p>
-    </section>
-  );
 }
 
 /** Thông báo lỗi truy cập (401/403/404/khác) kèm hành động phù hợp. */
@@ -156,7 +147,7 @@ export function KidConsole({ kidId, tab }: { kidId: string; tab: ConsoleTab }) {
       ) : tab === "report" ? (
         <ReportTab kidId={kidId} kid={kid} />
       ) : (
-        <Placeholder title="Cài đặt" note="Nguyên tắc học, môn học và phần thưởng sẽ có ở bước tiếp theo." />
+        <SettingsTab kid={kid} settings={detail.settings} isOwner={detail.is_owner} onChanged={load} />
       )}
     </div>
   );

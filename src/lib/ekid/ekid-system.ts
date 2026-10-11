@@ -287,10 +287,36 @@ function toMinutes(hhmm: string): number {
  * Nếu thiếu một trong hai đầu (null) ⇒ không giới hạn (luôn true).
  * Khung giờ qua nửa đêm (from > to, vd 20:00–06:00) được xử lý đúng.
  */
+/** Múi giờ nghiệp vụ eKid (giờ Việt Nam) — dùng thống nhất cho khung giờ & mốc ngày. */
+export const EKID_TZ = "Asia/Ho_Chi_Minh";
+
+/** Chuỗi ngày YYYY-MM-DD theo giờ VN (khoá ngày ekid_daily). */
+export function vnDayString(d: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: EKID_TZ }).format(d);
+}
+
+/** Thời điểm 00:00 giờ VN của ngày chứa `d` (instant UTC) — mốc đếm buổi trong ngày. */
+export function vnDayStart(d: Date = new Date()): Date {
+  return new Date(`${vnDayString(d)}T00:00:00+07:00`);
+}
+
+/** Số phút trong ngày theo giờ VN (0..1439) — không phụ thuộc TZ của server. */
+export function vnMinutes(d: Date = new Date()): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: EKID_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const h = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const mi = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  return h * 60 + mi;
+}
+
 export function isWithinAllowedHours(settings: KidSettings, now: Date): boolean {
   const { allowedFrom, allowedTo } = settings.rules;
   if (!allowedFrom || !allowedTo) return true;
-  const m = now.getHours() * 60 + now.getMinutes();
+  const m = vnMinutes(now);
   const from = toMinutes(allowedFrom);
   const to = toMinutes(allowedTo);
   return from <= to ? m >= from && m <= to : m >= from || m <= to;

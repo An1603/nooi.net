@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { remainingMinutes, resolvePlacement, normalizeKidSettings, isWithinAllowedHours } from "@/lib/ekid/ekid-system";
+import { remainingMinutes, resolvePlacement, normalizeKidSettings, isWithinAllowedHours, vnDayString, vnDayStart } from "@/lib/ekid/ekid-system";
 
 export const dynamic = "force-dynamic";
 
@@ -43,9 +43,10 @@ async function readableKid(userId: string, kidId: string) {
   return link ? kid : null;
 }
 
-// Ngày hôm nay dạng YYYY-MM-DD (khoá ngày của bảng ekid_daily).
+// Ngày hôm nay dạng YYYY-MM-DD theo GIỜ VIỆT NAM (khoá ngày bảng ekid_daily).
+// Dùng thống nhất với khung giờ học (isWithinAllowedHours) — tránh lệch mốc ngày.
 function todayStr() {
-  return new Date().toISOString().split("T")[0];
+  return vnDayString();
 }
 
 // Tính lại định vị ĐỘNG từ dữ liệu THẬT: điểm test đầu vào mới nhất + số phiên tốt gần đây.
@@ -154,14 +155,14 @@ export async function POST(req: Request) {
     );
   }
 
-  // (b) Số buổi học tối đa trong ngày — đếm số phiên đã tạo hôm nay (theo ngày UTC,
+  // (b) Số buổi học tối đa trong ngày — đếm số phiên đã tạo hôm nay (mốc 00:00 GIỜ VN,
   //     khớp khoá ngày của ekid_daily/todayStr). Đã đủ → chặn mở buổi mới.
   const maxLessons = settings.rules.maxLessonsPerDay;
   const { count: todayCount } = await admin
     .from("ekid_sessions")
     .select("id", { count: "exact", head: true })
     .eq("kid_id", kid_id)
-    .gte("started_at", `${todayStr()}T00:00:00.000Z`);
+    .gte("started_at", vnDayStart().toISOString());
   if ((todayCount ?? 0) >= maxLessons) {
     return NextResponse.json(
       {

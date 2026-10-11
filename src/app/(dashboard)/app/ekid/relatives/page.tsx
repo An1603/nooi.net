@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { RelativeLink } from "@/components/ekid/RelativeLink";
 
 export default function EkidRelativesPage() {
+  // kidId có thể null: người thân (không sở hữu hồ sơ nào) vẫn cần nhập mã liên kết.
   const [kidId, setKidId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,16 +27,16 @@ export default function EkidRelativesPage() {
     <div className="p-2 md:p-4 space-y-4" style={{ background: "#1a0a2e" }}>
       <h1 className="text-lg font-semibold text-foreground">Liên kết người thân</h1>
       <p className="text-sm text-muted-foreground">
-        Tạo mã liên kết gửi cho cha/mẹ/người giám hộ, hoặc tìm theo tên.
+        Nhập mã liên kết bạn nhận được, hoặc tạo mã/tìm người thân để gửi lời mời.
       </p>
       {loading ? (
         <p className="text-sm text-muted-foreground">Đang tải...</p>
-      ) : error ? (
-        <p className="text-sm text-destructive">{error}</p>
-      ) : kidId ? (
-        <RelativeLink kidId={kidId} />
       ) : (
-        <p className="text-sm text-muted-foreground">Chưa có hồ sơ bé.</p>
+        <>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {/* Luôn render để người thân (không sở hữu hồ sơ nào) vẫn nhập được mã. */}
+          <RelativeLink kidId={kidId} />
+        </>
       )}
     </div>
   );

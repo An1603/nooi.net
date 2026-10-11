@@ -66,6 +66,8 @@ export default function SetupPage() {
   const [kidName, setKidName] = useState("");
   const [kidDob, setKidDob] = useState("");
   const [kidEmoji, setKidEmoji] = useState("🦊");
+  const [kidUsername, setKidUsername] = useState("");
+  const [kidPassword, setKidPassword] = useState("");
   const [kidMsg, setKidMsg] = useState<string | null>(null);
 
   // Pre-fill from existing profile
@@ -163,19 +165,35 @@ export default function SetupPage() {
 
   async function createKid() {
     setKidMsg(null);
+    const username = kidUsername.trim().toLowerCase();
     if (!kidName.trim() || !kidDob) {
       setKidMsg("Vui lòng nhập tên và ngày sinh của con.");
+      return;
+    }
+    if (!/^[a-z0-9._]{3,20}$/.test(username)) {
+      setKidMsg("Tên đăng nhập cần 3–20 ký tự, chỉ gồm chữ thường a–z, số, dấu chấm hoặc gạch dưới.");
+      return;
+    }
+    if (kidPassword.length < 6) {
+      setKidMsg("Mật khẩu phải có ít nhất 6 ký tự.");
       return;
     }
     try {
       const r = await fetch("/api/ekid/kids", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: kidName.trim(), date_of_birth: kidDob, avatar_emoji: kidEmoji || "🦊" }),
+        body: JSON.stringify({
+          name: kidName.trim(),
+          date_of_birth: kidDob,
+          username,
+          password: kidPassword,
+          avatar_emoji: kidEmoji || "🦊",
+        }),
       });
       if (!r.ok) {
         const d = await r.json().catch(() => null);
-        setKidMsg(d?.error ?? "Có lỗi khi tạo hồ sơ bé.");
+        if (r.status === 409) setKidMsg("Tên đăng nhập đã tồn tại. Chọn tên khác nhé.");
+        else setKidMsg(d?.error ?? "Có lỗi khi tạo tài khoản cho con.");
         return;
       }
       const d = await r.json();
@@ -183,9 +201,13 @@ export default function SetupPage() {
         setKidName("");
         setKidDob("");
         setKidEmoji("🦊");
-        setKidMsg("Đã tạo hồ sơ bé! 🎉");
+        setKidUsername("");
+        setKidPassword("");
+        setKidMsg(
+          `Đã tạo tài khoản cho con (tên đăng nhập: ${username}). Đưa tên đăng nhập + mật khẩu này cho con để vào ekid.nooi.net.`,
+        );
       } else {
-        setKidMsg(d.error ?? "Có lỗi khi tạo hồ sơ bé.");
+        setKidMsg(d.error ?? "Có lỗi khi tạo tài khoản cho con.");
       }
     } catch {
       setKidMsg("Không kết nối được máy chủ. Vui lòng thử lại.");
@@ -252,7 +274,7 @@ export default function SetupPage() {
                 Thêm hồ sơ bé để bắt đầu học cùng AI Mentor (eKid).
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="relative">
                 <User className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -275,6 +297,22 @@ export default function SetupPage() {
               </div>
               <Input
                 type="text"
+                placeholder="Tên đăng nhập (con dùng để vào ekid.nooi.net)"
+                value={kidUsername}
+                onChange={(e) => { setKidUsername(e.target.value); setKidMsg(null); }}
+                className="sm:col-span-2"
+                autoComplete="off"
+              />
+              <Input
+                type="password"
+                placeholder="Mật khẩu cho con (ít nhất 6 ký tự)"
+                value={kidPassword}
+                onChange={(e) => { setKidPassword(e.target.value); setKidMsg(null); }}
+                className="sm:col-span-2"
+                autoComplete="new-password"
+              />
+              <Input
+                type="text"
                 placeholder="🦊"
                 value={kidEmoji}
                 onChange={(e) => setKidEmoji(e.target.value)}
@@ -282,6 +320,10 @@ export default function SetupPage() {
                 aria-label="Biểu tượng của bé"
               />
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              Tên đăng nhập 3–20 ký tự (chữ thường a–z, số, dấu chấm, gạch dưới). Sau khi tạo, đưa tên đăng nhập + mật
+              khẩu này cho con để con vào học tại ekid.nooi.net.
+            </p>
             {kidMsg && <p className="text-sm text-muted-foreground">{kidMsg}</p>}
             <Button onClick={createKid} className="w-full bg-primary text-primary-foreground">
               <Users className="size-4" /> Tạo hồ sơ bé

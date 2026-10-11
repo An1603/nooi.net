@@ -20,17 +20,19 @@ describe("ekid — initialBand", () => {
 });
 
 describe("ekid — resolvePlacement (định vị động)", () => {
+  // Mốc thời gian cố định để test tất định, không phụ thuộc đồng hồ thực.
+  const now = new Date("2026-10-11");
   it("điểm test đầu vào cao → nâng band", () => {
-    const p = resolvePlacement({ dob: "2019-05-01", entryTestPct: 95 });
+    const p = resolvePlacement({ dob: "2019-05-01", entryTestPct: 95, now });
     expect(p.ageBand).toBe("tieu-hoc");
     expect(p.level).toBeGreaterThan(1);
   });
   it("điểm test thấp → giữ band thấp hơn", () => {
-    const p = resolvePlacement({ dob: "2019-05-01", entryTestPct: 20 });
+    const p = resolvePlacement({ dob: "2019-05-01", entryTestPct: 20, now });
     expect(p.ageBand).toBe("mam-non");
   });
   it("không có test → band theo tuổi", () => {
-    expect(resolvePlacement({ dob: "2019-05-01" }).ageBand).toBe("tieu-hoc");
+    expect(resolvePlacement({ dob: "2019-05-01", now }).ageBand).toBe("tieu-hoc");
   });
 });
 

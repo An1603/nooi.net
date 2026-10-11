@@ -51,8 +51,10 @@ export function resolvePlacement(input: {
   dob: string | Date;
   entryTestPct?: number | null;
   recentGoodSessions?: number;
+  now?: Date;
 }): Placement {
-  const age = calcAge(input.dob);
+  // `now` là tham số tuỳ chọn để test tất định; mặc định dùng đồng hồ thực.
+  const age = calcAge(input.dob, input.now || new Date());
   let idx = BAND_ORDER.indexOf(initialBand(age));
 
   // Test đầu vào chỉnh định vị (chỉ khi có điểm)

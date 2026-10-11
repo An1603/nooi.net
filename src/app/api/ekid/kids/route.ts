@@ -14,17 +14,16 @@ async function currentUser() {
   return user;
 }
 
-// Các trường được phép cập nhật qua PATCH.
-type UpdateFields = {
-  name?: string;
-  date_of_birth?: string;
-  avatar_emoji?: string | null;
-  favorite_voice?: string | null;
-  daily_limit_min?: number;
-  level?: number;
-  placement_age_band?: string;
-  placement_level?: number;
-};
+// Các trường người dùng được phép cập nhật qua PATCH (whitelist tường minh).
+// Loại khỏi payload: `level`, `placement_age_band`, `placement_level` (server tự tính),
+// cùng `user_id`, `id`, `created_at` — không cho client ghi đè.
+const PATCH_ALLOWED_FIELDS = [
+  "name",
+  "date_of_birth",
+  "avatar_emoji",
+  "favorite_voice",
+  "daily_limit_min",
+] as const;
 
 // GET /api/ekid/kids — danh sách hồ sơ trẻ của user, sắp theo thời điểm tạo.
 export async function GET() {
@@ -84,23 +83,30 @@ export async function PATCH(req: Request) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
-  const { id, ...rest } = (await req.json()) ?? {};
+  const body = (await req.json()) ?? {};
+  const { id } = body as { id?: string };
   if (!id) return NextResponse.json({ error: "Thiếu id" }, { status: 400 });
 
-  const fields = rest as UpdateFields;
-  // Không cho phép đổi chủ sở hữu qua API.
-  delete (fields as Record<string, unknown>).user_id;
+  // Whitelist tường minh ở runtime: chỉ copy các key được phép từ body.
+  // Không dùng spread toàn bộ body để tránh mass-assignment (level, placement_*, …).
+  const patch: Record<string, unknown> = {};
+  for (const key of PATCH_ALLOWED_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(body, key)) {
+      patch[key] = (body as Record<string, unknown>)[key];
+    }
+  }
 
-  if (fields.date_of_birth) {
-    const p = resolvePlacement({ dob: fields.date_of_birth });
-    fields.placement_age_band = p.ageBand;
-    fields.placement_level = p.level;
+  // Nếu đổi ngày sinh thì tính lại định vị (server tự quyết, không nhận từ client).
+  if (patch.date_of_birth) {
+    const p = resolvePlacement({ dob: patch.date_of_birth as string });
+    patch.placement_age_band = p.ageBand;
+    patch.placement_level = p.level;
   }
 
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("ekid_kids")
-    .update(fields)
+    .update(patch)
     .eq("id", id)
     .eq("user_id", user.id)
     .select("*")

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { KID } from "@/components/ekid/child/kid-theme";
 
 export const dynamic = "force-dynamic";
 
@@ -22,18 +23,16 @@ async function currentKid() {
 }
 
 // Layout tối giản cho phân hệ con — KHÔNG Sidebar/Topbar người lớn.
+// Tone SÁNG sinh động cho trẻ (xem kid-theme.ts), khác hẳn tone tối NOOI.
 export default async function EkidLayout({ children }: { children: ReactNode }) {
   const kid = await currentKid();
 
   return (
-    <div
-      className="flex min-h-screen flex-col bg-background text-foreground"
-      style={{ backgroundColor: "#1a0a2e" }}
-    >
-      <header className="flex items-center justify-between gap-2 border-b border-border px-2 py-2">
+    <div className={KID.page}>
+      <header className="flex items-center justify-between gap-2 border-b-2 border-[#bae6fd] bg-white/70 px-3 py-3 backdrop-blur">
         <Link
           href="/ekid"
-          className="flex items-center gap-1.5 text-xl font-extrabold text-primary"
+          className="flex items-center gap-1.5 text-2xl font-extrabold text-[#ff7a59]"
         >
           <span aria-hidden>🎓</span>
           <span>eKid</span>
@@ -41,7 +40,7 @@ export default async function EkidLayout({ children }: { children: ReactNode }) 
 
         {kid ? (
           <div className="flex items-center gap-3">
-            <span className="text-lg font-bold">
+            <span className="text-lg font-bold text-[#3b2a20]">
               <span aria-hidden className="mr-1">
                 {kid.avatar_emoji ?? "🦊"}
               </span>
@@ -50,7 +49,7 @@ export default async function EkidLayout({ children }: { children: ReactNode }) 
             <form action="/auth/logout" method="POST">
               <button
                 type="submit"
-                className="rounded-full border border-border bg-card px-4 py-2 text-base font-bold text-card-foreground hover:opacity-90"
+                className="min-h-[48px] rounded-full border-2 border-[#ff7a59]/60 bg-white px-4 py-2 text-base font-bold text-[#e15a3a] transition-transform hover:scale-[1.03] active:scale-95"
               >
                 Đăng xuất
               </button>
@@ -59,7 +58,21 @@ export default async function EkidLayout({ children }: { children: ReactNode }) 
         ) : null}
       </header>
 
-      <main className="flex-1 px-2 py-4">{children}</main>
+      <main className="flex-1 px-3 py-5">{children}</main>
+
+      <footer className="border-t-2 border-[#bae6fd] bg-white/70 px-4 py-5 text-center backdrop-blur">
+        <p className="text-base font-semibold text-[#6b5648]">
+          Phân hệ eKid thuộc{" "}
+          <a
+            href="https://nooi.net"
+            target="_blank"
+            rel="noopener"
+            className="font-extrabold text-[#ff7a59] underline decoration-2 underline-offset-2 hover:text-[#e15a3a]"
+          >
+            NOOI
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }

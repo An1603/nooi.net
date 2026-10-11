@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LessonCard } from "@/components/ekid/child/LessonCard";
+import { KID } from "@/components/ekid/child/kid-theme";
 import type { LibraryKid, LibraryLesson } from "@/components/ekid/child/types";
 
 async function readJson(r: Response): Promise<Record<string, unknown>> {
@@ -66,7 +67,7 @@ export default function EkidLibraryPage() {
 
   if (loading) {
     return (
-      <p className="py-10 text-center text-xl font-bold text-foreground">
+      <p className="py-10 text-center text-xl font-bold text-[#3b2a20]">
         Đang mở thư viện...
       </p>
     );
@@ -74,19 +75,13 @@ export default function EkidLibraryPage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-md rounded-3xl border-2 border-destructive/50 bg-card p-6 text-center">
-        <p className="text-xl font-bold text-destructive">{error}</p>
+      <div className="mx-auto max-w-md rounded-3xl border-2 border-[#ff7a59]/50 bg-white/85 p-6 text-center shadow-lg shadow-sky-200/60">
+        <p className="text-xl font-bold text-[#e15a3a]">{error}</p>
         <div className="mt-4 flex flex-wrap justify-center gap-3">
-          <button
-            onClick={load}
-            className="rounded-full bg-primary px-6 py-3 text-lg font-extrabold text-primary-foreground"
-          >
+          <button onClick={load} className={KID.btnPrimary}>
             Thử lại
           </button>
-          <Link
-            href="/login"
-            className="rounded-full border-2 border-primary px-6 py-3 text-lg font-extrabold text-primary"
-          >
+          <Link href="/login" className={KID.btnGhost}>
             Đăng nhập
           </Link>
         </div>
@@ -97,16 +92,13 @@ export default function EkidLibraryPage() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold text-foreground">
+        <h1 className={KID.h1}>
           <span aria-hidden className="mr-1">
             {kid?.avatar_emoji ?? "🦊"}
           </span>
           Thư viện của {kid?.name ?? "bé"}
         </h1>
-        <Link
-          href="/ekid/thuong"
-          className="rounded-full bg-primary px-6 py-3 text-xl font-extrabold text-primary-foreground shadow-md"
-        >
+        <Link href="/ekid/thuong" className={KID.btnTeal}>
           🏆 Thưởng
         </Link>
       </div>
@@ -117,13 +109,13 @@ export default function EkidLibraryPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="🔍 Tìm bài học theo tên..."
-          className="flex-1 rounded-2xl border-2 border-border bg-card px-4 py-3 text-xl text-foreground placeholder:text-foreground/40 focus:border-primary focus:outline-none"
+          className={`flex-1 ${KID.input}`}
         />
         {parts.length > 0 ? (
           <select
             value={part}
             onChange={(e) => setPart(e.target.value)}
-            className="rounded-2xl border-2 border-border bg-card px-4 py-3 text-xl font-bold text-foreground focus:border-primary focus:outline-none"
+            className="min-h-[52px] rounded-2xl border-2 border-[#bae6fd] bg-white px-4 py-3 text-xl font-bold text-[#3b2a20] focus:border-[#4ecdc4] focus:ring-4 focus:ring-[#4ecdc4]/20 focus:outline-none"
           >
             <option value="all">Tất cả nhóm</option>
             {parts.map((p) => (
@@ -136,7 +128,7 @@ export default function EkidLibraryPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="py-10 text-center text-xl font-bold text-foreground/70">
+        <p className="py-10 text-center text-xl font-bold text-[#6b5648]">
           {lessons.length === 0
             ? "Chưa có bài học nào cho bé. Bé quay lại sau nhé!"
             : "Không tìm thấy bài học nào khớp."}

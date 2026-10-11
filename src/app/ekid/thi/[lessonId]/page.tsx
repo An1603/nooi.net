@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { QuizRunner } from "@/components/ekid/child/QuizRunner";
+import { KID } from "@/components/ekid/child/kid-theme";
 import type { LibraryLesson, PublicExercise } from "@/components/ekid/child/types";
 
 async function readJson(r: Response): Promise<Record<string, unknown>> {
@@ -51,7 +52,7 @@ export default function EkidQuizPage() {
 
   if (loading) {
     return (
-      <p className="py-10 text-center text-xl font-bold text-foreground">
+      <p className="py-10 text-center text-xl font-bold text-[#3b2a20]">
         Đang mở bài thi...
       </p>
     );
@@ -59,12 +60,9 @@ export default function EkidQuizPage() {
 
   if (error || !lesson) {
     return (
-      <div className="mx-auto max-w-md rounded-3xl border-2 border-destructive/50 bg-card p-6 text-center">
-        <p className="text-xl font-bold text-destructive">{error ?? "Không tìm thấy bài học"}</p>
-        <Link
-          href="/ekid"
-          className="mt-4 inline-block rounded-full bg-primary px-6 py-3 text-lg font-extrabold text-primary-foreground"
-        >
+      <div className="mx-auto max-w-md rounded-3xl border-2 border-[#ff7a59]/50 bg-white/85 p-6 text-center shadow-lg shadow-sky-200/60">
+        <p className="text-xl font-bold text-[#e15a3a]">{error ?? "Không tìm thấy bài học"}</p>
+        <Link href="/ekid" className={`mt-4 ${KID.btnPrimary}`}>
           ⬅ Về thư viện
         </Link>
       </div>
@@ -76,13 +74,8 @@ export default function EkidQuizPage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold text-foreground">
-          📝 {lesson.title}
-        </h1>
-        <Link
-          href={`/ekid/hoc/${lessonId}`}
-          className="rounded-full border-2 border-border bg-card px-5 py-2.5 text-lg font-bold text-foreground"
-        >
+        <h1 className={KID.h1}>📝 {lesson.title}</h1>
+        <Link href={`/ekid/hoc/${lessonId}`} className={KID.btnGhost}>
           ⬅ Học lại
         </Link>
       </div>

@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { EkidVoiceSession } from "@/components/ekid/EkidVoiceSession";
 import type { EkidKidLite, EkidLessonLite } from "@/components/ekid/EkidVoiceSession";
 import type { LibraryKid } from "@/components/ekid/child/types";
+import { KID } from "@/components/ekid/child/kid-theme";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
 
 // Bài học đầy đủ trả từ /api/ekid/lessons (kèm video_url dùng để phát hướng dẫn).
@@ -103,7 +104,7 @@ export default function EkidLessonPage() {
 
   if (loading) {
     return (
-      <p className="py-10 text-center text-xl font-bold text-foreground">
+      <p className="py-10 text-center text-xl font-bold text-[#3b2a20]">
         Đang mở bài học...
       </p>
     );
@@ -111,14 +112,11 @@ export default function EkidLessonPage() {
 
   if (error || !kid || !lesson) {
     return (
-      <div className="mx-auto max-w-md rounded-3xl border-2 border-destructive/50 bg-card p-6 text-center">
-        <p className="text-xl font-bold text-destructive">
+      <div className="mx-auto max-w-md rounded-3xl border-2 border-[#ff7a59]/50 bg-white/85 p-6 text-center shadow-lg shadow-sky-200/60">
+        <p className="text-xl font-bold text-[#e15a3a]">
           {error ?? "Không tìm thấy bài học"}
         </p>
-        <Link
-          href="/ekid"
-          className="mt-4 inline-block rounded-full bg-primary px-6 py-3 text-lg font-extrabold text-primary-foreground"
-        >
+        <Link href="/ekid" className={`mt-4 ${KID.btnPrimary}`}>
           ⬅ Về thư viện
         </Link>
       </div>
@@ -131,17 +129,14 @@ export default function EkidLessonPage() {
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold text-foreground">{lesson.core_topic}</h1>
-        <Link
-          href="/ekid"
-          className="rounded-full border-2 border-border bg-card px-5 py-2.5 text-lg font-bold text-foreground"
-        >
+        <h1 className={KID.h1}>{lesson.core_topic}</h1>
+        <Link href="/ekid" className={KID.btnGhost}>
           ⬅ Thư viện
         </Link>
       </div>
 
       {videoUrl ? (
-        <div className="overflow-hidden rounded-3xl border-2 border-border bg-card">
+        <div className="overflow-hidden rounded-3xl border-2 border-[#bae6fd] bg-white/85 shadow-lg shadow-sky-200/50">
           <div className="aspect-video w-full">
             <iframe
               src={embed ?? videoUrl}
@@ -156,10 +151,7 @@ export default function EkidLessonPage() {
 
       <EkidVoiceSession kid={kid} lesson={lesson} remaining={remaining} />
 
-      <Link
-        href={`/ekid/thi/${lessonId}`}
-        className="self-center rounded-full bg-primary px-8 py-4 text-2xl font-extrabold text-primary-foreground shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-      >
+      <Link href={`/ekid/thi/${lessonId}`} className={`self-center ${KID.btnHero}`}>
         Làm bài thi →
       </Link>
     </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { PublicExercise } from "./types";
+import { KID } from "./kid-theme";
 
 interface QuizResult {
   score: number;
@@ -42,14 +43,11 @@ export function QuizRunner({
 
   if (total === 0) {
     return (
-      <div className="rounded-3xl border-2 border-border bg-card p-6 text-center">
-        <p className="text-xl font-bold text-foreground">
+      <div className={`${KID.cardPad} text-center`}>
+        <p className="text-xl font-bold text-[#3b2a20]">
           Bài này chưa có câu hỏi nào. Bé quay lại thư viện nhé!
         </p>
-        <Link
-          href="/ekid"
-          className="mt-4 inline-block rounded-full bg-primary px-6 py-3 text-lg font-extrabold text-primary-foreground"
-        >
+        <Link href="/ekid" className={`mt-4 ${KID.btnPrimary}`}>
           ⬅ Về thư viện
         </Link>
       </div>
@@ -103,15 +101,15 @@ export function QuizRunner({
 
   if (phase === "result" && result) {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-primary/60 bg-card p-6 text-center">
-        <div className="text-6xl" aria-hidden>
+      <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-[#4ecdc4] bg-white/85 p-6 text-center shadow-lg shadow-sky-200/60">
+        <div className="text-7xl" aria-hidden>
           {result.score >= 70 ? "🎉" : "💪"}
         </div>
-        <p className="text-3xl font-extrabold text-primary">{result.score} điểm</p>
-        <p className="text-lg font-bold text-foreground">
+        <p className="text-3xl font-extrabold text-[#ff7a59]">{result.score} điểm</p>
+        <p className="text-lg font-bold text-[#3b2a20]">
           Điểm cao nhất: {result.best_score} điểm
         </p>
-        <p className="text-lg font-bold text-foreground">
+        <p className="text-lg font-bold text-[#3b2a20]">
           ⭐ Bé vừa nhận {result.points_awarded} điểm thưởng!
         </p>
 
@@ -120,7 +118,7 @@ export function QuizRunner({
             {result.new_badges.map((b) => (
               <span
                 key={b.code}
-                className="rounded-full bg-n-green/20 px-4 py-2 text-base font-extrabold text-n-green"
+                className="rounded-full bg-[#fff3c4] px-4 py-2 text-base font-extrabold text-[#a16207]"
               >
                 🏅 {b.label}
               </span>
@@ -128,19 +126,13 @@ export function QuizRunner({
           </div>
         ) : null}
 
-        {error ? <p className="text-base font-bold text-destructive">{error}</p> : null}
+        {error ? <p className="text-base font-bold text-[#e15a3a]">{error}</p> : null}
 
         <div className="mt-2 flex flex-wrap justify-center gap-3">
-          <button
-            onClick={retry}
-            className="rounded-full border-2 border-primary bg-card px-6 py-3 text-lg font-extrabold text-primary"
-          >
+          <button onClick={retry} className={KID.btnGhost}>
             🔁 Thi lại
           </button>
-          <Link
-            href="/ekid"
-            className="rounded-full bg-primary px-6 py-3 text-lg font-extrabold text-primary-foreground"
-          >
+          <Link href="/ekid" className={KID.btnPrimary}>
             🏠 Về thư viện
           </Link>
         </div>
@@ -153,19 +145,19 @@ export function QuizRunner({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-3">
-        <div className="h-3 flex-1 overflow-hidden rounded-full bg-card">
+        <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/80">
           <div
-            className="h-full rounded-full bg-primary transition-all"
+            className="h-full rounded-full bg-[#ff7a59] transition-all"
             style={{ width: `${((idx + (submitting ? 1 : 0)) / total) * 100}%` }}
           />
         </div>
-        <span className="text-base font-bold text-foreground">
+        <span className="text-base font-bold text-[#3b2a20]">
           Câu {idx + 1}/{total}
         </span>
       </div>
 
-      <div className="rounded-3xl border-2 border-border bg-card p-5">
-        <p className="text-2xl font-extrabold leading-snug text-foreground">
+      <div className={`${KID.cardPad}`}>
+        <p className="text-2xl font-extrabold leading-snug text-[#3b2a20]">
           {current.question}
         </p>
       </div>
@@ -176,7 +168,7 @@ export function QuizRunner({
             key={i}
             onClick={() => choose(i)}
             disabled={submitting}
-            className="rounded-2xl border-2 border-border bg-card px-4 py-6 text-2xl font-extrabold text-foreground shadow-md transition-transform hover:scale-[1.02] hover:border-primary active:scale-95 disabled:opacity-60"
+            className="min-h-[64px] rounded-2xl border-2 border-[#bae6fd] bg-white px-4 py-6 text-2xl font-extrabold text-[#3b2a20] shadow-md shadow-sky-200/50 transition-transform hover:scale-[1.02] hover:border-[#4ecdc4] active:scale-95 disabled:opacity-60"
           >
             {opt}
           </button>
@@ -184,10 +176,10 @@ export function QuizRunner({
       </div>
 
       {submitting ? (
-        <p className="text-center text-lg font-bold text-primary">Đang chấm điểm...</p>
+        <p className="text-center text-lg font-bold text-[#ff7a59]">Đang chấm điểm...</p>
       ) : null}
       {error ? (
-        <p className="text-center text-lg font-bold text-destructive">{error}</p>
+        <p className="text-center text-lg font-bold text-[#e15a3a]">{error}</p>
       ) : null}
     </div>
   );

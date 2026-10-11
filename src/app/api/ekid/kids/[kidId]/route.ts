@@ -42,6 +42,31 @@ function deepMerge(base: unknown, patch: unknown): unknown {
   return out;
 }
 
+// Client quản trị (service_role) dùng cho các truy vấn phía server cần vượt RLS.
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+/**
+ * Người dùng có phải CAREGIVER QUẢN LÝ (permission='admin') đã liên kết của hồ sơ
+ * này không. Tra bảng `ekid_caregivers`: caregiver_user_id = userId, status='linked'
+ * và permission='admin'. Trả false khi không có dòng nào thoả mãn (không có quyền
+ * hoặc chỉ là viewer).
+ */
+async function isAdminCaregiver(
+  admin: AdminClient,
+  userId: string,
+  kidId: string,
+): Promise<boolean> {
+  const { data: link } = await admin
+    .from("ekid_caregivers")
+    .select("id")
+    .eq("kid_id", kidId)
+    .eq("caregiver_user_id", userId)
+    .eq("status", "linked")
+    .eq("permission", "admin")
+    .maybeSingle();
+  return !!link;
+}
+
 // GET /api/ekid/kids/[kidId] — chi tiết một hồ sơ trẻ.
 // Quyền: OWNER (user_id = auth.uid()) HOẶC caregiver đã liên kết → do RLS
 // `ekid_kids` quyết định khi đọc bằng client phiên người dùng.
@@ -73,12 +98,19 @@ export async function GET(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!kid) return NextResponse.json({ error: "Không tìm thấy hồ sơ" }, { status: 404 });
 
+  const isOwner = kid.user_id === user.id;
+  const admin = createAdminClient();
+  const is_admin_caregiver = await isAdminCaregiver(admin, user.id, kidId);
+
   return NextResponse.json({
     kid,
     settings: normalizeKidSettings(kid.settings),
     // Additive: UI giám sát cần biết user có phải CHỦ hồ sơ để hiện/ẩn thao tác ghi
-    // (PATCH/DELETE chỉ cho OWNER). Không phá vỡ API cũ — chỉ thêm một trường.
-    is_owner: kid.user_id === user.id,
+    // (PATCH/DELETE chỉ cho OWNER). Không phá vỡ API cũ — chỉ thêm trường.
+    is_owner: isOwner,
+    // (v2.4) UI cần biết admin caregiver (được sửa hồ sơ nhưng không đổi status) để
+    // hiện/ẩn đúng các thao tác == không phá API cũ.
+    is_admin_caregiver: is_admin_caregiver && !isOwner,
   });
 }
 
@@ -108,7 +140,37 @@ async function requireOwner(userId: string, kidId: string) {
   return { admin, kid };
 }
 
-// PATCH /api/ekid/kids/[kidId] — sửa hồ sơ + trạng thái + cài đặt. CHỈ OWNER.
+// Kiểm tra quyền SỬA hồ sơ (PATCH): OWNER HOẶC admin caregiver đã liên kết.
+// Trả `kid` (kèm child_user_id/settings) + `isOwner` để phân biệt quyền đổi `status`
+// (chỉ owner được phép). Viewer caregiver KHÔNG đủ điều kiện → 403.
+async function requireCanEdit(userId: string, kidId: string) {
+  if (!UUID_RE.test(kidId)) {
+    return { error: NextResponse.json({ error: "Không tìm thấy hồ sơ" }, { status: 404 }) };
+  }
+  const admin = createAdminClient();
+  const { data: kid, error } = await admin
+    .from("ekid_kids")
+    .select("id, user_id, child_user_id, settings")
+    .eq("id", kidId)
+    .maybeSingle();
+
+  if (error) return { error: NextResponse.json({ error: error.message }, { status: 500 }) };
+  if (!kid) return { error: NextResponse.json({ error: "Không tìm thấy hồ sơ" }, { status: 404 }) };
+
+  const isOwner = kid.user_id === userId;
+  if (!isOwner && !(await isAdminCaregiver(admin, userId, kidId))) {
+    return {
+      error: NextResponse.json(
+        { error: "Không có quyền sửa hồ sơ này" },
+        { status: 403 },
+      ),
+    };
+  }
+  return { admin, kid, isOwner };
+}
+
+// PATCH /api/ekid/kids/[kidId] — sửa hồ sơ + trạng thái + cài đặt. OWNER HOẶC
+// admin caregiver; chỉ OWNER được đổi `status`.
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ kidId: string }> },
@@ -117,7 +179,7 @@ export async function PATCH(
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
-  const owned = await requireOwner(user.id, kidId);
+  const owned = await requireCanEdit(user.id, kidId);
   if ("error" in owned) return owned.error;
 
   const body = ((await req.json()) ?? {}) as Record<string, unknown>;
@@ -151,6 +213,14 @@ export async function PATCH(
       return NextResponse.json({ error: "Biểu tượng không hợp lệ" }, { status: 400 });
     }
     patch.avatar_emoji = v.trim();
+  }
+
+  if (has("favorite_voice")) {
+    const v = body.favorite_voice;
+    if (v !== null && typeof v !== "string") {
+      return NextResponse.json({ error: "Giọng đọc không hợp lệ" }, { status: 400 });
+    }
+    patch.favorite_voice = v === null ? null : v.trim() || null;
   }
 
   if (has("daily_limit_min")) {
@@ -199,6 +269,14 @@ export async function PATCH(
   }
 
   if (has("status")) {
+    // (v2.4) Chỉ OWNER được đổi trạng thái (khoá/mở). Admin caregiver KHÔNG được
+    // phép đổi `status` dù có quyền sửa hồ sơ/cài đặt.
+    if (!owned.isOwner) {
+      return NextResponse.json(
+        { error: "Chỉ chủ hồ sơ được đổi trạng thái" },
+        { status: 403 },
+      );
+    }
     const v = body.status;
     if (v !== "active" && v !== "khoa") {
       return NextResponse.json({ error: "Trạng thái không hợp lệ" }, { status: 400 });
@@ -229,7 +307,6 @@ export async function PATCH(
     .from("ekid_kids")
     .update(patch)
     .eq("id", kidId)
-    .eq("user_id", user.id)
     .select("*")
     .single();
 

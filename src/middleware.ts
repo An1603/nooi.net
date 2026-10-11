@@ -1,14 +1,56 @@
 import { NextResponse, type NextRequest } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { updateSession } from "@/lib/supabase/middleware";
 
 const publicRoutes = ["/", "/login", "/signup", "/gallery", "/auth/callback", "/auth/confirm", "/auth/reset", "/auth/update-password", "/api/migrate", "/u"];
 
 const ADMIN_HOST = "admin.nooi.net";
+const EKID_HOST = "ekid.nooi.net";
+
+/** Host riêng cho phân hệ eKid của bé. */
+function isEkidHost(host: string): boolean {
+  return host === EKID_HOST;
+}
+
+/** Kiểm tra user hiện tại có phải tài khoản CON không (ekid_kids.child_user_id = user.id). */
+async function isChildUser(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("ekid_kids")
+    .select("id")
+    .eq("child_user_id", userId)
+    .maybeSingle();
+  return !!data;
+}
 
 export async function middleware(request: NextRequest) {
   const { supabase, supabaseResponse, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
+
+  /* ── eKid subdomain guard (đặt trước admin để host ekid không bị admin/main chặn) ── */
+  if (isEkidHost(host)) {
+    // Đã đúng path /ekid/* → để nguyên
+    if (pathname.startsWith("/ekid")) return supabaseResponse;
+
+    // Trang đăng nhập → cho qua
+    if (pathname === "/login") return supabaseResponse;
+
+    // Chưa đăng nhập → về /ekid/login
+    if (!user) {
+      const loginUrl = new URL("/ekid/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Đã đăng nhập: tài khoản CON → rewrite nội bộ mọi path dưới /ekid/*
+    if (await isChildUser(supabase, user.id)) {
+      const target = "/ekid" + (pathname === "/" ? "" : pathname);
+      return NextResponse.rewrite(new URL(target, request.url));
+    }
+
+    // Người lớn → chuyển về app người lớn
+    return NextResponse.redirect(new URL("https://nooi.net/app/ekid"));
+  }
 
   /* ── Admin subdomain guard ── */
   if (host === ADMIN_HOST) {
@@ -52,6 +94,11 @@ export async function middleware(request: NextRequest) {
   }
 
   /* ── Main site guard ── */
+  // Con không vào app người lớn → chuyển sang phân hệ eKid
+  if (user && (await isChildUser(supabase, user.id))) {
+    return NextResponse.redirect(new URL("https://ekid.nooi.net"));
+  }
+
   if (pathname.startsWith("/admin")) {
     return NextResponse.redirect(new URL("/", request.url));
   }

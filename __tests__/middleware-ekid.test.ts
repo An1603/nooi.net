@@ -51,7 +51,7 @@ describe("middleware eKid host — (C) API passthrough", () => {
     expect(res.status).toBe(200);
   });
 
-  it("CHO QUA /api khi chưa đăng nhập (route tự lo 401), không redirect/rewrite", async () => {
+  it("CHO QUA /api/ekid/* khi chưa đăng nhập (route tự lo 401), không redirect/rewrite", async () => {
     updateSessionMock.mockResolvedValue({
       supabase: fakeSupabase([]),
       supabaseResponse: new Response(null, { status: 200 }),
@@ -61,6 +61,45 @@ describe("middleware eKid host — (C) API passthrough", () => {
     const res = await middleware(makeReq("/api/ekid/session?kid_id=x"));
     expect(rewriteTarget(res)).toBeNull();
     expect(res.status).toBe(200);
+  });
+
+  it("CHO QUA /api/voice/token (con đang đăng nhập) — endpoint giọng nói của phân hệ con", async () => {
+    updateSessionMock.mockResolvedValue({
+      supabase: fakeSupabase([{ id: "kid1" }]), // user là con
+      supabaseResponse: new Response(null, { status: 200 }),
+      user: { id: "child-user-1" },
+    });
+
+    const res = await middleware(makeReq("/api/voice/token"));
+    expect(rewriteTarget(res)).toBeNull();
+    expect(res.status).toBe(200);
+  });
+
+  it("KHÔNG passthrough /api/ai-mentor/chat (route app người lớn): con bị rewrite → 404, không lộ API", async () => {
+    updateSessionMock.mockResolvedValue({
+      supabase: fakeSupabase([{ id: "kid1" }]), // user là con
+      supabaseResponse: new Response(null, { status: 200 }),
+      user: { id: "child-user-1" },
+    });
+
+    const res = await middleware(makeReq("/api/ai-mentor/chat"));
+    const target = rewriteTarget(res);
+    // Bị rewrite sang /ekid/api/ai-mentor/chat → không có page route → 404 (bị chặn)
+    expect(target).not.toBeNull();
+    expect(new URL(target!).pathname).toBe("/ekid/api/ai-mentor/chat");
+  });
+
+  it("KHÔNG passthrough /api không nằm whitelist khi anonymous: chuyển về /ekid/login, không cho qua", async () => {
+    updateSessionMock.mockResolvedValue({
+      supabase: fakeSupabase([]),
+      supabaseResponse: new Response(null, { status: 200 }),
+      user: null,
+    });
+
+    const res = await middleware(makeReq("/api/upload/avatar"));
+    expect(rewriteTarget(res)).toBeNull();
+    expect(res.status).toBe(307); // redirect → /ekid/login
+    expect(res.headers.get("location")).toContain("/ekid/login");
   });
 
   it("vẫn rewrite path web thường của con: /hoc/abc → /ekid/hoc/abc", async () => {

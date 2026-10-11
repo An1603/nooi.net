@@ -51,10 +51,18 @@ export async function middleware(request: NextRequest) {
     // Trang đăng nhập của con → cho qua, không cần auth (anonymous OK)
     if (pathname === "/ekid/login") return supabaseResponse;
 
-    // (C) API trên host ekid → cho qua, KHÔNG rewrite sang /ekid+path.
-    // Mọi route /api tự guard auth của nó (401 khi chưa đăng nhập), nên không
-    // được bọc thêm tiền tố /ekid (nếu không sẽ thành /ekid/api/... → 404).
-    if (pathname.startsWith("/api")) return supabaseResponse;
+    // (C) Passthrough CHỈ những /api mà phân hệ con thực sự cần, KHÔNG rewrite
+    // sang /ekid+path (nếu không sẽ thành /ekid/api/... → 404):
+    //   - /api/ekid/*  → API riêng của phân hệ con
+    //   - /api/voice/* → endpoint token giọng nói (EkidVoiceSession → VoiceAssistant
+    //                    → useVoiceAssistant gọi /api/voice/token)
+    // Mọi /api KHÁC trên host ekid (ví dụ /api/ai-mentor/chat, /api/upload/avatar,
+    // /api/ref-code/change, /api/telegram/send — route của app người lớn) KHÔNG
+    // được passthrough: chúng rơi vào nhánh dưới (redirect login hoặc rewrite
+    // /ekid/... → 404) nên bị chặn, không lộ trên ekid.nooi.net.
+    if (pathname.startsWith("/api/ekid") || pathname.startsWith("/api/voice")) {
+      return supabaseResponse;
+    }
 
     // Chưa đăng nhập → về /ekid/login (giữ nguyên path + query để quay lại sau login)
     // LƯU Ý (I1): KHÔNG cho qua /ekid/* trước khi kiểm auth như bản cũ.

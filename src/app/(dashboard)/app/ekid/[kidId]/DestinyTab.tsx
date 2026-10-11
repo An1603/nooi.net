@@ -4,6 +4,7 @@ import type { NumerologyResult } from "@/lib/numerology";
 import type { TuViResult } from "@/lib/tuvi";
 import type { AstrologyResult } from "@/lib/astrology";
 import { NumerologyDetail } from "./destiny/NumerologyDetail";
+import { TuViDetail } from "./destiny/TuViDetail";
 
 /** Payload GET /api/ekid/kids/[kidId]/destiny. */
 interface DestinyData {
@@ -127,7 +128,7 @@ export function DestinyTab({ kidId }: { kidId: string }) {
       {active === "numerology" ? (
         <NumerologyDetail result={data.numerology} />
       ) : active === "tuvi" ? (
-        <ComingSoon label="Tử vi" icon="☯️" />
+        <TuViDetail result={data.tuvi} />
       ) : (
         <ComingSoon label="Chiêm tinh" icon="🌌" />
       )}

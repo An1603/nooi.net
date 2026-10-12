@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OnToolCall, VoiceTurn } from "@/components/voice/useVoiceAssistant";
 import type { ToolFunctionCall, ToolFunctionResponse } from "@/lib/voice/gemini-live";
-import type { InteractiveItem } from "@/lib/ekid/interactive";
+import type { InteractiveItem, MediaItem } from "@/lib/ekid/interactive";
 
 /** Sự kiện lớp tương tác (gọi công cụ / kết quả bé tương tác) — lưu vào log. */
 export interface ToolLogMeta {
@@ -95,44 +95,107 @@ export function useEkidInteractive(): EkidInteractiveController {
     convLenRef.current = turns.length;
   }, []);
 
-  const buildItem = useCallback((call: ToolFunctionCall): InteractiveItem | null => {
+  // Sinh id item tăng dần (mọi loại item dùng chung một dãy để không trùng id).
+  const nextItemId = useCallback((): string => {
     seqRef.current += 1;
-    const id = `ekid-item-${seqRef.current}`;
+    return `ekid-item-${seqRef.current}`;
+  }, []);
 
-    if (call.name === "show_exercise") {
+  // CHỈ dựng item đồng bộ cho bài tập; media phải qua validate (bất đồng bộ) trước.
+  const buildExercise = useCallback(
+    (call: ToolFunctionCall): InteractiveItem | null => {
       const question = asString(call.args.question);
       const options = asStringArray(call.args.options);
       if (!question || options.length === 0) return null;
       return {
-        id,
+        id: nextItemId(),
         kind: "exercise",
         question,
         options,
         answerIndex: asIntOrUndef(call.args.answer_index),
         exerciseKind: asString(call.args.kind) ?? undefined,
       };
-    }
+    },
+    [nextItemId],
+  );
 
-    if (call.name === "show_media") {
+  // Gọi API kiểm tra link media — KHÔNG BAO GIỜ ném lỗi; mọi trục trặc → { ok:false }.
+  const validateMedia = useCallback(
+    async (url: string): Promise<{ ok: boolean; kind: "image" | "video" | null }> => {
+      try {
+        const res = await fetch(`/api/ekid/media/validate?url=${encodeURIComponent(url)}`, {
+          method: "GET",
+        });
+        if (!res.ok) return { ok: false, kind: null };
+        const data = (await res.json()) as { ok?: unknown; kind?: unknown };
+        const kind = data.kind === "image" || data.kind === "video" ? data.kind : null;
+        return { ok: data.ok === true && kind !== null, kind };
+      } catch {
+        return { ok: false, kind: null };
+      }
+    },
+    [],
+  );
+
+  // Xử lý `show_media`: KIỂM TRA link TRƯỚC, chỉ hiện khi hợp lệ; ngược lại thông báo nhẹ.
+  const handleShowMedia = useCallback(
+    async (call: ToolFunctionCall, respond: (res: ToolFunctionResponse[]) => void) => {
       const url = asString(call.args.url);
-      if (!url) return null;
-      const mediaType = call.args.kind === "video" ? "video" : "image";
-      return {
+      if (!url) {
+        respond([{ name: "show_media", response: { shown: false } }]);
+        return;
+      }
+
+      const { ok, kind } = await validateMedia(url);
+      const id = nextItemId();
+
+      if (!ok || !kind) {
+        // Không tìm thấy nội dung phù hợp → thông báo NHẸ (không khung lỗi to) + ghi log.
+        setCurrent({ id, kind: "notice", text: "Không tìm thấy nội dung phù hợp" });
+        pushLog({
+          role: "tool",
+          text: "AI không tìm thấy nội dung phù hợp để hiện.",
+          meta: {
+            event: "call",
+            tool: call.name,
+            item_id: id,
+            args: call.args,
+            result: { shown: false },
+          },
+        });
+        respond([{ name: "show_media", response: { shown: false } }]);
+        return;
+      }
+
+      const item: MediaItem = {
         id,
         kind: "media",
         url,
-        mediaType,
+        mediaType: kind,
         caption: asString(call.args.caption) ?? undefined,
       };
-    }
-
-    return null;
-  }, []);
+      respondRef.current.set(item.id, { respond, item });
+      // THAY THẾ nội dung đang hiện — sân khấu chỉ có 1 nội dung tại một thời điểm.
+      setCurrent(item);
+      pushLog({
+        role: "tool",
+        text: "AI hiện nội dung lên màn hình.",
+        meta: { event: "call", tool: call.name, item_id: item.id, args: call.args },
+      });
+    },
+    [nextItemId, validateMedia, pushLog],
+  );
 
   const onToolCall = useCallback<OnToolCall>(
     (calls, respond) => {
       for (const call of calls) {
-        const item = buildItem(call);
+        // Media: kiểm tra link bất đồng bộ rồi mới hiện (không chặn lượt gọi khác).
+        if (call.name === "show_media") {
+          void handleShowMedia(call, respond);
+          continue;
+        }
+
+        const item = buildExercise(call);
         if (!item) {
           // Công cụ chưa hỗ trợ / tham số thiếu → trả lỗi để model không bị treo.
           respond([{ name: call.name, response: { error: "unsupported_or_invalid" } }]);
@@ -148,7 +211,7 @@ export function useEkidInteractive(): EkidInteractiveController {
         });
       }
     },
-    [buildItem, pushLog],
+    [buildExercise, handleShowMedia, pushLog],
   );
 
   const onResolve = useCallback<EkidInteractiveController["onResolve"]>(

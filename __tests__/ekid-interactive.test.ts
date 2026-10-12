@@ -4,6 +4,7 @@ import {
   toolsPromptSection,
   isExerciseItem,
   isMediaItem,
+  isNoticeItem,
 } from "@/lib/ekid/interactive";
 import { BAND_ADDRESS, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { normalizeTurns } from "@/lib/ekid/kid-memory";
@@ -58,6 +59,13 @@ describe("ekid interactive — phân loại item", () => {
     expect(isMediaItem(ex)).toBe(false);
     expect(isMediaItem(md)).toBe(true);
     expect(isExerciseItem(md)).toBe(false);
+  });
+
+  it("isNoticeItem nhận diện thông báo nhẹ", () => {
+    const notice = { id: "n1", kind: "notice" as const, text: "Không tìm thấy nội dung phù hợp" };
+    expect(isNoticeItem(notice)).toBe(true);
+    expect(isNoticeItem({ id: "m1", kind: "media" as const, url: "x.jpg", mediaType: "image" as const })).toBe(false);
+    expect(isNoticeItem({ id: "e1", kind: "exercise" as const, question: "?", options: ["a"] })).toBe(false);
   });
 });
 

@@ -20,7 +20,7 @@ export interface EkidToolDeclaration {
 }
 
 /** Loại nội dung hiển thị trên sân khấu tương tác. */
-export type InteractiveItemKind = "exercise" | "media";
+export type InteractiveItemKind = "exercise" | "media" | "notice";
 
 /** Một thẻ bài tập trắc nghiệm. */
 export interface ExerciseItem {
@@ -43,7 +43,14 @@ export interface MediaItem {
   caption?: string;
 }
 
-export type InteractiveItem = ExerciseItem | MediaItem;
+/** Thông báo NHẸ hiện trong sân khấu (vd: link media không hợp lệ) — không phải khung lỗi. */
+export interface NoticeItem {
+  id: string;
+  kind: "notice";
+  text: string;
+}
+
+export type InteractiveItem = ExerciseItem | MediaItem | NoticeItem;
 
 /** Phân loại một item để render (dùng cả client & kiểm thử). */
 export function isExerciseItem(item: InteractiveItem): item is ExerciseItem {
@@ -53,6 +60,11 @@ export function isExerciseItem(item: InteractiveItem): item is ExerciseItem {
 /** Phân loại media item. */
 export function isMediaItem(item: InteractiveItem): item is MediaItem {
   return item.kind === "media";
+}
+
+/** Phân loại thông báo nhẹ. */
+export function isNoticeItem(item: InteractiveItem): item is NoticeItem {
+  return item.kind === "notice";
 }
 
 /** Kết quả trả về model sau khi bé tương tác với một item. */

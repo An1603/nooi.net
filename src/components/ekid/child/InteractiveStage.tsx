@@ -14,9 +14,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   isExerciseItem,
   isMediaItem,
+  isNoticeItem,
   type ExerciseResult,
   type InteractiveItem,
   type MediaResult,
+  type NoticeItem,
 } from "@/lib/ekid/interactive";
 
 export type InteractiveResult = ExerciseResult | MediaResult;
@@ -74,6 +76,8 @@ export function InteractiveStage({ item, onResolve }: InteractiveStageProps) {
       <div key={item.id} className="w-full animate-slide-up">
         {isExerciseItem(item) ? (
           <ExerciseCard item={item} chosen={chosenIndex} onChoose={(i) => choose(item, i)} />
+        ) : isNoticeItem(item) ? (
+          <NoticeCard item={item} />
         ) : (
           <MediaCard item={item} />
         )}
@@ -185,6 +189,20 @@ function UnsafeNotice() {
   return (
     <div className="flex h-full w-full items-center justify-center px-4 text-center text-base font-semibold text-[#6b5648]">
       Không hiển thị được nội dung này.
+    </div>
+  );
+}
+
+// ─── Thẻ thông báo NHẸ (vd: link media không hợp lệ) ──────────────────────────
+// Không phải khung lỗi to — chỉ một dòng nhắc nhẹ trong sân khấu, tông sáng.
+
+function NoticeCard({ item }: { item: NoticeItem }) {
+  return (
+    <div className="flex h-full w-full items-center justify-center px-4 text-center">
+      <p className="rounded-2xl bg-white/70 px-5 py-4 text-lg font-semibold text-[#6b5648]">
+        <span aria-hidden className="mr-1">🔎</span>
+        {item.text}
+      </p>
     </div>
   );
 }

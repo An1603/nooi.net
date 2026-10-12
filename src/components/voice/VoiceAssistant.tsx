@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useVoiceAssistant, type VoiceStatus, type VoiceTurn } from "./useVoiceAssistant";
+import {
+  useVoiceAssistant,
+  type VoiceStatus,
+  type VoiceTurn,
+  type OnToolCall,
+} from "./useVoiceAssistant";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import { VoiceVisualizer } from "./VoiceVisualizer";
 import {
@@ -38,6 +43,13 @@ interface VoiceAssistantProps {
    * Mặc định bỏ trống → không ảnh hưởng AI Mentor.
    */
   onTurnsChange?: (turns: VoiceTurn[]) => void;
+  /**
+   * Khai báo function calling gửi kèm setup — chỉ dùng cho eKid.
+   * Mặc định bỏ trống → AI Mentor hoạt động KHÔNG đổi.
+   */
+  tools?: unknown[];
+  /** Xử lý khi model gọi hàm (chỉ khi eKid truyền `tools`). */
+  onToolCall?: OnToolCall;
 }
 
 export function VoiceAssistant({
@@ -46,6 +58,8 @@ export function VoiceAssistant({
   title = "Trợ lý giọng nói",
   hideTranscript = false,
   onTurnsChange,
+  tools,
+  onToolCall,
 }: VoiceAssistantProps) {
   const {
     status,
@@ -56,7 +70,7 @@ export function VoiceAssistant({
     isMicMuted,
     start,
     stop,
-  } = useVoiceAssistant({ voice, systemInstruction, onTurnsChange });
+  } = useVoiceAssistant({ voice, systemInstruction, onTurnsChange, tools, onToolCall });
 
   const [showChat, setShowChat] = useState(true);
   const [isHovered, setIsHovered] = useState(false);

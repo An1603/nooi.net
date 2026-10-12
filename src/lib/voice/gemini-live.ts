@@ -25,6 +25,24 @@ export interface GeminiLiveConfig {
   outputAudioTranscription?: boolean;
   /** Temperature (0-1, default: 1.0) */
   temperature?: number;
+  /**
+   * Khai báo function calling (functionDeclarations) — chỉ dùng cho eKid.
+   * Bỏ trống → AI Mentor hoạt động như cũ (không có tool).
+   */
+  tools?: unknown[];
+}
+
+/** Một lời gọi hàm do model phát ra (đã chuẩn hoá). */
+export interface ToolFunctionCall {
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
+}
+
+/** Kết quả trả về cho model sau khi UI xử lý xong một tool call. */
+export interface ToolFunctionResponse {
+  name: string;
+  response: Record<string, unknown>;
 }
 
 export type VoiceOption =
@@ -39,6 +57,7 @@ export type GeminiLiveEvent =
   | { type: "turn_complete" }
   | { type: "input_transcription"; data: { text: string; finished: boolean } }
   | { type: "output_transcription"; data: { text: string; finished: boolean } }
+  | { type: "tool_call"; data: { functionCalls: ToolFunctionCall[] } }
   | { type: "error"; data: string };
 
 // ─── Client ──────────────────────────────────────────────────────────────────
@@ -52,6 +71,7 @@ export class GeminiLiveClient {
   private inputTranscription: boolean;
   private outputTranscription: boolean;
   private temperature: number;
+  private tools: unknown[] | null;
   private connected = false;
 
   public onEvent: ((event: GeminiLiveEvent) => void) | null = null;
@@ -67,6 +87,7 @@ export class GeminiLiveClient {
     this.inputTranscription = config.inputAudioTranscription ?? true;
     this.outputTranscription = config.outputAudioTranscription ?? true;
     this.temperature = config.temperature ?? 1.0;
+    this.tools = config.tools && config.tools.length > 0 ? config.tools : null;
   }
 
   get isConnected(): boolean {
@@ -126,7 +147,7 @@ export class GeminiLiveClient {
   }
 
   /** Send a tool/function response */
-  sendToolResponse(functionResponses: Array<{ name: string; response: Record<string, unknown> }>) {
+  sendToolResponse(functionResponses: ToolFunctionResponse[]) {
     this.send({
       toolResponse: { functionResponses },
     });
@@ -167,6 +188,7 @@ export class GeminiLiveClient {
 
     if (this.inputTranscription) setup.inputAudioTranscription = {};
     if (this.outputTranscription) setup.outputAudioTranscription = {};
+    if (this.tools) setup.tools = [{ functionDeclarations: this.tools }];
 
     this.send({ setup });
   }
@@ -233,8 +255,21 @@ export class GeminiLiveClient {
     }
 
     if (msg.toolCall) {
-      // Future: handle tool calls
-      console.log("[GeminiLive] Tool call:", msg.toolCall);
+      const tc = msg.toolCall as {
+        functionCalls?: Array<{
+          id?: string;
+          name?: string;
+          args?: Record<string, unknown>;
+        }>;
+      };
+      const functionCalls: ToolFunctionCall[] = (tc.functionCalls ?? []).map((fc) => ({
+        id: fc.id ?? "",
+        name: fc.name ?? "",
+        args: (fc.args ?? {}) as Record<string, unknown>,
+      }));
+      if (functionCalls.length > 0) {
+        this.onEvent?.({ type: "tool_call", data: { functionCalls } });
+      }
     }
   }
 }

@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { GeminiLiveClient, type GeminiLiveEvent, type VoiceOption } from "@/lib/voice/gemini-live";
+import {
+  GeminiLiveClient,
+  type GeminiLiveEvent,
+  type VoiceOption,
+  type ToolFunctionCall,
+  type ToolFunctionResponse,
+} from "@/lib/voice/gemini-live";
 import { AudioCapture, AudioPlayback, checkAudioSupport } from "@/lib/voice/audio-utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -21,6 +27,12 @@ export interface VoiceTurn {
   text: string;
 }
 
+/** Callback xử lý tool call: nhận danh sách lời gọi + hàm `respond` để trả kết quả. */
+export type OnToolCall = (
+  calls: ToolFunctionCall[],
+  respond: (res: ToolFunctionResponse[]) => void
+) => void;
+
 export interface VoiceAssistantConfig {
   voice?: VoiceOption;
   systemInstruction?: string;
@@ -29,6 +41,13 @@ export interface VoiceAssistantConfig {
    * — để cha nhận được cả lượt cuối cùng khi component bị gỡ.
    */
   onTurnsChange?: (turns: VoiceTurn[]) => void;
+  /**
+   * Khai báo function calling gửi kèm setup — chỉ dùng cho eKid.
+   * Bỏ trống → AI Mentor hoạt động như cũ.
+   */
+  tools?: unknown[];
+  /** Xử lý khi model gọi hàm (chỉ khi eKid truyền `tools`). */
+  onToolCall?: OnToolCall;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -63,11 +82,16 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
   // khi đó KHÔNG cộng dồn thêm các part `text` để tránh nhân đôi lượt AI.
   const aiTranscribedRef = useRef(false);
   const onTurnsChangeRef = useRef(config?.onTurnsChange);
+  const onToolCallRef = useRef(config?.onToolCall);
 
   // Giữ callback mới nhất mà không cần đưa vào phụ thuộc của start().
   useEffect(() => {
     onTurnsChangeRef.current = config?.onTurnsChange;
   }, [config?.onTurnsChange]);
+
+  useEffect(() => {
+    onToolCallRef.current = config?.onToolCall;
+  }, [config?.onToolCall]);
 
   // Chốt một lượt vào mảng turns và báo lên cha (đồng bộ, best-effort).
   const commitTurn = useCallback((role: "user" | "ai", text: string) => {
@@ -189,6 +213,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
         systemInstruction: config?.systemInstruction || "",
         inputAudioTranscription: true,
         outputAudioTranscription: true,
+        tools: config?.tools,
       });
 
       client.onOpen = () => {
@@ -264,6 +289,13 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
             setSafeStatus("listening");
             setIsMicMuted(false);
             break;
+
+          case "tool_call":
+            // Model gọi hàm (eKid) — chuyển lên UI; UI xử lý xong gọi `respond`.
+            onToolCallRef.current?.(event.data.functionCalls, (res) => {
+              clientRef.current?.sendToolResponse(res);
+            });
+            break;
         }
       };
 
@@ -292,7 +324,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
       setError(msg);
       setSafeStatus("error");
     }
-  }, [config?.voice, config?.systemInstruction, setSafeStatus, resetTurns, flushTurns, commitPendingUser]);
+  }, [config?.voice, config?.systemInstruction, config?.tools, setSafeStatus, resetTurns, flushTurns, commitPendingUser]);
 
   const stop = useCallback(() => {
     // Chốt nốt lượt đang dở trước khi ngắt phiên.
@@ -318,6 +350,11 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
     }
   }, [status, setSafeStatus]);
 
+  /** Gửi kết quả xử lý tool call về cho model (dùng khi không dùng `respond` trong onToolCall). */
+  const sendToolResponse = useCallback((responses: ToolFunctionResponse[]) => {
+    clientRef.current?.sendToolResponse(responses);
+  }, []);
+
   return {
     status,
     transcript,
@@ -331,5 +368,6 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
     start,
     stop,
     toggleMute,
+    sendToolResponse,
   };
 }

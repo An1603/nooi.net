@@ -24,6 +24,7 @@
 - [ ] `InteractiveStage.tsx`: nhận danh sách "item" (exercise | media) + `onResolve(itemId, result)`; render thẻ trắc nghiệm (chọn đáp án, hiện đúng/sai) và thẻ media (img/YouTube embed/mp4); hỗ trợ nhiều item (mới nhất nổi bật + lịch sử cuộn).
 - [ ] `EkidTalkCard` + `EkidVoiceSession`: truyền `tools={EKID_TOOLS}` + `onToolCall` → tạo item từ `call.args` → render qua `InteractiveStage`; khi bé tương tác → `respond([{name, response}])` (vd `{chosen_index, correct}` / `{shown:true}`); ghi mỗi tool call + kết quả vào log hội thoại (đẩy vào turns với role đặc biệt hoặc metadata) để lưu vào session/memory.
 - [ ] Bổ sung mô tả công cụ vào `buildSystemInstruction` (mục CÔNG CỤ) để AI biết khi nào dùng.
+- [ ] **Persona & xưng hô** trong `buildSystemInstruction`: AI tự xưng **"thầy AI"/"cô AI"** (hoặc tên thân thiện), KHÔNG xưng "tôi"/"mình" lạnh lùng; gọi học sinh theo lứa tuổi — `mam-non`→**"con"** (hoặc "bé"), `tieu-hoc`→**"con"** (hoặc "em"), `thieu-nien`→**"em"** (hoặc "bạn"); thỉnh thoảng gọi tên bé; không dùng từ xưng hô suồng sã. Thêm hằng `BAND_ADDRESS` trong `ekid-system.ts`.
 - [ ] tsc + test + lint + `npm run build` sạch. Commit.
 
 ---

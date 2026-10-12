@@ -24,6 +24,15 @@
 ## Ghi log
 - Mỗi tool call (bài tập/ảnh/video) + kết quả bé tương tác được thêm vào log hội thoại → lưu vào `ekid_sessions.transcript`/`memory` (đã có) để chuẩn hoá nội dung sau.
 
+## Persona & xưng hô (Ngài An yêu cầu)
+- AI **tự xưng là "thầy AI" / "cô AI"** (hoặc một tên thân thiện được đặt) — gần gũi, KHÔNG xưng "tôi"/"mình" lạnh lùng. Giữ nhất quán trong suốt buổi.
+- **Gọi học sinh theo lứa tuổi**:
+  - `mam-non` (≤5 tuổi) → gọi **"con"** (có thể "bé"), câu rất ngắn.
+  - `tieu-hoc` (≤10 tuổi) → gọi **"con"** (hoặc "em").
+  - `thieu-nien` (>10 tuổi) → gọi **"em"** (hoặc "bạn").
+  - Thỉnh thoảng gọi tên bé để thân mật. TUYỆT ĐỐI không dùng từ xưng hô suồng sã/thiếu tôn trọng.
+- Áp dụng cho **mọi phiên** (trang chủ con + trong bài học).
+
 ## Ràng buộc
 - Nhánh `dev`; production = `main`; không migration mới (dùng cột sẵn có).
 - TS strict; tiếng Việt; KHÔNG phá AI Mentor (tính năng tùy chọn, chỉ bật cho eKid).

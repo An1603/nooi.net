@@ -1,4 +1,5 @@
 import type { VoiceOption } from "@/lib/voice/gemini-live";
+import { toolsPromptSection } from "@/lib/ekid/interactive";
 
 export type AgeBand = "mam-non" | "tieu-hoc" | "thieu-nien";
 
@@ -25,6 +26,26 @@ export const BAND_LABEL: Record<AgeBand, string> = {
   "mam-non": "Mầm non",
   "tieu-hoc": "Tiểu học",
   "thieu-nien": "Thiếu niên",
+};
+
+/**
+ * Cách gọi học sinh theo lứa tuổi (Ngài An yêu cầu).
+ * `student` = cách gọi chính; `alt` = cách gọi xen kẽ cho tự nhiên.
+ *  - mam-non  (≤5)  → "con" (hoặc "bé"), câu rất ngắn.
+ *  - tieu-hoc (≤10) → "con" (hoặc "em").
+ *  - thieu-nien (>10) → "em" (hoặc "bạn").
+ */
+export const BAND_ADDRESS: Record<AgeBand, { student: string; alt: string }> = {
+  "mam-non": { student: "con", alt: "bé" },
+  "tieu-hoc": { student: "con", alt: "em" },
+  "thieu-nien": { student: "em", alt: "bạn" },
+};
+
+/** Ghi chú độ dài/độ khó câu nói theo lứa tuổi (chèn vào system instruction). */
+const BAND_STYLE_NOTE: Record<AgeBand, string> = {
+  "mam-non": "Câu RẤT NGẮN, dùng từ ngữ đơn giản nhất, nói chậm và lặp lại nhẹ nhàng.",
+  "tieu-hoc": "Câu ngắn, vui vẻ, khuyến khích bé kể và đặt câu hỏi.",
+  "thieu-nien": "Câu gọn, tôn trọng, khuyến khích em suy nghĩ và tự trình bày.",
 };
 
 function asDate(d: string | Date): Date {
@@ -374,21 +395,28 @@ export function buildSystemInstruction(params: {
 }): string {
   const { kidName, placement, lessonTopic, recentNotes, exercises, freeSession } = params;
   const band = BAND_LABEL[placement.ageBand];
+  const addr = BAND_ADDRESS[placement.ageBand];
+  const styleNote = BAND_STYLE_NOTE[placement.ageBand];
   const exLines = (exercises ?? [])
     .map((e, i) => `${i + 1}. ${e.question} (đáp án: ${e.options[e.answer_index]})`)
     .join("\n");
 
   return [
-    `Bạn là "eKid" — người bạn AI thân thiết, vui vẻ của bé ${kidName}.`,
-    `Bé đang ở trình độ: ${band}, cấp ${placement.level}.`,
-    `Luôn nói tiếng Việt, giọng ấm áp, câu ngắn, dùng từ đơn giản phù hợp lứa tuổi.`,
+    `Bạn là "eKid" — người bạn AI thân thiết, ấm áp của ${addr.student} ${kidName}.`,
+    // ── Xưng hô (Ngài An yêu cầu) ───────────────────────────────────────────
+    `Cách tự xưng: AI tự gọi mình là "thầy AI" hoặc "cô AI" (chọn MỘT cách và giữ nhất quán suốt buổi). TUYỆT ĐỐI KHÔNG xưng "tôi"/"mình" lạnh lùng.`,
+    `Cách gọi học sinh: gọi ${addr.student} (thỉnh thoảng xen "${addr.alt}"); thi thoảng gọi tên "${kidName}" cho thân mật. KHÔNG dùng từ xưng hô suồng sã, thiếu tôn trọng.`,
+    `Bé ${kidName} đang ở trình độ: ${band}, cấp ${placement.level}.`,
+    `Luôn nói tiếng Việt, giọng ấm áp. ${styleNote}`,
     freeSession
-      ? `Bạn CHỦ ĐỘNG trò chuyện: chào bé, hỏi bé hôm nay thế nào, gợi chuyện học tập và vui chơi, khuyến khích bé kể và đặt câu hỏi.`
-      : `Bạn CHỦ ĐỘNG trò chuyện: chào bé, hỏi bé muốn học gì, rồi mời bé làm bài tập.`,
-    `Khen ngợi cụ thể khi bé đúng, động viên nhẹ nhàng khi bé sai, KHÔNG chê.`,
+      ? `Bạn CHỦ ĐỘNG trò chuyện: chào ${addr.student}, hỏi ${addr.student} hôm nay thế nào, gợi chuyện học tập và vui chơi, khuyến khích ${addr.student} kể và đặt câu hỏi.`
+      : `Bạn CHỦ ĐỘNG trò chuyện: chào ${addr.student}, hỏi ${addr.student} muốn học gì, rồi mời ${addr.student} làm bài tập.`,
+    `Khen ngợi cụ thể khi ${addr.student} đúng, động viên nhẹ nhàng khi ${addr.student} sai, KHÔNG chê.`,
     lessonTopic ? `Chủ đề hôm nay: ${lessonTopic}.` : "",
-    exLines ? `Các bài tập sẽ hiện trên màn hình (đọc câu hỏi cho bé nghe):\n${exLines}` : "",
-    recentNotes ? `Ghi chú về bé từ buổi trước: ${recentNotes}` : "",
-    exLines ? `Mỗi khi ra bài, đọc to câu hỏi và các lựa chọn để bé chọn hoặc nói đáp án.` : "",
+    exLines ? `Các bài tập sẽ hiện trên màn hình (đọc câu hỏi cho ${addr.student} nghe):\n${exLines}` : "",
+    recentNotes ? `Ghi chú về ${addr.student} từ buổi trước: ${recentNotes}` : "",
+    exLines ? `Mỗi khi ra bài, đọc to câu hỏi và các lựa chọn để ${addr.student} chọn hoặc nói đáp án.` : "",
+    // ── Công cụ hiển thị lên màn hình (bài tập/ảnh/video) ───────────────────
+    toolsPromptSection(),
   ].filter(Boolean).join("\n");
 }

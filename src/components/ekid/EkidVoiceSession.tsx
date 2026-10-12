@@ -1,11 +1,13 @@
 "use client";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
-import type { VoiceTurn } from "@/components/voice/useVoiceAssistant";
 import { ExerciseCard } from "./ExerciseCard";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import type { AgeBand, EkidExercise } from "@/lib/ekid/ekid-system";
 import { BAND_VOICE, buildSystemInstruction } from "@/lib/ekid/ekid-system";
+import { EKID_TOOLS } from "@/lib/ekid/interactive";
+import { InteractiveStage } from "@/components/ekid/child/InteractiveStage";
+import { useEkidInteractive } from "@/components/ekid/child/useEkidInteractive";
 
 export interface EkidKidLite {
   id: string;
@@ -60,11 +62,9 @@ export function EkidVoiceSession({
   const [results, setResults] = useState<{ i: number; correct: boolean }[]>([]);
   const startedRef = useMemo(() => Date.now(), []);
 
-  // Hội thoại thật của buổi (bé ↔ AI) — tích luỹ từ VoiceAssistant để lưu cùng phiên.
-  const turnsRef = useRef<VoiceTurn[]>([]);
-  const onTurnsChange = useCallback((turns: VoiceTurn[]) => {
-    turnsRef.current = turns;
-  }, []);
+  // Hội thoại thật của buổi (bé ↔ AI) + sự kiện công cụ (bài tập/ảnh/video)
+  // — gom qua useEkidInteractive để lưu cùng phiên.
+  const interactive = useEkidInteractive();
 
   const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
     ? kid.favorite_voice
@@ -96,7 +96,7 @@ export function EkidVoiceSession({
         kid_id: kid.id,
         lesson_id: lesson?.id ?? null,
         duration_min: duration,
-        transcript: turnsRef.current,
+        transcript: interactive.getLog(),
         exercises_done: results.map((r) => ({ exercise_id: r.i, correct: r.correct })),
       }),
     });
@@ -105,13 +105,18 @@ export function EkidVoiceSession({
   return (
     <div className="flex flex-col gap-5">
       {remaining > 0 ? (
-        <VoiceAssistant
-          voice={voice}
-          systemInstruction={systemInstruction}
-          title={`Cùng học với ${kid.name}`}
-          hideTranscript
-          onTurnsChange={onTurnsChange}
-        />
+        <>
+          <VoiceAssistant
+            voice={voice}
+            systemInstruction={systemInstruction}
+            title={`Cùng học với ${kid.name}`}
+            hideTranscript
+            onTurnsChange={interactive.onTurnsChange}
+            tools={EKID_TOOLS}
+            onToolCall={interactive.onToolCall}
+          />
+          <InteractiveStage items={interactive.items} onResolve={interactive.onResolve} />
+        </>
       ) : (
         <div
           role="status"

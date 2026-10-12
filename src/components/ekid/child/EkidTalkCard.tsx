@@ -6,11 +6,13 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
-import type { VoiceTurn } from "@/components/voice/useVoiceAssistant";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
 import { BAND_VOICE, buildSystemInstruction } from "@/lib/ekid/ekid-system";
+import { EKID_TOOLS } from "@/lib/ekid/interactive";
 import { KID } from "@/components/ekid/child/kid-theme";
+import { InteractiveStage } from "@/components/ekid/child/InteractiveStage";
+import { useEkidInteractive } from "@/components/ekid/child/useEkidInteractive";
 
 /** Hồ sơ bé rút gọn — đủ để chọn giọng + dựng system instruction + lưu bộ nhớ. */
 export interface TalkKid {
@@ -73,21 +75,20 @@ export function EkidTalkCard({ kid, remaining }: { kid: TalkKid; remaining: numb
     ],
   );
 
+  // ── Lớp tương tác (bài tập/ảnh/video) + ghi log hội thoại ────────────────
+  const { items, onToolCall, onTurnsChange, onResolve, getLog } = useEkidInteractive();
+
   // ── Thu thập + tự lưu hội thoại ─────────────────────────────────────────
-  const turnsRef = useRef<VoiceTurn[]>([]);
   const sentRef = useRef(false); // Chỉ gửi MỘT LẦN cho mỗi buổi.
   const startedAtRef = useRef<number>(0);
   if (startedAtRef.current === 0) startedAtRef.current = Date.now();
 
-  const onTurnsChange = useCallback((turns: VoiceTurn[]) => {
-    turnsRef.current = turns;
-  }, []);
-
   // Best-effort: gửi toàn bộ lượt hội thoại + số phút tới API lưu bộ nhớ.
+  // Log gồm cả sự kiện công cụ (bài tập/ảnh/video) để chuẩn hoá nội dung về sau.
   // Im lặng tuyệt đối nếu lỗi; chỉ gửi khi có lượt và chưa gửi lần nào.
   const saveSession = useCallback(() => {
     if (sentRef.current) return;
-    const turns = turnsRef.current;
+    const turns = getLog();
     if (turns.length === 0) return;
     sentRef.current = true;
 
@@ -102,7 +103,7 @@ export function EkidTalkCard({ kid, remaining }: { kid: TalkKid; remaining: numb
     } catch {
       // Bỏ qua — không chặn luồng nói của bé.
     }
-  }, [kid.id]);
+  }, [kid.id, getLog]);
 
   useEffect(() => {
     const onVisibility = () => {
@@ -138,13 +139,18 @@ export function EkidTalkCard({ kid, remaining }: { kid: TalkKid; remaining: numb
       </div>
 
       {remaining > 0 ? (
-        <VoiceAssistant
-          voice={voice}
-          systemInstruction={systemInstruction}
-          title={`Bạn AI của ${kid.name}`}
-          hideTranscript
-          onTurnsChange={onTurnsChange}
-        />
+        <>
+          <VoiceAssistant
+            voice={voice}
+            systemInstruction={systemInstruction}
+            title={`Bạn AI của ${kid.name}`}
+            hideTranscript
+            onTurnsChange={onTurnsChange}
+            tools={EKID_TOOLS}
+            onToolCall={onToolCall}
+          />
+          <InteractiveStage items={items} onResolve={onResolve} />
+        </>
       ) : (
         <div
           role="status"

@@ -7,10 +7,23 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // VÀ `POST /api/ekid/session` (buổi học có bài) đều biên tập bộ nhớ GIỐNG NHAU.
 // Mọi hàm ở đây là BEST-EFFORT: lỗi LLM/DB KHÔNG được ném ra ngoài.
 
+/**
+ * Một lượt trong log hội thoại eKid.
+ * - `user` / `ai`: lời BÉ và lời AI (như trước).
+ * - `tool`: sự kiện lớp tương tác v3.1 (AI gọi công cụ hiện bài tập/ảnh/video,
+ *   và kết quả bé tương tác). Lưu kèm để Ngài An chuẩn hoá nội dung về sau.
+ */
 export interface Turn {
-  role: "user" | "ai";
+  role: "user" | "ai" | "tool";
   text: string;
 }
+
+/** Nhãn hiển thị của từng role khi ghép transcript cho prompt bộ nhớ. */
+const ROLE_LABEL: Record<Turn["role"], string> = {
+  user: "BÉ",
+  ai: "AI",
+  tool: "CÔNG CỤ",
+};
 
 // Giới hạn kích thước — chống lạm dụng dung lượng DB và đốt token LLM.
 export const MEMORY_CAPS = {
@@ -53,7 +66,7 @@ export function normalizeTurns(raw: unknown): Turn[] {
     if (!isRecord(item)) continue;
     const role = item.role;
     const text = typeof item.text === "string" ? item.text.trim() : "";
-    if ((role === "user" || role === "ai") && text) {
+    if ((role === "user" || role === "ai" || role === "tool") && text) {
       const remaining = MEMORY_CAPS.maxTranscriptChars - total;
       if (remaining <= 0) break;
       const clipped = text.length > remaining ? text.slice(0, remaining) : text;
@@ -69,7 +82,7 @@ export function renderTranscript(turns: Turn[]): string {
   const lines: string[] = [];
   let total = 0;
   for (const t of turns.slice(0, MEMORY_CAPS.maxTurns)) {
-    const line = `${t.role === "user" ? "BÉ" : "AI"}: ${t.text}`;
+    const line = `${ROLE_LABEL[t.role]}: ${t.text}`;
     total += line.length;
     if (total > MEMORY_CAPS.maxTranscriptChars) break;
     lines.push(line);

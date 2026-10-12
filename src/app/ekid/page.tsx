@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LessonCard } from "@/components/ekid/child/LessonCard";
+import { EkidTalkCard } from "@/components/ekid/child/EkidTalkCard";
 import { KID } from "@/components/ekid/child/kid-theme";
 import type { LibraryKid, LibraryLesson } from "@/components/ekid/child/types";
+import type { AgeBand } from "@/lib/ekid/ekid-system";
 
 async function readJson(r: Response): Promise<Record<string, unknown>> {
   try {
@@ -27,6 +29,7 @@ export default function EkidLibraryPage() {
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [part, setPart] = useState<string>("all");
+  const [remaining, setRemaining] = useState(30);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,6 +50,26 @@ export default function EkidLibraryPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Số phút còn lại hôm nay — lấy từ /api/ekid/session, fallback daily_limit_min.
+  useEffect(() => {
+    if (!kid?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`/api/ekid/session?kid_id=${encodeURIComponent(kid.id)}`);
+        const d = await readJson(r);
+        if (cancelled) return;
+        if (r.ok && typeof d.remaining === "number") setRemaining(d.remaining);
+        else setRemaining(kid.daily_limit_min ?? 30);
+      } catch {
+        if (!cancelled) setRemaining(kid.daily_limit_min ?? 30);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [kid]);
 
   // Danh sách nhóm có thật trong dữ liệu (để dựng bộ lọc).
   const parts = useMemo(() => {
@@ -103,14 +126,28 @@ export default function EkidLibraryPage() {
         </Link>
       </div>
 
-      {/* Lối vào chính: NÓI CHUYỆN LIVE với bạn AI (phiên voice nằm trong trang học). */}
-      {lessons.length > 0 ? (
-        <Link href={`/hoc/${lessons[0].id}`} className={`${KID.btnHero} w-full text-center`}>
-          🎙️ Nói chuyện &amp; học cùng bạn AI
-        </Link>
+      {/* Đầu trang: khung trò chuyện AI (kiểu NOOI AI Mentor). */}
+      {kid ? (
+        <EkidTalkCard
+          kid={{
+            name: kid.name,
+            favorite_voice: kid.favorite_voice ?? null,
+            placement_age_band: (kid.placement_age_band as AgeBand | null) ?? null,
+            placement_level: kid.placement_level ?? null,
+          }}
+          remaining={remaining}
+        />
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      {/* Link nhỏ dẫn xuống thư viện bài học bên dưới. */}
+      <a
+        href="#thu-vien"
+        className={`${KID.btnGhost} w-full text-center sm:w-auto sm:self-start`}
+      >
+        📚 Xem bài học
+      </a>
+
+      <div id="thu-vien" className="flex flex-col gap-3 sm:flex-row">
         <input
           type="text"
           value={q}

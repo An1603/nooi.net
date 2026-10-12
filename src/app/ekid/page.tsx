@@ -132,10 +132,12 @@ export default function EkidLibraryPage() {
       {kid ? (
         <EkidTalkCard
           kid={{
+            id: kid.id,
             name: kid.name,
             favorite_voice: kid.favorite_voice ?? null,
             placement_age_band: (kid.placement_age_band as AgeBand | null) ?? null,
             placement_level: kid.placement_level ?? null,
+            memory: kid.memory ?? null,
           }}
           remaining={remaining}
         />

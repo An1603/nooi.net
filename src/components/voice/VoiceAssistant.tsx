@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useVoiceAssistant, type VoiceStatus } from "./useVoiceAssistant";
+import { useVoiceAssistant, type VoiceStatus, type VoiceTurn } from "./useVoiceAssistant";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import { VoiceVisualizer } from "./VoiceVisualizer";
 import {
@@ -33,6 +33,11 @@ interface VoiceAssistantProps {
   title?: string;
   /** Ẩn khối hội thoại (bong bóng chữ) — chỉ giữ visualizer giọng nói. */
   hideTranscript?: boolean;
+  /**
+   * Báo lên cha mỗi khi danh sách lượt hội thoại thay đổi (tùy chọn).
+   * Mặc định bỏ trống → không ảnh hưởng AI Mentor.
+   */
+  onTurnsChange?: (turns: VoiceTurn[]) => void;
 }
 
 export function VoiceAssistant({
@@ -40,6 +45,7 @@ export function VoiceAssistant({
   systemInstruction,
   title = "Trợ lý giọng nói",
   hideTranscript = false,
+  onTurnsChange,
 }: VoiceAssistantProps) {
   const {
     status,
@@ -50,7 +56,7 @@ export function VoiceAssistant({
     isMicMuted,
     start,
     stop,
-  } = useVoiceAssistant({ voice, systemInstruction });
+  } = useVoiceAssistant({ voice, systemInstruction, onTurnsChange });
 
   const [showChat, setShowChat] = useState(true);
   const [isHovered, setIsHovered] = useState(false);

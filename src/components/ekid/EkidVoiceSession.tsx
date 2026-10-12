@@ -1,6 +1,7 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
+import type { VoiceTurn } from "@/components/voice/useVoiceAssistant";
 import { ExerciseCard } from "./ExerciseCard";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import type { AgeBand, EkidExercise } from "@/lib/ekid/ekid-system";
@@ -59,6 +60,12 @@ export function EkidVoiceSession({
   const [results, setResults] = useState<{ i: number; correct: boolean }[]>([]);
   const startedRef = useMemo(() => Date.now(), []);
 
+  // Hội thoại thật của buổi (bé ↔ AI) — tích luỹ từ VoiceAssistant để lưu cùng phiên.
+  const turnsRef = useRef<VoiceTurn[]>([]);
+  const onTurnsChange = useCallback((turns: VoiceTurn[]) => {
+    turnsRef.current = turns;
+  }, []);
+
   const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
     ? kid.favorite_voice
     : BAND_VOICE[kid.placement_age_band ?? "mam-non"];
@@ -89,7 +96,7 @@ export function EkidVoiceSession({
         kid_id: kid.id,
         lesson_id: lesson?.id ?? null,
         duration_min: duration,
-        transcript: [],
+        transcript: turnsRef.current,
         exercises_done: results.map((r) => ({ exercise_id: r.i, correct: r.correct })),
       }),
     });
@@ -103,6 +110,7 @@ export function EkidVoiceSession({
           systemInstruction={systemInstruction}
           title={`Cùng học với ${kid.name}`}
           hideTranscript
+          onTurnsChange={onTurnsChange}
         />
       ) : (
         <div

@@ -15,9 +15,20 @@ export type VoiceStatus =
   | "speaking"   // Gemini responding
   | "error";     // Something failed
 
+/** Một lượt hội thoại trong phiên: bé nói (user) hoặc AI đáp (ai). */
+export interface VoiceTurn {
+  role: "user" | "ai";
+  text: string;
+}
+
 export interface VoiceAssistantConfig {
   voice?: VoiceOption;
   systemInstruction?: string;
+  /**
+   * Gọi NGAY khi danh sách lượt hội thoại thay đổi (đồng bộ, không qua effect)
+   * — để cha nhận được cả lượt cuối cùng khi component bị gỡ.
+   */
+  onTurnsChange?: (turns: VoiceTurn[]) => void;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -31,12 +42,73 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
   const [support, setSupport] = useState<{ supported: boolean; missing: string[] } | null>(null);
   const [isMicMuted, setIsMicMuted] = useState(true);
   const [voiceKey, setVoiceKey] = useState(0); // Increment to force reconnect
+  const [turns, setTurns] = useState<VoiceTurn[]>([]);
 
   const clientRef = useRef<GeminiLiveClient | null>(null);
   const captureRef = useRef<AudioCapture | null>(null);
   const playbackRef = useRef<AudioPlayback | null>(null);
   const statusRef = useRef<VoiceStatus>("init");
   const voiceRef = useRef<string>(config?.voice || "Puck");
+
+  // ── Tích luỹ hội thoại ──────────────────────────────────────────────────
+  // turnsRef: bản sao đồng bộ của `turns` (tránh stale closure trong handler).
+  // curUserRef/curAiRef: văn bản ĐANG nói của lượt hiện tại (transcription tích
+  // luỹ theo lượt); userCommittedRef/aiCommittedRef: đã chốt lượt hiện tại chưa.
+  const turnsRef = useRef<VoiceTurn[]>([]);
+  const curUserRef = useRef("");
+  const curAiRef = useRef("");
+  const userCommittedRef = useRef(false);
+  const aiCommittedRef = useRef(false);
+  const onTurnsChangeRef = useRef(config?.onTurnsChange);
+
+  // Giữ callback mới nhất mà không cần đưa vào phụ thuộc của start().
+  useEffect(() => {
+    onTurnsChangeRef.current = config?.onTurnsChange;
+  }, [config?.onTurnsChange]);
+
+  // Chốt một lượt vào mảng turns và báo lên cha (đồng bộ, best-effort).
+  const commitTurn = useCallback((role: "user" | "ai", text: string) => {
+    const clean = text.trim();
+    if (!clean) return;
+    const next = [...turnsRef.current, { role, text: clean }];
+    turnsRef.current = next;
+    setTurns(next);
+    onTurnsChangeRef.current?.(next);
+  }, []);
+
+  // Chốt lượt BÉ khi AI bắt đầu trả lời (hoặc khi đổi lượt).
+  const commitPendingUser = useCallback(() => {
+    if (userCommittedRef.current) return;
+    userCommittedRef.current = true;
+    commitTurn("user", curUserRef.current);
+  }, [commitTurn]);
+
+  // Chốt lượt AI khi lượt AI kết thúc (turn_complete) hoặc bị ngắt/đổi lượt.
+  const commitPendingAi = useCallback(() => {
+    if (aiCommittedRef.current) return;
+    aiCommittedRef.current = true;
+    commitTurn("ai", curAiRef.current);
+  }, [commitTurn]);
+
+  // Chốt mọi lượt đang dở rồi mở lượt mới (khi kết thúc/đổi lượt).
+  const flushTurns = useCallback(() => {
+    commitPendingUser();
+    commitPendingAi();
+    curUserRef.current = "";
+    curAiRef.current = "";
+    userCommittedRef.current = false;
+    aiCommittedRef.current = false;
+  }, [commitPendingUser, commitPendingAi]);
+
+  // Reset toàn bộ tích luỹ (bắt đầu phiên mới).
+  const resetTurns = useCallback(() => {
+    turnsRef.current = [];
+    curUserRef.current = "";
+    curAiRef.current = "";
+    userCommittedRef.current = false;
+    aiCommittedRef.current = false;
+    setTurns([]);
+  }, []);
 
   // Listen for voice changes from VoiceSelector
   useEffect(() => {
@@ -88,6 +160,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
     setError(null);
     setTranscript("");
     setResponse("");
+    resetTurns();
     setSafeStatus("connecting");
 
     try {
@@ -118,6 +191,8 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
       };
 
       client.onClose = () => {
+        // Chốt nốt lượt đang dở để không mất hội thoại khi ngắt kết nối.
+        flushTurns();
         setSafeStatus("ready");
         captureRef.current?.stop();
         setIsMicMuted(true);
@@ -137,34 +212,46 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
             break;
 
           case "audio":
+            // AI bắt đầu đáp → chốt lượt BÉ trước khi AI nói.
+            commitPendingUser();
             setSafeStatus("speaking");
             setIsMicMuted(true);
             playbackRef.current?.playBase64PCM(event.data);
             break;
 
           case "text":
+            commitPendingUser();
             setResponse((prev) => prev + event.data);
             break;
 
           case "input_transcription":
             if (event.data.text) {
+              // Văn bản tích luỹ theo ĐÚNG lượt này của bé.
+              curUserRef.current = event.data.text;
               setTranscript(event.data.text);
             }
             break;
 
           case "output_transcription":
             if (event.data.text) {
+              // AI bắt đầu đáp → chốt lượt bé; tích luỹ văn bản AI của lượt này.
+              commitPendingUser();
+              curAiRef.current = event.data.text;
               setResponse(event.data.text);
             }
             break;
 
           case "interrupted":
+            // AI bị ngắt giữa lượt → chốt phần đã nói rồi mở lượt mới.
+            flushTurns();
             playbackRef.current?.stop();
             setSafeStatus("listening");
             setIsMicMuted(false);
             break;
 
           case "turn_complete":
+            // Lượt AI kết thúc → chốt lượt AI + mở lượt mới cho bé.
+            flushTurns();
             setSafeStatus("listening");
             setIsMicMuted(false);
             break;
@@ -196,16 +283,18 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
       setError(msg);
       setSafeStatus("error");
     }
-  }, [config?.voice, config?.systemInstruction, setSafeStatus]);
+  }, [config?.voice, config?.systemInstruction, setSafeStatus, resetTurns, flushTurns, commitPendingUser]);
 
   const stop = useCallback(() => {
+    // Chốt nốt lượt đang dở trước khi ngắt phiên.
+    flushTurns();
     captureRef.current?.stop();
     clientRef.current?.disconnect();
     playbackRef.current?.stop();
     setIsMicMuted(true);
     setAudioLevel(0);
     setSafeStatus("ready");
-  }, [setSafeStatus]);
+  }, [setSafeStatus, flushTurns]);
 
   const toggleMute = useCallback(() => {
     // For now, toggle = stop/start
@@ -224,6 +313,8 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
     status,
     transcript,
     response,
+    /** Toàn bộ lượt hội thoại tích luỹ trong phiên (bé ↔ AI). */
+    turns,
     audioLevel,
     error,
     support,

@@ -143,7 +143,7 @@ function parseIPv6Bytes(raw: string): number[] | null {
 }
 
 function isBlockedIPv4(o: [number, number, number, number]): boolean {
-  const [a, b] = o;
+  const [a, b, c] = o;
   if (a === 0) return true; // 0.0.0.0/8 ("this network"/unspecified)
   if (a === 10) return true; // 10.0.0.0/8 private
   if (a === 100 && b >= 64 && b <= 127) return true; // 100.64.0.0/10 CGNAT
@@ -151,6 +151,10 @@ function isBlockedIPv4(o: [number, number, number, number]): boolean {
   if (a === 169 && b === 254) return true; // 169.254.0.0/16 link-local (gồm metadata)
   if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12 private
   if (a === 192 && b === 168) return true; // 192.168.0.0/16 private
+  if (a === 192 && b === 0) return true; // 192.0.0.0/24 IETF + 192.0.2.0/24 TEST-NET-1
+  if (a === 198 && b >= 18 && b <= 19) return true; // 198.18.0.0/15 benchmarking
+  if (a === 198 && b === 51 && c === 100) return true; // 198.51.100.0/24 TEST-NET-2
+  if (a === 203 && b === 0 && c === 113) return true; // 203.0.113.0/24 TEST-NET-3
   if (a >= 224) return true; // 224.0.0.0/4 multicast + 240.0.0.0/4 reserved + broadcast
   return false;
 }
@@ -163,6 +167,7 @@ function isBlockedIPv6(bytes: number[]): boolean {
   if (bytes.slice(0, 15).every((x) => x === 0) && bytes[15] === 1) return true; // ::1 loopback
   if ((b0 & 0xfe) === 0xfc) return true; // fc00::/7 unique-local
   if (b0 === 0xfe && (b1 & 0xc0) === 0x80) return true; // fe80::/10 link-local
+  if (b0 === 0x20 && b1 === 0x02) return true; // 2002::/16 6to4 (có thể bọc IPv4 nội bộ)
 
   const first10Zero = bytes.slice(0, 10).every((x) => x === 0);
   if (first10Zero && bytes[10] === 0xff && bytes[11] === 0xff) {

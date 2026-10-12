@@ -120,6 +120,16 @@ describe("media-validate — isBlockedAddress (SSRF, tĩnh)", () => {
     expect(isBlockedAddress("255.255.255.255")).toBe(true);
   });
 
+  it("chặn dải đặc biệt: IETF/TEST-NET/benchmarking/6to4", () => {
+    expect(isBlockedAddress("192.0.0.1")).toBe(true); // 192.0.0.0/24 IETF
+    expect(isBlockedAddress("192.0.2.1")).toBe(true); // TEST-NET-1
+    expect(isBlockedAddress("198.18.0.1")).toBe(true); // benchmarking
+    expect(isBlockedAddress("198.19.255.255")).toBe(true); // benchmarking (biên trên)
+    expect(isBlockedAddress("198.51.100.1")).toBe(true); // TEST-NET-2
+    expect(isBlockedAddress("203.0.113.1")).toBe(true); // TEST-NET-3
+    expect(isBlockedAddress("2002:7f00:1::")).toBe(true); // 6to4
+  });
+
   it("chặn IPv6 loopback/ULA/link-local/IPv4-mapped", () => {
     expect(isBlockedAddress("::1")).toBe(true);
     expect(isBlockedAddress("[::1]")).toBe(true);

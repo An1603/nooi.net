@@ -195,8 +195,23 @@ function youtubeEmbedUrl(url: string): string | null {
   }
 }
 
+/** Chỉ cho phép scheme http/https — chặn javascript:, data:, vbscript:, file:... */
+function isSafeUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
+/** Thông báo khi URL do AI cung cấp không phải http/https (phòng thủ). */
+function UnsafeNotice() {
+  return (
+    <div className="flex h-full w-full items-center justify-center px-4 text-center text-base font-semibold text-[#6b5648]">
+      Không hiển thị được nội dung này.
+    </div>
+  );
+}
+
 function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }> }) {
   const embed = item.mediaType === "video" ? youtubeEmbedUrl(item.url) : null;
+  const safe = isSafeUrl(item.url);
 
   const container = useMemo(
     () => "overflow-hidden rounded-2xl border-2 border-[#bae6fd] bg-[#f7fcff]",
@@ -207,13 +222,17 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
     <div className={container}>
       <div className="aspect-video w-full bg-white">
         {item.mediaType === "image" ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.url}
-            alt={item.caption ?? "Hình minh hoạ"}
-            className="h-full w-full object-contain"
-            loading="lazy"
-          />
+          safe ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={item.url}
+              alt={item.caption ?? "Hình minh hoạ"}
+              className="h-full w-full object-contain"
+              loading="lazy"
+            />
+          ) : (
+            <UnsafeNotice />
+          )
         ) : embed ? (
           <iframe
             src={embed}
@@ -222,7 +241,7 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
-        ) : (
+        ) : safe ? (
           <video
             src={item.url}
             controls
@@ -230,6 +249,8 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
             className="h-full w-full"
             aria-label={item.caption ?? "Video minh hoạ"}
           />
+        ) : (
+          <UnsafeNotice />
         )}
       </div>
       {item.caption && (

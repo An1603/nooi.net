@@ -136,7 +136,8 @@ export function useEkidInteractive(): EkidInteractiveController {
           continue;
         }
         respondRef.current.set(item.id, respond);
-        setItems((prev) => [...prev, item]);
+        // Giữ tối đa 30 item gần nhất — tránh DOM phình vô hạn trong phiên dài.
+        setItems((prev) => [...prev, item].slice(-30));
         pushLog({
           role: "tool",
           text: `AI hiện ${item.kind === "exercise" ? "bài tập" : "nội dung"} lên màn hình.`,

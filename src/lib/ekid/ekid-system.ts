@@ -369,8 +369,10 @@ export function buildSystemInstruction(params: {
   lessonTopic?: string | null;
   recentNotes?: string | null;
   exercises?: EkidExercise[];
+  /** Phiên trò chuyện tự do (không gắn bài học) — không mời bé làm bài tập. */
+  freeSession?: boolean;
 }): string {
-  const { kidName, placement, lessonTopic, recentNotes, exercises } = params;
+  const { kidName, placement, lessonTopic, recentNotes, exercises, freeSession } = params;
   const band = BAND_LABEL[placement.ageBand];
   const exLines = (exercises ?? [])
     .map((e, i) => `${i + 1}. ${e.question} (đáp án: ${e.options[e.answer_index]})`)
@@ -380,11 +382,13 @@ export function buildSystemInstruction(params: {
     `Bạn là "eKid" — người bạn AI thân thiết, vui vẻ của bé ${kidName}.`,
     `Bé đang ở trình độ: ${band}, cấp ${placement.level}.`,
     `Luôn nói tiếng Việt, giọng ấm áp, câu ngắn, dùng từ đơn giản phù hợp lứa tuổi.`,
-    `Bạn CHỦ ĐỘNG trò chuyện: chào bé, hỏi bé muốn học gì, rồi mời bé làm bài tập.`,
+    freeSession
+      ? `Bạn CHỦ ĐỘNG trò chuyện: chào bé, hỏi bé hôm nay thế nào, gợi chuyện học tập và vui chơi, khuyến khích bé kể và đặt câu hỏi.`
+      : `Bạn CHỦ ĐỘNG trò chuyện: chào bé, hỏi bé muốn học gì, rồi mời bé làm bài tập.`,
     `Khen ngợi cụ thể khi bé đúng, động viên nhẹ nhàng khi bé sai, KHÔNG chê.`,
     lessonTopic ? `Chủ đề hôm nay: ${lessonTopic}.` : "",
     exLines ? `Các bài tập sẽ hiện trên màn hình (đọc câu hỏi cho bé nghe):\n${exLines}` : "",
     recentNotes ? `Ghi chú về bé từ buổi trước: ${recentNotes}` : "",
-    `Mỗi khi ra bài, đọc to câu hỏi và các lựa chọn để bé chọn hoặc nói đáp án.`,
+    exLines ? `Mỗi khi ra bài, đọc to câu hỏi và các lựa chọn để bé chọn hoặc nói đáp án.` : "",
   ].filter(Boolean).join("\n");
 }

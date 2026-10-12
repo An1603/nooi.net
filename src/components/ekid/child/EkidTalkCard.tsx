@@ -56,6 +56,7 @@ export function EkidTalkCard({ kid, remaining }: { kid: TalkKid; remaining: numb
         },
         lessonTopic: undefined,
         exercises: [],
+        freeSession: true,
       }),
     [kid],
   );

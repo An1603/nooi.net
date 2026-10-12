@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { remainingMinutes, resolvePlacement, normalizeKidSettings, isWithinAllowedHours, vnDayString, vnDayStart } from "@/lib/ekid/ekid-system";
-import { MEMORY_CAPS, memoryRateLimitOk, normalizeTurns, summarizeAndUpdateMemory } from "@/lib/ekid/kid-memory";
+import { MEMORY_CAPS, isRecord, memoryRateLimitOk, normalizeTurns, summarizeAndUpdateMemory } from "@/lib/ekid/kid-memory";
 
 export const dynamic = "force-dynamic";
 
@@ -126,7 +126,25 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
 
-  const body = (await req.json()) ?? {};
+  // (X3) Guard kích thước body (giống endpoint memory): header Content-Length HOẶC độ dài thực
+  //      đọc được > 256 KB → 413, tránh parse body khổng lồ tốn RAM/CPU.
+  const declaredLength = Number(req.headers.get("content-length") ?? 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MEMORY_CAPS.maxBodyBytes) {
+    return NextResponse.json({ error: "Dữ liệu gửi lên quá lớn" }, { status: 413 });
+  }
+  const rawText = await req.text().catch(() => "");
+  if (rawText.length > MEMORY_CAPS.maxBodyBytes) {
+    return NextResponse.json({ error: "Dữ liệu gửi lên quá lớn" }, { status: 413 });
+  }
+  let body: Record<string, unknown> = {};
+  if (rawText) {
+    try {
+      const parsed = JSON.parse(rawText);
+      if (isRecord(parsed)) body = parsed;
+    } catch {
+      body = {};
+    }
+  }
   const { kid_id, lesson_id, transcript, exercises_done, duration_min, ai_notes } = body as {
     kid_id?: string;
     lesson_id?: string | null;
@@ -214,17 +232,6 @@ export async function POST(req: Request) {
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // (F3) Buổi học CÓ BÀI cũng cập nhật bộ nhớ: khi có hội thoại, biên tập memory về bé
-  // qua helper DÙNG CHUNG với endpoint memory. BEST-EFFORT: lỗi LLM không chặn phiên.
-  // Chỉ chạy khi còn hạn mức mềm (tránh đốt token Gemini) — vượt hạn mức thì im lặng bỏ qua.
-  if (cleanTurns.length > 0 && memoryRateLimitOk(user.id)) {
-    await summarizeAndUpdateMemory(kid_id, cleanTurns, {
-      sessionId: data.id,
-      kidName: kid.name,
-      currentMemory: kid.memory,
-    });
-  }
-
   // (I-C1) Khi con vừa học xong một bài có lesson_id: đánh dấu tiến độ 'da-hoc'
   // — nhưng KHÔNG hạ cấp bài đã 'da-thi' xuống.
   if (lesson_id) {
@@ -255,6 +262,20 @@ export async function POST(req: Request) {
     })
     .eq("id", kid_id);
   if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+
+  // (F3 + X2) Buổi học CÓ BÀI cũng cập nhật bộ nhớ: khi có hội thoại, biên tập memory về bé
+  // qua helper DÙNG CHUNG với endpoint memory. BEST-EFFORT + FIRE-AND-FORGET: chạy NỀN SAU
+  // khi đã cập nhật placement và dựng xong response — KHÔNG await nên KHÔNG tăng độ trễ trả về,
+  // và response KHÔNG phụ thuộc kết quả helper. Chỉ chạy khi còn hạn mức mềm (tránh đốt token Gemini).
+  if (cleanTurns.length > 0 && memoryRateLimitOk(user.id)) {
+    void summarizeAndUpdateMemory(kid_id, cleanTurns, {
+      sessionId: data.id,
+      kidName: kid.name,
+      currentMemory: kid.memory,
+    }).catch(() => {
+      // helper đã tự nuốt lỗi; đây chỉ là chốt an toàn để không tạo unhandled rejection.
+    });
+  }
 
   return NextResponse.json({
     ok: true,

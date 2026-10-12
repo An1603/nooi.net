@@ -44,6 +44,8 @@ async function writableKid(userId: string, kidId: string): Promise<KidRow | null
  * Quyền: CHỦ hồ sơ HOẶC chính tài khoản con (caregiver → 403).
  * Body: { turns: {role:"user"|"ai", text}[], duration_min?, lesson_id?, exercises_done? }
  * LUÔN best-effort: lỗi LLM KHÔNG chặn — vẫn lưu session, vẫn trả ok.
+ * (X1) Rate limit CHỈ chặn lời gọi Gemini (đốt token), KHÔNG chặn việc lưu buổi học:
+ *      vượt hạn mức vẫn lưu session + cộng phút, trả ok kèm `summarized:false` (KHÔNG 429).
  */
 export async function POST(
   req: Request,
@@ -62,14 +64,6 @@ export async function POST(
 
   const kid = await writableKid(user.id, kidId);
   if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
-
-  // (F1) Rate limit mềm theo user — chống gọi lặp đốt token Gemini (mỗi POST = 1 lời gọi LLM).
-  if (!memoryRateLimitOk(user.id)) {
-    return NextResponse.json(
-      { error: "Con đã lưu hơi nhiều trong giờ này rồi. Thử lại sau một lát nhé!" },
-      { status: 429 },
-    );
-  }
 
   // (F1) Guard kích thước body: header Content-Length hoặc độ dài thực đọc được.
   const declaredLength = Number(req.headers.get("content-length") ?? 0);
@@ -144,13 +138,20 @@ export async function POST(
       .upsert({ kid_id: kidId, day, minutes_used: newUsed }, { onConflict: "kid_id,day" });
   }
 
-  // 3) Biên tập bộ nhớ bằng Gemini — BEST-EFFORT, dùng CHUNG helper với endpoint session.
+  // 3) (X1) Biên tập bộ nhớ bằng Gemini — BEST-EFFORT, dùng CHUNG helper với endpoint session.
+  //    Rate limit CHỈ chặn lời gọi Gemini (chống đốt token), KHÔNG chặn việc lưu buổi học:
+  //    dù vượt hạn mức, session + phút học đã được lưu ở trên và vẫn trả ok (không 429 → không mất hội thoại).
   //    Mọi lỗi (thiếu key, mạng, parse) đều bị nuốt, KHÔNG chặn: session đã lưu, trả ok.
-  const aiNotes = await summarizeAndUpdateMemory(kidId, turns, {
-    sessionId: session.id,
-    kidName: kid.name,
-    currentMemory: kid.memory,
-  });
+  let aiNotes: string | null = null;
+  let summarized = false;
+  if (memoryRateLimitOk(user.id)) {
+    summarized = true;
+    aiNotes = await summarizeAndUpdateMemory(kidId, turns, {
+      sessionId: session.id,
+      kidName: kid.name,
+      currentMemory: kid.memory,
+    });
+  }
 
-  return NextResponse.json({ ok: true, ai_notes: aiNotes });
+  return NextResponse.json({ ok: true, ai_notes: aiNotes, summarized });
 }

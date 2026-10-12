@@ -78,7 +78,7 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
   );
 
   // ── Lớp tương tác (1 nội dung hiện tại) + ghi log hội thoại ───────────────
-  const { current, onToolCall, onTurnsChange, onResolve, getLog } = useEkidInteractive();
+  const { current, onToolCall, onTurnsChange, onResolve, getLog } = useEkidInteractive(kid.id);
 
   // ── Thu thập + tự lưu hội thoại ─────────────────────────────────────────
   const sentRef = useRef(false); // Chỉ gửi MỘT LẦN cho mỗi buổi.

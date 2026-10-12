@@ -61,7 +61,7 @@ export interface EkidInteractiveController {
   getLog: () => EkidLogTurn[];
 }
 
-export function useEkidInteractive(): EkidInteractiveController {
+export function useEkidInteractive(kidId?: string): EkidInteractiveController {
   const [current, setCurrent] = useState<InteractiveItem | null>(null);
 
   const currentRef = useRef<InteractiveItem | null>(null);
@@ -120,12 +120,15 @@ export function useEkidInteractive(): EkidInteractiveController {
   );
 
   // Gọi API kiểm tra link media — KHÔNG BAO GIỜ ném lỗi; mọi trục trặc → { ok:false }.
+  // (SSRF) API yêu cầu `kid_id` để phân quyền (chủ hồ sơ / tài khoản con) — thiếu thì không gọi.
   const validateMedia = useCallback(
     async (url: string): Promise<{ ok: boolean; kind: "image" | "video" | null }> => {
+      if (!kidId) return { ok: false, kind: null };
       try {
-        const res = await fetch(`/api/ekid/media/validate?url=${encodeURIComponent(url)}`, {
-          method: "GET",
-        });
+        const res = await fetch(
+          `/api/ekid/media/validate?kid_id=${encodeURIComponent(kidId)}&url=${encodeURIComponent(url)}`,
+          { method: "GET" },
+        );
         if (!res.ok) return { ok: false, kind: null };
         const data = (await res.json()) as { ok?: unknown; kind?: unknown };
         const kind = data.kind === "image" || data.kind === "video" ? data.kind : null;
@@ -134,7 +137,7 @@ export function useEkidInteractive(): EkidInteractiveController {
         return { ok: false, kind: null };
       }
     },
-    [],
+    [kidId],
   );
 
   // Xử lý `show_media`: KIỂM TRA link TRƯỚC, chỉ hiện khi hợp lệ; ngược lại thông báo nhẹ.

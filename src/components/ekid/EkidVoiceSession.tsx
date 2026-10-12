@@ -64,7 +64,7 @@ export function EkidVoiceSession({
 
   // Hội thoại thật của buổi (bé ↔ AI) + sự kiện công cụ (bài tập/ảnh/video)
   // — gom qua useEkidInteractive để lưu cùng phiên.
-  const interactive = useEkidInteractive();
+  const interactive = useEkidInteractive(kid.id);
 
   const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
     ? kid.favorite_voice

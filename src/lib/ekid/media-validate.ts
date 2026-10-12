@@ -2,15 +2,21 @@
 //
 // Dùng CHUNG cho API `GET /api/ekid/media/validate` và cho kiểm thử:
 //   - Chỉ chấp nhận scheme http/https (chặn javascript:/data:/file:/vbscript:…).
+//   - Chỉ chấp nhận port mặc định 80/443 (không port, hoặc port 80/443).
+//   - (SSRF) Chặn địa chỉ nội bộ/riêng tư/link-local/metadata: kiểm hostname + IP literal
+//     và RESOLVE DNS — nếu BẤT KỲ IP nào bị chặn thì từ chối (chống DNS rebinding cơ bản).
 //   - Link YouTube (watch/youtu.be/embed/shorts/music) → coi là VIDEO, khỏi gọi mạng.
-//   - Còn lại: HEAD request (timeout) rồi fallback GET `Range: bytes=0-0` →
-//     đọc `content-type`: image/* → ảnh, video/* → video, khác → không hợp lệ.
+//   - Còn lại: HEAD request (redirect THỦ CÔNG, tối đa 3 hop, kiểm lại từng hop) rồi fallback
+//     GET `Range: bytes=0-0` → đọc `content-type`: image/* → ảnh, video/* → video, khác → không hợp lệ.
 //
-// TUYỆT ĐỐI không ném lỗi ra ngoài — mọi trục trặc (timeout, mạng, URL sai) đều
+// TUYỆT ĐỐI không ném lỗi ra ngoài — mọi trục trặc (timeout, mạng, URL sai, DNS lỗi) đều
 // quy về `{ ok: false, kind: null }` để phía client chỉ việc ẩn nội dung.
 
 /** Thời gian chờ tối đa cho một lần kiểm tra (ms). */
 export const MEDIA_VALIDATE_TIMEOUT_MS = 5000;
+
+/** Số hop redirect tối đa được phép đi theo (mỗi hop đều phải qua kiểm SSRF). */
+export const MEDIA_MAX_REDIRECTS = 3;
 
 /** Loại nội dung hiển thị được trên sân khấu. */
 export type MediaKind = "image" | "video";
@@ -25,9 +31,209 @@ export interface MediaValidateResult {
 /** Kiểu hàm fetch tối thiểu — cho phép tiêm bản giả trong kiểm thử. */
 export type MediaFetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
+/** Một kết quả phân giải DNS tối thiểu. */
+export interface DnsAddress {
+  address: string;
+  family: number;
+}
+
+/** Kiểu hàm phân giải DNS tối thiểu — cho phép tiêm bản giả trong kiểm thử. */
+export type DnsLookupLike = (hostname: string) => Promise<DnsAddress[]>;
+
+/** Phân giải DNS thật (Node runtime) — nạp động để module vẫn import được ở môi trường khác. */
+async function defaultDnsLookup(hostname: string): Promise<DnsAddress[]> {
+  const { promises: dns } = await import("node:dns");
+  return dns.lookup(hostname, { all: true });
+}
+
 function invalid(contentType: string | null = null): MediaValidateResult {
   return { ok: false, kind: null, contentType };
 }
+
+// ─── Chuẩn hoá hostname / nhận diện IP ────────────────────────────────────────
+
+/** Bỏ ngoặc vuông của IPv6 (`[::1]` → `::1`) và khoảng trắng thừa. */
+function stripBrackets(host: string): string {
+  const t = host.trim();
+  if (t.startsWith("[") && t.endsWith("]")) return t.slice(1, -1);
+  return t;
+}
+
+/** Chuẩn hoá hostname: bỏ ngoặc, hạ chữ thường, bỏ dấu chấm cuối. */
+function normalizeHost(hostname: string): string {
+  return stripBrackets(hostname).toLowerCase().replace(/\.$/, "");
+}
+
+/** Phân tích IPv4 dạng chấm-thập-phân; trả null nếu không phải IPv4 hợp lệ. */
+function parseIPv4(host: string): [number, number, number, number] | null {
+  const parts = host.split(".");
+  if (parts.length !== 4) return null;
+  const nums: number[] = [];
+  for (const p of parts) {
+    if (!/^\d{1,3}$/.test(p)) return null;
+    const n = Number(p);
+    if (n > 255) return null;
+    nums.push(n);
+  }
+  return [nums[0], nums[1], nums[2], nums[3]];
+}
+
+/**
+ * Phân tích IPv6 (chuẩn nén `::`, có/không có IPv4 nhúng, có/không zone `%eth0`)
+ * → mảng 16 byte; trả null nếu không hợp lệ.
+ */
+function parseIPv6Bytes(raw: string): number[] | null {
+  let h = raw;
+  const pct = h.indexOf("%");
+  if (pct !== -1) h = h.slice(0, pct);
+  if (!h.includes(":")) return null;
+  if (!/^[0-9a-f:.]+$/i.test(h)) return null;
+  if (h.split("::").length > 2) return null;
+
+  // Chuyển một đoạn IPv4 nhúng thành 2 nhóm 16-bit.
+  const expandV4 = (part: string): string[] | null => {
+    const v4 = parseIPv4(part);
+    if (!v4) return null;
+    return [(((v4[0] << 8) | v4[1]) >>> 0).toString(16), (((v4[2] << 8) | v4[3]) >>> 0).toString(16)];
+  };
+
+  const hasDoubleColon = h.includes("::");
+  const [leftRaw, rightRaw] = hasDoubleColon ? h.split("::") : [h, ""];
+  const left = leftRaw ? leftRaw.split(":") : [];
+  const right = rightRaw ? rightRaw.split(":") : [];
+
+  const conv = (arr: string[]): string[] | null => {
+    const out: string[] = [];
+    for (const seg of arr) {
+      if (seg === "") return null;
+      if (seg.includes(".")) {
+        const ex = expandV4(seg);
+        if (!ex) return null;
+        out.push(...ex);
+      } else {
+        if (!/^[0-9a-fA-F]{1,4}$/.test(seg)) return null;
+        out.push(seg);
+      }
+    }
+    return out;
+  };
+
+  const lc = conv(left);
+  const rc = conv(right);
+  if (!lc || !rc) return null;
+
+  let groups: string[];
+  if (hasDoubleColon) {
+    const fill = 8 - lc.length - rc.length;
+    if (fill < 1) return null;
+    groups = [...lc, ...new Array<string>(fill).fill("0"), ...rc];
+  } else {
+    if (lc.length !== 8) return null;
+    groups = lc;
+  }
+  if (groups.length !== 8) return null;
+
+  const bytes: number[] = [];
+  for (const g of groups) {
+    const n = parseInt(g, 16);
+    if (Number.isNaN(n) || n < 0 || n > 0xffff) return null;
+    bytes.push((n >> 8) & 0xff, n & 0xff);
+  }
+  return bytes;
+}
+
+function isBlockedIPv4(o: [number, number, number, number]): boolean {
+  const [a, b] = o;
+  if (a === 0) return true; // 0.0.0.0/8 ("this network"/unspecified)
+  if (a === 10) return true; // 10.0.0.0/8 private
+  if (a === 100 && b >= 64 && b <= 127) return true; // 100.64.0.0/10 CGNAT
+  if (a === 127) return true; // 127.0.0.0/8 loopback
+  if (a === 169 && b === 254) return true; // 169.254.0.0/16 link-local (gồm metadata)
+  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12 private
+  if (a === 192 && b === 168) return true; // 192.168.0.0/16 private
+  if (a >= 224) return true; // 224.0.0.0/4 multicast + 240.0.0.0/4 reserved + broadcast
+  return false;
+}
+
+function isBlockedIPv6(bytes: number[]): boolean {
+  if (bytes.length !== 16) return false;
+  const b0 = bytes[0];
+  const b1 = bytes[1];
+  if (bytes.every((x) => x === 0)) return true; // :: unspecified
+  if (bytes.slice(0, 15).every((x) => x === 0) && bytes[15] === 1) return true; // ::1 loopback
+  if ((b0 & 0xfe) === 0xfc) return true; // fc00::/7 unique-local
+  if (b0 === 0xfe && (b1 & 0xc0) === 0x80) return true; // fe80::/10 link-local
+
+  const first10Zero = bytes.slice(0, 10).every((x) => x === 0);
+  if (first10Zero && bytes[10] === 0xff && bytes[11] === 0xff) {
+    // ::ffff:a.b.c.d — IPv4-mapped
+    return isBlockedIPv4([bytes[12], bytes[13], bytes[14], bytes[15]]);
+  }
+  if (first10Zero && bytes[10] === 0 && bytes[11] === 0) {
+    // ::a.b.c.d — IPv4-compatible (kể cả ::1 đã chặn ở trên)
+    return isBlockedIPv4([bytes[12], bytes[13], bytes[14], bytes[15]]);
+  }
+  if (b0 === 0x00 && b1 === 0x64 && bytes[2] === 0xff && bytes[3] === 0x9b && bytes.slice(4, 12).every((x) => x === 0)) {
+    // 64:ff9b::/96 — NAT64 well-known prefix
+    return isBlockedIPv4([bytes[12], bytes[13], bytes[14], bytes[15]]);
+  }
+  return false;
+}
+
+/** True nếu hostname là một IP literal (IPv4 hoặc IPv6). */
+function isIpLiteral(host: string): boolean {
+  return parseIPv4(host) !== null || parseIPv6Bytes(host) !== null;
+}
+
+/**
+ * (SSRF) Kiểm tra ĐỒNG BỘ một hostname/IP literal có bị chặn hay không.
+ * Chặn: `localhost`/`*.localhost`, `*.local`, `*.internal` (gồm `metadata.google.internal`),
+ * và các dải IP nội bộ/riêng tư/link-local/metadata (IPv4 + IPv6).
+ *
+ * LƯU Ý: hàm này là kiểm tra TĨNH. Với hostname KHÔNG phải IP literal cần gọi thêm
+ * `isAllowedHost()` để phân giải DNS và kiểm từng IP.
+ */
+export function isBlockedAddress(hostname: string): boolean {
+  const h = normalizeHost(hostname);
+  if (!h) return true;
+  if (h === "localhost" || h.endsWith(".localhost")) return true;
+  if (h.endsWith(".local") || h.endsWith(".internal")) return true;
+  const v4 = parseIPv4(h);
+  if (v4) return isBlockedIPv4(v4);
+  const v6 = parseIPv6Bytes(h);
+  if (v6) return isBlockedIPv6(v6);
+  return false;
+}
+
+/**
+ * (SSRF) Kiểm tra một hostname có an toàn để phát request hay không:
+ *   1) Chặn ngay nếu hostname/IP literal thuộc danh sách đen (`isBlockedAddress`).
+ *   2) Với hostname thường: phân giải DNS (mọi bản ghi) — nếu BẤT KỲ IP nào bị chặn → từ chối;
+ *      lookup lỗi hoặc rỗng → coi như KHÔNG hợp lệ.
+ * Luôn best-effort: không bao giờ ném lỗi (trả `false` khi trục trặc).
+ */
+export async function isAllowedHost(
+  hostname: string,
+  lookup: DnsLookupLike = defaultDnsLookup,
+): Promise<boolean> {
+  if (isBlockedAddress(hostname)) return false;
+  const h = normalizeHost(hostname);
+  if (isIpLiteral(h)) return true; // IP literal không nằm danh sách đen → cho phép
+  let addrs: DnsAddress[];
+  try {
+    addrs = await lookup(h);
+  } catch {
+    return false;
+  }
+  if (!Array.isArray(addrs) || addrs.length === 0) return false;
+  for (const a of addrs) {
+    if (!a || typeof a.address !== "string") return false;
+    if (isBlockedAddress(a.address)) return false;
+  }
+  return true;
+}
+
+// ─── Kiểm tra URL / protocol / port ──────────────────────────────────────────
 
 /** Chỉ cho phép scheme http/https — chặn javascript:, data:, file:, vbscript:… */
 export function isHttpUrl(raw: string): boolean {
@@ -37,6 +243,11 @@ export function isHttpUrl(raw: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** (SSRF) Chỉ cho phép port mặc định: không port, hoặc 80/443. */
+export function isAllowedPort(port: string): boolean {
+  return port === "" || port === "80" || port === "443";
 }
 
 /** Nhận diện link YouTube (watch/youtu.be/embed/shorts/music) → coi là video. */
@@ -63,7 +274,10 @@ export function classifyContentType(contentType: string | null): MediaKind | nul
   return null;
 }
 
+// ─── Gọi mạng có kiểm soát ───────────────────────────────────────────────────
+
 // Một lần gọi mạng có timeout — nuốt mọi lỗi, trả null nếu thất bại.
+// (SSRF) `redirect: "manual"` — KHÔNG để fetch tự đi theo redirect; tự kiểm từng hop.
 async function requestWithTimeout(
   doFetch: MediaFetchLike,
   url: string,
@@ -72,7 +286,7 @@ async function requestWithTimeout(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), MEDIA_VALIDATE_TIMEOUT_MS);
   try {
-    return await doFetch(url, { ...init, redirect: "follow", signal: controller.signal });
+    return await doFetch(url, { ...init, redirect: "manual", signal: controller.signal });
   } catch {
     return null;
   } finally {
@@ -80,38 +294,107 @@ async function requestWithTimeout(
   }
 }
 
+async function cancelBody(res: Response | null): Promise<void> {
+  try {
+    await res?.body?.cancel();
+  } catch {
+    // bỏ qua
+  }
+}
+
+/**
+ * (SSRF) Gọi request nhưng tự đi theo redirect một cách AN TOÀN: mỗi hop phải
+ * là http/https, port mặc định, và host an toàn (kiểm địa chỉ + DNS). Tối đa
+ * `MEDIA_MAX_REDIRECTS` hop; vượt quá / Location xấu → trả null.
+ */
+async function fetchFollowingSafeRedirects(
+  doFetch: MediaFetchLike,
+  url: string,
+  init: RequestInit,
+  lookup: DnsLookupLike,
+): Promise<Response | null> {
+  let current = url;
+  for (let hop = 0; hop <= MEDIA_MAX_REDIRECTS; hop++) {
+    const res = await requestWithTimeout(doFetch, current, init);
+    if (!res) return null;
+
+    const status = typeof res.status === "number" ? res.status : 0;
+    if (status >= 300 && status < 400) {
+      const location = res.headers.get("location");
+      await cancelBody(res);
+      if (!location || hop >= MEDIA_MAX_REDIRECTS) return null;
+
+      let nextUrl: string;
+      try {
+        nextUrl = new URL(location, current).toString();
+      } catch {
+        return null;
+      }
+      if (!isHttpUrl(nextUrl)) return null;
+
+      let next: URL;
+      try {
+        next = new URL(nextUrl);
+      } catch {
+        return null;
+      }
+      if (!isAllowedPort(next.port)) return null;
+      if (!(await isAllowedHost(next.hostname, lookup))) return null;
+
+      current = nextUrl;
+      continue;
+    }
+    return res;
+  }
+  return null;
+}
+
 /**
  * Kiểm tra một URL media. KHÔNG BAO GIỜ ném lỗi.
  * @param raw URL cần kiểm tra.
  * @param doFetch hàm fetch (mặc định `globalThis.fetch`) — tiêm để kiểm thử.
+ * @param doLookup hàm phân giải DNS (mặc định `node:dns`) — tiêm để kiểm thử.
  */
 export async function validateMediaUrl(
   raw: string,
   doFetch: MediaFetchLike = (input, init) => fetch(input, init),
+  doLookup: DnsLookupLike = defaultDnsLookup,
 ): Promise<MediaValidateResult> {
   const url = (raw ?? "").trim();
   if (!url || !isHttpUrl(url)) return invalid();
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return invalid();
+  }
+
+  // (SSRF) Chỉ port mặc định 80/443.
+  if (!isAllowedPort(parsed.port)) return invalid();
+
+  // (SSRF) Chặn hostname/IP nội bộ + phân giải DNS kiểm từng IP.
+  if (!(await isAllowedHost(parsed.hostname, doLookup))) return invalid();
 
   // YouTube coi là video — không cần chạm mạng (embed sẽ chạy ở client).
   if (isYouTubeUrl(url)) return { ok: true, kind: "video", contentType: "video/youtube" };
 
   // HEAD trước; nhiều CDN chặn HEAD (405) → fallback GET `Range: bytes=0-0`.
+  // Mọi redirect đều được kiểm SSRF ở từng hop.
   let contentType: string | null = null;
-  const head = await requestWithTimeout(doFetch, url, { method: "HEAD" });
+  const head = await fetchFollowingSafeRedirects(doFetch, url, { method: "HEAD" }, doLookup);
   if (head && head.ok) contentType = head.headers.get("content-type");
 
   if (!contentType) {
-    const get = await requestWithTimeout(doFetch, url, {
-      method: "GET",
-      headers: { Range: "bytes=0-0" },
-    });
+    const get = await fetchFollowingSafeRedirects(
+      doFetch,
+      url,
+      { method: "GET", headers: { Range: "bytes=0-0" } },
+      doLookup,
+    );
     if (get) contentType = get.headers.get("content-type");
     // Chỉ cần header — huỷ luồng để không tải nặng nội dung.
-    try {
-      await get?.body?.cancel();
-    } catch {
-      // bỏ qua
-    }
+    await cancelBody(get);
   }
 
   const kind = classifyContentType(contentType);

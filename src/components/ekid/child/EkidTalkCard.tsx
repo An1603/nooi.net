@@ -83,6 +83,7 @@ export function EkidTalkCard({ kid, remaining }: { kid: TalkKid; remaining: numb
           voice={voice}
           systemInstruction={systemInstruction}
           title={`Bạn AI của ${kid.name}`}
+          hideTranscript
         />
       ) : (
         <div

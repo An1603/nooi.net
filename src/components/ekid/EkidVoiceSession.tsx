@@ -102,6 +102,7 @@ export function EkidVoiceSession({
           voice={voice}
           systemInstruction={systemInstruction}
           title={`Cùng học với ${kid.name}`}
+          hideTranscript
         />
       ) : (
         <div

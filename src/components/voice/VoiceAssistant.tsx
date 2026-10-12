@@ -31,12 +31,15 @@ interface VoiceAssistantProps {
   voice?: VoiceOption;
   systemInstruction?: string;
   title?: string;
+  /** Ẩn khối hội thoại (bong bóng chữ) — chỉ giữ visualizer giọng nói. */
+  hideTranscript?: boolean;
 }
 
 export function VoiceAssistant({
   voice,
   systemInstruction,
   title = "Trợ lý giọng nói",
+  hideTranscript = false,
 }: VoiceAssistantProps) {
   const {
     status,
@@ -157,7 +160,7 @@ export function VoiceAssistant({
       )}
 
       {/* ── Chat Transcript ── */}
-      {hasConversation && (
+      {!hideTranscript && hasConversation && (
         <div className="w-full max-w-lg space-y-4 animate-slide-up">
           {/* Toggle */}
           <div className="flex items-center justify-center">

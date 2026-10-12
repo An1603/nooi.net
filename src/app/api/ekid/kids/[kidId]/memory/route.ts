@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { vnDayString } from "@/lib/ekid/ekid-system";
+import {
+  MEMORY_CAPS,
+  isRecord,
+  memoryRateLimitOk,
+  normalizeTurns,
+  summarizeAndUpdateMemory,
+} from "@/lib/ekid/kid-memory";
 
 export const dynamic = "force-dynamic";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-// Một lượt hội thoại trong buổi: bé nói (user) hoặc AI đáp (ai).
-interface Turn {
-  role: "user" | "ai";
-  text: string;
-}
 
 // Hồ sơ bé tối thiểu cần cho phân quyền + ngữ cảnh biên tập bộ nhớ.
 interface KidRow {
@@ -21,26 +21,6 @@ interface KidRow {
   user_id: string | null;
   child_user_id: string | null;
   memory: string | null;
-}
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
-// Chuẩn hoá mảng turns nhận từ client: chỉ giữ role hợp lệ ('user'|'ai') và text
-// không rỗng; cắt khoảng trắng, bỏ mọi phần tử sai kiểu (không ném lỗi).
-function normalizeTurns(raw: unknown): Turn[] {
-  if (!Array.isArray(raw)) return [];
-  const out: Turn[] = [];
-  for (const item of raw) {
-    if (!isRecord(item)) continue;
-    const role = item.role;
-    const text = typeof item.text === "string" ? item.text.trim() : "";
-    if ((role === "user" || role === "ai") && text) {
-      out.push({ role, text });
-    }
-  }
-  return out;
 }
 
 // Quyền GHI: CHỦ hồ sơ (cha/mẹ) HOẶC chính TÀI KHOẢN CON của hồ sơ đó.
@@ -57,51 +37,6 @@ async function writableKid(userId: string, kidId: string): Promise<KidRow | null
   if (kid.user_id === userId || kid.child_user_id === userId) return kid;
   return null;
 }
-
-// Ghép hội thoại thành văn bản dễ đọc cho prompt (bé↔AI), giới hạn độ dài để tránh
-// prompt quá dài (chỉ cần đủ để biên tập bộ nhớ).
-function renderTranscript(turns: Turn[]): string {
-  const MAX_TURNS = 200;
-  const MAX_CHARS = 12000;
-  const lines: string[] = [];
-  let total = 0;
-  for (const t of turns.slice(0, MAX_TURNS)) {
-    const line = `${t.role === "user" ? "BÉ" : "AI"}: ${t.text}`;
-    total += line.length;
-    if (total > MAX_CHARS) break;
-    lines.push(line);
-  }
-  return lines.join("\n");
-}
-
-// Bóc JSON khỏi câu trả lời của model (chấp nhận có/không có rào ```json ... ```).
-function extractJson(text: string): Record<string, unknown> | null {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fenced ? fenced[1] : trimmed;
-  const start = candidate.indexOf("{");
-  const end = candidate.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) return null;
-  try {
-    const parsed = JSON.parse(candidate.slice(start, end + 1));
-    return isRecord(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-const SYSTEM_INSTRUCTION = `Bạn là chuyên gia giáo dục mầm non và tiểu học của NOOI eKid.
-Nhiệm vụ: đọc hội thoại giữa BÉ và trợ lý AI trong MỘT buổi học, rồi BIÊN TẬP lại thành
-bộ nhớ ngắn gọn, mạch lạc bằng TIẾNG VIỆT để các buổi sau AI hiểu bé hơn.
-
-Yêu cầu:
-- Chỉ dùng thông tin CÓ THẬT trong hội thoại; tuyệt đối không bịa. Thông tin nào chưa rõ thì bỏ qua.
-- Tập trung ghi nhận về BÉ: tính cách, sở thích, điểm mạnh, khó khăn, cảm xúc, tiến bộ.
-- Giữ bộ nhớ CŨ (nếu có) làm nền, GỘP thêm hiểu biết mới, viết lại cho gọn và không mâu thuẫn.
-- Văn phong khách quan, tôn trọng trẻ, không phán xét, không chẩn đoán y tế/tâm lý.
-
-Trả về DUY NHẤT một đối tượng JSON đúng định dạng:
-{"ai_notes": "<nhận xét ngắn cho buổi này, 1-3 câu>", "memory": "<bộ nhớ tổng hợp về bé, tiếng Việt, ngắn gọn>"}`;
 
 /**
  * POST /api/ekid/kids/[kidId]/memory
@@ -128,7 +63,34 @@ export async function POST(
   const kid = await writableKid(user.id, kidId);
   if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  // (F1) Rate limit mềm theo user — chống gọi lặp đốt token Gemini (mỗi POST = 1 lời gọi LLM).
+  if (!memoryRateLimitOk(user.id)) {
+    return NextResponse.json(
+      { error: "Con đã lưu hơi nhiều trong giờ này rồi. Thử lại sau một lát nhé!" },
+      { status: 429 },
+    );
+  }
+
+  // (F1) Guard kích thước body: header Content-Length hoặc độ dài thực đọc được.
+  const declaredLength = Number(req.headers.get("content-length") ?? 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MEMORY_CAPS.maxBodyBytes) {
+    return NextResponse.json({ error: "Dữ liệu gửi lên quá lớn" }, { status: 413 });
+  }
+  const rawText = await req.text().catch(() => "");
+  if (rawText.length > MEMORY_CAPS.maxBodyBytes) {
+    return NextResponse.json({ error: "Dữ liệu gửi lên quá lớn" }, { status: 413 });
+  }
+  let body: Record<string, unknown> = {};
+  if (rawText) {
+    try {
+      const parsed = JSON.parse(rawText);
+      if (isRecord(parsed)) body = parsed;
+    } catch {
+      body = {};
+    }
+  }
+
+  // (F1) Cap số lượt + tổng ký tự (cắt) TRƯỚC khi lưu DB và TRƯỚC khi gọi LLM.
   const turns = normalizeTurns(body.turns);
 
   // Không có lượt nào → không có gì để lưu hay biên tập; coi như thành công (im lặng).
@@ -142,13 +104,15 @@ export async function POST(
   const dur = Math.max(0, Math.round(durRaw));
 
   // Điểm = tỉ lệ bài tập đúng trên tổng số bài đã làm (null nếu không có bài).
-  const done = Array.isArray(body.exercises_done) ? body.exercises_done : [];
+  // (F1) Cap số lượng bài tập lưu để tránh phình DB.
+  const doneRaw = Array.isArray(body.exercises_done) ? body.exercises_done : [];
+  const done = doneRaw.slice(0, MEMORY_CAPS.maxExercises);
   const correct = done.filter((d) => isRecord(d) && d.correct === true).length;
   const score = done.length ? Math.round((correct / done.length) * 100) : null;
 
   const admin = createAdminClient();
 
-  // 1) Lưu buổi học (transcript = toàn bộ lượt hội thoại).
+  // 1) Lưu buổi học (transcript = toàn bộ lượt hội thoại, đã cap).
   const { data: session, error: insErr } = await admin
     .from("ekid_sessions")
     .insert({
@@ -180,51 +144,13 @@ export async function POST(
       .upsert({ kid_id: kidId, day, minutes_used: newUsed }, { onConflict: "kid_id,day" });
   }
 
-  // 3) Biên tập bộ nhớ bằng Gemini — BEST-EFFORT: mọi lỗi (thiếu key, mạng, parse)
-  //    đều bỏ qua, KHÔNG chặn: session đã lưu, trả ok để client không kẹt.
-  let aiNotes: string | null = null;
-  try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey) {
-      const transcript = renderTranscript(turns);
-      const oldMemory = (kid.memory ?? "").trim();
-      const userPrompt = [
-        `Tên bé: ${kid.name}`,
-        `Bộ nhớ hiện có về bé (có thể trống):\n${oldMemory || "(chưa có)"}`,
-        `Hội thoại buổi này:\n${transcript}`,
-      ].join("\n\n");
-
-      const client = new GoogleGenAI({ apiKey });
-      const response = await client.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          temperature: 0.4,
-          maxOutputTokens: 2048,
-          responseMimeType: "application/json",
-        },
-      });
-
-      const text = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      const parsed = extractJson(text);
-      const notes =
-        parsed && typeof parsed.ai_notes === "string" ? parsed.ai_notes.trim() : "";
-      const memory =
-        parsed && typeof parsed.memory === "string" ? parsed.memory.trim() : "";
-      aiNotes = notes || null;
-
-      // 4) Cập nhật CẢ HAI cột: ai_notes cho buổi này + memory tổng hợp cho bé.
-      if (aiNotes) {
-        await admin.from("ekid_sessions").update({ ai_notes: aiNotes }).eq("id", session.id);
-      }
-      if (memory) {
-        await admin.from("ekid_kids").update({ memory }).eq("id", kidId);
-      }
-    }
-  } catch (err) {
-    console.error("[ekid/kids/memory] Lỗi biên tập bộ nhớ (bỏ qua, best-effort):", err);
-  }
+  // 3) Biên tập bộ nhớ bằng Gemini — BEST-EFFORT, dùng CHUNG helper với endpoint session.
+  //    Mọi lỗi (thiếu key, mạng, parse) đều bị nuốt, KHÔNG chặn: session đã lưu, trả ok.
+  const aiNotes = await summarizeAndUpdateMemory(kidId, turns, {
+    sessionId: session.id,
+    kidName: kid.name,
+    currentMemory: kid.memory,
+  });
 
   return NextResponse.json({ ok: true, ai_notes: aiNotes });
 }

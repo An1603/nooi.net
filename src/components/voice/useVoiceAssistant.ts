@@ -59,6 +59,9 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
   const curAiRef = useRef("");
   const userCommittedRef = useRef(false);
   const aiCommittedRef = useRef(false);
+  // Đánh dấu lượt AI đã có văn bản từ output_transcription (bản đầy đủ theo lượt) —
+  // khi đó KHÔNG cộng dồn thêm các part `text` để tránh nhân đôi lượt AI.
+  const aiTranscribedRef = useRef(false);
   const onTurnsChangeRef = useRef(config?.onTurnsChange);
 
   // Giữ callback mới nhất mà không cần đưa vào phụ thuộc của start().
@@ -98,6 +101,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
     curAiRef.current = "";
     userCommittedRef.current = false;
     aiCommittedRef.current = false;
+    aiTranscribedRef.current = false;
   }, [commitPendingUser, commitPendingAi]);
 
   // Reset toàn bộ tích luỹ (bắt đầu phiên mới).
@@ -107,6 +111,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
     curAiRef.current = "";
     userCommittedRef.current = false;
     aiCommittedRef.current = false;
+    aiTranscribedRef.current = false;
     setTurns([]);
   }, []);
 
@@ -220,7 +225,10 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
             break;
 
           case "text":
+            // AI bắt đầu đáp bằng TEXT (không audio) → vẫn phải tích luỹ để không mất
+            // lượt AI text-only. Chỉ cộng dồn khi lượt này CHƯA có output_transcription.
             commitPendingUser();
+            if (!aiTranscribedRef.current) curAiRef.current += event.data;
             setResponse((prev) => prev + event.data);
             break;
 
@@ -236,6 +244,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
             if (event.data.text) {
               // AI bắt đầu đáp → chốt lượt bé; tích luỹ văn bản AI của lượt này.
               commitPendingUser();
+              aiTranscribedRef.current = true;
               curAiRef.current = event.data.text;
               setResponse(event.data.text);
             }

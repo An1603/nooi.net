@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { remainingMinutes, resolvePlacement, normalizeKidSettings, isWithinAllowedHours, vnDayString, vnDayStart } from "@/lib/ekid/ekid-system";
+import { MEMORY_CAPS, memoryRateLimitOk, normalizeTurns, summarizeAndUpdateMemory } from "@/lib/ekid/kid-memory";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ async function writableKid(userId: string, kidId: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("ekid_kids")
-    .select("id, daily_limit_min, date_of_birth, user_id, child_user_id, settings")
+    .select("id, name, memory, daily_limit_min, date_of_birth, user_id, child_user_id, settings")
     .eq("id", kidId)
     .maybeSingle();
   if (!data) return null;
@@ -187,8 +188,13 @@ export async function POST(req: Request) {
     .from("ekid_daily")
     .upsert({ kid_id, day, minutes_used: newUsed }, { onConflict: "kid_id,day" });
 
+  // (F1) Cap số lượt + tổng ký tự hội thoại (cắt) TRƯỚC khi lưu DB.
+  const cleanTurns = normalizeTurns(transcript);
+
   // Điểm = tỉ lệ bài tập đúng trên tổng số bài đã làm (null nếu không có bài).
-  const done = Array.isArray(exercises_done) ? exercises_done : [];
+  // (F1) Cap số lượng bài tập lưu để tránh phình DB.
+  const doneRaw = Array.isArray(exercises_done) ? exercises_done : [];
+  const done = doneRaw.slice(0, MEMORY_CAPS.maxExercises);
   const correct = done.filter((d: { correct?: boolean }) => d?.correct).length;
   const score = done.length ? Math.round((correct / done.length) * 100) : null;
 
@@ -199,7 +205,7 @@ export async function POST(req: Request) {
       lesson_id: lesson_id ?? null,
       ended_at: new Date().toISOString(),
       duration_min: dur,
-      transcript: transcript ?? [],
+      transcript: cleanTurns,
       exercises_done: done,
       score,
       ai_notes: ai_notes ?? null,
@@ -207,6 +213,17 @@ export async function POST(req: Request) {
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // (F3) Buổi học CÓ BÀI cũng cập nhật bộ nhớ: khi có hội thoại, biên tập memory về bé
+  // qua helper DÙNG CHUNG với endpoint memory. BEST-EFFORT: lỗi LLM không chặn phiên.
+  // Chỉ chạy khi còn hạn mức mềm (tránh đốt token Gemini) — vượt hạn mức thì im lặng bỏ qua.
+  if (cleanTurns.length > 0 && memoryRateLimitOk(user.id)) {
+    await summarizeAndUpdateMemory(kid_id, cleanTurns, {
+      sessionId: data.id,
+      kidName: kid.name,
+      currentMemory: kid.memory,
+    });
+  }
 
   // (I-C1) Khi con vừa học xong một bài có lesson_id: đánh dấu tiến độ 'da-hoc'
   // — nhưng KHÔNG hạ cấp bài đã 'da-thi' xuống.

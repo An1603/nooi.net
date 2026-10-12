@@ -1,7 +1,7 @@
 // NOOI — PWA Service Worker
 // Version: 3.0.0 — Auto-update notify + new brand icons
 
-const CACHE_NAME = "nooi-v4";
+const CACHE_NAME = "nooi-v5";
 const APP_ROUTES = [
   "/",
   "/manifest.json",
@@ -70,6 +70,13 @@ self.addEventListener("fetch", (event) => {
 
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
+
+  // ⚠️ TUYỆT ĐỐI KHÔNG cache API và request không phải GET.
+  // Lý do: cache của SW khoá theo URL, KHÔNG theo người dùng → bé A đăng nhập
+  // sau có thể nhận dữ liệu đã cache của bé B (rò dữ liệu chéo + sai danh tính,
+  // sai hạn mức ngày). API luôn phải ra mạng. Trả về không respondWith → browser
+  // tự fetch qua mạng bình thường.
+  if (url.pathname.startsWith("/api/") || request.method !== "GET") return;
 
   // ── App routes: NETWORK-FIRST (critical for auth) ──
   if (request.mode === "navigate" && url.pathname.startsWith("/app")) {

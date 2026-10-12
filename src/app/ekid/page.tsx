@@ -35,7 +35,7 @@ export default function EkidLibraryPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch("/api/ekid/library");
+      const r = await fetch("/api/ekid/library", { cache: "no-store" });
       const d = await readJson(r);
       if (!r.ok) throw new Error((d.error as string) || "Không tải được thư viện");
       setKid((d.kid as LibraryKid) ?? null);
@@ -57,7 +57,9 @@ export default function EkidLibraryPage() {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch(`/api/ekid/session?kid_id=${encodeURIComponent(kid.id)}`);
+        const r = await fetch(`/api/ekid/session?kid_id=${encodeURIComponent(kid.id)}`, {
+          cache: "no-store",
+        });
         const d = await readJson(r);
         if (cancelled) return;
         if (r.ok && typeof d.remaining === "number") setRemaining(d.remaining);

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ToastProvider";
@@ -59,25 +60,41 @@ export const viewport: Viewport = {
   themeColor: "#1a0a2e",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Host ekid.nooi.net KHÔNG dùng service worker: cache của SW khoá theo URL (không
+  // theo người dùng) → dễ phục vụ dữ liệu cũ/của bé khác. Trên host ekid ta chủ động
+  // GỠ mọi SW + xoá cache cũ; các host khác giữ nguyên đăng ký PWA như trước.
+  const host = (await headers()).get("host") || "";
+  const isEkidHost = host === "ekid.nooi.net";
+  const swScript = isEkidHost
+    ? `
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (r) { r.unregister(); });
+        });
+        if (window.caches && caches.keys) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k); });
+          });
+        }
+      }
+    `
+    : `
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/sw.js").catch(function (err) {
+            console.log("SW registration failed:", err);
+          });
+        });
+      }
+    `;
+
   return (
     <html lang="vi" className="dark">
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ("serviceWorker" in navigator) {
-                window.addEventListener("load", function () {
-                  navigator.serviceWorker.register("/sw.js").catch(function (err) {
-                    console.log("SW registration failed:", err);
-                  });
-                });
-              }
-            `,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: swScript }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <div id="toast-debug" className="hidden">toast marker</div>

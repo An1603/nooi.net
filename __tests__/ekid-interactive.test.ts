@@ -5,14 +5,27 @@ import {
   isExerciseItem,
   isMediaItem,
   isNoticeItem,
+  gradeExercise,
+  describeAnswer,
+  optionLetter,
+  stageHint,
 } from "@/lib/ekid/interactive";
 import { BAND_ADDRESS, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { normalizeTurns } from "@/lib/ekid/kid-memory";
 
 describe("ekid interactive — EKID_TOOLS", () => {
-  it("có 2 khai báo: show_exercise và show_media", () => {
+  it("có 3 khai báo: show_exercise, show_media, answer_exercise", () => {
     const names = EKID_TOOLS.map((t) => t.name);
-    expect(names).toEqual(["show_exercise", "show_media"]);
+    expect(names).toEqual(["show_exercise", "show_media", "answer_exercise"]);
+  });
+
+  it("answer_exercise yêu cầu chosen_index (vị trí lựa chọn bé nói)", () => {
+    const ans = EKID_TOOLS.find((t) => t.name === "answer_exercise");
+    expect(ans).toBeDefined();
+    expect(ans?.parameters.required).toContain("chosen_index");
+    const props = ans?.parameters.properties as Record<string, { type?: string }>;
+    expect(props.chosen_index.type).toBe("integer");
+    expect(props.spoken.type).toBe("string");
   });
 
   it("show_exercise yêu cầu question + options", () => {
@@ -108,6 +121,108 @@ describe("ekid — buildSystemInstruction persona & xưng hô", () => {
     expect(s).toContain("CÔNG CỤ HIỂN THỊ LÊN MÀN HÌNH");
     expect(s).toContain("show_exercise");
     expect(s).toContain("show_media");
+  });
+});
+
+describe("ekid interactive — ghi nhận kết quả 2 đường (bấm màn hình & lời nói)", () => {
+  const ex = {
+    id: "e1",
+    kind: "exercise" as const,
+    question: "1+1 bằng mấy?",
+    options: ["1", "2", "3"],
+    answerIndex: 1,
+  };
+
+  it("gradeExercise: bấm trúng đáp án → correct true, nguồn tap", () => {
+    expect(gradeExercise(ex, 1, "tap")).toEqual({ chosen_index: 1, correct: true, source: "tap" });
+  });
+
+  it("gradeExercise: bấm lệch đáp án → correct false", () => {
+    expect(gradeExercise(ex, 0, "tap")).toEqual({ chosen_index: 0, correct: false, source: "tap" });
+  });
+
+  it("gradeExercise: trả lời bằng lời → giữ nguyên văn bé nói, nguồn voice", () => {
+    expect(gradeExercise(ex, 1, "voice", "  con chọn B  ")).toEqual({
+      chosen_index: 1,
+      correct: true,
+      source: "voice",
+      spoken: "con chọn B",
+    });
+  });
+
+  it("gradeExercise: AI không cho answer_index → KHÔNG chấm đúng/sai", () => {
+    expect(gradeExercise({ answerIndex: undefined }, 0, "tap")).toEqual({
+      chosen_index: 0,
+      source: "tap",
+    });
+  });
+
+  it("gradeExercise: cắt lời bé nói quá dài (cap 200 ký tự)", () => {
+    const long = "a".repeat(500);
+    const r = gradeExercise(ex, 0, "voice", long);
+    expect(r.spoken?.length).toBe(200);
+  });
+
+  it("optionLetter: 0 → A, 25 → Z", () => {
+    expect(optionLetter(0)).toBe("A");
+    expect(optionLetter(1)).toBe("B");
+    expect(optionLetter(25)).toBe("Z");
+  });
+
+  it("describeAnswer: nói rõ BẤM hay BẰNG LỜI + kết quả đúng/sai", () => {
+    expect(describeAnswer({ chosen_index: 1, correct: true, source: "tap" })).toBe(
+      "Bé bấm chọn đáp án B — ĐÚNG.",
+    );
+    expect(
+      describeAnswer({ chosen_index: 0, correct: false, source: "voice", spoken: "con chọn 1" }),
+    ).toBe('Bé trả lời bằng lời: "con chọn 1" → chọn đáp án A — SAI.');
+  });
+
+  it("describeAnswer: không có đáp án đúng → chỉ ghi nhận, KHÔNG chấm", () => {
+    const text = describeAnswer({ chosen_index: 2, source: "voice", spoken: "con nghĩ là ba" });
+    expect(text).not.toContain("ĐÚNG");
+    expect(text).not.toContain("SAI");
+    expect(text).toContain("đã ghi nhận");
+  });
+});
+
+describe("ekid interactive — stageHint (khung ghi chú cột trái)", () => {
+  const ex = {
+    id: "e1",
+    kind: "exercise" as const,
+    question: "1+1?",
+    options: ["1", "2"],
+    answerIndex: 1,
+  };
+
+  it("chưa có nội dung → gợi ý bấm mic", () => {
+    expect(stageHint(null, null)).toContain("mic");
+  });
+
+  it("bài tập CHƯA trả lời → gợi ý bấm hoặc nói 'con chọn'", () => {
+    const h = stageHint(ex, null);
+    expect(h).toContain("bấm");
+    expect(h).toContain("con chọn");
+  });
+
+  it("bài tập ĐÃ trả lời đúng → khen con", () => {
+    expect(stageHint(ex, { itemId: "e1", correct: true })).toContain("đúng");
+  });
+
+  it("bài tập ĐÃ trả lời sai → động viên, không chê", () => {
+    const h = stageHint(ex, { itemId: "e1", correct: false });
+    expect(h).not.toContain("sai quá");
+    expect(h).toContain("ghi nhận");
+  });
+
+  it("kết quả của item KHÁC không ảnh hưởng item đang hiện", () => {
+    const h = stageHint(ex, { itemId: "e-old", correct: true });
+    expect(h).toContain("con chọn");
+  });
+
+  it("media → mời con quan sát", () => {
+    const md = { id: "m1", kind: "media" as const, url: "https://x/y.png", mediaType: "image" as const };
+    expect(stageHint(md, null)).toContain("xem");
   });
 });
 

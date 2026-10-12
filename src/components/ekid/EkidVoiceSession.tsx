@@ -115,7 +115,12 @@ export function EkidVoiceSession({
             tools={EKID_TOOLS}
             onToolCall={interactive.onToolCall}
           />
-          <InteractiveStage item={interactive.current} onResolve={interactive.onResolve} />
+          {/* `resolution` để thẻ bài tập hiện đúng/sai dù bé BẤM hay TRẢ LỜI BẰNG LỜI. */}
+          <InteractiveStage
+            item={interactive.current}
+            resolution={interactive.resolution}
+            onResolve={interactive.onResolve}
+          />
         </>
       ) : (
         <div

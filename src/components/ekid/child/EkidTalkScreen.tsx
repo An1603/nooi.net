@@ -16,7 +16,7 @@ import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
 import { BAND_VOICE, buildSystemInstruction } from "@/lib/ekid/ekid-system";
-import { EKID_TOOLS } from "@/lib/ekid/interactive";
+import { EKID_TOOLS, stageHint } from "@/lib/ekid/interactive";
 import { KID } from "@/components/ekid/child/kid-theme";
 import { InteractiveStage } from "@/components/ekid/child/InteractiveStage";
 import { useEkidInteractive } from "@/components/ekid/child/useEkidInteractive";
@@ -78,7 +78,13 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
   );
 
   // ── Lớp tương tác (1 nội dung hiện tại) + ghi log hội thoại ───────────────
-  const { current, onToolCall, onTurnsChange, onResolve, getLog } = useEkidInteractive(kid.id);
+  // `resolution` = kết quả bé ĐÃ trả lời (bấm màn hình HOẶC nói) — dùng cho cả
+  // khung hiển thị (tô đúng/sai) lẫn khung "ghi chú" bên trái.
+  const { current, resolution, onToolCall, onTurnsChange, onResolve, getLog } =
+    useEkidInteractive(kid.id);
+
+  // Gợi ý ngắn cho khung ghi chú (cột trái) — bám theo nội dung đang hiện.
+  const hint = stageHint(current, resolution);
 
   // ── Thu thập + tự lưu hội thoại ─────────────────────────────────────────
   const sentRef = useRef(false); // Chỉ gửi MỘT LẦN cho mỗi buổi.
@@ -139,14 +145,40 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
       </div>
 
       {remaining > 0 ? (
-        <>
-          {/* ── SÂN KHẤU (chủ đạo, flex-1) ── */}
+        <div className="flex flex-1 flex-col gap-3 md:flex-row md:gap-4">
+          {/* ── CỘT TRÁI: mic + trạng thái + ghi chú ──
+              Mobile: dock gọn nổi ở góc dưới-phải (như v3.2).
+              Desktop: cột 280px cố định bên trái, sân khấu nhường chỗ bên phải. */}
+          <aside
+            aria-label="Mic, trạng thái và ghi chú"
+            className="fixed bottom-4 right-4 z-40 md:static md:z-auto md:order-first md:w-[280px] md:shrink-0"
+          >
+            <div className={`${KID.cardPad} flex flex-col items-center gap-3 p-3 md:p-4`}>
+              <VoiceAssistant
+                voice={voice}
+                systemInstruction={systemInstruction}
+                title={`Bạn AI của ${kid.name}`}
+                hideTranscript
+                onTurnsChange={onTurnsChange}
+                tools={EKID_TOOLS}
+                onToolCall={onToolCall}
+                compact
+              />
+              {/* Ghi chú: chỉ hiện trên desktop (mobile ưu tiên chỗ cho khung hiển thị). */}
+              <div className="hidden w-full border-t-2 border-[#e0f2fe] pt-3 md:block" aria-live="polite">
+                <p className="text-xs font-black tracking-wide text-[#9c8b7e] uppercase">Ghi chú</p>
+                <p className="mt-1 text-sm leading-snug font-bold text-[#3b2a20]">{hint}</p>
+              </div>
+            </div>
+          </aside>
+
+          {/* ── CỘT PHẢI: KHUNG HIỂN THỊ (chủ đạo) ── */}
           <section
-            aria-label="Sân khấu trình chiếu"
-            className="flex flex-1 items-center justify-center rounded-3xl border-2 border-white bg-white/60 p-3 pb-28 shadow-lg shadow-sky-200/50 sm:p-5 md:pb-5"
+            aria-label="Khung hiển thị"
+            className="flex flex-1 items-center justify-center rounded-3xl border-2 border-white bg-white/60 p-3 pb-28 shadow-lg shadow-sky-200/50 sm:p-5 md:order-last md:pb-5"
           >
             {current ? (
-              <InteractiveStage item={current} onResolve={onResolve} />
+              <InteractiveStage item={current} resolution={resolution} onResolve={onResolve} />
             ) : (
               <div className="flex max-w-md flex-col items-center gap-3 text-center">
                 <span className="text-5xl" aria-hidden>
@@ -161,23 +193,7 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
               </div>
             )}
           </section>
-
-          {/* ── VOICE DOCK gọn: góc dưới-phải (mobile) / cạnh phải (desktop) ── */}
-          <div className="fixed bottom-4 right-4 z-40 md:bottom-auto md:top-1/2 md:right-6 md:-translate-y-1/2">
-            <div className={`${KID.cardPad} flex flex-col items-center gap-2 p-3`}>
-              <VoiceAssistant
-                voice={voice}
-                systemInstruction={systemInstruction}
-                title={`Bạn AI của ${kid.name}`}
-                hideTranscript
-                onTurnsChange={onTurnsChange}
-                tools={EKID_TOOLS}
-                onToolCall={onToolCall}
-                compact
-              />
-            </div>
-          </div>
-        </>
+        </div>
       ) : (
         <div
           role="status"

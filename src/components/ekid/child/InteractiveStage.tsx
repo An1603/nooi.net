@@ -10,31 +10,39 @@
 // Bé tương tác xong → `onResolve(itemId, result)` để cha gửi `toolResponse` về model
 // và ghi log hội thoại.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   isExerciseItem,
   isMediaItem,
   isNoticeItem,
-  type ExerciseResult,
   type InteractiveItem,
-  type MediaResult,
   type NoticeItem,
 } from "@/lib/ekid/interactive";
 
-export type InteractiveResult = ExerciseResult | MediaResult;
+/**
+ * Kết quả bé tương tác: chọn một lựa chọn (bài tập) hoặc đã xem xong media.
+ * KHÔNG mang `correct` — việc chấm nằm ở MỘT chỗ duy nhất trong `useEkidInteractive`,
+ * dùng chung cho cả bấm màn hình lẫn trả lời bằng lời.
+ */
+export type InteractiveResult = { chosen_index?: number; shown?: true };
 
 interface InteractiveStageProps {
   /** Nội dung đang trình chiếu (null → cha tự hiện trạng thái chờ). */
   item: InteractiveItem | null;
+  /**
+   * Kết quả ĐÃ ghi nhận cho nội dung đang hiện (bé bấm HOẶC trả lời bằng lời) —
+   * do `useEkidInteractive` giữ. Sân khấu chỉ ĐỌC để tô đúng/sai, không tự chấm.
+   */
+  resolution?: { itemId: string; chosen_index: number } | null;
   /** Gọi MỘT LẦN khi bé tương tác xong với một item (chọn đáp án / nội dung đã hiện). */
   onResolve: (itemId: string, result: InteractiveResult) => void;
 }
 
-export function InteractiveStage({ item, onResolve }: InteractiveStageProps) {
-  // Các item đã "chốt" (không cho chọn lại / không báo lại cho model).
+export function InteractiveStage({ item, resolution, onResolve }: InteractiveStageProps) {
+  // Các item đã "chốt" ở phía sân khấu (không cho bấm lại / không báo lại model).
+  // Bé trả lời bằng lời cũng khoá nút qua `resolution` (nút `disabled`) và phía hook
+  // chặn trùng bằng `already_answered`.
   const resolvedRef = useRef<Set<string>>(new Set());
-  // Đáp án bé đã chọn CHO nội dung đang hiện (kèm id để tự reset khi item đổi).
-  const [chosen, setChosen] = useState<{ id: string; index: number } | null>(null);
 
   const resolve = useCallback(
     (id: string, result: InteractiveResult) => {
@@ -53,20 +61,16 @@ export function InteractiveStage({ item, onResolve }: InteractiveStageProps) {
   const choose = useCallback(
     (target: InteractiveItem, index: number) => {
       if (resolvedRef.current.has(target.id)) return;
-      const answerIndex = isExerciseItem(target) ? target.answerIndex : undefined;
-      const result: ExerciseResult =
-        typeof answerIndex === "number"
-          ? { chosen_index: index, correct: index === answerIndex }
-          : { chosen_index: index };
-      setChosen({ id: target.id, index });
-      resolve(target.id, result);
+      resolve(target.id, { chosen_index: index });
     },
     [resolve],
   );
 
   if (!item) return null;
 
-  const chosenIndex = chosen && chosen.id === item.id ? chosen.index : undefined;
+  // Kết quả chỉ áp cho ĐÚNG item đang hiện (kết quả của item cũ không lây sang).
+  const chosenIndex =
+    resolution && resolution.itemId === item.id ? resolution.chosen_index : undefined;
 
   return (
     <section

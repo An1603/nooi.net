@@ -15,7 +15,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OnToolCall, VoiceTurn } from "@/components/voice/useVoiceAssistant";
 import type { ToolFunctionCall, ToolFunctionResponse } from "@/lib/voice/gemini-live";
-import type { InteractiveItem, MediaItem } from "@/lib/ekid/interactive";
+import {
+  describeAnswer,
+  gradeExercise,
+  isExerciseItem,
+  type AnswerSource,
+  type ExerciseResult,
+  type InteractiveItem,
+  type MediaItem,
+} from "@/lib/ekid/interactive";
 
 /** Sự kiện lớp tương tác (gọi công cụ / kết quả bé tương tác) — lưu vào log. */
 export interface ToolLogMeta {
@@ -24,6 +32,18 @@ export interface ToolLogMeta {
   item_id: string;
   args?: Record<string, unknown>;
   result?: Record<string, unknown>;
+  /** Bé trả lời bằng cách nào (chỉ có ở sự kiện `result` của bài tập). */
+  source?: AnswerSource;
+  /** Nguyên văn lời bé nói (chỉ khi trả lời bằng lời). */
+  spoken?: string;
+}
+
+/**
+ * Kết quả đã ghi nhận cho nội dung ĐANG hiện — nguồn DUY NHẤT cho cả 2 đường
+ * (bé bấm trên màn hình `tap` hoặc trả lời bằng lời `voice`).
+ */
+export interface ExerciseResolution extends ExerciseResult {
+  itemId: string;
 }
 
 /** Một lượt trong log mở rộng: lượt hội thoại (BÉ/AI) hoặc sự kiện công cụ. */
@@ -55,16 +75,28 @@ export interface EkidInteractiveController {
   onToolCall: OnToolCall;
   /** Truyền vào `VoiceAssistant onTurnsChange` — gom lượt BÉ/AI vào log. */
   onTurnsChange: (turns: VoiceTurn[]) => void;
-  /** Xử lý khi bé tương tác xong → trả kết quả về model + ghi log. */
-  onResolve: (itemId: string, result: { chosen_index?: number; correct?: boolean; shown?: true }) => void;
+  /**
+   * Kết quả ĐÃ ghi nhận cho nội dung đang hiện (đúng/sai + bé trả lời bằng cách nào).
+   * Có cùng lúc với cả 2 đường: bé bấm trên màn hình hoặc trả lời bằng lời.
+   */
+  resolution: ExerciseResolution | null;
+  /**
+   * Xử lý khi bé BẤM trên màn hình (bài tập) hoặc media đã hiện xong
+   * → trả kết quả về model + ghi log. Đường trả lời bằng lời đi qua công cụ
+   * `answer_exercise` và ghi nhận vào CÙNG một chỗ.
+   */
+  onResolve: (itemId: string, result: { chosen_index?: number; shown?: true }) => void;
   /** Log hội thoại đầy đủ (BÉ/AI + sự kiện công cụ) để lưu vào session/memory. */
   getLog: () => EkidLogTurn[];
 }
 
 export function useEkidInteractive(kidId?: string): EkidInteractiveController {
   const [current, setCurrent] = useState<InteractiveItem | null>(null);
+  // Kết quả đã ghi nhận cho nội dung đang hiện (bé bấm HOẶC trả lời bằng lời).
+  const [resolution, setResolution] = useState<ExerciseResolution | null>(null);
 
   const currentRef = useRef<InteractiveItem | null>(null);
+  const resolutionRef = useRef<ExerciseResolution | null>(null);
   const logRef = useRef<EkidLogTurn[]>([]);
   const convLenRef = useRef(0); // số lượt BÉ/AI đã nạp vào log
   const seqRef = useRef(0); // sinh id item tăng dần
@@ -189,9 +221,90 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
     [nextItemId, validateMedia, pushLog],
   );
 
+  /**
+   * Ghi nhận câu trả lời cho bài tập ĐANG hiện — ĐƯỜNG DUY NHẤT cho cả hai cách:
+   * bé BẤM trên màn hình (`tap`) hoặc TRẢ LỜI BẰNG LỜI (`voice`, qua công cụ
+   * `answer_exercise`). Làm cùng lúc 3 việc:
+   *   (1) chốt kết quả → màn hình hiện đúng/sai dù bé trả lời bằng cách nào;
+   *   (2) trả kết quả về model → AI phản hồi bằng giọng;
+   *   (3) ghi log kèm NGUỒN trả lời + nguyên văn lời bé nói.
+   */
+  const resolveExercise = useCallback(
+    (
+      itemId: string,
+      chosenIndex: number,
+      source: AnswerSource,
+      spoken?: string,
+    ): { ok: boolean; result?: ExerciseResult; reason?: string } => {
+      if (resolutionRef.current?.itemId === itemId) return { ok: false, reason: "already_answered" };
+
+      const item = currentRef.current;
+      if (!item || item.id !== itemId || !isExerciseItem(item)) {
+        return { ok: false, reason: "no_active_exercise" };
+      }
+      if (!Number.isInteger(chosenIndex) || chosenIndex < 0 || chosenIndex >= item.options.length) {
+        return { ok: false, reason: "invalid_index" };
+      }
+
+      const result = gradeExercise(item, chosenIndex, source, spoken);
+      const next: ExerciseResolution = { itemId, ...result };
+      resolutionRef.current = next;
+      setResolution(next);
+
+      const entry = respondRef.current.get(itemId);
+      respondRef.current.delete(itemId);
+      entry?.respond([
+        { name: "show_exercise", response: result as unknown as Record<string, unknown> },
+      ]);
+
+      pushLog({
+        role: "tool",
+        text: describeAnswer(result),
+        meta: {
+          event: "result",
+          tool: "show_exercise",
+          item_id: itemId,
+          result: result as unknown as Record<string, unknown>,
+          source,
+          spoken: result.spoken,
+        },
+      });
+      return { ok: true, result };
+    },
+    [pushLog],
+  );
+
   const onToolCall = useCallback<OnToolCall>(
     (calls, respond) => {
       for (const call of calls) {
+        // ── Bé TRẢ LỜI BẰNG LỜI cho bài tập đang hiện ────────────────────────
+        // AI tự gọi `answer_exercise` khi bé nói câu trả lời; ghi nhận vào CÙNG
+        // một đường với bấm trên màn hình → kết quả đồng bộ ở mọi nơi.
+        if (call.name === "answer_exercise") {
+          const index = asIntOrUndef(call.args.chosen_index);
+          const spoken = asString(call.args.spoken) ?? undefined;
+          const item = currentRef.current;
+
+          let response: Record<string, unknown>;
+          if (index === undefined) {
+            response = { ok: false, reason: "missing_chosen_index" };
+          } else if (!item || !isExerciseItem(item)) {
+            response = { ok: false, reason: "no_active_exercise" };
+          } else {
+            const done = resolveExercise(item.id, index, "voice", spoken);
+            response =
+              done.ok && done.result
+                ? {
+                    ok: true,
+                    chosen_index: done.result.chosen_index,
+                    ...(done.result.correct !== undefined ? { correct: done.result.correct } : {}),
+                  }
+                : { ok: false, reason: done.reason ?? "unknown" };
+          }
+          respond([{ name: call.name, response }]);
+          continue;
+        }
+
         // Media: kiểm tra link bất đồng bộ rồi mới hiện (không chặn lượt gọi khác).
         if (call.name === "show_media") {
           void handleShowMedia(call, respond);
@@ -214,41 +327,31 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
         });
       }
     },
-    [buildExercise, handleShowMedia, pushLog],
+    [buildExercise, handleShowMedia, pushLog, resolveExercise],
   );
 
   const onResolve = useCallback<EkidInteractiveController["onResolve"]>(
     (itemId, result) => {
+      // Bài tập: bé bấm trên màn hình → đi vào CÙNG đường với trả lời bằng lời.
+      if (typeof result.chosen_index === "number") {
+        resolveExercise(itemId, result.chosen_index, "tap");
+        return;
+      }
+
+      // Media: báo model là nội dung đã hiện xong.
       const entry = respondRef.current.get(itemId);
       respondRef.current.delete(itemId);
-      const name = entry?.item.kind === "exercise" ? "show_exercise" : "show_media";
-      entry?.respond([{ name, response: result as Record<string, unknown> }]);
-
-      // Mô tả kết quả dễ đọc để lưu log.
-      let text: string;
-      if (typeof result.chosen_index === "number") {
-        const letter = String.fromCharCode(65 + result.chosen_index);
-        text = result.correct === undefined
-          ? `Bé chọn đáp án ${letter}.`
-          : `Bé chọn đáp án ${letter} — ${result.correct ? "ĐÚNG" : "SAI"}.`;
-      } else {
-        text = "Bé đã xem nội dung trên màn hình.";
-      }
+      entry?.respond([{ name: "show_media", response: { shown: true } }]);
       pushLog({
         role: "tool",
-        text,
-        meta: {
-          event: "result",
-          tool: name,
-          item_id: itemId,
-          result: result as Record<string, unknown>,
-        },
+        text: "Bé đã xem nội dung trên màn hình.",
+        meta: { event: "result", tool: "show_media", item_id: itemId, result: { shown: true } },
       });
     },
-    [pushLog],
+    [pushLog, resolveExercise],
   );
 
   const getLog = useCallback(() => logRef.current, []);
 
-  return { current, onToolCall, onTurnsChange, onResolve, getLog };
+  return { current, resolution, onToolCall, onTurnsChange, onResolve, getLog };
 }

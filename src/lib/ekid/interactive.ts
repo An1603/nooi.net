@@ -67,15 +67,81 @@ export function isNoticeItem(item: InteractiveItem): item is NoticeItem {
   return item.kind === "notice";
 }
 
-/** Kết quả trả về model sau khi bé tương tác với một item. */
+/**
+ * Nguồn của một câu trả lời: bé BẤM trên màn hình hay TRẢ LỜI BẰNG LỜI NÓI.
+ * Dùng để log phản ánh đúng thực tế (bé đã trả lời bằng cách nào).
+ */
+export type AnswerSource = "tap" | "voice";
+
+/** Kết quả trả về model sau khi bé tương tác với một item (đã chấm nếu AI cho đáp án). */
 export interface ExerciseResult {
   chosen_index: number;
   /** Chỉ có khi AI cung cấp `answer_index`. */
   correct?: boolean;
+  /** Bé trả lời bằng cách nào — bấm màn hình hay nói. */
+  source: AnswerSource;
+  /** Nguyên văn lời bé nói (chỉ khi `source === "voice"`), đã cắt tối đa 200 ký tự. */
+  spoken?: string;
 }
 
 export interface MediaResult {
   shown: true;
+}
+
+// ─── Chấm & mô tả kết quả (dùng CHUNG cho cả 2 đường: bấm và lời nói) ─────────
+
+const OPTION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+/** Chữ cái của một lựa chọn (0 → A, 1 → B…). */
+export function optionLetter(index: number): string {
+  return OPTION_LETTERS[index] ?? String(index + 1);
+}
+
+/**
+ * Chấm một lựa chọn cho bài tập. Hàm THUẦN — một đường duy nhất dùng cho cả
+ * bấm trên màn hình lẫn bé trả lời bằng lời, nên kết quả luôn đồng bộ.
+ */
+export function gradeExercise(
+  item: Pick<ExerciseItem, "answerIndex">,
+  chosenIndex: number,
+  source: AnswerSource,
+  spoken?: string,
+): ExerciseResult {
+  const result: ExerciseResult = { chosen_index: chosenIndex, source };
+  if (typeof item.answerIndex === "number") result.correct = chosenIndex === item.answerIndex;
+  const trimmed = spoken?.trim();
+  if (trimmed) result.spoken = trimmed.slice(0, 200);
+  return result;
+}
+
+/** Câu mô tả kết quả để ghi log/session — nói rõ bé trả lời BẰNG LỜI hay BẤM. */
+export function describeAnswer(result: ExerciseResult): string {
+  const letter = optionLetter(result.chosen_index);
+  const how =
+    result.source === "voice"
+      ? `Bé trả lời bằng lời${result.spoken ? `: "${result.spoken}"` : ""} → chọn đáp án ${letter}`
+      : `Bé bấm chọn đáp án ${letter}`;
+  if (result.correct === undefined) return `${how} — đã ghi nhận.`;
+  return `${how} — ${result.correct ? "ĐÚNG" : "SAI"}.`;
+}
+
+/**
+ * Gợi ý ngắn cho khung "ghi chú" cột trái màn hình con — bám theo nội dung
+ * đang hiện (`current`) và kết quả đã ghi nhận (`resolution`).
+ */
+export function stageHint(
+  current: InteractiveItem | null,
+  resolution: { itemId: string; correct?: boolean } | null,
+): string {
+  if (!current) return 'Bấm mic rồi nói điều con muốn: hỏi bài, kể chuyện hoặc luyện nói.';
+  if (current.kind === "media") return "Con xem thật kỹ rồi kể cho thầy/cô AI nghe nhé!";
+  if (current.kind === "notice") return "Thầy/cô AI đang tìm nội dung khác cho con.";
+
+  const answered = resolution && resolution.itemId === current.id ? resolution : null;
+  if (!answered) return 'Con hãy bấm một đáp án, hoặc nói: "con chọn A" (B, C…).';
+  if (answered.correct === true) return "Con trả lời đúng rồi — nghe thầy/cô AI khen nhé! 🎉";
+  if (answered.correct === false) return "Đã ghi nhận câu trả lời — nghe thầy/cô AI gợi mở nhé! 💪";
+  return "Đã ghi nhận câu trả lời của con. 👍";
 }
 
 // ─── Function declarations (gửi kèm setup của Gemini Live) ────────────────────
@@ -145,6 +211,31 @@ export const EKID_TOOLS: EkidToolDeclaration[] = [
       required: ["url", "kind"],
     },
   },
+  {
+    name: "answer_exercise",
+    description:
+      "GHI NHẬN câu trả lời của bé cho bài tập ĐANG hiện trên màn hình khi bé trả lời " +
+      "BẰNG LỜI NÓI (ví dụ bé nói \"con chọn B\", \"đáp án là số 2\", \"con nghĩ là ba\"). " +
+      "CHỈ gọi khi trên màn hình đang có thẻ bài tập chưa được trả lời. " +
+      "KHÔNG gọi khi bé bấm trên màn hình — lúc đó hệ thống tự ghi nhận. " +
+      "Sau khi gọi, hãy phản hồi bằng giọng: khen khi đúng, gợi mở nhẹ nhàng khi sai.",
+    parameters: {
+      type: "object",
+      properties: {
+        chosen_index: {
+          type: "integer",
+          description:
+            "Vị trí (bắt đầu từ 0) của lựa chọn mà bé vừa nói — dựa trên đúng thứ tự " +
+            "`options` của bài tập đang hiện.",
+        },
+        spoken: {
+          type: "string",
+          description: "Nguyên văn lời bé vừa nói (để ghi log trung thực).",
+        },
+      },
+      required: ["chosen_index"],
+    },
+  },
 ];
 
 // ─── Prompt mô tả công cụ (chèn vào system instruction) ───────────────────────
@@ -162,6 +253,10 @@ export function toolsPromptSection(): string {
     "- `show_media`: hiện ẢNH hoặc VIDEO minh hoạ (YouTube hoặc file .mp4) lên màn hình.",
     "  Dùng khi bé hỏi về con vật, đồ vật, sự việc, bài hát, hoạt động… mà một hình ảnh",
     "  hoặc đoạn video sẽ giúp bé dễ hiểu hơn.",
+    "- `answer_exercise`: GHI NHẬN câu trả lời khi bé trả lời BẰNG LỜI NÓI cho thẻ bài tập",
+    "  đang hiện trên màn hình (ví dụ bé nói \"con chọn B\"). Bé có thể trả lời bằng cách",
+    "  BẤM trên màn hình hoặc NÓI — cả hai đường đều được ghi nhận như nhau, kết quả hiện",
+    "  ngay trên thẻ. Bé bấm rồi thì KHÔNG gọi lại công cụ này.",
     "Nguyên tắc dùng công cụ:",
     "- Chỉ gọi khi thực sự hữu ích cho bài học/buổi trò chuyện; KHÔNG lạm dụng dồn dập.",
     "- Trước/sau khi gọi, hãy NÓI cho bé biết: gọi công cụ ở giữa lượt bạn đang nói,",

@@ -127,6 +127,11 @@ export async function middleware(request: NextRequest) {
       }
       // Đã đúng path /ekid/* (đã qua auth) → để nguyên
       if (pathname.startsWith("/ekid")) return supabaseResponse;
+      // URL ngắn /bai-hoc trên host ekid → REWRITE sang /ekid/bai-hoc (GIỮ URL
+      // /bai-hoc trên thanh địa chỉ, giống /login). Thư viện bài học tách riêng.
+      if (pathname === "/bai-hoc") {
+        return withCookies(NextResponse.rewrite(new URL("/ekid/bai-hoc", request.url)), supabaseResponse);
+      }
       // Path khác trên host ekid → rewrite nội bộ sang /ekid + path, GIỮ query string (M1)
       const target = "/ekid" + (pathname === "/" ? "" : pathname) + request.nextUrl.search;
       return withCookies(NextResponse.rewrite(new URL(target, request.url)), supabaseResponse);

@@ -117,6 +117,19 @@ describe("middleware eKid host — (C) API passthrough", () => {
     expect(new URL(target!).pathname).toBe("/ekid/hoc/abc");
   });
 
+  it("URL ngắn /bai-hoc của con → rewrite sang /ekid/bai-hoc (giữ URL)", async () => {
+    updateSessionMock.mockResolvedValue({
+      supabase: fakeSupabase([{ id: "kid1" }]),
+      supabaseResponse: new Response(null, { status: 200 }),
+      user: { id: "child-user-1" },
+    });
+
+    const res = await middleware(makeReq("/bai-hoc"));
+    const target = rewriteTarget(res);
+    expect(target).not.toBeNull();
+    expect(new URL(target!).pathname).toBe("/ekid/bai-hoc");
+  });
+
   it("path /ekid/* của con đi thẳng, không rewrite", async () => {
     updateSessionMock.mockResolvedValue({
       supabase: fakeSupabase([{ id: "kid1" }]),

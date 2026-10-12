@@ -115,7 +115,7 @@ export function EkidVoiceSession({
             tools={EKID_TOOLS}
             onToolCall={interactive.onToolCall}
           />
-          <InteractiveStage items={interactive.items} onResolve={interactive.onResolve} />
+          <InteractiveStage item={interactive.current} onResolve={interactive.onResolve} />
         </>
       ) : (
         <div

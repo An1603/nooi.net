@@ -1,17 +1,16 @@
 "use client";
 
-// InteractiveStage — sân khấu nội dung tương tác của con (eKid v3.1).
+// InteractiveStage — sân khấu nội dung tương tác của con (eKid v3.2).
 //
-// AI (qua Gemini Live function calling) chủ động đẩy bài tập / ảnh / video lên đây
-// ĐỒNG THỜI với hội thoại. Bé có thể chạm chọn đáp án ngay trong lúc vẫn đang nói.
-// Thẻ MỚI NHẤT được làm nổi bật (viền + bóng); các thẻ cũ giữ lại trong lịch sử cuộn.
-// Tông SÁNG theo kid-theme (KHÔNG dùng token tối của NOOI).
+// Chỉ hiển thị MỘT nội dung tại một thời điểm (`item` — bài tập/ảnh/video) và TỰ VỪA
+// KHUNG theo kích thước màn hình (object-contain + min-h). Nội dung mới THAY NGAY nội
+// dung cũ (không lịch sử cuộn). Bài tập GIỮ trạng thái đúng/sai sau khi bé chọn cho tới
+// khi có nội dung kế tiếp. Tông SÁNG theo kid-theme (KHÔNG dùng token tối của NOOI).
 //
 // Bé tương tác xong → `onResolve(itemId, result)` để cha gửi `toolResponse` về model
 // và ghi log hội thoại.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { KID } from "@/components/ekid/child/kid-theme";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   isExerciseItem,
   isMediaItem,
@@ -23,23 +22,17 @@ import {
 export type InteractiveResult = ExerciseResult | MediaResult;
 
 interface InteractiveStageProps {
-  items: InteractiveItem[];
+  /** Nội dung đang trình chiếu (null → cha tự hiện trạng thái chờ). */
+  item: InteractiveItem | null;
   /** Gọi MỘT LẦN khi bé tương tác xong với một item (chọn đáp án / nội dung đã hiện). */
   onResolve: (itemId: string, result: InteractiveResult) => void;
 }
 
-export function InteractiveStage({ items, onResolve }: InteractiveStageProps) {
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  // Đáp án bé đã chọn cho từng thẻ bài tập (itemId → index).
-  const [chosen, setChosen] = useState<Record<string, number>>({});
-  // Thẻ đã "chốt" (không cho chọn lại / không báo lại cho model).
+export function InteractiveStage({ item, onResolve }: InteractiveStageProps) {
+  // Các item đã "chốt" (không cho chọn lại / không báo lại cho model).
   const resolvedRef = useRef<Set<string>>(new Set());
-
-  // Tự cuộn xuống thẻ mới nhất mỗi khi có nội dung mới.
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [items.length]);
+  // Đáp án bé đã chọn CHO nội dung đang hiện (kèm id để tự reset khi item đổi).
+  const [chosen, setChosen] = useState<{ id: string; index: number } | null>(null);
 
   const resolve = useCallback(
     (id: string, result: InteractiveResult) => {
@@ -52,51 +45,38 @@ export function InteractiveStage({ items, onResolve }: InteractiveStageProps) {
 
   // Media coi như "đã hiện" ngay khi render → báo một lần cho model.
   useEffect(() => {
-    for (const item of items) {
-      if (isMediaItem(item)) resolve(item.id, { shown: true });
-    }
-  }, [items, resolve]);
+    if (item && isMediaItem(item)) resolve(item.id, { shown: true });
+  }, [item, resolve]);
 
   const choose = useCallback(
-    (item: InteractiveItem, index: number) => {
-      if (resolvedRef.current.has(item.id)) return;
-      const answerIndex = isExerciseItem(item) ? item.answerIndex : undefined;
+    (target: InteractiveItem, index: number) => {
+      if (resolvedRef.current.has(target.id)) return;
+      const answerIndex = isExerciseItem(target) ? target.answerIndex : undefined;
       const result: ExerciseResult =
         typeof answerIndex === "number"
           ? { chosen_index: index, correct: index === answerIndex }
           : { chosen_index: index };
-      setChosen((prev) => ({ ...prev, [item.id]: index }));
-      resolve(item.id, result);
+      setChosen({ id: target.id, index });
+      resolve(target.id, result);
     },
     [resolve],
   );
 
-  if (items.length === 0) return null;
+  if (!item) return null;
 
-  const lastId = items[items.length - 1]?.id;
+  const chosenIndex = chosen && chosen.id === item.id ? chosen.index : undefined;
 
   return (
     <section
       aria-label="Nội dung tương tác"
-      className={`${KID.cardPad} flex flex-col gap-3`}
+      className="flex min-h-[50vh] w-full flex-1 items-center justify-center"
     >
-      <div ref={scrollRef} className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto no-scrollbar">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className={
-              item.id === lastId
-                ? "animate-slide-up rounded-2xl ring-4 ring-[#ffd93d] ring-offset-2 ring-offset-white"
-                : "opacity-90"
-            }
-          >
-            {isExerciseItem(item) ? (
-              <ExerciseCard item={item} chosen={chosen[item.id]} onChoose={(i) => choose(item, i)} />
-            ) : (
-              <MediaCard item={item} />
-            )}
-          </div>
-        ))}
+      <div key={item.id} className="w-full animate-slide-up">
+        {isExerciseItem(item) ? (
+          <ExerciseCard item={item} chosen={chosenIndex} onChoose={(i) => choose(item, i)} />
+        ) : (
+          <MediaCard item={item} />
+        )}
       </div>
     </section>
   );
@@ -117,8 +97,8 @@ function ExerciseCard({
   const hasAnswer = typeof item.answerIndex === "number";
 
   return (
-    <div className="rounded-2xl border-2 border-[#bae6fd] bg-[#f7fcff] p-4">
-      <p className="mb-3 text-lg font-extrabold text-[#3b2a20]">
+    <div className="mx-auto w-full max-w-2xl rounded-2xl border-2 border-[#bae6fd] bg-[#f7fcff] p-4 sm:p-6">
+      <p className="mb-3 text-lg font-extrabold text-[#3b2a20] sm:text-xl">
         <span aria-hidden className="mr-1">📝</span>
         {item.question}
       </p>
@@ -213,21 +193,16 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
   const embed = item.mediaType === "video" ? youtubeEmbedUrl(item.url) : null;
   const safe = isSafeUrl(item.url);
 
-  const container = useMemo(
-    () => "overflow-hidden rounded-2xl border-2 border-[#bae6fd] bg-[#f7fcff]",
-    [],
-  );
-
   return (
-    <div className={container}>
-      <div className="aspect-video w-full bg-white">
+    <div className="overflow-hidden rounded-2xl border-2 border-[#bae6fd] bg-[#f7fcff]">
+      <div className="flex min-h-[50vh] w-full items-center justify-center bg-white/60 p-2 sm:p-3">
         {item.mediaType === "image" ? (
           safe ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={item.url}
               alt={item.caption ?? "Hình minh hoạ"}
-              className="h-full w-full object-contain"
+              className="max-h-[65vh] w-auto max-w-full object-contain"
               loading="lazy"
             />
           ) : (
@@ -237,7 +212,7 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
           <iframe
             src={embed}
             title={item.caption ?? "Video minh hoạ"}
-            className="h-full w-full"
+            className="aspect-video w-full max-w-4xl"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
@@ -246,7 +221,7 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
             src={item.url}
             controls
             playsInline
-            className="h-full w-full"
+            className="max-h-[65vh] w-auto max-w-full object-contain"
             aria-label={item.caption ?? "Video minh hoạ"}
           />
         ) : (

@@ -1,10 +1,17 @@
 "use client";
 
-// EkidTalkCard — khung trò chuyện AI ở ĐẦU trang chủ con (kiểu NOOI AI Mentor).
-// Chỉ tái dùng VoiceAssistant + buildSystemInstruction; KHÔNG viết lại engine voice.
-// Nạp BỘ NHỚ về bé vào ngữ cảnh AI; tự lưu hội thoại một lần khi kết thúc buổi.
+// EkidTalkScreen — màn hình chính của con (eKid v3.2).
+//
+// Bố cục: SÂN KHẤU TRÌNH CHIẾU là chủ đạo (flex-1, chiếm phần lớn màn hình) + VOICE DOCK
+// GỌN neo góc dưới-phải (mobile) / cạnh phải (desktop). Không tiêu đề lớn/tip/hội thoại ở
+// đây — chỉ nút mic tròn (chế độ `compact` của VoiceAssistant).
+//
+// Tái dùng VoiceAssistant + useEkidInteractive; KHÔNG viết lại engine voice.
+// Nạp BỘ NHỚ về bé vào ngữ cảnh AI; tự lưu hội thoại một lần khi kết thúc buổi
+// (visibilitychange/pagehide) — logic chuyển từ EkidTalkCard cũ.
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
@@ -44,10 +51,10 @@ function isVoiceOption(value: string | null): value is VoiceOption {
 }
 
 /**
- * Thẻ trò chuyện AI cho bé: thẻ tiêu đề kiểu AI Mentor chứa trợ lý giọng nói.
- * Hết giờ học trong ngày (`remaining <= 0`) → thay bằng lời hẹn ngày mai.
+ * Màn hình trò chuyện + trình chiếu của bé: sân khấu chủ đạo, voice dock gọn ở góc,
+ * nút "📚 Bài học" mở trang thư viện riêng.
  */
-export function EkidTalkCard({ kid, remaining }: { kid: TalkKid; remaining: number }) {
+export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: number }) {
   const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
     ? kid.favorite_voice
     : BAND_VOICE[kid.placement_age_band ?? "mam-non"];
@@ -67,16 +74,11 @@ export function EkidTalkCard({ kid, remaining }: { kid: TalkKid; remaining: numb
         freeSession: true,
         recentNotes: kid.memory ?? null,
       }),
-    [
-      kid.name,
-      kid.placement_age_band,
-      kid.placement_level,
-      kid.memory,
-    ],
+    [kid.name, kid.placement_age_band, kid.placement_level, kid.memory],
   );
 
-  // ── Lớp tương tác (bài tập/ảnh/video) + ghi log hội thoại ────────────────
-  const { items, onToolCall, onTurnsChange, onResolve, getLog } = useEkidInteractive();
+  // ── Lớp tương tác (1 nội dung hiện tại) + ghi log hội thoại ───────────────
+  const { current, onToolCall, onTurnsChange, onResolve, getLog } = useEkidInteractive();
 
   // ── Thu thập + tự lưu hội thoại ─────────────────────────────────────────
   const sentRef = useRef(false); // Chỉ gửi MỘT LẦN cho mỗi buổi.
@@ -122,34 +124,59 @@ export function EkidTalkCard({ kid, remaining }: { kid: TalkKid; remaining: numb
   }, [saveSession]);
 
   return (
-    <section
-      className={`${KID.cardPad} flex flex-col gap-4`}
-      aria-label={`Bạn AI của ${kid.name}`}
-    >
-      <div className="text-center">
-        <h2 className="text-2xl font-extrabold text-[#3b2a20]">
+    <div className="relative flex min-h-[72vh] flex-col gap-3 md:min-h-[78vh]">
+      {/* ── Thanh trên: tiêu đề nhỏ + nút mở thư viện bài học ── */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className={KID.h1}>
           <span aria-hidden className="mr-1">
             🎙️
           </span>
           Bạn AI của {kid.name}
-        </h2>
-        <p className="mt-1 text-base font-semibold text-[#6b5648]">
-          Trò chuyện cùng bạn AI — hỏi bài, kể chuyện hay luyện nói nhé!
-        </p>
+        </h1>
+        <Link href="/bai-hoc" className={KID.btnGhost}>
+          📚 Bài học
+        </Link>
       </div>
 
       {remaining > 0 ? (
         <>
-          <VoiceAssistant
-            voice={voice}
-            systemInstruction={systemInstruction}
-            title={`Bạn AI của ${kid.name}`}
-            hideTranscript
-            onTurnsChange={onTurnsChange}
-            tools={EKID_TOOLS}
-            onToolCall={onToolCall}
-          />
-          <InteractiveStage items={items} onResolve={onResolve} />
+          {/* ── SÂN KHẤU (chủ đạo, flex-1) ── */}
+          <section
+            aria-label="Sân khấu trình chiếu"
+            className="flex flex-1 items-center justify-center rounded-3xl border-2 border-white bg-white/60 p-3 pb-28 shadow-lg shadow-sky-200/50 sm:p-5 md:pb-5"
+          >
+            {current ? (
+              <InteractiveStage item={current} onResolve={onResolve} />
+            ) : (
+              <div className="flex max-w-md flex-col items-center gap-3 text-center">
+                <span className="text-5xl" aria-hidden>
+                  🎈
+                </span>
+                <p className="text-xl font-extrabold text-[#3b2a20]">
+                  Bấm mic để trò chuyện cùng thầy/cô AI
+                </p>
+                <p className="text-base font-semibold text-[#6b5648]">
+                  Con có thể hỏi bài, kể chuyện hoặc luyện nói — thầy/cô AI sẽ hiện hình ảnh và bài tập lên đây nhé!
+                </p>
+              </div>
+            )}
+          </section>
+
+          {/* ── VOICE DOCK gọn: góc dưới-phải (mobile) / cạnh phải (desktop) ── */}
+          <div className="fixed bottom-4 right-4 z-40 md:bottom-auto md:top-1/2 md:right-6 md:-translate-y-1/2">
+            <div className={`${KID.cardPad} flex flex-col items-center gap-2 p-3`}>
+              <VoiceAssistant
+                voice={voice}
+                systemInstruction={systemInstruction}
+                title={`Bạn AI của ${kid.name}`}
+                hideTranscript
+                onTurnsChange={onTurnsChange}
+                tools={EKID_TOOLS}
+                onToolCall={onToolCall}
+                compact
+              />
+            </div>
+          </div>
         </>
       ) : (
         <div
@@ -159,6 +186,6 @@ export function EkidTalkCard({ kid, remaining }: { kid: TalkKid; remaining: numb
           Hôm nay mình học đủ rồi, hẹn bé ngày mai nhé! 🌙
         </div>
       )}
-    </section>
+    </div>
   );
 }

@@ -50,6 +50,12 @@ interface VoiceAssistantProps {
   tools?: unknown[];
   /** Xử lý khi model gọi hàm (chỉ khi eKid truyền `tools`). */
   onToolCall?: OnToolCall;
+  /**
+   * Chế độ GỌN (voice dock): chỉ nút mic tròn + trạng thái 1 dòng ngắn.
+   * BỎ tiêu đề lớn / tip / khối hội thoại — dùng cho góc sân khấu eKid.
+   * Mặc định `false` → giao diện AI Mentor KHÔNG đổi.
+   */
+  compact?: boolean;
 }
 
 export function VoiceAssistant({
@@ -60,6 +66,7 @@ export function VoiceAssistant({
   onTurnsChange,
   tools,
   onToolCall,
+  compact = false,
 }: VoiceAssistantProps) {
   const {
     status,
@@ -80,6 +87,71 @@ export function VoiceAssistant({
   const isListening = status === "listening";
   const isSpeaking = status === "speaking";
   const hasConversation = transcript.length > 0 || response.length > 0;
+
+  // ── Chế độ GỌN (voice dock eKid): nút mic tròn + 1 dòng trạng thái ngắn ──
+  // BỎ tiêu đề lớn / tip / khối hội thoại. Mặc định `compact=false`.
+  if (compact) {
+    const label = error
+      ? "Có lỗi kết nối"
+      : isBusy
+        ? STATUS_LABELS[status]
+        : isListening
+          ? "Đang nghe..."
+          : isSpeaking
+            ? "Đang trả lời..."
+            : status === "connected"
+              ? (isMicMuted ? "Mic đang tắt" : "Đang nghe...")
+              : "Bấm mic để nói";
+
+    const dotColor =
+      isListening ? "#ef4444" :
+      isSpeaking ? "#a78bfa" :
+      error ? "#ef4444" :
+      isBusy ? "#fbbf24" :
+      isActive ? "#22c55e" :
+      "#9c8b7e";
+
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <button
+          type="button"
+          onClick={isActive ? stop : start}
+          disabled={isBusy}
+          aria-label={isActive ? "Tắt mic" : "Bật mic trò chuyện"}
+          className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{
+            borderColor: isListening ? "#ef4444" : isSpeaking ? "#a78bfa" : "#4ecdc4",
+            background: isListening ? "#fee2e2" : isSpeaking ? "#ede9fe" : "#e6fffb",
+            boxShadow: isActive ? `0 0 22px ${dotColor}55` : "0 4px 12px rgba(0,0,0,0.08)",
+          }}
+        >
+          {isBusy ? (
+            <Loader2 className="h-7 w-7 animate-spin text-[#6b5648]" />
+          ) : isSpeaking ? (
+            <Volume2 className="h-7 w-7 animate-pulse text-[#7c3aed]" />
+          ) : isActive && !isMicMuted ? (
+            <Mic className="h-7 w-7 text-[#e15a3a]" />
+          ) : (
+            <MicOff className="h-7 w-7 text-[#0d9488]" />
+          )}
+          {isActive && !isMicMuted && (
+            <span
+              aria-hidden
+              className="absolute inset-0 animate-ping rounded-full border-2"
+              style={{ borderColor: isSpeaking ? "#a78bfa" : "#ef4444" }}
+            />
+          )}
+        </button>
+        <span
+          role="status"
+          className="whitespace-nowrap rounded-full bg-white/95 px-3 py-1 text-xs font-bold shadow-sm"
+          style={{ color: error ? "#b91c1c" : "#3b2a20" }}
+        >
+          {label}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6">

@@ -1,11 +1,12 @@
 "use client";
 
-// useEkidInteractive — gom logic lớp tương tác eKid v3.1 dùng CHUNG cho EkidTalkCard
+// useEkidInteractive — gom logic lớp tương tác eKid dùng CHUNG cho EkidTalkScreen
 // (trang chủ con) và EkidVoiceSession (trong bài học):
 //   - Nhận `tool_call` từ Gemini Live → tạo item (bài tập/ảnh/video) + render.
+//   - Mỗi tool call THAY THẾ nội dung đang hiện (sân khấu chỉ có 1 nội dung: `current`).
 //   - Khi bé tương tác xong → gọi `respond([...])` trả kết quả về model.
 //   - Ghi MỖI tool call + kết quả vào LOG hội thoại theo thứ tự (trộn chung lượt BÉ/AI
-//     để lưu vào `ekid_sessions.transcript`/memory).
+//     để lưu vào `ekid_sessions.transcript`/memory) — log vẫn ĐẦY ĐỦ dù stage chỉ 1 item.
 //
 // FALLBACK: nếu model Live không hỗ trợ function calling thì đơn giản KHÔNG có
 // `tool_call` nào được phát ra — stage rỗng, toàn bộ code vẫn build sạch và buổi
@@ -48,8 +49,8 @@ function asIntOrUndef(v: unknown): number | undefined {
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export interface EkidInteractiveController {
-  /** Danh sách item đang hiển thị (mới nhất ở cuối). */
-  items: InteractiveItem[];
+  /** Nội dung ĐANG hiển thị trên sân khấu (mỗi tool call THAY THẾ nội dung cũ). */
+  current: InteractiveItem | null;
   /** Truyền vào `VoiceAssistant onToolCall`. */
   onToolCall: OnToolCall;
   /** Truyền vào `VoiceAssistant onTurnsChange` — gom lượt BÉ/AI vào log. */
@@ -61,18 +62,20 @@ export interface EkidInteractiveController {
 }
 
 export function useEkidInteractive(): EkidInteractiveController {
-  const [items, setItems] = useState<InteractiveItem[]>([]);
+  const [current, setCurrent] = useState<InteractiveItem | null>(null);
 
-  const itemsRef = useRef<InteractiveItem[]>([]);
+  const currentRef = useRef<InteractiveItem | null>(null);
   const logRef = useRef<EkidLogTurn[]>([]);
   const convLenRef = useRef(0); // số lượt BÉ/AI đã nạp vào log
   const seqRef = useRef(0); // sinh id item tăng dần
-  // respond của mỗi item (một batch `tool_call` dùng chung một hàm respond).
-  const respondRef = useRef<Map<string, (res: ToolFunctionResponse[]) => void>>(new Map());
+  // respond của mỗi item + item gốc (một batch `tool_call` dùng chung một hàm respond).
+  const respondRef = useRef<Map<string, { respond: (res: ToolFunctionResponse[]) => void; item: InteractiveItem }>>(
+    new Map(),
+  );
 
   useEffect(() => {
-    itemsRef.current = items;
-  }, [items]);
+    currentRef.current = current;
+  }, [current]);
 
   const pushLog = useCallback((turn: EkidLogTurn) => {
     logRef.current = [...logRef.current, turn];
@@ -135,9 +138,9 @@ export function useEkidInteractive(): EkidInteractiveController {
           respond([{ name: call.name, response: { error: "unsupported_or_invalid" } }]);
           continue;
         }
-        respondRef.current.set(item.id, respond);
-        // Giữ tối đa 30 item gần nhất — tránh DOM phình vô hạn trong phiên dài.
-        setItems((prev) => [...prev, item].slice(-30));
+        respondRef.current.set(item.id, { respond, item });
+        // THAY THẾ nội dung đang hiện — sân khấu chỉ có 1 nội dung tại một thời điểm.
+        setCurrent(item);
         pushLog({
           role: "tool",
           text: `AI hiện ${item.kind === "exercise" ? "bài tập" : "nội dung"} lên màn hình.`,
@@ -150,11 +153,10 @@ export function useEkidInteractive(): EkidInteractiveController {
 
   const onResolve = useCallback<EkidInteractiveController["onResolve"]>(
     (itemId, result) => {
-      const respond = respondRef.current.get(itemId);
+      const entry = respondRef.current.get(itemId);
       respondRef.current.delete(itemId);
-      const item = itemsRef.current.find((i) => i.id === itemId);
-      const name = item?.kind === "exercise" ? "show_exercise" : "show_media";
-      respond?.([{ name, response: result as Record<string, unknown> }]);
+      const name = entry?.item.kind === "exercise" ? "show_exercise" : "show_media";
+      entry?.respond([{ name, response: result as Record<string, unknown> }]);
 
       // Mô tả kết quả dễ đọc để lưu log.
       let text: string;
@@ -182,5 +184,5 @@ export function useEkidInteractive(): EkidInteractiveController {
 
   const getLog = useCallback(() => logRef.current, []);
 
-  return { items, onToolCall, onTurnsChange, onResolve, getLog };
+  return { current, onToolCall, onTurnsChange, onResolve, getLog };
 }

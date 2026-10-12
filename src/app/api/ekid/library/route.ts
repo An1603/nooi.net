@@ -18,6 +18,7 @@ interface KidRow {
   user_id: string;
   child_user_id: string | null;
   settings: unknown;
+  memory: string | null;
 }
 
 interface ProgressRow {
@@ -33,7 +34,7 @@ async function accessibleKid(userId: string, kidId: string): Promise<KidRow | nu
   const { data: kid } = await admin
     .from("ekid_kids")
     .select(
-      "id, name, username, avatar_emoji, favorite_voice, placement_age_band, placement_level, daily_limit_min, user_id, child_user_id, settings",
+      "id, name, username, avatar_emoji, favorite_voice, placement_age_band, placement_level, daily_limit_min, user_id, child_user_id, settings, memory",
     )
     .eq("id", kidId)
     .maybeSingle();

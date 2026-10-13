@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
+  buildVideoQuery,
   commonsSearchUrl,
+  isKidSafeTitle,
   pickCommonsImage,
+  rankVideoCandidates,
   sanitizeMediaQuery,
   youtubeWatchUrl,
   ytDlpSearch,
@@ -39,7 +42,7 @@ async function permittedKid(userId: string, kidId: string): Promise<KidRow | nul
 
 const notFound: FoundMedia = { ok: false, kind: null, url: null };
 
-/** Tìm ẢNH thật trên Wikimedia Commons (không cần key). */
+/** Tìm ẢNH thật trên Wikimedia Commons (không cần key) — LỌC tiêu đề không phù hợp. */
 async function findImage(query: string): Promise<FoundMedia> {
   try {
     const res = await fetch(commonsSearchUrl(query), {
@@ -47,7 +50,7 @@ async function findImage(query: string): Promise<FoundMedia> {
       signal: AbortSignal.timeout(12000),
     });
     if (!res.ok) return notFound;
-    const image = pickCommonsImage(await res.json());
+    const image = pickCommonsImage(await res.json(), isKidSafeTitle);
     if (!image) return notFound;
     return { ok: true, kind: "image", url: image.url, title: image.title, source: "commons" };
   } catch {
@@ -55,9 +58,13 @@ async function findImage(query: string): Promise<FoundMedia> {
   }
 }
 
-/** Tìm VIDEO YouTube thật (qua `yt-dlp`) rồi chỉ nhận video NHÚNG ĐƯỢC. */
+/**
+ * Tìm VIDEO YouTube thật (qua `yt-dlp`) rồi chỉ nhận video NHÚNG ĐƯỢC.
+ * AN TOÀN CHO BÉ: truy vấn được thêm hậu tố "cho bé"; danh sách BỎ tiêu đề không phù
+ * hợp và ƯU TIÊN tiêu đề thiếu nhi trước khi kiểm nhúng.
+ */
 async function findVideo(query: string): Promise<FoundMedia> {
-  const candidates = await ytDlpSearch(query, 5);
+  const candidates = rankVideoCandidates(await ytDlpSearch(buildVideoQuery(query), 8));
   for (const c of candidates) {
     if (await checkYouTubeEmbeddable(c.id)) {
       return {

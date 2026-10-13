@@ -46,6 +46,84 @@ export function youtubeWatchUrl(videoId: string): string {
   return `https://www.youtube.com/watch?v=${videoId}`;
 }
 
+// ─── AN TOÀN CHO BÉ ──────────────────────────────────────────────────────────
+
+/** Hậu tố hướng nội dung về trẻ em khi TÌM VIDEO (YouTube có nhiều nội dung người lớn). */
+export const KID_VIDEO_SUFFIX = "cho bé";
+
+/** Dấu hiệu tiêu đề DÀNH CHO TRẺ EM (để ưu tiên khi xếp hạng). */
+const KID_TITLE_HINTS = [
+  "thiếu nhi",
+  "cho bé",
+  "trẻ em",
+  "hoạt hình",
+  "bài hát",
+  "nhạc thiếu",
+  "em bé",
+  "mầm non",
+  "bé",
+  "kids",
+  "for children",
+];
+
+/** Từ khoá KHÔNG phù hợp với trẻ em (lọc tiêu đề — lớp phòng thủ rẻ tiền). */
+const BLOCKED_TITLE_WORDS = [
+  "18+",
+  "tình dục",
+  "khiêu dâm",
+  "sex",
+  "xxx",
+  "nude",
+  "gợi cảm",
+  "bạo lực",
+  "máu me",
+  "giết người",
+  "tự tử",
+  "ma túy",
+  "cờ bạc",
+  "rượu",
+  "bia",
+  "thuốc lá",
+  "kinh dị",
+  "horror",
+  "cá độ",
+  "đánh nhau",
+];
+
+/** Từ khoá thêm vào truy vấn VIDEO để hướng về nội dung trẻ em. */
+export function buildVideoQuery(query: string, suffix: string = KID_VIDEO_SUFFIX): string {
+  const q = (query ?? "").trim();
+  if (!q) return q;
+  const lower = q.toLowerCase();
+  // Đã có sẵn hậu tố (hoặc từ tương đương) → không thêm nữa.
+  if (lower.includes(suffix) || lower.includes("thiếu nhi") || lower.includes("trẻ em")) return q;
+  return sanitizeMediaQuery(`${q} ${suffix}`);
+}
+
+/** Tiêu đề có an toàn cho trẻ em không (rỗng → không an toàn). */
+export function isKidSafeTitle(title: string): boolean {
+  const t = (title ?? "").toLowerCase().trim();
+  if (!t) return false;
+  return !BLOCKED_TITLE_WORDS.some((w) => t.includes(w));
+}
+
+/** Tiêu đề có dấu hiệu dành cho trẻ em không. */
+export function isKidFriendlyTitle(title: string): boolean {
+  const t = (title ?? "").toLowerCase();
+  return KID_TITLE_HINTS.some((w) => t.includes(w));
+}
+
+/**
+ * Sắp xếp danh sách video tìm được: BỎ tiêu đề không phù hợp, rồi ƯU TIÊN tiêu đề
+ * thiếu nhi (giữ thứ tự tìm kiếm trong cùng nhóm). Dùng trước khi kiểm nhúng.
+ */
+export function rankVideoCandidates<T extends { id: string; title: string }>(list: T[]): T[] {
+  const safe = (list ?? []).filter((c) => isKidSafeTitle(c.title));
+  const preferred = safe.filter((c) => isKidFriendlyTitle(c.title));
+  const rest = safe.filter((c) => !isKidFriendlyTitle(c.title));
+  return [...preferred, ...rest];
+}
+
 const YT_ID_RE = /^[A-Za-z0-9_-]{6,20}$/;
 
 /**
@@ -84,7 +162,10 @@ interface CommonsPage {
  * Chọn ẢNH đầu tiên (theo `index` của Commons) từ payload MediaWiki
  * `generator=search&prop=imageinfo`. Bỏ qua mục không phải ảnh.
  */
-export function pickCommonsImage(payload: unknown): { url: string; title: string } | null {
+export function pickCommonsImage(
+  payload: unknown,
+  isAllowed: (title: string) => boolean = () => true,
+): { url: string; title: string } | null {
   const pages = (payload as { query?: { pages?: Record<string, CommonsPage> } })?.query?.pages;
   if (!pages || typeof pages !== "object") return null;
 
@@ -99,10 +180,12 @@ export function pickCommonsImage(payload: unknown): { url: string; title: string
   for (const it of items) {
     const mime = typeof it.info?.mime === "string" ? it.info.mime : "";
     const url = typeof it.info?.thumburl === "string" ? it.info.thumburl : "";
-    if (mime.startsWith("image/") && /^https?:\/\//i.test(url)) {
-      // Bỏ tham số theo dõi của Commons cho link gọn + cache tốt hơn.
-      return { url: url.split("?")[0], title: it.title.replace(/^File:/, "") };
-    }
+    if (!mime.startsWith("image/") || !/^https?:\/\//i.test(url)) continue;
+    const title = it.title.replace(/^File:/, "");
+    // Lọc theo tiêu đề (an toàn cho bé) — mặc định cho qua hết.
+    if (!isAllowed(title)) continue;
+    // Bỏ tham số theo dõi của Commons cho link gọn + cache tốt hơn.
+    return { url: url.split("?")[0], title };
   }
   return null;
 }

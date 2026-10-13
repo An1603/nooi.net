@@ -4,6 +4,9 @@ import {
   parseYtDlpSearch,
   pickCommonsImage,
   youtubeWatchUrl,
+  buildVideoQuery,
+  isKidSafeTitle,
+  rankVideoCandidates,
 } from "@/lib/ekid/media-find";
 
 describe("media-find — sanitizeMediaQuery", () => {
@@ -46,7 +49,37 @@ describe("media-find — parseYtDlpSearch", () => {
   });
 });
 
-describe("media-find — pickCommonsImage", () => {
+describe("media-find — AN TOÀN CHO BÉ (v3.4.1)", () => {
+  it("buildVideoQuery: thêm 'cho bé' cho video, không lặp nếu đã hướng trẻ em", () => {
+    expect(buildVideoQuery("con mèo")).toBe("con mèo cho bé");
+    expect(buildVideoQuery("con mèo cho bé")).toBe("con mèo cho bé");
+    // Đã là nội dung thiếu nhi/trẻ em → giữ nguyên, không nhồi thêm.
+    expect(buildVideoQuery("nhạc thiếu nhi")).toBe("nhạc thiếu nhi");
+    expect(buildVideoQuery("bài hát trẻ em")).toBe("bài hát trẻ em");
+  });
+
+  it("isKidSafeTitle: chặn tiêu đề nhạy cảm (Việt + Anh)", () => {
+    expect(isKidSafeTitle("Chú Mèo Con - Nhạc Thiếu Nhi Vui Nhộn")).toBe(true);
+    expect(isKidSafeTitle("Bài hát con mèo cho bé")).toBe(true);
+    expect(isKidSafeTitle("Mèo con 18+ tình dục")).toBe(false);
+    expect(isKidSafeTitle("Kinh dị: máu và bạo lực")).toBe(false);
+    expect(isKidSafeTitle("Hướng dẫn uống rượu bia")).toBe(false);
+    expect(isKidSafeTitle("Cat video xxx")).toBe(false);
+    expect(isKidSafeTitle("")).toBe(false);
+  });
+
+  it("rankVideoCandidates: bỏ tiêu đề xấu, ưu tiên tiêu đề thiếu nhi", () => {
+    const list = [
+      { id: "id0001", title: "Mèo con ngoài đường" },
+      { id: "id0002", title: "Mèo con 18+ cấm trẻ em" },
+      { id: "id0003", title: "Nhạc thiếu nhi về mèo con" },
+    ];
+    const out = rankVideoCandidates(list);
+    expect(out.map((x) => x.id)).toEqual(["id0003", "id0001"]);
+  });
+});
+
+describe("media-find — pickCommonsImage lọc theo tiêu đề", () => {
   const payload = {
     query: {
       pages: {
@@ -81,6 +114,28 @@ describe("media-find — pickCommonsImage", () => {
       query: { pages: { "9": { title: "File:x", imageinfo: [{ mime: "video/webm", thumburl: "u" }] } } },
     };
     expect(pickCommonsImage(only)).toBeNull();
+  });
+
+  it("lọc theo điều kiện: bỏ ảnh có tiêu đề bị chặn, lấy ảnh tiếp theo", () => {
+    const payload2 = {
+      query: {
+        pages: {
+          "1": {
+            title: "File:Mèo 18+ tình dục.jpg",
+            index: 1,
+            imageinfo: [{ mime: "image/jpeg", thumburl: "https://t/bad.jpg" }],
+          },
+          "2": {
+            title: "File:Mèo con dễ thương.jpg",
+            index: 2,
+            imageinfo: [{ mime: "image/jpeg", thumburl: "https://t/good.jpg" }],
+          },
+        },
+      },
+    };
+    expect(pickCommonsImage(payload2, isKidSafeTitle)?.url).toBe("https://t/good.jpg");
+    // Không truyền điều kiện → vẫn lấy mục đầu (giữ nguyên hành vi cũ).
+    expect(pickCommonsImage(payload2)?.url).toBe("https://t/bad.jpg");
   });
 });
 

@@ -11,6 +11,7 @@ import {
   stageHint,
   answerSpeechInstruction,
   answerNudge,
+  proxiedMediaUrl,
 } from "@/lib/ekid/interactive";
 import { BAND_ADDRESS, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { normalizeTurns } from "@/lib/ekid/kid-memory";
@@ -230,6 +231,23 @@ describe("ekid interactive — answerSpeechInstruction (ÉP AI nói kết quả)
     expect(ok.toLowerCase()).toContain("bài tiếp theo");
     expect(answerNudge({ chosen_index: 1, correct: false, source: "tap" })).toContain("SAI");
     expect(answerNudge({ chosen_index: 1, source: "tap" })).not.toContain("SAI");
+  });
+});
+
+describe("ekid interactive — proxiedMediaUrl (ảnh đi qua domain mình)", () => {
+  const KID = "11111111-2222-3333-4444-555555555555";
+
+  it("dựng URL proxy có kid_id + url đã mã hoá", () => {
+    const out = proxiedMediaUrl(KID, "https://cdn.example/a b.png?x=1");
+    expect(out).toBe(
+      `/api/ekid/media/proxy?kid_id=${KID}&url=${encodeURIComponent("https://cdn.example/a b.png?x=1")}`,
+    );
+  });
+
+  it("thiếu kid_id hoặc URL không phải http(s) → null (dùng link gốc)", () => {
+    expect(proxiedMediaUrl("", "https://cdn.example/a.png")).toBeNull();
+    expect(proxiedMediaUrl(KID, "javascript:alert(1)")).toBeNull();
+    expect(proxiedMediaUrl(KID, "data:image/png;base64,AAAA")).toBeNull();
   });
 });
 

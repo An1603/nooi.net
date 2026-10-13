@@ -20,6 +20,7 @@ import {
   describeAnswer,
   gradeExercise,
   isExerciseItem,
+  proxiedMediaUrl,
   type AnswerSource,
   type ExerciseResult,
   type InteractiveItem,
@@ -214,6 +215,8 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
         caption: asString(call.args.caption) ?? undefined,
         // Với YouTube: mã video đã kiểm chứng nhúng được (server trả về).
         ...(videoId ? { videoId } : {}),
+        // Ảnh: phát lại qua domain mình (hết chặn hotlink/mixed content/chặn vùng).
+        ...(kind === "image" ? { displayUrl: proxiedMediaUrl(kidId ?? "", url) ?? undefined } : {}),
       };
       respondRef.current.set(item.id, { respond, item });
       // THAY THẾ nội dung đang hiện — sân khấu chỉ có 1 nội dung tại một thời điểm.

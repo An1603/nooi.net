@@ -21,6 +21,12 @@ export const MEDIA_VALIDATE_TIMEOUT_MS = 5000;
 /** Số hop redirect tối đa được phép đi theo (mỗi hop đều phải qua kiểm SSRF). */
 export const MEDIA_MAX_REDIRECTS = 3;
 
+/**
+ * Hạn mức dung lượng một ảnh đi qua proxy (byte). Vượt → từ chối, KHÔNG tải thân
+ * nội dung (đọc `content-length` trước).
+ */
+export const MEDIA_PROXY_MAX_BYTES = 12 * 1024 * 1024;
+
 /** Loại nội dung hiển thị được trên sân khấu. */
 export type MediaKind = "image" | "video";
 
@@ -464,5 +470,87 @@ export async function validateMediaUrl(
 
   const kind = classifyContentType(contentType, sawResponse ? url : undefined);
   if (!kind) return invalid(contentType);
+  // VIDEO chỉ chấp nhận YouTube (đã qua oEmbed ở trên) — file video trực tiếp bị loại,
+  // vì chúng hay hỏng (referer, codec, mixed content) và không proxy được.
+  if (kind === "video") return invalid(contentType);
   return { ok: true, kind, contentType };
+}
+
+/** Kết quả tải nội dung về để PHÁT LẠI từ domain mình (media proxy). */
+export interface MediaProxyResult {
+  ok: boolean;
+  kind: MediaKind | null;
+  contentType: string | null;
+  /** Thân nội dung để trả về client (chỉ có khi `ok`). */
+  bytes: Uint8Array | null;
+}
+
+/**
+ * Tải một ẢNH để phát lại từ `ekid.nooi.net` (media proxy).
+ *
+ * Vì sao: validate phía server ≠ môi trường trình duyệt của bé. Tải trực tiếp từ host
+ * khác còn hỏng vì chặn hotlink theo Referer, mixed content (https tải http), đòi cookie,
+ * URL hết hạn, host chặn theo vùng… Đi qua domain mình thì trình duyệt chỉ nói chuyện với
+ * CHÍNH MÌNH nên hết các rủi ro đó.
+ *
+ * Quy tắc: chỉ ảnh (`image/*` hoặc đuôi ảnh khi content-type chung chung); KHÔNG proxy
+ * video (video dùng YouTube qua iframe); dùng CHUNG bộ chặn SSRF + DNS; đọc
+ * `content-length` trước để loại ảnh quá lớn mà không tải. KHÔNG BAO GIỜ ném lỗi.
+ */
+export async function fetchMediaForProxy(
+  raw: string,
+  doFetch: MediaFetchLike = (input, init) => fetch(input, init),
+  doLookup: DnsLookupLike = defaultDnsLookup,
+): Promise<MediaProxyResult> {
+  const fail: MediaProxyResult = { ok: false, kind: null, contentType: null, bytes: null };
+
+  const url = (raw ?? "").trim();
+  if (!url || url.length > 2000 || !isHttpUrl(url)) return fail;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return fail;
+  }
+
+  // (SSRF) Chỉ port mặc định 80/443; chặn hostname/IP nội bộ + kiểm DNS từng IP.
+  if (!isAllowedPort(parsed.port)) return fail;
+  if (!(await isAllowedHost(parsed.hostname, doLookup))) return fail;
+
+  // Video không proxy (YouTube phát qua iframe) — và cũng không cần tải về.
+  if (isYouTubeUrl(url)) return fail;
+
+  const res = await fetchFollowingSafeRedirects(doFetch, url, { method: "GET" }, doLookup);
+  if (!res) return fail;
+
+  const status = typeof res.status === "number" ? res.status : 0;
+  if (status < 200 || status >= 300) {
+    await cancelBody(res);
+    return fail;
+  }
+
+  const contentType = res.headers.get("content-type");
+  const kind = classifyContentType(contentType, url);
+  if (kind !== "image") {
+    await cancelBody(res);
+    return fail;
+  }
+
+  // Biết trước là quá lớn → cắt luôn, không tải thân nội dung.
+  const declared = Number(res.headers.get("content-length") ?? "");
+  if (Number.isFinite(declared) && declared > MEDIA_PROXY_MAX_BYTES) {
+    await cancelBody(res);
+    return fail;
+  }
+
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(await res.arrayBuffer());
+  } catch {
+    return fail;
+  }
+  if (bytes.byteLength === 0 || bytes.byteLength > MEDIA_PROXY_MAX_BYTES) return fail;
+
+  return { ok: true, kind, contentType: contentType ?? "image/*", bytes };
 }

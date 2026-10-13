@@ -213,6 +213,8 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
   // Ưu tiên mã video server ĐÃ kiểm chứng nhúng được; không có thì tự suy từ URL.
   const ytId = item.mediaType === "video" ? (item.videoId ?? youtubeVideoId(item.url)) : null;
   const embed = ytId ? `https://www.youtube-nocookie.com/embed/${ytId}` : null;
+  // Ảnh đi qua domain mình (proxy) → hết chặn hotlink/mixed content; không có thì link gốc.
+  const imgSrc = item.displayUrl ?? item.url;
   const safe = isSafeUrl(item.url);
 
   return (
@@ -222,15 +224,15 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
           <MediaBrokenNotice kind={item.mediaType} />
         ) : item.mediaType === "image" ? (
           safe ? (
-            // `referrerPolicy="no-referrer"`: nhiều host ảnh chặn hotlink theo Referer →
-            // không gửi Referer thì ảnh hiện được (nguyên nhân "lúc được lúc không").
+            // `loading="eager"`: hiện NGAY khi AI vừa gọi (không trễ như lazy) vì sân khấu
+            // chỉ có một nội dung. Ảnh đã qua proxy nên không cần `referrerPolicy`.
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={item.url}
+              src={imgSrc}
               alt={item.caption ?? "Hình minh hoạ"}
               className="max-h-[65vh] w-auto max-w-full object-contain"
-              loading="lazy"
-              referrerPolicy="no-referrer"
+              loading="eager"
+              decoding="async"
               onError={() => setBroken(true)}
             />
           ) : (

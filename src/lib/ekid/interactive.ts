@@ -43,6 +43,11 @@ export interface MediaItem {
   caption?: string;
   /** Mã video YouTube đã kiểm chứng nhúng được (nếu là video YouTube). */
   videoId?: string;
+  /**
+   * URL PHÁT LẠI qua domain mình (ảnh) — trình duyệt chỉ tải từ `ekid.nooi.net` nên
+   * không bị chặn hotlink/mixed content. Không có thì dùng `url`.
+   */
+  displayUrl?: string;
 }
 
 /** Thông báo NHẸ hiện trong sân khấu (vd: link media không hợp lệ) — không phải khung lỗi. */
@@ -159,6 +164,18 @@ export function answerNudge(result: ExerciseResult): string {
 }
 
 /**
+ * Dựng URL PHÁT LẠI ảnh qua domain mình (`/api/ekid/media/proxy`).
+ *
+ * Nhờ vậy trình duyệt của bé chỉ nói chuyện với `ekid.nooi.net` → hết chặn hotlink
+ * theo Referer, hết mixed content, hết đòi cookie, hết chặn theo vùng. Trả null khi
+ * thiếu `kid_id` hoặc URL không phải http(s) → nơi gọi dùng link gốc.
+ */
+export function proxiedMediaUrl(kidId: string, url: string): string | null {
+  if (!kidId || !/^https?:\/\//i.test(url)) return null;
+  return `/api/ekid/media/proxy?kid_id=${encodeURIComponent(kidId)}&url=${encodeURIComponent(url)}`;
+}
+
+/**
  * Gợi ý ngắn cho khung "ghi chú" cột trái màn hình con — bám theo nội dung
  * đang hiện (`current`) và kết quả đã ghi nhận (`resolution`).
  */
@@ -224,7 +241,8 @@ export const EKID_TOOLS: EkidToolDeclaration[] = [
     name: "show_media",
     description:
       "Hiện một ẢNH hoặc VIDEO lên màn hình để minh hoạ nội dung đang nói. " +
-      "Dùng link ảnh trực tiếp (.jpg/.png/...) hoặc video (YouTube hoặc file .mp4). " +
+      "ẢNH: dùng link ảnh trực tiếp (.jpg/.png/.webp/.gif) của nội dung thật sự xem được. " +
+      "VIDEO: CHỈ dùng link YouTube — TUYỆT ĐỐI KHÔNG dùng file .mp4/.webm hay link tải video. " +
       "Sau khi hiện, hãy dẫn dắt bé quan sát: mô tả ngắn, đặt 1-2 câu hỏi gợi mở.",
     parameters: {
       type: "object",
@@ -286,7 +304,11 @@ export function toolsPromptSection(): string {
     "- `show_exercise`: hiện thẻ BÀI TẬP trắc nghiệm lên màn hình. Dùng khi bạn muốn bé",
     "  luyện tập/kiểm tra qua đồng hồ: đọc to câu hỏi + các lựa chọn, rồi để bé chạm chọn.",
     "  Bé luôn quan sát được màn hình trong khi vẫn nói chuyện với bạn.",
-    "- `show_media`: hiện ẢNH hoặc VIDEO minh hoạ (YouTube hoặc file .mp4) lên màn hình.",
+    "- `show_media`: hiện ẢNH hoặc VIDEO minh hoạ lên màn hình.",
+    "  ẢNH: link ảnh trực tiếp của nội dung thật sự xem được. Hệ thống sẽ tự phát lại ảnh",
+    "  qua máy chủ NOOI nên không bị chặn hiển thị.",
+    "  VIDEO: CHỈ dùng link YouTube (video còn tồn tại và cho phép nhúng). TUYỆT ĐỐI KHÔNG",
+    "  dùng file .mp4/.webm hay link tải video — hệ thống sẽ từ chối.",
     "  Dùng khi bé hỏi về con vật, đồ vật, sự việc, bài hát, hoạt động… mà một hình ảnh",
     "  hoặc đoạn video sẽ giúp bé dễ hiểu hơn.",
     "- `answer_exercise`: GHI NHẬN câu trả lời khi bé trả lời BẰNG LỜI NÓI cho thẻ bài tập",

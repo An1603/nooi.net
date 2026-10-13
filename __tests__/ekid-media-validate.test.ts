@@ -7,6 +7,8 @@ import {
   isHttpUrl,
   isYouTubeUrl,
   youtubeVideoId,
+  fetchMediaForProxy,
+  MEDIA_PROXY_MAX_BYTES,
   validateMediaUrl,
   type DnsAddress,
   type DnsLookupLike,
@@ -242,12 +244,12 @@ describe("media-validate — validateMediaUrl", () => {
     expect(calls[0][1].redirect).toBe("manual");
   });
 
-  it("HEAD bị chặn (405) → fallback GET Range → video", async () => {
+  it("HEAD bị chặn (405) → vẫn fallback GET Range (để kiểm ảnh), video file bị loại", async () => {
     const doFetch = vi.fn(async (_url: string, init?: RequestInit) =>
-      init?.method === "HEAD" ? fakeRes(null, false, 405) : fakeRes("video/mp4"),
+      init?.method === "HEAD" ? fakeRes(null, false, 405) : fakeRes("image/png"),
     ) as unknown as MediaFetchLike;
-    const r = await validateMediaUrl("https://cdn.example/movie.mp4", doFetch, publicLookup);
-    expect(r).toEqual({ ok: true, kind: "video", contentType: "video/mp4" });
+    const r = await validateMediaUrl("https://cdn.example/a.png", doFetch, publicLookup);
+    expect(r).toEqual({ ok: true, kind: "image", contentType: "image/png" });
     const calls = (doFetch as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls;
     expect(calls[1][1].method).toBe("GET");
     expect((calls[1][1].headers as Record<string, string>).Range).toBe("bytes=0-0");
@@ -392,6 +394,91 @@ describe("media-validate — SSRF: redirect phải kiểm lại từng hop", () 
   });
 });
 
+describe("media-validate — proxy CHỈ ảnh, video chỉ YouTube (v3.3.3)", () => {
+  it("video dạng FILE trực tiếp (.mp4) bị TỪ CHỐI — video chỉ dùng YouTube", async () => {
+    const doFetch = vi.fn(async () => fakeRes("video/mp4")) as unknown as MediaFetchLike;
+    const r = await validateMediaUrl("https://cdn.example/v.mp4", doFetch, publicLookup);
+    expect(r.ok).toBe(false);
+    expect(r.kind).toBeNull();
+  });
+
+  it("ảnh công khai (GET qua proxy) → ok:true kèm bytes + content-type", async () => {
+    const doFetch = vi.fn(async () => {
+      const png = new Uint8Array([137, 80, 78, 71]);
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: (k: string) =>
+            k.toLowerCase() === "content-type"
+              ? "image/png"
+              : k.toLowerCase() === "content-length"
+                ? String(png.byteLength)
+                : null,
+        },
+        body: { cancel: async () => {} },
+        arrayBuffer: async () => png.buffer,
+      } as unknown as Response;
+    }) as unknown as MediaFetchLike;
+
+    const r = await fetchMediaForProxy("https://cdn.example/a.png", doFetch, publicLookup);
+    expect(r.ok).toBe(true);
+    expect(r.kind).toBe("image");
+    expect(r.contentType).toBe("image/png");
+    expect(r.bytes?.byteLength).toBe(4);
+  });
+
+  it("nội dung KHÔNG phải ảnh (text/html) → ok:false", async () => {
+    const doFetch = vi.fn(async () => fakeRes("text/html")) as unknown as MediaFetchLike;
+    const r = await fetchMediaForProxy("https://cdn.example/trang", doFetch, publicLookup);
+    expect(r.ok).toBe(false);
+  });
+
+  it("ảnh quá lớn (content-length vượt cap) → ok:false, KHÔNG tải nội dung", async () => {
+    const doFetch = vi.fn(async () => {
+      let read = false;
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: (k: string) => {
+            const key = k.toLowerCase();
+            if (key === "content-type") return "image/png";
+            if (key === "content-length") return String(MEDIA_PROXY_MAX_BYTES + 1);
+            return null;
+          },
+        },
+        body: { cancel: async () => {} },
+        arrayBuffer: async () => {
+          read = true;
+          return new ArrayBuffer(0);
+        },
+        __read: () => read,
+      } as unknown as Response;
+    }) as unknown as MediaFetchLike;
+
+    const r = await fetchMediaForProxy("https://cdn.example/big.png", doFetch, publicLookup);
+    expect(r.ok).toBe(false);
+    // KHÔNG được đọc thân nội dung khi đã biết vượt hạn mức.
+    const inst = (await doFetch("x")) as unknown as { __read: () => boolean };
+    expect(inst.__read()).toBe(false);
+  });
+
+  it("host nội bộ → ok:false, KHÔNG chạm mạng (SSRF)", async () => {
+    const doFetch = vi.fn() as unknown as MediaFetchLike;
+    const r = await fetchMediaForProxy("http://127.0.0.1/secret.png", doFetch, publicLookup);
+    expect(r.ok).toBe(false);
+    expect(doFetch).not.toHaveBeenCalled();
+  });
+
+  it("link YouTube KHÔNG proxy (phát qua iframe) → ok:false, KHÔNG chạm mạng", async () => {
+    const doFetch = vi.fn() as unknown as MediaFetchLike;
+    const r = await fetchMediaForProxy("https://youtu.be/dQw4w9WgXcQ", doFetch, publicLookup);
+    expect(r.ok).toBe(false);
+    expect(doFetch).not.toHaveBeenCalled();
+  });
+});
+
 describe("media-validate — link công khai vẫn hoạt động", () => {
   it("ảnh công khai (HEAD image/*) vẫn ok:true", async () => {
     const r = await validateMediaUrl("https://cdn.public-example.com/a.png", imageFetch, publicLookup);
@@ -399,13 +486,13 @@ describe("media-validate — link công khai vẫn hoạt động", () => {
     expect(r.kind).toBe("image");
   });
 
-  it("video công khai (GET fallback) vẫn ok:true", async () => {
+  it("video dạng file trực tiếp KHÔNG còn được nhận (video chỉ YouTube)", async () => {
     const doFetch = vi.fn(async (_url: string, init?: RequestInit) =>
       init?.method === "HEAD" ? fakeRes(null, false, 405) : fakeRes("video/mp4"),
     ) as unknown as MediaFetchLike;
     const r = await validateMediaUrl("https://cdn.public-example.com/v.mp4", doFetch, publicLookup);
-    expect(r.ok).toBe(true);
-    expect(r.kind).toBe("video");
+    expect(r.ok).toBe(false);
+    expect(r.kind).toBeNull();
   });
 
   it("hostname công khai với DnsAddress đúng kiểu vẫn được chấp nhận", async () => {

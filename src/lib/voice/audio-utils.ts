@@ -44,6 +44,19 @@ export class AudioCapture {
   private callbacks: AudioCaptureCallbacks;
   private chunkInterval: ReturnType<typeof setInterval> | null = null;
   private bufferQueue: Float32Array[] = [];
+  /**
+   * Nút "câm" để KHÔNG phát tiếng mic ra loa. Bắt buộc phải nối processor vào một
+   * GainNode gain=0 rồi mới tới `destination` — nhiều trình duyệt chỉ chạy
+   * `process()`/`onaudioprocess` khi node được nối tới đích.
+   *
+   * 🔴 BUG đã sửa: trước đây nối THẲNG processor vào `destination` → TIẾNG MIC CỦA BÉ
+   * PHÁT RA LOA → loa phát lại tiếng bé + tiếng AI → mic thu lại chính nó → vòng lặp
+   * âm thanh. Hệ quả đo được: model chép lời sai sang tiếng Trung/Ý/Thái và tự ngắt lời
+   * mình (câu trả lời bị cụt).
+   */
+  private monitorGain: GainNode | null = null;
+  /** Khi `true`: KHÔNG gửi audio lên model (dùng lúc AI đang nói / đang xem video). */
+  private paused = false;
 
   constructor(callbacks: AudioCaptureCallbacks) {
     this.callbacks = callbacks;
@@ -51,6 +64,19 @@ export class AudioCapture {
 
   get captureState(): AudioCaptureState {
     return this.state;
+  }
+
+  get isPaused(): boolean {
+    return this.paused;
+  }
+
+  /**
+   * Tạm NGƯNG gửi audio (giữ nguyên mic/stream). Dùng khi AI đang nói (chống lặp âm
+   * thanh) và khi bé đang xem video (tiết kiệm voice live).
+   */
+  setPaused(paused: boolean) {
+    this.paused = paused;
+    if (paused) this.bufferQueue = []; // bỏ phần đã thu, không gửi lên model
   }
 
   async start(): Promise<void> {
@@ -74,6 +100,11 @@ export class AudioCapture {
       this.audioContext = new AudioContext({
         sampleRate: AUDIO_CONSTANTS.INPUT_SAMPLE_RATE,
       });
+
+      // Nút câm: processor → monitorGain(gain=0) → destination (KHÔNG nghe thấy gì).
+      this.monitorGain = this.audioContext.createGain();
+      this.monitorGain.gain.value = 0;
+      this.monitorGain.connect(this.audioContext.destination);
 
       this.source = this.audioContext.createMediaStreamSource(this.stream);
 
@@ -103,6 +134,7 @@ export class AudioCapture {
 
   stop() {
     this.state = "idle";
+    this.paused = false;
 
     if (this.chunkInterval) {
       clearInterval(this.chunkInterval);
@@ -117,6 +149,11 @@ export class AudioCapture {
     if (this.source) {
       this.source.disconnect();
       this.source = null;
+    }
+
+    if (this.monitorGain) {
+      this.monitorGain.disconnect();
+      this.monitorGain = null;
     }
 
     if (this.audioContext) {
@@ -163,7 +200,8 @@ export class AudioCapture {
     };
 
     this.source!.connect(this.processor);
-    this.processor.connect(this.audioContext!.destination);
+    // Nối qua NÚT CÂM (gain=0) — KHÔNG nối thẳng vào loa, tránh phát tiếng mic ra loa.
+    this.processor.connect(this.monitorGain ?? this.audioContext!.destination);
   }
 
   private setupScriptProcessor() {
@@ -182,11 +220,18 @@ export class AudioCapture {
     };
 
     this.source!.connect(this.processor);
-    this.processor.connect(this.audioContext.destination);
+    // Nối qua NÚT CÂM (gain=0) — KHÔNG nối thẳng vào loa (xem chú thích `monitorGain`).
+    this.processor.connect(this.monitorGain ?? this.audioContext.destination);
   }
 
   private flushBuffer() {
     if (this.bufferQueue.length === 0) return;
+
+    // Đang tạm ngưng (AI đang nói / bé đang xem video) → KHÔNG gửi gì lên model.
+    if (this.paused) {
+      this.bufferQueue = [];
+      return;
+    }
 
     // Concatenate all buffered samples
     let totalLength = 0;

@@ -6,7 +6,7 @@ import { ExerciseCard } from "./ExerciseCard";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import type { AgeBand, EkidExercise } from "@/lib/ekid/ekid-system";
 import { BAND_VOICE, buildSystemInstruction } from "@/lib/ekid/ekid-system";
-import { EKID_TOOLS } from "@/lib/ekid/interactive";
+import { EKID_TOOLS, mediaShouldPauseVoice } from "@/lib/ekid/interactive";
 import { InteractiveStage } from "@/components/ekid/child/InteractiveStage";
 import { useEkidInteractive } from "@/components/ekid/child/useEkidInteractive";
 import { useAnswerSpeech } from "@/components/ekid/child/useAnswerSpeech";
@@ -71,6 +71,8 @@ export function EkidVoiceSession({
   // phiên để biết AI đã tự đáp hay chưa (khỏi nói chồng).
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
   const { onSpeakReady } = useAnswerSpeech(interactive.resolution, voiceStatus);
+  // Đang có VIDEO trên màn hình → tạm dừng trò chuyện (bé nghe rõ + tiết kiệm voice live).
+  const videoOnStage = mediaShouldPauseVoice(interactive.current);
 
   const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
     ? kid.favorite_voice
@@ -122,6 +124,7 @@ export function EkidVoiceSession({
             onToolCall={interactive.onToolCall}
             onSpeakReady={onSpeakReady}
             onStatusChange={setVoiceStatus}
+            paused={videoOnStage}
           />
           {/* `resolution` để thẻ bài tập hiện đúng/sai dù bé BẤM hay TRẢ LỜI BẰNG LỜI. */}
           <InteractiveStage

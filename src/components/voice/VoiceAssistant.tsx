@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Volume2,
   MessageSquare,
+  Play,
 } from "lucide-react";
 
 // ─── Voice Status Labels ─────────────────────────────────────────────────────
@@ -69,6 +70,12 @@ interface VoiceAssistantProps {
    * Mặc định bỏ trống → AI Mentor KHÔNG đổi.
    */
   onStatusChange?: (status: VoiceStatus) => void;
+  /**
+   * TẠM DỪNG trò chuyện (giữ phiên) — dùng khi bé đang xem VIDEO: ngưng gửi mic +
+   * ngưng phát giọng AI để bé nghe rõ và TIẾT KIỆM voice live. Bé bấm "Nói tiếp" để
+   * quay lại trò chuyện. Mặc định `false` → AI Mentor KHÔNG đổi.
+   */
+  paused?: boolean;
 }
 
 export function VoiceAssistant({
@@ -82,6 +89,7 @@ export function VoiceAssistant({
   compact = false,
   onSpeakReady,
   onStatusChange,
+  paused = false,
 }: VoiceAssistantProps) {
   const {
     status,
@@ -92,6 +100,8 @@ export function VoiceAssistant({
     isMicMuted,
     start,
     stop,
+    pause,
+    resume,
     sendText,
   } = useVoiceAssistant({ voice, systemInstruction, onTurnsChange, tools, onToolCall });
 
@@ -104,6 +114,12 @@ export function VoiceAssistant({
   useEffect(() => {
     onStatusChange?.(status);
   }, [onStatusChange, status]);
+
+  // Tạm dừng / tiếp tục theo yêu cầu của cha (vd bé đang xem video).
+  useEffect(() => {
+    if (paused) pause();
+    else resume();
+  }, [paused, pause, resume]);
 
   const [showChat, setShowChat] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
@@ -119,17 +135,20 @@ export function VoiceAssistant({
   if (compact) {
     const label = error
       ? "Có lỗi kết nối"
-      : isBusy
-        ? STATUS_LABELS[status]
-        : isListening
-          ? "Đang nghe..."
-          : isSpeaking
-            ? "Đang trả lời..."
-            : status === "connected"
-              ? (isMicMuted ? "Mic đang tắt" : "Đang nghe...")
-              : "Bấm mic để nói";
+      : paused
+        ? "Đang xem video — tạm dừng"
+        : isBusy
+          ? STATUS_LABELS[status]
+          : isListening
+            ? "Đang nghe..."
+            : isSpeaking
+              ? "Đang trả lời..."
+              : status === "connected"
+                ? (isMicMuted ? "Mic đang tắt" : "Đang nghe...")
+                : "Bấm mic để nói";
 
     const dotColor =
+      paused ? "#0d9488" :
       isListening ? "#ef4444" :
       isSpeaking ? "#a78bfa" :
       error ? "#ef4444" :
@@ -141,18 +160,32 @@ export function VoiceAssistant({
       <div className="flex flex-col items-center gap-2">
         <button
           type="button"
-          onClick={isActive ? stop : start}
+          onClick={paused ? resume : isActive ? stop : start}
           disabled={isBusy}
-          aria-label={isActive ? "Tắt mic" : "Bật mic trò chuyện"}
+          aria-label={paused ? "Nói tiếp trò chuyện" : isActive ? "Tắt mic" : "Bật mic trò chuyện"}
           className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
           style={{
-            borderColor: isListening ? "#ef4444" : isSpeaking ? "#a78bfa" : "#4ecdc4",
-            background: isListening ? "#fee2e2" : isSpeaking ? "#ede9fe" : "#e6fffb",
-            boxShadow: isActive ? `0 0 22px ${dotColor}55` : "0 4px 12px rgba(0,0,0,0.08)",
+            borderColor: paused
+              ? "#4ecdc4"
+              : isListening
+                ? "#ef4444"
+                : isSpeaking
+                  ? "#a78bfa"
+                  : "#4ecdc4",
+            background: paused
+              ? "#ffffff"
+              : isListening
+                ? "#fee2e2"
+                : isSpeaking
+                  ? "#ede9fe"
+                  : "#e6fffb",
+            boxShadow: isActive || paused ? `0 0 22px ${dotColor}55` : "0 4px 12px rgba(0,0,0,0.08)",
           }}
         >
           {isBusy ? (
             <Loader2 className="h-7 w-7 animate-spin text-[#6b5648]" />
+          ) : paused ? (
+            <Play className="h-7 w-7 fill-[#0d9488] text-[#0d9488]" />
           ) : isSpeaking ? (
             <Volume2 className="h-7 w-7 animate-pulse text-[#7c3aed]" />
           ) : isActive && !isMicMuted ? (
@@ -160,7 +193,7 @@ export function VoiceAssistant({
           ) : (
             <MicOff className="h-7 w-7 text-[#0d9488]" />
           )}
-          {isActive && !isMicMuted && (
+          {isActive && !isMicMuted && !paused && (
             <span
               aria-hidden
               className="absolute inset-0 animate-ping rounded-full border-2"
@@ -170,11 +203,12 @@ export function VoiceAssistant({
         </button>
         <span
           role="status"
-          className="whitespace-nowrap rounded-full bg-white/95 px-3 py-1 text-xs font-bold shadow-sm"
+          className="rounded-full bg-white/95 px-3 py-1 text-center text-xs font-bold shadow-sm"
           style={{ color: error ? "#b91c1c" : "#3b2a20" }}
         >
           {label}
         </span>
+        {paused && <span className="text-xs font-bold text-[#0d9488]">Bấm để nói tiếp</span>}
       </div>
     );
   }
@@ -257,6 +291,17 @@ export function VoiceAssistant({
           </div>
         ) : null}
       </div>
+
+      {/* ── Tạm dừng vì bé đang xem video ── */}
+      {paused && !error && (
+        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-muted/40 border border-border/50 text-xs text-muted-foreground">
+          <Play className="w-3.5 h-3.5" />
+          <span>Đang xem video — trò chuyện tạm dừng để tiết kiệm</span>
+          <button onClick={resume} className="font-medium text-foreground underline">
+            Nói tiếp
+          </button>
+        </div>
+      )}
 
       {/* ── Mute status (when connected but not listening) ── */}
       {isMicMuted && isActive && !isSpeaking && (

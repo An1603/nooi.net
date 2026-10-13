@@ -4,6 +4,18 @@
 // component CLIENT import thẳng file đó sẽ làm webpack lôi `node:dns` vào bundle trình
 // duyệt → "UnhandledSchemeError". Mọi thứ client cần phải nằm ở file này.
 
+/** Tham số nhúng: TỰ PHÁT + gọn gàng cho màn hình trẻ em. */
+const YT_EMBED_PARAMS = "autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3";
+
+/**
+ * URL nhúng video YouTube (`youtube-nocookie.com`) — **tự phát**, không gợi ý video lạ.
+ * Lưu ý: trình duyệt có thể chặn tự phát nếu trang chưa có thao tác của người dùng;
+ * khi đó bé chỉ cần bấm nút phát.
+ */
+export function youtubeEmbedSrc(videoId: string): string {
+  return `https://www.youtube-nocookie.com/embed/${videoId}?${YT_EMBED_PARAMS}`;
+}
+
 /** Nhận diện link YouTube (watch / youtu.be / embed / shorts / music / nocookie). */
 export function isYouTubeUrl(raw: string): boolean {
   try {

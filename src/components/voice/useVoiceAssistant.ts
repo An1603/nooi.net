@@ -237,15 +237,18 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
         switch (event.type) {
           case "setup_complete":
             // Setup done — now start mic
+            captureRef.current?.setPaused(false);
             setSafeStatus("listening");
             setIsMicMuted(false);
             break;
 
           case "audio":
-            // AI bắt đầu đáp → chốt lượt BÉ trước khi AI nói.
+            // AI bắt đầu đáp → chốt lượt BÉ, NGƯNG gửi mic (chống lặp âm thanh: loa phát
+            // tiếng AI → mic thu lại → model tự ngắt lời mình, chép lời sai).
             commitPendingUser();
             setSafeStatus("speaking");
             setIsMicMuted(true);
+            captureRef.current?.setPaused(true);
             playbackRef.current?.playBase64PCM(event.data);
             break;
 
@@ -279,6 +282,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
             // AI bị ngắt giữa lượt → chốt phần đã nói rồi mở lượt mới.
             flushTurns();
             playbackRef.current?.stop();
+            captureRef.current?.setPaused(false);
             setSafeStatus("listening");
             setIsMicMuted(false);
             break;
@@ -286,6 +290,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
           case "turn_complete":
             // Lượt AI kết thúc → chốt lượt AI + mở lượt mới cho bé.
             flushTurns();
+            captureRef.current?.setPaused(false);
             setSafeStatus("listening");
             setIsMicMuted(false);
             break;
@@ -325,6 +330,28 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
       setSafeStatus("error");
     }
   }, [config?.voice, config?.systemInstruction, config?.tools, setSafeStatus, resetTurns, flushTurns, commitPendingUser]);
+
+  /**
+   * TẠM DỪNG trò chuyện (giữ phiên): ngưng gửi mic + ngưng phát giọng AI.
+   * Dùng khi bé đang xem VIDEO — để bé nghe rõ và TIẾT KIỆM voice live.
+   * Không làm gì nếu phiên chưa hoạt động.
+   */
+  const pause = useCallback(() => {
+    const s = statusRef.current;
+    if (s !== "listening" && s !== "speaking" && s !== "connected") return;
+    captureRef.current?.setPaused(true);
+    playbackRef.current?.stop();
+    setIsMicMuted(true);
+    setSafeStatus("connected");
+  }, [setSafeStatus]);
+
+  /** TIẾP TỤC trò chuyện sau khi tạm dừng (chỉ khi đang ở trạng thái tạm dừng). */
+  const resume = useCallback(() => {
+    if (statusRef.current !== "connected") return;
+    captureRef.current?.setPaused(false);
+    setIsMicMuted(false);
+    setSafeStatus("listening");
+  }, [setSafeStatus]);
 
   const stop = useCallback(() => {
     // Chốt nốt lượt đang dở trước khi ngắt phiên.
@@ -376,6 +403,8 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
     isMicMuted,
     start,
     stop,
+    pause,
+    resume,
     toggleMute,
     sendToolResponse,
     sendText,

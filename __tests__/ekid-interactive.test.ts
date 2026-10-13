@@ -12,7 +12,11 @@ import {
   answerSpeechInstruction,
   answerNudge,
   proxiedMediaUrl,
+  mediaShouldPauseVoice,
 } from "@/lib/ekid/interactive";
+
+// `youtubeEmbedSrc` là hàm thuần, an toàn cho client — nhập trực tiếp để kiểm thử.
+import { youtubeEmbedSrc } from "@/lib/ekid/youtube";
 import { BAND_ADDRESS, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { normalizeTurns } from "@/lib/ekid/kid-memory";
 
@@ -262,6 +266,28 @@ describe("ekid interactive — proxiedMediaUrl (ảnh đi qua domain mình)", ()
   });
 });
 
+describe("ekid interactive — video: tự phát + tạm dừng voice (v3.4.2)", () => {
+  it("youtubeEmbedSrc: nhúng nocookie, tự phát, không gợi video lạ", () => {
+    const src = youtubeEmbedSrc("dQw4w9WgXcQ");
+    expect(src).toContain("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ");
+    expect(src).toContain("autoplay=1");
+    expect(src).toContain("rel=0");
+    expect(src).toContain("playsinline=1");
+  });
+
+  it("mediaShouldPauseVoice: chỉ VIDEO mới tạm dừng trò chuyện", () => {
+    const video = { id: "m1", kind: "media" as const, url: "https://youtu.be/x", mediaType: "video" as const };
+    const image = { id: "m2", kind: "media" as const, url: "https://x/a.png", mediaType: "image" as const };
+    const ex = { id: "e1", kind: "exercise" as const, question: "1+1?", options: ["1", "2"] };
+    const notice = { id: "n1", kind: "notice" as const, text: "..." };
+    expect(mediaShouldPauseVoice(video)).toBe(true);
+    expect(mediaShouldPauseVoice(image)).toBe(false);
+    expect(mediaShouldPauseVoice(ex)).toBe(false);
+    expect(mediaShouldPauseVoice(notice)).toBe(false);
+    expect(mediaShouldPauseVoice(null)).toBe(false);
+  });
+});
+
 describe("ekid interactive — stageHint (khung ghi chú cột trái)", () => {
   const ex = {
     id: "e1",
@@ -299,6 +325,13 @@ describe("ekid interactive — stageHint (khung ghi chú cột trái)", () => {
   it("media → mời con quan sát", () => {
     const md = { id: "m1", kind: "media" as const, url: "https://x/y.png", mediaType: "image" as const };
     expect(stageHint(md, null)).toContain("xem");
+  });
+
+  it("video → báo trò chuyện tạm dừng + cách nói tiếp", () => {
+    const vd = { id: "v1", kind: "media" as const, url: "https://youtu.be/x", mediaType: "video" as const };
+    const h = stageHint(vd, null);
+    expect(h).toContain("tạm dừng");
+    expect(h).toContain("▶");
   });
 });
 

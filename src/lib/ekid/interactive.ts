@@ -176,6 +176,14 @@ export function proxiedMediaUrl(kidId: string, url: string): string | null {
 }
 
 /**
+ * Bé có nên TẠM DỪNG trò chuyện khi nội dung này đang hiện không?
+ * Có — chỉ với VIDEO: vừa để bé nghe rõ, vừa không tốn voice live trong lúc xem.
+ */
+export function mediaShouldPauseVoice(item: InteractiveItem | null): boolean {
+  return !!item && item.kind === "media" && item.mediaType === "video";
+}
+
+/**
  * Gợi ý ngắn cho khung "ghi chú" cột trái màn hình con — bám theo nội dung
  * đang hiện (`current`) và kết quả đã ghi nhận (`resolution`).
  */
@@ -184,7 +192,11 @@ export function stageHint(
   resolution: { itemId: string; correct?: boolean } | null,
 ): string {
   if (!current) return 'Bấm mic rồi nói điều con muốn: hỏi bài, kể chuyện hoặc luyện nói.';
-  if (current.kind === "media") return "Con xem thật kỹ rồi kể cho thầy/cô AI nghe nhé!";
+  if (current.kind === "media") {
+    return current.mediaType === "video"
+      ? "Con xem video nhé — trò chuyện tạm dừng để con nghe rõ. Bấm nút ▶ để nói tiếp."
+      : "Con xem thật kỹ rồi kể cho thầy/cô AI nghe nhé!";
+  }
   if (current.kind === "notice") return "Thầy/cô AI đang tìm nội dung khác cho con.";
 
   const answered = resolution && resolution.itemId === current.id ? resolution : null;

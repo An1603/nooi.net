@@ -11,7 +11,7 @@
 // và ghi log hội thoại.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { youtubeVideoId } from "@/lib/ekid/youtube";
+import { youtubeVideoId, youtubeEmbedSrc } from "@/lib/ekid/youtube";
 import {
   isExerciseItem,
   isMediaItem,
@@ -212,7 +212,7 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
 
   // Ưu tiên mã video server ĐÃ kiểm chứng nhúng được; không có thì tự suy từ URL.
   const ytId = item.mediaType === "video" ? (item.videoId ?? youtubeVideoId(item.url)) : null;
-  const embed = ytId ? `https://www.youtube-nocookie.com/embed/${ytId}` : null;
+  const embed = ytId ? youtubeEmbedSrc(ytId) : null;
   // Ảnh đi qua domain mình (proxy) → hết chặn hotlink/mixed content; không có thì link gốc.
   const imgSrc = item.displayUrl ?? item.url;
   const safe = isSafeUrl(item.url);

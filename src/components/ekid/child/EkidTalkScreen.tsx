@@ -17,7 +17,7 @@ import type { VoiceOption } from "@/lib/voice/gemini-live";
 import type { VoiceStatus } from "@/components/voice/useVoiceAssistant";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
 import { BAND_VOICE, buildSystemInstruction } from "@/lib/ekid/ekid-system";
-import { EKID_TOOLS, stageHint } from "@/lib/ekid/interactive";
+import { EKID_TOOLS, mediaShouldPauseVoice, stageHint } from "@/lib/ekid/interactive";
 import { KID } from "@/components/ekid/child/kid-theme";
 import { InteractiveStage } from "@/components/ekid/child/InteractiveStage";
 import { useEkidInteractive } from "@/components/ekid/child/useEkidInteractive";
@@ -92,6 +92,9 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
   // Cần trạng thái phiên để biết AI ĐÃ tự đáp hay chưa (khỏi nói chồng).
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
   const { onSpeakReady } = useAnswerSpeech(resolution, voiceStatus);
+
+  // Đang có VIDEO trên sân khấu → TẠM DỪNG trò chuyện (bé nghe rõ + tiết kiệm voice live).
+  const videoOnStage = mediaShouldPauseVoice(current);
 
   // ── Thu thập + tự lưu hội thoại ─────────────────────────────────────────
   const sentRef = useRef(false); // Chỉ gửi MỘT LẦN cho mỗi buổi.
@@ -171,6 +174,7 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
                 onToolCall={onToolCall}
                 onSpeakReady={onSpeakReady}
                 onStatusChange={setVoiceStatus}
+                paused={videoOnStage}
                 compact
               />
               {/* Ghi chú: chỉ hiện trên desktop (mobile ưu tiên chỗ cho khung hiển thị). */}

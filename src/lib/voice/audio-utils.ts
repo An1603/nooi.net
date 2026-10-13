@@ -55,7 +55,7 @@ export class AudioCapture {
    * mình (câu trả lời bị cụt).
    */
   private monitorGain: GainNode | null = null;
-  /** Khi `true`: KHÔNG gửi audio lên model (dùng lúc AI đang nói / đang xem video). */
+  /** Khi `true`: KHÔNG gửi audio lên model (dùng khi bé đang XEM VIDEO). */
   private paused = false;
 
   constructor(callbacks: AudioCaptureCallbacks) {
@@ -71,8 +71,12 @@ export class AudioCapture {
   }
 
   /**
-   * Tạm NGƯNG gửi audio (giữ nguyên mic/stream). Dùng khi AI đang nói (chống lặp âm
-   * thanh) và khi bé đang xem video (tiết kiệm voice live).
+   * Tạm NGƯNG gửi audio (giữ nguyên mic/stream).
+   * Dùng khi bé đang XEM VIDEO (VoiceAssistant prop `paused`) — để bé nghe rõ và tiết
+   * kiệm voice live.
+   * ⚠️ KHÔNG dùng để chặn mic trong lúc AI đang nói: bé phải NGẮT LỜI được tự nhiên
+   * (barge-in của Live). Việc chống vòng lặp âm thanh do `monitorGain` (gain = 0) đảm
+   * nhiệm, không phải bằng cách chặn mic.
    */
   setPaused(paused: boolean) {
     this.paused = paused;
@@ -227,7 +231,7 @@ export class AudioCapture {
   private flushBuffer() {
     if (this.bufferQueue.length === 0) return;
 
-    // Đang tạm ngưng (AI đang nói / bé đang xem video) → KHÔNG gửi gì lên model.
+    // Đang tạm ngưng (bé đang xem video) → KHÔNG gửi gì lên model.
     if (this.paused) {
       this.bufferQueue = [];
       return;

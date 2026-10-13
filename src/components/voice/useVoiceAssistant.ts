@@ -237,18 +237,18 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
         switch (event.type) {
           case "setup_complete":
             // Setup done — now start mic
-            captureRef.current?.setPaused(false);
             setSafeStatus("listening");
             setIsMicMuted(false);
             break;
 
           case "audio":
-            // AI bắt đầu đáp → chốt lượt BÉ, NGƯNG gửi mic (chống lặp âm thanh: loa phát
-            // tiếng AI → mic thu lại → model tự ngắt lời mình, chép lời sai).
+            // AI bắt đầu đáp → chốt lượt BÉ trước khi AI nói.
+            // KHÔNG chặn mic trong lúc AI nói: bé phải NGẮT LỜI được tự nhiên (barge-in
+            // của Live). Việc chống vòng lặp âm thanh nằm ở `monitorGain` gain=0 trong
+            // audio-utils (không phát tiếng mic ra loa) + echoCancellation của trình duyệt.
             commitPendingUser();
             setSafeStatus("speaking");
             setIsMicMuted(true);
-            captureRef.current?.setPaused(true);
             playbackRef.current?.playBase64PCM(event.data);
             break;
 
@@ -279,10 +279,9 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
             break;
 
           case "interrupted":
-            // AI bị ngắt giữa lượt → chốt phần đã nói rồi mở lượt mới.
+            // AI bị ngắt giữa lượt (bé nói chen) → chốt phần đã nói rồi mở lượt mới.
             flushTurns();
             playbackRef.current?.stop();
-            captureRef.current?.setPaused(false);
             setSafeStatus("listening");
             setIsMicMuted(false);
             break;
@@ -290,7 +289,6 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
           case "turn_complete":
             // Lượt AI kết thúc → chốt lượt AI + mở lượt mới cho bé.
             flushTurns();
-            captureRef.current?.setPaused(false);
             setSafeStatus("listening");
             setIsMicMuted(false);
             break;

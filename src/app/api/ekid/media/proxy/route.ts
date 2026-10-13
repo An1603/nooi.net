@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { fetchMediaForProxy } from "@/lib/ekid/media-validate";
+import { rateLimited } from "@/lib/ekid/rate-limit";
 
 // Cần Node runtime vì kiểm SSRF phải phân giải DNS (`node:dns`) + cần Buffer.
 export const runtime = "nodejs";
@@ -30,26 +31,9 @@ async function permittedKid(userId: string, kidId: string): Promise<KidRow | nul
   return null;
 }
 
-// ─── Giới hạn tần suất trong tiến trình (giống route memory: không phân tán) ───
+// ─── Giới hạn tần suất (trong tiến trình — dùng chung module) ────────────────
 const WINDOW_MS = 60_000;
 const MAX_PER_WINDOW = 60;
-const hits = new Map<string, number[]>();
-
-function rateLimited(key: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= MAX_PER_WINDOW) {
-    hits.set(key, recent);
-    return true;
-  }
-  recent.push(now);
-  hits.set(key, recent);
-  // Dọn rác nhỏ: giữ map không phình vô hạn.
-  if (hits.size > 500) {
-    for (const [k, v] of hits) if (v.every((t) => now - t >= WINDOW_MS)) hits.delete(k);
-  }
-  return false;
-}
 
 /**
  * GET /api/ekid/media/proxy?kid_id=<uuid>&url=<url>
@@ -81,7 +65,7 @@ export async function GET(req: Request) {
     const kid = await permittedKid(user.id, kidId);
     if (!kid) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
 
-    if (rateLimited(user.id)) {
+    if (rateLimited(`proxy:${user.id}`, MAX_PER_WINDOW, WINDOW_MS)) {
       return NextResponse.json({ error: "Quá nhiều yêu cầu" }, { status: 429 });
     }
 

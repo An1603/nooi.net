@@ -312,6 +312,9 @@ export function classifyContentType(contentType: string | null, url?: string): M
 
 // ─── Gọi mạng có kiểm soát ───────────────────────────────────────────────────
 
+/** User-Agent gửi kèm mọi request media — nhiều host (vd Wikimedia) chặn request thiếu UA. */
+export const MEDIA_USER_AGENT = "NooiEkid/1.0 (+https://nooi.net)";
+
 // Một lần gọi mạng có timeout — nuốt mọi lỗi, trả null nếu thất bại.
 // (SSRF) `redirect: "manual"` — KHÔNG để fetch tự đi theo redirect; tự kiểm từng hop.
 async function requestWithTimeout(
@@ -322,7 +325,15 @@ async function requestWithTimeout(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), MEDIA_VALIDATE_TIMEOUT_MS);
   try {
-    return await doFetch(url, { ...init, redirect: "manual", signal: controller.signal });
+    return await doFetch(url, {
+      ...init,
+      headers: {
+        "User-Agent": MEDIA_USER_AGENT,
+        ...((init.headers as Record<string, string> | undefined) ?? {}),
+      },
+      redirect: "manual",
+      signal: controller.signal,
+    });
   } catch {
     return null;
   } finally {
@@ -401,6 +412,15 @@ async function isYouTubeEmbeddable(
   const ok = !!res && res.ok === true && res.status >= 200 && res.status < 300;
   await cancelBody(res);
   return ok;
+}
+
+/** Kiểm chứng một MÃ VIDEO YouTube có nhúng được không (dùng cho công cụ tìm video). */
+export async function checkYouTubeEmbeddable(
+  videoId: string,
+  doFetch: MediaFetchLike = (input, init) => fetch(input, init),
+): Promise<boolean> {
+  if (!/^[A-Za-z0-9_-]{6,20}$/.test(videoId)) return false;
+  return isYouTubeEmbeddable(videoId, doFetch);
 }
 
 /**

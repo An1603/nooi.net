@@ -202,6 +202,32 @@ export function stageHint(
  */
 export const EKID_TOOLS: EkidToolDeclaration[] = [
   {
+    name: "find_media",
+    description:
+      "TÌM và hiện ẢNH hoặc VIDEO THẬT theo TỪ KHOÁ. " +
+      "DÙNG CÔNG CỤ NÀY khi bé muốn xem hình/video — KHÔNG tự đưa link. " +
+      "Hệ thống sẽ tìm nội dung thật, đúng chủ đề, đã kiểm chứng xem được. " +
+      "`kind`: \"image\" (ảnh) hoặc \"video\" (video YouTube). " +
+      "Sau khi hiện, hãy dẫn dắt bé quan sát: mô tả ngắn, đặt 1-2 câu hỏi gợi mở.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "Từ khoá NGẮN, tiếng Việt, đúng thứ bé muốn xem (vd \"con mèo\", \"khủng long\", " +
+            "\"biển\"). Đừng đưa cả câu dài.",
+        },
+        kind: {
+          type: "string",
+          description: "Loại nội dung cần tìm: \"image\" (ảnh) hoặc \"video\" (video).",
+          enum: ["image", "video"],
+        },
+      },
+      required: ["query", "kind"],
+    },
+  },
+  {
     name: "show_exercise",
     description:
       "Hiện một bài tập trắc nghiệm LÊN MÀN HÌNH của bé (đồng thời với hội thoại). " +
@@ -304,9 +330,12 @@ export function toolsPromptSection(): string {
     "- `show_exercise`: hiện thẻ BÀI TẬP trắc nghiệm lên màn hình. Dùng khi bạn muốn bé",
     "  luyện tập/kiểm tra qua đồng hồ: đọc to câu hỏi + các lựa chọn, rồi để bé chạm chọn.",
     "  Bé luôn quan sát được màn hình trong khi vẫn nói chuyện với bạn.",
-    "- `show_media`: hiện ẢNH hoặc VIDEO minh hoạ lên màn hình.",
-    "  ẢNH: link ảnh trực tiếp của nội dung thật sự xem được. Hệ thống sẽ tự phát lại ảnh",
-    "  qua máy chủ NOOI nên không bị chặn hiển thị.",
+    "- `find_media`: TÌM VÀ HIỆN ảnh/video THẬT theo từ khoá — ĐÂY LÀ CÁCH CHÍNH để bé xem",
+    "  hình/video. Chỉ đưa TỪ KHOÁ ngắn tiếng Việt (vd \"con mèo\", \"khủng long\", \"biển\");",
+    "  `kind`: \"image\" hoặc \"video\". Hệ thống tự tìm nội dung thật + kiểm chứng xem được.",
+    "  TUYỆT ĐỐI KHÔNG tự bịa link, KHÔNG đưa link trang web.",
+    "- `show_media`: chỉ dùng khi bạn ĐÃ có sẵn link ảnh trực tiếp (.jpg/.png/.webp) hoặc link",
+    "  YouTube cụ thể. Nếu không chắc → dùng `find_media`.",
     "  VIDEO: CHỈ dùng link YouTube (video còn tồn tại và cho phép nhúng). TUYỆT ĐỐI KHÔNG",
     "  dùng file .mp4/.webm hay link tải video — hệ thống sẽ từ chối.",
     "  Dùng khi bé hỏi về con vật, đồ vật, sự việc, bài hát, hoạt động… mà một hình ảnh",

@@ -17,9 +17,17 @@ import { BAND_ADDRESS, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { normalizeTurns } from "@/lib/ekid/kid-memory";
 
 describe("ekid interactive — EKID_TOOLS", () => {
-  it("có 3 khai báo: show_exercise, show_media, answer_exercise", () => {
+  it("có 4 khai báo: find_media, show_exercise, show_media, answer_exercise", () => {
     const names = EKID_TOOLS.map((t) => t.name);
-    expect(names).toEqual(["show_exercise", "show_media", "answer_exercise"]);
+    expect(names).toEqual(["find_media", "show_exercise", "show_media", "answer_exercise"]);
+  });
+
+  it("find_media yêu cầu query + kind (image|video)", () => {
+    const fm = EKID_TOOLS.find((t) => t.name === "find_media");
+    expect(fm?.parameters.required).toContain("query");
+    expect(fm?.parameters.required).toContain("kind");
+    const props = fm?.parameters.properties as Record<string, { enum?: string[] }>;
+    expect(props.kind.enum).toEqual(["image", "video"]);
   });
 
   it("answer_exercise yêu cầu chosen_index (vị trí lựa chọn bé nói)", () => {
@@ -59,10 +67,13 @@ describe("ekid interactive — toolsPromptSection", () => {
     expect(p.toLowerCase()).toContain("bài tiếp theo");
   });
 
-  it("toolsPromptSection mô tả 2 công cụ và hướng dẫn khi nào dùng", () => {
+  it("toolsPromptSection mô tả các công cụ và hướng dẫn khi nào dùng", () => {
     const p = toolsPromptSection();
     expect(p).toContain("show_exercise");
+    expect(p).toContain("find_media");
     expect(p).toContain("show_media");
+    // Cách CHÍNH để xem hình/video là TÌM THẬT, không tự bịa link.
+    expect(p).toContain("KHÔNG tự bịa link");
     expect(p.toLowerCase()).toContain("bài tập");
     expect(p.toLowerCase()).toContain("ảnh");
   });

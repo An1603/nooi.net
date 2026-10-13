@@ -68,6 +68,14 @@ function asIntOrUndef(v: unknown): number | undefined {
   return typeof v === "number" && Number.isInteger(v) ? v : undefined;
 }
 
+/** Phản hồi của `GET /api/ekid/media/find`. */
+interface FoundMediaResponse {
+  ok?: unknown;
+  url?: unknown;
+  videoId?: unknown;
+  title?: unknown;
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export interface EkidInteractiveController {
@@ -175,6 +183,70 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
       }
     },
     [kidId],
+  );
+
+  // Xử lý `find_media`: TÌM nội dung THẬT theo từ khoá rồi mới hiện (AI không tự bịa link).
+  const handleFindMedia = useCallback(
+    async (call: ToolFunctionCall, respond: (res: ToolFunctionResponse[]) => void) => {
+      const query = asString(call.args.query);
+      const kind = call.args.kind === "video" ? "video" : "image";
+      const id = nextItemId();
+
+      const fail = (text: string) => {
+        setCurrent({ id, kind: "notice", text });
+        pushLog({
+          role: "tool",
+          text: `AI tìm "${query ?? ""}" nhưng không có nội dung phù hợp.`,
+          meta: { event: "call", tool: call.name, item_id: id, args: call.args, result: { shown: false } },
+        });
+        respond([{ name: "find_media", response: { shown: false } }]);
+      };
+
+      if (!query) {
+        respond([{ name: "find_media", response: { shown: false, reason: "missing_query" } }]);
+        return;
+      }
+
+      let found: FoundMediaResponse | null = null;
+      try {
+        const res = await fetch(
+          `/api/ekid/media/find?kid_id=${encodeURIComponent(kidId ?? "")}` +
+            `&q=${encodeURIComponent(query)}&kind=${kind}`,
+          { method: "GET" },
+        );
+        if (res.ok) found = (await res.json()) as FoundMediaResponse;
+      } catch {
+        found = null;
+      }
+
+      const url = typeof found?.url === "string" ? found.url : null;
+      const videoId = typeof found?.videoId === "string" && found.videoId ? found.videoId : null;
+      const title = typeof found?.title === "string" && found.title ? found.title : undefined;
+
+      if (found?.ok !== true || !url) {
+        fail("Không tìm thấy nội dung phù hợp");
+        return;
+      }
+
+      const item: MediaItem = {
+        id,
+        kind: "media",
+        url,
+        mediaType: kind,
+        caption: title,
+        ...(videoId ? { videoId } : {}),
+        // Ảnh: phát lại qua domain mình (hết chặn hotlink/mixed content/chặn vùng).
+        ...(kind === "image" ? { displayUrl: proxiedMediaUrl(kidId ?? "", url) ?? undefined } : {}),
+      };
+      respondRef.current.set(item.id, { respond, item });
+      setCurrent(item);
+      pushLog({
+        role: "tool",
+        text: `AI tìm và hiện ${kind === "video" ? "video" : "hình ảnh"}: ${title ?? query}.`,
+        meta: { event: "call", tool: call.name, item_id: item.id, args: call.args },
+      });
+    },
+    [kidId, nextItemId, pushLog],
   );
 
   // Xử lý `show_media`: KIỂM TRA link TRƯỚC, chỉ hiện khi hợp lệ; ngược lại thông báo nhẹ.
@@ -316,6 +388,12 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
           continue;
         }
 
+        // Media: TÌM nội dung thật theo từ khoá (cách chính) — không chặn lượt gọi khác.
+        if (call.name === "find_media") {
+          void handleFindMedia(call, respond);
+          continue;
+        }
+
         // Media: kiểm tra link bất đồng bộ rồi mới hiện (không chặn lượt gọi khác).
         if (call.name === "show_media") {
           void handleShowMedia(call, respond);
@@ -338,7 +416,7 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
         });
       }
     },
-    [buildExercise, handleShowMedia, pushLog, resolveExercise],
+    [buildExercise, handleFindMedia, handleShowMedia, pushLog, resolveExercise],
   );
 
   const onResolve = useCallback<EkidInteractiveController["onResolve"]>(

@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
+import type { VoiceStatus } from "@/components/voice/useVoiceAssistant";
 import { ExerciseCard } from "./ExerciseCard";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import type { AgeBand, EkidExercise } from "@/lib/ekid/ekid-system";
@@ -66,8 +67,10 @@ export function EkidVoiceSession({
   // Hội thoại thật của buổi (bé ↔ AI) + sự kiện công cụ (bài tập/ảnh/video)
   // — gom qua useEkidInteractive để lưu cùng phiên.
   const interactive = useEkidInteractive(kid.id);
-  // ÉP AI nói ngay kết quả bài tập (bấm hoặc nói) trong buổi học.
-  const { onSpeakReady } = useAnswerSpeech(interactive.resolution);
+  // ÉP AI nói ngay kết quả bài tập (bấm hoặc nói) trong buổi học — cần trạng thái
+  // phiên để biết AI đã tự đáp hay chưa (khỏi nói chồng).
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
+  const { onSpeakReady } = useAnswerSpeech(interactive.resolution, voiceStatus);
 
   const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
     ? kid.favorite_voice
@@ -118,6 +121,7 @@ export function EkidVoiceSession({
             tools={EKID_TOOLS}
             onToolCall={interactive.onToolCall}
             onSpeakReady={onSpeakReady}
+            onStatusChange={setVoiceStatus}
           />
           {/* `resolution` để thẻ bài tập hiện đúng/sai dù bé BẤM hay TRẢ LỜI BẰNG LỜI. */}
           <InteractiveStage

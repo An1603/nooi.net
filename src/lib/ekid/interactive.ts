@@ -146,6 +146,19 @@ export function answerSpeechInstruction(result: ExerciseResult): string {
 }
 
 /**
+ * Lời nhắc NGẮN gắn ngay trong kết quả `answer_exercise` trả về model — để model phản
+ * hồi trong CHÍNH lượt đang xử lý (đường bé nói thường bị model kết thúc lượt im lặng).
+ */
+export function answerNudge(result: ExerciseResult): string {
+  const letter = optionLetter(result.chosen_index);
+  const outcome = result.correct === undefined ? "" : result.correct ? " (ĐÚNG)" : " (SAI)";
+  return (
+    `Bé đã chọn đáp án ${letter}${outcome}. Hãy LÊN TIẾNG ngay kết quả cho bé nghe, ` +
+    `rồi hiện bài tiếp theo trong cùng lượt.`
+  );
+}
+
+/**
  * Gợi ý ngắn cho khung "ghi chú" cột trái màn hình con — bám theo nội dung
  * đang hiện (`current`) và kết quả đã ghi nhận (`resolution`).
  */
@@ -176,7 +189,9 @@ export const EKID_TOOLS: EkidToolDeclaration[] = [
     description:
       "Hiện một bài tập trắc nghiệm LÊN MÀN HÌNH của bé (đồng thời với hội thoại). " +
       "Dùng khi muốn bé quan sát/luyện tập và tự chạm chọn đáp án. " +
-      "Sau khi gọi, hãy ĐỌC TO câu hỏi và các lựa chọn cho bé nghe, rồi chờ bé chọn.",
+      "Sau khi gọi, hãy ĐỌC TO câu hỏi và các lựa chọn cho bé nghe, rồi chờ bé chọn. " +
+      "Khi đã có kết quả của bài trước, hãy gọi công cụ này NGAY trong cùng lượt để bé " +
+      "thấy bài tiếp theo không phải chờ.",
     parameters: {
       type: "object",
       properties: {
@@ -238,7 +253,8 @@ export const EKID_TOOLS: EkidToolDeclaration[] = [
       "BẰNG LỜI NÓI (ví dụ bé nói \"con chọn B\", \"đáp án là số 2\", \"con nghĩ là ba\"). " +
       "CHỈ gọi khi trên màn hình đang có thẻ bài tập chưa được trả lời. " +
       "KHÔNG gọi khi bé bấm trên màn hình — lúc đó hệ thống tự ghi nhận. " +
-      "Sau khi gọi, hãy phản hồi bằng giọng: khen khi đúng, gợi mở nhẹ nhàng khi sai.",
+      "Sau khi gọi, hãy LÊN TIẾNG ngay kết quả (khen khi đúng, gợi mở khi sai) VÀ hiện " +
+      "bài tiếp theo trong cùng lượt nói.",
     parameters: {
       type: "object",
       properties: {
@@ -280,6 +296,9 @@ export function toolsPromptSection(): string {
     "- BẮT BUỘC: ngay khi nhận được kết quả bài tập (bé bấm hoặc bé nói), bạn phải LÊN",
     "  TIẾNG ngay 1-2 câu về kết quả đó — khen khi đúng, động viên + gợi mở khi sai.",
     "  TUYỆT ĐỐI KHÔNG im lặng sau khi có kết quả.",
+    "- CHUYỂN TIẾP NHANH: trong CÙNG lượt đó, hãy gọi luôn `show_exercise` để hiện BÀI TIẾP THEO",
+    "  (không chờ bé giục, không hỏi lại \"con làm tiếp không\"). Bé chỉ cần nghe bạn nhận xét",
+    "  ngắn 1 câu là đã thấy bài mới trên màn hình.",
     "- Khi hiện ảnh/video: chỉ dùng link THẬT SỰ xem được. Video YouTube phải là video",
     "  còn tồn tại và cho phép nhúng; nếu hệ thống báo không hiện được thì hãy mô tả bằng",
     "  lời và mời bé hỏi tiếp, đừng thử lại y nguyên link đó.",

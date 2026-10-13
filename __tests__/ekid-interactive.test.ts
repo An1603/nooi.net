@@ -10,6 +10,7 @@ import {
   optionLetter,
   stageHint,
   answerSpeechInstruction,
+  answerNudge,
 } from "@/lib/ekid/interactive";
 import { BAND_ADDRESS, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { normalizeTurns } from "@/lib/ekid/kid-memory";
@@ -50,7 +51,14 @@ describe("ekid interactive — EKID_TOOLS", () => {
 });
 
 describe("ekid interactive — toolsPromptSection", () => {
-  it("mô tả 2 công cụ và hướng dẫn khi nào dùng", () => {
+  it("toolsPromptSection: yêu cầu trả lời kết quả VÀ hiện bài tiếp theo trong CÙNG lượt", () => {
+    const p = toolsPromptSection();
+    // Chống chậm chuyển tiếp: AI không được chờ bé giục mới hiện bài kế tiếp.
+    expect(p).toContain("CÙNG");
+    expect(p.toLowerCase()).toContain("bài tiếp theo");
+  });
+
+  it("toolsPromptSection mô tả 2 công cụ và hướng dẫn khi nào dùng", () => {
     const p = toolsPromptSection();
     expect(p).toContain("show_exercise");
     expect(p).toContain("show_media");
@@ -213,6 +221,15 @@ describe("ekid interactive — answerSpeechInstruction (ÉP AI nói kết quả)
     expect(s).not.toContain("ĐÚNG");
     expect(s).not.toContain("SAI");
     expect(s).toContain("phản hồi");
+  });
+
+  it("answerNudge: nhắc model nói kết quả + hiện bài tiếp theo, có nêu đúng/sai", () => {
+    const ok = answerNudge({ chosen_index: 0, correct: true, source: "voice" });
+    expect(ok).toContain("A");
+    expect(ok).toContain("ĐÚNG");
+    expect(ok.toLowerCase()).toContain("bài tiếp theo");
+    expect(answerNudge({ chosen_index: 1, correct: false, source: "tap" })).toContain("SAI");
+    expect(answerNudge({ chosen_index: 1, source: "tap" })).not.toContain("SAI");
   });
 });
 

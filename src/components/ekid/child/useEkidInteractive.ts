@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { OnToolCall, VoiceTurn } from "@/components/voice/useVoiceAssistant";
 import type { ToolFunctionCall, ToolFunctionResponse } from "@/lib/voice/gemini-live";
 import {
+  answerNudge,
   describeAnswer,
   gradeExercise,
   isExerciseItem,
@@ -303,6 +304,8 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
                     ok: true,
                     chosen_index: done.result.chosen_index,
                     ...(done.result.correct !== undefined ? { correct: done.result.correct } : {}),
+                    // Nhắc model NGAY trong kết quả trả về: phải nói kết quả cho bé nghe.
+                    instruction: answerNudge(done.result),
                   }
                 : { ok: false, reason: done.reason ?? "unknown" };
           }

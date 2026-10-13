@@ -10,10 +10,11 @@
 // Nạp BỘ NHỚ về bé vào ngữ cảnh AI; tự lưu hội thoại một lần khi kết thúc buổi
 // (visibilitychange/pagehide) — logic chuyển từ EkidTalkCard cũ.
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
+import type { VoiceStatus } from "@/components/voice/useVoiceAssistant";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
 import { BAND_VOICE, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { EKID_TOOLS, stageHint } from "@/lib/ekid/interactive";
@@ -88,7 +89,9 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
   const hint = stageHint(current, resolution);
 
   // ÉP AI nói ngay kết quả (bấm hoặc nói) — không chờ model tự phát lượt.
-  const { onSpeakReady } = useAnswerSpeech(resolution);
+  // Cần trạng thái phiên để biết AI ĐÃ tự đáp hay chưa (khỏi nói chồng).
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
+  const { onSpeakReady } = useAnswerSpeech(resolution, voiceStatus);
 
   // ── Thu thập + tự lưu hội thoại ─────────────────────────────────────────
   const sentRef = useRef(false); // Chỉ gửi MỘT LẦN cho mỗi buổi.
@@ -167,6 +170,7 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
                 tools={EKID_TOOLS}
                 onToolCall={onToolCall}
                 onSpeakReady={onSpeakReady}
+                onStatusChange={setVoiceStatus}
                 compact
               />
               {/* Ghi chú: chỉ hiện trên desktop (mobile ưu tiên chỗ cho khung hiển thị). */}

@@ -63,6 +63,12 @@ interface VoiceAssistantProps {
    * Mặc định bỏ trống → AI Mentor KHÔNG đổi.
    */
   onSpeakReady?: (speak: (text: string) => void) => void;
+  /**
+   * Báo lên cha mỗi khi TRẠNG THÁI phiên đổi (đang nghe / đang trả lời / lỗi…).
+   * Dùng để cha biết AI ĐÃ lên tiếng hay chưa (vd: khỏi ép nói lại kết quả bài tập).
+   * Mặc định bỏ trống → AI Mentor KHÔNG đổi.
+   */
+  onStatusChange?: (status: VoiceStatus) => void;
 }
 
 export function VoiceAssistant({
@@ -75,6 +81,7 @@ export function VoiceAssistant({
   onToolCall,
   compact = false,
   onSpeakReady,
+  onStatusChange,
 }: VoiceAssistantProps) {
   const {
     status,
@@ -92,6 +99,11 @@ export function VoiceAssistant({
   useEffect(() => {
     onSpeakReady?.(sendText);
   }, [onSpeakReady, sendText]);
+
+  // Báo trạng thái lên cha (tùy chọn) — cha biết khi nào AI ĐANG nói.
+  useEffect(() => {
+    onStatusChange?.(status);
+  }, [onStatusChange, status]);
 
   const [showChat, setShowChat] = useState(true);
   const [isHovered, setIsHovered] = useState(false);

@@ -355,6 +355,15 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
     clientRef.current?.sendToolResponse(responses);
   }, []);
 
+  /**
+   * Gửi một LƯỢT VĂN BẢN vào phiên theo thời gian thực.
+   * Dùng để ÉP AI lên tiếng ngay (vd: thông báo kết quả bài tập) — không phụ thuộc
+   * việc model có tự phát lượt hay không. An toàn khi chưa kết nối: tự bỏ qua.
+   */
+  const sendText = useCallback((text: string) => {
+    clientRef.current?.sendText(text);
+  }, []);
+
   return {
     status,
     transcript,
@@ -369,5 +378,6 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
     stop,
     toggleMute,
     sendToolResponse,
+    sendText,
   };
 }

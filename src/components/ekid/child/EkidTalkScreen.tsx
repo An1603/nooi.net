@@ -20,6 +20,7 @@ import { EKID_TOOLS, stageHint } from "@/lib/ekid/interactive";
 import { KID } from "@/components/ekid/child/kid-theme";
 import { InteractiveStage } from "@/components/ekid/child/InteractiveStage";
 import { useEkidInteractive } from "@/components/ekid/child/useEkidInteractive";
+import { useAnswerSpeech } from "@/components/ekid/child/useAnswerSpeech";
 
 /** Hồ sơ bé rút gọn — đủ để chọn giọng + dựng system instruction + lưu bộ nhớ. */
 export interface TalkKid {
@@ -85,6 +86,9 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
 
   // Gợi ý ngắn cho khung ghi chú (cột trái) — bám theo nội dung đang hiện.
   const hint = stageHint(current, resolution);
+
+  // ÉP AI nói ngay kết quả (bấm hoặc nói) — không chờ model tự phát lượt.
+  const { onSpeakReady } = useAnswerSpeech(resolution);
 
   // ── Thu thập + tự lưu hội thoại ─────────────────────────────────────────
   const sentRef = useRef(false); // Chỉ gửi MỘT LẦN cho mỗi buổi.
@@ -162,6 +166,7 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
                 onTurnsChange={onTurnsChange}
                 tools={EKID_TOOLS}
                 onToolCall={onToolCall}
+                onSpeakReady={onSpeakReady}
                 compact
               />
               {/* Ghi chú: chỉ hiện trên desktop (mobile ưu tiên chỗ cho khung hiển thị). */}

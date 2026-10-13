@@ -10,7 +10,8 @@
 // Bé tương tác xong → `onResolve(itemId, result)` để cha gửi `toolResponse` về model
 // và ghi log hội thoại.
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { youtubeVideoId } from "@/lib/ekid/youtube";
 import {
   isExerciseItem,
   isMediaItem,
@@ -160,27 +161,20 @@ function ExerciseCard({
 
 // ─── Thẻ media (ảnh / video) ──────────────────────────────────────────────────
 
-function youtubeEmbedUrl(url: string): string | null {
-  // Hỗ trợ youtu.be/<id>, youtube.com/watch?v=<id>, youtube.com/embed/<id>, /shorts/<id>.
-  try {
-    const u = new URL(url);
-    const host = u.hostname.replace(/^www\./, "");
-    if (host === "youtu.be") {
-      const id = u.pathname.slice(1);
-      return id ? `https://www.youtube.com/embed/${id}` : null;
-    }
-    if (host === "youtube.com" || host === "m.youtube.com" || host === "music.youtube.com") {
-      if (u.pathname === "/watch") {
-        const id = u.searchParams.get("v");
-        return id ? `https://www.youtube.com/embed/${id}` : null;
-      }
-      const m = u.pathname.match(/^\/(embed|shorts|v)\/([^/]+)/);
-      if (m) return `https://www.youtube.com/embed/${m[2]}`;
-    }
-    return null;
-  } catch {
-    return null;
-  }
+/** Khung báo nội dung không xem được — thay cho khung vỡ/trắng. */
+function MediaBrokenNotice({ kind }: { kind: "image" | "video" }) {
+  return (
+    <div className="flex h-full min-h-[40vh] w-full items-center justify-center px-4 text-center">
+      <p className="rounded-2xl bg-white/80 px-5 py-4 text-lg font-semibold text-[#6b5648]">
+        <span aria-hidden className="mr-1">
+          🔎
+        </span>
+        {kind === "video"
+          ? "Video này không xem được. Con thử hỏi thầy/cô AI nội dung khác nhé!"
+          : "Ảnh này không xem được. Con thử hỏi thầy/cô AI hình khác nhé!"}
+      </p>
+    </div>
+  );
 }
 
 /** Chỉ cho phép scheme http/https — chặn javascript:, data:, vbscript:, file:... */
@@ -212,20 +206,32 @@ function NoticeCard({ item }: { item: NoticeItem }) {
 }
 
 function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }> }) {
-  const embed = item.mediaType === "video" ? youtubeEmbedUrl(item.url) : null;
+  // Theo dõi khi CHÍNH TRÌNH DUYỆT không tải được (hotlink, hết hạn, mạng) → báo nhẹ
+  // thay vì để khung ảnh/khung video vỡ.
+  const [broken, setBroken] = useState(false);
+
+  // Ưu tiên mã video server ĐÃ kiểm chứng nhúng được; không có thì tự suy từ URL.
+  const ytId = item.mediaType === "video" ? (item.videoId ?? youtubeVideoId(item.url)) : null;
+  const embed = ytId ? `https://www.youtube-nocookie.com/embed/${ytId}` : null;
   const safe = isSafeUrl(item.url);
 
   return (
     <div className="overflow-hidden rounded-2xl border-2 border-[#bae6fd] bg-[#f7fcff]">
       <div className="flex min-h-[50vh] w-full items-center justify-center bg-white/60 p-2 sm:p-3">
-        {item.mediaType === "image" ? (
+        {broken ? (
+          <MediaBrokenNotice kind={item.mediaType} />
+        ) : item.mediaType === "image" ? (
           safe ? (
+            // `referrerPolicy="no-referrer"`: nhiều host ảnh chặn hotlink theo Referer →
+            // không gửi Referer thì ảnh hiện được (nguyên nhân "lúc được lúc không").
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={item.url}
               alt={item.caption ?? "Hình minh hoạ"}
               className="max-h-[65vh] w-auto max-w-full object-contain"
               loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={() => setBroken(true)}
             />
           ) : (
             <UnsafeNotice />
@@ -236,6 +242,7 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
             title={item.caption ?? "Video minh hoạ"}
             className="aspect-video w-full max-w-4xl"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
           />
         ) : safe ? (
@@ -245,6 +252,7 @@ function MediaCard({ item }: { item: Extract<InteractiveItem, { kind: "media" }>
             playsInline
             className="max-h-[65vh] w-auto max-w-full object-contain"
             aria-label={item.caption ?? "Video minh hoạ"}
+            onError={() => setBroken(true)}
           />
         ) : (
           <UnsafeNotice />

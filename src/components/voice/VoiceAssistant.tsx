@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useVoiceAssistant,
   type VoiceStatus,
@@ -56,6 +56,13 @@ interface VoiceAssistantProps {
    * Mặc định `false` → giao diện AI Mentor KHÔNG đổi.
    */
   compact?: boolean;
+  /**
+   * Cho cha một hàm "NÓI CÂU NÀY NGAY" (gửi một lượt văn bản vào phiên Live).
+   * Dùng để ÉP AI lên tiếng khi cần chắc chắn có lời đáp — vd thông báo kết quả bài
+   * tập của bé. Hàm ổn định, gọi lúc nào cũng an toàn (chưa kết nối thì tự bỏ qua).
+   * Mặc định bỏ trống → AI Mentor KHÔNG đổi.
+   */
+  onSpeakReady?: (speak: (text: string) => void) => void;
 }
 
 export function VoiceAssistant({
@@ -67,6 +74,7 @@ export function VoiceAssistant({
   tools,
   onToolCall,
   compact = false,
+  onSpeakReady,
 }: VoiceAssistantProps) {
   const {
     status,
@@ -77,7 +85,13 @@ export function VoiceAssistant({
     isMicMuted,
     start,
     stop,
+    sendText,
   } = useVoiceAssistant({ voice, systemInstruction, onTurnsChange, tools, onToolCall });
+
+  // Phơi hàm "nói câu này ngay" cho cha (tùy chọn) — để ÉP AI lên tiếng khi cần.
+  useEffect(() => {
+    onSpeakReady?.(sendText);
+  }, [onSpeakReady, sendText]);
 
   const [showChat, setShowChat] = useState(true);
   const [isHovered, setIsHovered] = useState(false);

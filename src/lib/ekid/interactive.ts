@@ -41,6 +41,8 @@ export interface MediaItem {
   url: string;
   mediaType: "image" | "video";
   caption?: string;
+  /** Mã video YouTube đã kiểm chứng nhúng được (nếu là video YouTube). */
+  videoId?: string;
 }
 
 /** Thông báo NHẸ hiện trong sân khấu (vd: link media không hợp lệ) — không phải khung lỗi. */
@@ -123,6 +125,24 @@ export function describeAnswer(result: ExerciseResult): string {
       : `Bé bấm chọn đáp án ${letter}`;
   if (result.correct === undefined) return `${how} — đã ghi nhận.`;
   return `${how} — ${result.correct ? "ĐÚNG" : "SAI"}.`;
+}
+
+/**
+ * Câu lệnh GỬI THẲNG vào phiên Gemini Live để ÉP AI nói ngay kết quả vừa ghi nhận
+ * (không phụ thuộc việc model có tự phát lượt hay không). Bé trả lời bằng BẤM hay
+ * bằng LỜI đều được nói rõ, nên lời đáp luôn khớp với thực tế.
+ */
+export function answerSpeechInstruction(result: ExerciseResult): string {
+  const letter = optionLetter(result.chosen_index);
+  const how = result.source === "voice" ? "vừa trả lời bằng lời" : "vừa bấm trên màn hình";
+  const head = `[KẾT QUẢ BÀI TẬP] Bé ${how}, chọn đáp án ${letter}`;
+  if (result.correct === true) {
+    return `${head} — ĐÚNG. Hãy nói ngay 1-2 câu khen bé thật vui vẻ, rồi mời bé làm tiếp.`;
+  }
+  if (result.correct === false) {
+    return `${head} — SAI. Hãy nói ngay 1-2 câu động viên nhẹ nhàng và gợi mở để bé thử lại, không chê bé.`;
+  }
+  return `${head}. Hãy nói ngay 1-2 câu phản hồi về câu trả lời của bé.`;
 }
 
 /**
@@ -257,6 +277,12 @@ export function toolsPromptSection(): string {
     "  đang hiện trên màn hình (ví dụ bé nói \"con chọn B\"). Bé có thể trả lời bằng cách",
     "  BẤM trên màn hình hoặc NÓI — cả hai đường đều được ghi nhận như nhau, kết quả hiện",
     "  ngay trên thẻ. Bé bấm rồi thì KHÔNG gọi lại công cụ này.",
+    "- BẮT BUỘC: ngay khi nhận được kết quả bài tập (bé bấm hoặc bé nói), bạn phải LÊN",
+    "  TIẾNG ngay 1-2 câu về kết quả đó — khen khi đúng, động viên + gợi mở khi sai.",
+    "  TUYỆT ĐỐI KHÔNG im lặng sau khi có kết quả.",
+    "- Khi hiện ảnh/video: chỉ dùng link THẬT SỰ xem được. Video YouTube phải là video",
+    "  còn tồn tại và cho phép nhúng; nếu hệ thống báo không hiện được thì hãy mô tả bằng",
+    "  lời và mời bé hỏi tiếp, đừng thử lại y nguyên link đó.",
     "Nguyên tắc dùng công cụ:",
     "- Chỉ gọi khi thực sự hữu ích cho bài học/buổi trò chuyện; KHÔNG lạm dụng dồn dập.",
     "- Trước/sau khi gọi, hãy NÓI cho bé biết: gọi công cụ ở giữa lượt bạn đang nói,",

@@ -5,12 +5,15 @@
 //   - Chỉ chấp nhận port mặc định 80/443 (không port, hoặc port 80/443).
 //   - (SSRF) Chặn địa chỉ nội bộ/riêng tư/link-local/metadata: kiểm hostname + IP literal
 //     và RESOLVE DNS — nếu BẤT KỲ IP nào bị chặn thì từ chối (chống DNS rebinding cơ bản).
-//   - Link YouTube (watch/youtu.be/embed/shorts/music) → coi là VIDEO, khỏi gọi mạng.
+//   - Link YouTube → VIDEO, phải hỏi oEmbed: chỉ nhận video còn tồn tại VÀ cho phép nhúng.
 //   - Còn lại: HEAD request (redirect THỦ CÔNG, tối đa 3 hop, kiểm lại từng hop) rồi fallback
 //     GET `Range: bytes=0-0` → đọc `content-type`: image/* → ảnh, video/* → video, khác → không hợp lệ.
 //
 // TUYỆT ĐỐI không ném lỗi ra ngoài — mọi trục trặc (timeout, mạng, URL sai, DNS lỗi) đều
 // quy về `{ ok: false, kind: null }` để phía client chỉ việc ẩn nội dung.
+
+// Dùng cục bộ + xuất lại (re-export) — các nơi khác vẫn import từ media-validate như trước.
+import { isYouTubeUrl, youtubeVideoId } from "./youtube";
 
 /** Thời gian chờ tối đa cho một lần kiểm tra (ms). */
 export const MEDIA_VALIDATE_TIMEOUT_MS = 5000;
@@ -26,6 +29,8 @@ export interface MediaValidateResult {
   ok: boolean;
   kind: MediaKind | null;
   contentType: string | null;
+  /** Chỉ có với video YouTube: mã video đã kiểm chứng nhúng được. */
+  videoId?: string | null;
 }
 
 /** Kiểu hàm fetch tối thiểu — cho phép tiêm bản giả trong kiểm thử. */
@@ -255,27 +260,47 @@ export function isAllowedPort(port: string): boolean {
   return port === "" || port === "80" || port === "443";
 }
 
-/** Nhận diện link YouTube (watch/youtu.be/embed/shorts/music) → coi là video. */
-export function isYouTubeUrl(raw: string): boolean {
+// ─── Nhận diện YouTube (tách sang youtube.ts — hàm thuần, an toàn cho client) ──
+// Xuất lại để nơi khác tiếp tục import từ media-validate như trước.
+export { isYouTubeUrl, youtubeVideoId } from "./youtube";
+
+/** Content-type "chung chung" — server không nói rõ là ảnh hay video. */
+function isGenericContentType(ct: string): boolean {
+  return (
+    ct === "" ||
+    ct === "application/octet-stream" ||
+    ct === "binary/octet-stream" ||
+    ct === "application/binary"
+  );
+}
+
+const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
+const VIDEO_EXT_RE = /\.(mp4|webm|mov|m4v|ogv)$/i;
+
+/** Lấy phần đường dẫn (bỏ query) của URL để đoán loại theo đuôi file. */
+function urlPathname(url: string): string {
   try {
-    const host = new URL(raw).hostname.replace(/^www\./, "").toLowerCase();
-    return (
-      host === "youtu.be" ||
-      host === "youtube.com" ||
-      host === "m.youtube.com" ||
-      host === "music.youtube.com" ||
-      host === "youtube-nocookie.com"
-    );
+    return new URL(url).pathname;
   } catch {
-    return false;
+    return url;
   }
 }
 
-/** Quy `content-type` về loại hiển thị được (image/video) hoặc null. */
-export function classifyContentType(contentType: string | null): MediaKind | null {
-  const ct = (contentType ?? "").toLowerCase();
+/**
+ * Quy `content-type` về loại hiển thị được (image/video) hoặc null.
+ * Với content-type CHUNG CHUNG (vd `application/octet-stream` — rất nhiều CDN ảnh
+ * trả kiểu này) thì suy tiếp từ ĐUÔI FILE của `url`, tránh loại oan ảnh xem được.
+ * Content-type nói RÕ là `text/html`/`application/json` thì vẫn bị loại (trang web).
+ */
+export function classifyContentType(contentType: string | null, url?: string): MediaKind | null {
+  const ct = (contentType ?? "").toLowerCase().split(";")[0].trim();
   if (ct.startsWith("image/")) return "image";
   if (ct.startsWith("video/")) return "video";
+  if (!url || !isGenericContentType(ct)) return null;
+
+  const path = urlPathname(url);
+  if (IMAGE_EXT_RE.test(path)) return "image";
+  if (VIDEO_EXT_RE.test(path)) return "video";
   return null;
 }
 
@@ -355,6 +380,24 @@ async function fetchFollowingSafeRedirects(
 }
 
 /**
+ * Hỏi YouTube **oEmbed** xem video còn tồn tại VÀ có cho phép nhúng không.
+ * 200 = nhúng được; 401/403/404 (video riêng tư, đã xoá, chủ kênh tắt nhúng,
+ * video nhạc) = KHÔNG nhúng được. Mọi lỗi mạng/timeout → coi như không nhúng được.
+ * Endpoint là hằng số của YouTube (không dựng từ input) nên không có rủi ro SSRF.
+ */
+async function isYouTubeEmbeddable(
+  videoId: string,
+  doFetch: MediaFetchLike,
+): Promise<boolean> {
+  const watch = `https://www.youtube.com/watch?v=${videoId}`;
+  const endpoint = `https://www.youtube.com/oembed?url=${encodeURIComponent(watch)}&format=json`;
+  const res = await requestWithTimeout(doFetch, endpoint, { method: "GET" });
+  const ok = !!res && res.ok === true && res.status >= 200 && res.status < 300;
+  await cancelBody(res);
+  return ok;
+}
+
+/**
  * Kiểm tra một URL media. KHÔNG BAO GIỜ ném lỗi.
  * @param raw URL cần kiểm tra.
  * @param doFetch hàm fetch (mặc định `globalThis.fetch`) — tiêm để kiểm thử.
@@ -381,14 +424,28 @@ export async function validateMediaUrl(
   // (SSRF) Chặn hostname/IP nội bộ + phân giải DNS kiểm từng IP.
   if (!(await isAllowedHost(parsed.hostname, doLookup))) return invalid();
 
-  // YouTube coi là video — không cần chạm mạng (embed sẽ chạy ở client).
-  if (isYouTubeUrl(url)) return { ok: true, kind: "video", contentType: "video/youtube" };
+  // YouTube: KHÔNG tin tưởng mù. Hỏi oEmbed — chỉ nhận video còn tồn tại VÀ cho
+  // phép nhúng; nếu không, tránh hẳn khung "video không khả dụng" cho bé xem.
+  if (isYouTubeUrl(url)) {
+    const videoId = youtubeVideoId(url);
+    if (!videoId) return invalid();
+    if (!(await isYouTubeEmbeddable(videoId, doFetch))) return invalid();
+    return { ok: true, kind: "video", contentType: "video/youtube", videoId };
+  }
 
   // HEAD trước; nhiều CDN chặn HEAD (405) → fallback GET `Range: bytes=0-0`.
   // Mọi redirect đều được kiểm SSRF ở từng hop.
+  // `sawResponse`: server THẬT SỰ trả lời (kể cả lỗi) — chỉ khi đó mới được suy
+  // loại từ đuôi file; mạng lỗi/timeout/chặn SSRF thì KHÔNG suy (tránh nhận oan).
   let contentType: string | null = null;
+  let sawResponse = false;
+
   const head = await fetchFollowingSafeRedirects(doFetch, url, { method: "HEAD" }, doLookup);
-  if (head && head.ok) contentType = head.headers.get("content-type");
+  if (head) {
+    sawResponse = true;
+    if (head.ok) contentType = head.headers.get("content-type");
+    await cancelBody(head);
+  }
 
   if (!contentType) {
     const get = await fetchFollowingSafeRedirects(
@@ -397,12 +454,15 @@ export async function validateMediaUrl(
       { method: "GET", headers: { Range: "bytes=0-0" } },
       doLookup,
     );
-    if (get) contentType = get.headers.get("content-type");
+    if (get) {
+      sawResponse = true;
+      contentType = get.headers.get("content-type");
+    }
     // Chỉ cần header — huỷ luồng để không tải nặng nội dung.
     await cancelBody(get);
   }
 
-  const kind = classifyContentType(contentType);
+  const kind = classifyContentType(contentType, sawResponse ? url : undefined);
   if (!kind) return invalid(contentType);
   return { ok: true, kind, contentType };
 }

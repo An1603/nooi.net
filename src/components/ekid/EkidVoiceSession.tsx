@@ -8,6 +8,7 @@ import { BAND_VOICE, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { EKID_TOOLS } from "@/lib/ekid/interactive";
 import { InteractiveStage } from "@/components/ekid/child/InteractiveStage";
 import { useEkidInteractive } from "@/components/ekid/child/useEkidInteractive";
+import { useAnswerSpeech } from "@/components/ekid/child/useAnswerSpeech";
 
 export interface EkidKidLite {
   id: string;
@@ -65,6 +66,8 @@ export function EkidVoiceSession({
   // Hội thoại thật của buổi (bé ↔ AI) + sự kiện công cụ (bài tập/ảnh/video)
   // — gom qua useEkidInteractive để lưu cùng phiên.
   const interactive = useEkidInteractive(kid.id);
+  // ÉP AI nói ngay kết quả bài tập (bấm hoặc nói) trong buổi học.
+  const { onSpeakReady } = useAnswerSpeech(interactive.resolution);
 
   const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
     ? kid.favorite_voice
@@ -114,6 +117,7 @@ export function EkidVoiceSession({
             onTurnsChange={interactive.onTurnsChange}
             tools={EKID_TOOLS}
             onToolCall={interactive.onToolCall}
+            onSpeakReady={onSpeakReady}
           />
           {/* `resolution` để thẻ bài tập hiện đúng/sai dù bé BẤM hay TRẢ LỜI BẰNG LỜI. */}
           <InteractiveStage

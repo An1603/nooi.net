@@ -154,19 +154,22 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
   // Gọi API kiểm tra link media — KHÔNG BAO GIỜ ném lỗi; mọi trục trặc → { ok:false }.
   // (SSRF) API yêu cầu `kid_id` để phân quyền (chủ hồ sơ / tài khoản con) — thiếu thì không gọi.
   const validateMedia = useCallback(
-    async (url: string): Promise<{ ok: boolean; kind: "image" | "video" | null }> => {
-      if (!kidId) return { ok: false, kind: null };
+    async (
+      url: string,
+    ): Promise<{ ok: boolean; kind: "image" | "video" | null; videoId: string | null }> => {
+      if (!kidId) return { ok: false, kind: null, videoId: null };
       try {
         const res = await fetch(
           `/api/ekid/media/validate?kid_id=${encodeURIComponent(kidId)}&url=${encodeURIComponent(url)}`,
           { method: "GET" },
         );
-        if (!res.ok) return { ok: false, kind: null };
-        const data = (await res.json()) as { ok?: unknown; kind?: unknown };
+        if (!res.ok) return { ok: false, kind: null, videoId: null };
+        const data = (await res.json()) as { ok?: unknown; kind?: unknown; videoId?: unknown };
         const kind = data.kind === "image" || data.kind === "video" ? data.kind : null;
-        return { ok: data.ok === true && kind !== null, kind };
+        const videoId = typeof data.videoId === "string" && data.videoId ? data.videoId : null;
+        return { ok: data.ok === true && kind !== null, kind, videoId };
       } catch {
-        return { ok: false, kind: null };
+        return { ok: false, kind: null, videoId: null };
       }
     },
     [kidId],
@@ -181,7 +184,7 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
         return;
       }
 
-      const { ok, kind } = await validateMedia(url);
+      const { ok, kind, videoId } = await validateMedia(url);
       const id = nextItemId();
 
       if (!ok || !kind) {
@@ -208,6 +211,8 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
         url,
         mediaType: kind,
         caption: asString(call.args.caption) ?? undefined,
+        // Với YouTube: mã video đã kiểm chứng nhúng được (server trả về).
+        ...(videoId ? { videoId } : {}),
       };
       respondRef.current.set(item.id, { respond, item });
       // THAY THẾ nội dung đang hiện — sân khấu chỉ có 1 nội dung tại một thời điểm.

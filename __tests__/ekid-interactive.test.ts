@@ -9,6 +9,7 @@ import {
   describeAnswer,
   optionLetter,
   stageHint,
+  answerSpeechInstruction,
 } from "@/lib/ekid/interactive";
 import { BAND_ADDRESS, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { normalizeTurns } from "@/lib/ekid/kid-memory";
@@ -183,6 +184,35 @@ describe("ekid interactive — ghi nhận kết quả 2 đường (bấm màn h�
     expect(text).not.toContain("ĐÚNG");
     expect(text).not.toContain("SAI");
     expect(text).toContain("đã ghi nhận");
+  });
+});
+
+describe("ekid interactive — answerSpeechInstruction (ÉP AI nói kết quả)", () => {
+  it("bấm đúng → đòi AI khen, nêu rõ bé BẤM", () => {
+    const s = answerSpeechInstruction({ chosen_index: 1, correct: true, source: "tap" });
+    expect(s).toContain("bấm");
+    expect(s).toContain("B");
+    expect(s).toContain("ĐÚNG");
+    expect(s).toContain("khen");
+  });
+
+  it("nói sai → đòi AI động viên + gợi mở, nêu rõ bé NÓI", () => {
+    const s = answerSpeechInstruction({
+      chosen_index: 0,
+      correct: false,
+      source: "voice",
+      spoken: "con chọn một",
+    });
+    expect(s).toContain("bằng lời");
+    expect(s).toContain("SAI");
+    expect(s).toContain("động viên");
+  });
+
+  it("không có đáp án đúng → vẫn đòi AI phản hồi, KHÔNG chấm đúng/sai", () => {
+    const s = answerSpeechInstruction({ chosen_index: 2, source: "tap" });
+    expect(s).not.toContain("ĐÚNG");
+    expect(s).not.toContain("SAI");
+    expect(s).toContain("phản hồi");
   });
 });
 

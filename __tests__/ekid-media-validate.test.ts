@@ -6,6 +6,7 @@ import {
   isBlockedAddress,
   isHttpUrl,
   isYouTubeUrl,
+  youtubeVideoId,
   validateMediaUrl,
   type DnsAddress,
   type DnsLookupLike,
@@ -83,6 +84,30 @@ describe("media-validate — hàm thuần", () => {
     expect(classifyContentType("text/html")).toBeNull();
     expect(classifyContentType("application/json")).toBeNull();
     expect(classifyContentType(null)).toBeNull();
+  });
+
+  it("classifyContentType: content-type CHUNG CHUNG → suy từ đuôi file", () => {
+    // Nhiều CDN ảnh trả application/octet-stream → trước đây bị loại oan ("lúc được lúc không").
+    expect(classifyContentType("application/octet-stream", "https://x/a.PNG")).toBe("image");
+    expect(classifyContentType(null, "https://x/a.webp?w=100")).toBe("image");
+    expect(classifyContentType("binary/octet-stream", "https://x/a.JPG")).toBe("image");
+    expect(classifyContentType("application/octet-stream", "https://x/a.mp4")).toBe("video");
+    // KHÔNG suy từ đuôi khi server nói RÕ đó là HTML (trang web đội lốt .jpg).
+    expect(classifyContentType("text/html", "https://x/fake.jpg")).toBeNull();
+    expect(classifyContentType("application/octet-stream", "https://x/trang-chu")).toBeNull();
+  });
+
+  it("youtubeVideoId lấy mã video từ mọi dạng link, null nếu không phải video", () => {
+    expect(youtubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=5")).toBe("dQw4w9WgXcQ");
+    expect(youtubeVideoId("https://youtu.be/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+    expect(youtubeVideoId("https://m.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+    expect(youtubeVideoId("https://www.youtube.com/shorts/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+    expect(youtubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+    expect(youtubeVideoId("https://www.youtube.com/live/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+    expect(youtubeVideoId("https://www.youtube.com/feed/subscriptions")).toBeNull();
+    expect(youtubeVideoId("https://www.youtube.com/")).toBeNull();
+    expect(youtubeVideoId("https://example.com/watch?v=dQw4w9WgXcQ")).toBeNull();
+    expect(youtubeVideoId("không-phải-url")).toBeNull();
   });
 
   it("isAllowedPort chỉ cho port mặc định 80/443 (hoặc rỗng)", () => {
@@ -180,11 +205,29 @@ describe("media-validate — validateMediaUrl", () => {
     expect(r.ok).toBe(false);
   });
 
-  it("link YouTube → ok:true, kind video, không gọi mạng", async () => {
-    const doFetch = vi.fn() as unknown as MediaFetchLike;
+  it("link YouTube ĐÃ KIỂM TRA nhúng được → ok:true, kind video + videoId", async () => {
+    // oEmbed trả 200 = video tồn tại VÀ cho phép nhúng.
+    const doFetch = vi.fn(async () => fakeRes("application/json")) as unknown as MediaFetchLike;
+    const r = await validateMediaUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ", doFetch, publicLookup);
+    expect(r).toEqual({ ok: true, kind: "video", contentType: "video/youtube", videoId: "dQw4w9WgXcQ" });
+    // Có chạm mạng (gọi oEmbed) — khác hẳn hành vi "tin tưởng mù" trước đây.
+    expect(doFetch).toHaveBeenCalled();
+    const calls = (doFetch as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls;
+    expect(calls[0][0]).toContain("youtube.com/oembed");
+    expect(calls[0][0]).toContain("dQw4w9WgXcQ");
+  });
+
+  it("YouTube KHÔNG cho nhúng (oEmbed 401/404) → ok:false (tránh khung 'video không khả dụng')", async () => {
+    const doFetch = vi.fn(async () => fakeRes(null, false, 401)) as unknown as MediaFetchLike;
     const r = await validateMediaUrl("https://youtu.be/abc123", doFetch, publicLookup);
-    expect(r.ok).toBe(true);
-    expect(r.kind).toBe("video");
+    expect(r.ok).toBe(false);
+    expect(r.kind).toBeNull();
+  });
+
+  it("YouTube không lấy được video id → ok:false, KHÔNG gọi mạng", async () => {
+    const doFetch = vi.fn() as unknown as MediaFetchLike;
+    const r = await validateMediaUrl("https://www.youtube.com/feed/subscriptions", doFetch, publicLookup);
+    expect(r.ok).toBe(false);
     expect(doFetch).not.toHaveBeenCalled();
   });
 

@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { generateGeminiText } from "@/lib/ai/gemini-text";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // ─── Bộ nhớ bé (eKid) — dùng CHUNG cho endpoint memory và endpoint session ────
@@ -230,19 +230,13 @@ export async function summarizeAndUpdateMemory(
       transcript,
     });
 
-    const client = new GoogleGenAI({ apiKey });
-    const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      config: {
+    const text =
+      (await generateGeminiText(apiKey, userPrompt, {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.4,
         maxOutputTokens: 2048,
         responseMimeType: "application/json",
-      },
-    });
-
-    const text = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      })) ?? "";
     const parsed = extractJson(text);
     const notes = parsed && typeof parsed.ai_notes === "string" ? parsed.ai_notes.trim() : "";
     const memory = parsed && typeof parsed.memory === "string" ? parsed.memory.trim() : "";

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import { generateGeminiText } from "@/lib/ai/gemini-text";
 
 const SYSTEM_INSTRUCTION = `# AI Mentor System Prompt (NOOI Standard)
 
@@ -60,21 +60,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const client = new GoogleGenAI({ apiKey });
-
-    const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        { role: "user", parts: [{ text: userMessage }] },
-      ],
-      config: {
+    const reply =
+      (await generateGeminiText(apiKey, userMessage, {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.7,
         maxOutputTokens: 4096,
-      },
-    });
-
-    const reply = response.candidates?.[0]?.content?.parts?.[0]?.text || 
+      })) ||
       "Xin lỗi, tôi chưa thể đưa ra lời khuyên lúc này. Hãy chia sẻ thêm về điều bạn đang trải nghiệm.";
 
     return NextResponse.json({ reply });

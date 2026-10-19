@@ -71,6 +71,12 @@ interface VoiceAssistantProps {
    */
   onStatusChange?: (status: VoiceStatus) => void;
   /**
+   * Báo lên cha mỗi khi có văn bản nhận dạng được lời bé nói — lưới an toàn để
+   * client tự chấm đáp án khi model không gọi `answer_exercise`.
+   * Mặc định bỏ trống → AI Mentor KHÔNG đổi.
+   */
+  onUserSpeech?: (text: string) => void;
+  /**
    * TẠM DỪNG trò chuyện (giữ phiên) — dùng khi bé đang xem VIDEO: ngưng gửi mic +
    * ngưng phát giọng AI để bé nghe rõ và TIẾT KIỆM voice live. Bé bấm "Nói tiếp" để
    * quay lại trò chuyện. Mặc định `false` → AI Mentor KHÔNG đổi.
@@ -89,6 +95,7 @@ export function VoiceAssistant({
   compact = false,
   onSpeakReady,
   onStatusChange,
+  onUserSpeech,
   paused = false,
 }: VoiceAssistantProps) {
   const {
@@ -103,7 +110,7 @@ export function VoiceAssistant({
     pause,
     resume,
     sendText,
-  } = useVoiceAssistant({ voice, systemInstruction, onTurnsChange, tools, onToolCall });
+  } = useVoiceAssistant({ voice, systemInstruction, onTurnsChange, tools, onToolCall, onUserSpeech });
 
   // Phơi hàm "nói câu này ngay" cho cha (tùy chọn) — để ÉP AI lên tiếng khi cần.
   useEffect(() => {

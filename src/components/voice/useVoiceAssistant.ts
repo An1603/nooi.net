@@ -48,6 +48,12 @@ export interface VoiceAssistantConfig {
   tools?: unknown[];
   /** Xử lý khi model gọi hàm (chỉ khi eKid truyền `tools`). */
   onToolCall?: OnToolCall;
+  /**
+   * Báo lên cha mỗi khi có văn bản NHẬN DẠNG được lời bé nói (input transcription).
+   * Dùng làm lưới an toàn: bé nói đáp án mà model không gọi `answer_exercise` thì
+   * client vẫn tự chấm được. Bỏ trống → không ảnh hưởng AI Mentor.
+   */
+  onUserSpeech?: (text: string) => void;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -83,6 +89,7 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
   const aiTranscribedRef = useRef(false);
   const onTurnsChangeRef = useRef(config?.onTurnsChange);
   const onToolCallRef = useRef(config?.onToolCall);
+  const onUserSpeechRef = useRef(config?.onUserSpeech);
 
   // Giữ callback mới nhất mà không cần đưa vào phụ thuộc của start().
   useEffect(() => {
@@ -92,6 +99,10 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
   useEffect(() => {
     onToolCallRef.current = config?.onToolCall;
   }, [config?.onToolCall]);
+
+  useEffect(() => {
+    onUserSpeechRef.current = config?.onUserSpeech;
+  }, [config?.onUserSpeech]);
 
   // Chốt một lượt vào mảng turns và báo lên cha (đồng bộ, best-effort).
   const commitTurn = useCallback((role: "user" | "ai", text: string) => {
@@ -265,6 +276,9 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
               // Văn bản tích luỹ theo ĐÚNG lượt này của bé.
               curUserRef.current = event.data.text;
               setTranscript(event.data.text);
+              // Lưới an toàn cho eKid: báo lời bé nói lên trên (để tự chấm đáp án
+              // khi model không gọi `answer_exercise`). Các nơi khác bỏ trống → no-op.
+              onUserSpeechRef.current?.(event.data.text);
             }
             break;
 
@@ -273,8 +287,11 @@ export function useVoiceAssistant(config?: VoiceAssistantConfig) {
               // AI bắt đầu đáp → chốt lượt bé; tích luỹ văn bản AI của lượt này.
               commitPendingUser();
               aiTranscribedRef.current = true;
-              curAiRef.current = event.data.text;
-              setResponse(event.data.text);
+              // Live API trả transcript theo TỪNG MẢNH (mỗi event một vài từ) → phải
+              // CỘNG DỒN. Ghi đè (bản cũ) làm log hội thoại chỉ còn mảnh cuối, ví dụ
+              // AI nói cả câu mà transcript lưu được đúng một chữ.
+              curAiRef.current += event.data.text;
+              setResponse(curAiRef.current);
             }
             break;
 

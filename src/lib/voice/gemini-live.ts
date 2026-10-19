@@ -41,6 +41,8 @@ export interface ToolFunctionCall {
 
 /** Kết quả trả về cho model sau khi UI xử lý xong một tool call. */
 export interface ToolFunctionResponse {
+  /** Khớp `ToolFunctionCall.id` — Live API dùng để ghép phản hồi với lời gọi. */
+  id?: string;
   name: string;
   response: Record<string, unknown>;
 }

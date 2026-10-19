@@ -3,6 +3,8 @@ import {
   EKID_MEDIA_VIEW_ENABLED,
   EKID_TOOLS,
   EKID_TOOL_DECLARATIONS,
+  exerciseShownInstruction,
+  parseSpokenAnswer,
   toolsPromptSection,
   isExerciseItem,
   isMediaItem,
@@ -108,6 +110,45 @@ describe("ekid interactive — toolsPromptSection", () => {
       expect(p).toContain("TUYỆT ĐỐI KHÔNG hứa");
       expect(p).toContain("KHÔNG đọc link");
     }
+  });
+});
+
+describe("ekid interactive — khớp nội dung & đáp án bằng lời (v3.5)", () => {
+  it("exerciseShownInstruction chứa NGUYÊN VĂN câu hỏi + đúng thứ tự lựa chọn", () => {
+    const s = exerciseShownInstruction({ question: "5 + 3 bằng mấy?", options: ["7", "8", "9"] });
+    expect(s).toContain('"5 + 3 bằng mấy?"');
+    expect(s).toContain("A. 7");
+    expect(s).toContain("B. 8");
+    expect(s).toContain("C. 9");
+    expect(s).toContain("ĐỌC TO");
+    expect(s).toContain("KHÔNG đổi nội dung");
+  });
+
+  it("parseSpokenAnswer: nhận đáp án bằng chữ cái", () => {
+    expect(parseSpokenAnswer("con chọn B", 3)).toBe(1);
+    expect(parseSpokenAnswer("Đáp án là C", 3)).toBe(2);
+    expect(parseSpokenAnswer("chọn đáp án a", 4)).toBe(0);
+    expect(parseSpokenAnswer("khoanh c", 3)).toBe(2);
+    expect(parseSpokenAnswer("b", 3)).toBe(1);
+  });
+
+  it("parseSpokenAnswer: nhận đáp án bằng số (đếm từ 1)", () => {
+    expect(parseSpokenAnswer("con chọn 2", 3)).toBe(1);
+    expect(parseSpokenAnswer("đáp án số 3", 3)).toBe(2);
+    expect(parseSpokenAnswer("chọn cái thứ 1", 3)).toBe(0);
+  });
+
+  it("parseSpokenAnswer: KHÔNG chấm khi nói chuyện bình thường", () => {
+    expect(parseSpokenAnswer("con thích chơi bóng đá", 3)).toBeNull();
+    expect(parseSpokenAnswer("hôm nay trời đẹp quá", 3)).toBeNull();
+    expect(parseSpokenAnswer("", 3)).toBeNull();
+    expect(parseSpokenAnswer(null, 3)).toBeNull();
+  });
+
+  it("parseSpokenAnswer: chữ cái/số ngoài phạm vi lựa chọn → null (không chấm bừa)", () => {
+    expect(parseSpokenAnswer("con chọn D", 3)).toBeNull();
+    expect(parseSpokenAnswer("con chọn 5", 3)).toBeNull();
+    expect(parseSpokenAnswer("con chọn 7", 4)).toBeNull();
   });
 });
 

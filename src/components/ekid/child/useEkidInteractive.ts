@@ -19,10 +19,13 @@ import {
   answerNudge,
   describeAnswer,
   EKID_MEDIA_VIEW_ENABLED,
+  exerciseShownInstruction,
   gradeExercise,
   isExerciseItem,
+  parseSpokenAnswer,
   proxiedMediaUrl,
   type AnswerSource,
+  type ExerciseItem,
   type ExerciseResult,
   type InteractiveItem,
   type MediaItem,
@@ -99,9 +102,20 @@ export interface EkidInteractiveController {
   onResolve: (itemId: string, result: { chosen_index?: number; shown?: true }) => void;
   /** Log hội thoại đầy đủ (BÉ/AI + sự kiện công cụ) để lưu vào session/memory. */
   getLog: () => EkidLogTurn[];
+  /**
+   * Truyền vào `VoiceAssistant onUserSpeech` — lưới an toàn tự chấm khi bé nói
+   * đáp án mà model không gọi `answer_exercise`.
+   */
+  onUserSpeech: (text: string) => void;
 }
 
-export function useEkidInteractive(kidId?: string): EkidInteractiveController {
+export function useEkidInteractive(
+  kidId?: string,
+  opts?: {
+    /** Gửi một lượt văn bản vào phiên Live (ép AI đọc đúng nội dung vừa hiện). */
+    speak?: (text: string) => void;
+  },
+): EkidInteractiveController {
   const [current, setCurrent] = useState<InteractiveItem | null>(null);
   // Kết quả đã ghi nhận cho nội dung đang hiện (bé bấm HOẶC trả lời bằng lời).
   const [resolution, setResolution] = useState<ExerciseResolution | null>(null);
@@ -111,10 +125,6 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
   const logRef = useRef<EkidLogTurn[]>([]);
   const convLenRef = useRef(0); // số lượt BÉ/AI đã nạp vào log
   const seqRef = useRef(0); // sinh id item tăng dần
-  // respond của mỗi item + item gốc (một batch `tool_call` dùng chung một hàm respond).
-  const respondRef = useRef<Map<string, { respond: (res: ToolFunctionResponse[]) => void; item: InteractiveItem }>>(
-    new Map(),
-  );
 
   useEffect(() => {
     currentRef.current = current;
@@ -123,6 +133,31 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
   const pushLog = useCallback((turn: EkidLogTurn) => {
     logRef.current = [...logRef.current, turn];
   }, []);
+
+  // Giữ hàm speak mới nhất (không đưa vào deps của onToolCall).
+  const speakRef = useRef<((text: string) => void) | null>(null);
+  useEffect(() => {
+    speakRef.current = opts?.speak ?? null;
+  }, [opts?.speak]);
+
+  /**
+   * Sau khi hiện bài: (1) trả toolResponse NGAY để model không bị treo chờ,
+   * (2) gửi luôn một lượt văn bản chứa ĐÚNG nội dung đã hiện — đo trên Gemini Live:
+   * model chỉ đọc khớp khi có bước (2).
+   */
+  const announceExercise = useCallback(
+    (item: ExerciseItem, respond: (res: ToolFunctionResponse[]) => void, callId?: string) => {
+      respond([
+        {
+          ...(callId ? { id: callId } : {}),
+          name: "show_exercise",
+          response: { shown: true, question: item.question, options: item.options },
+        },
+      ]);
+      speakRef.current?.(exerciseShownInstruction(item));
+    },
+    [],
+  );
 
   // Nạp các lượt hội thoại MỚI vào log (giữ đúng thứ tự với sự kiện công cụ).
   const onTurnsChange = useCallback((turns: VoiceTurn[]) => {
@@ -239,7 +274,14 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
         // Ảnh: phát lại qua domain mình (hết chặn hotlink/mixed content/chặn vùng).
         ...(kind === "image" ? { displayUrl: proxiedMediaUrl(kidId ?? "", url) ?? undefined } : {}),
       };
-      respondRef.current.set(item.id, { respond, item });
+      // Trả toolResponse NGAY (ảnh/video không cần ép đọc như bài tập).
+      respond([
+        {
+          ...(call.id ? { id: call.id } : {}),
+          name: call.name,
+          response: { shown: true, caption: title ?? query ?? "" },
+        },
+      ]);
       setCurrent(item);
       pushLog({
         role: "tool",
@@ -291,7 +333,13 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
         // Ảnh: phát lại qua domain mình (hết chặn hotlink/mixed content/chặn vùng).
         ...(kind === "image" ? { displayUrl: proxiedMediaUrl(kidId ?? "", url) ?? undefined } : {}),
       };
-      respondRef.current.set(item.id, { respond, item });
+      respond([
+        {
+          ...(call.id ? { id: call.id } : {}),
+          name: call.name,
+          response: { shown: true },
+        },
+      ]);
       // THAY THẾ nội dung đang hiện — sân khấu chỉ có 1 nội dung tại một thời điểm.
       setCurrent(item);
       pushLog({
@@ -333,11 +381,10 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
       resolutionRef.current = next;
       setResolution(next);
 
-      const entry = respondRef.current.get(itemId);
-      respondRef.current.delete(itemId);
-      entry?.respond([
-        { name: "show_exercise", response: result as unknown as Record<string, unknown> },
-      ]);
+      // LƯU Ý: toolResponse cho `show_exercise` đã gửi NGAY lúc hiện bài (xem
+      // `announceExercise`). Kết quả của bé đi về model bằng một LƯỢT VĂN BẢN
+      // (`useAnswerSpeech`) — đo trên Gemini Live: gửi toolResponse muộn không làm
+      // model lên tiếng, còn lượt văn bản thì có.
 
       pushLog({
         role: "tool",
@@ -409,22 +456,24 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
         }
 
         const item = buildExercise(call);
-        if (!item) {
+        if (!item || !isExerciseItem(item)) {
           // Công cụ chưa hỗ trợ / tham số thiếu → trả lỗi để model không bị treo.
           respond([{ name: call.name, response: { error: "unsupported_or_invalid" } }]);
           continue;
         }
-        respondRef.current.set(item.id, { respond, item });
         // THAY THẾ nội dung đang hiện — sân khấu chỉ có 1 nội dung tại một thời điểm.
         setCurrent(item);
+        // Trả toolResponse NGAY + buộc AI đọc ĐÚNG câu hỏi vừa hiện (đo được: nếu
+        // không có bước này model im lặng hoặc nói lệch nội dung thẻ).
+        announceExercise(item, respond, call.id);
         pushLog({
           role: "tool",
-          text: `AI hiện ${item.kind === "exercise" ? "bài tập" : "nội dung"} lên màn hình.`,
+          text: "AI hiện bài tập lên màn hình.",
           meta: { event: "call", tool: call.name, item_id: item.id, args: call.args },
         });
       }
     },
-    [buildExercise, handleFindMedia, handleShowMedia, pushLog, resolveExercise],
+    [announceExercise, buildExercise, handleFindMedia, handleShowMedia, pushLog, resolveExercise],
   );
 
   const onResolve = useCallback<EkidInteractiveController["onResolve"]>(
@@ -435,10 +484,7 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
         return;
       }
 
-      // Media: báo model là nội dung đã hiện xong.
-      const entry = respondRef.current.get(itemId);
-      respondRef.current.delete(itemId);
-      entry?.respond([{ name: "show_media", response: { shown: true } }]);
+      // Media: nội dung đã hiện xong (toolResponse đã gửi ngay lúc hiện) → chỉ ghi log.
       pushLog({
         role: "tool",
         text: "Bé đã xem nội dung trên màn hình.",
@@ -448,7 +494,24 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
     [pushLog, resolveExercise],
   );
 
+  /**
+   * LƯỚI AN TOÀN: bé nói đáp án mà model không gọi `answer_exercise` (đo được là có
+   * xảy ra) → client tự chấm, để bé luôn nhận phản hồi thay vì im lặng.
+   * Chỉ nhận câu RÕ RÀNG ("con chọn B", "đáp án số 2"…) và chỉ khi bài CHƯA trả lời.
+   */
+  const onUserSpeech = useCallback(
+    (text: string) => {
+      const item = currentRef.current;
+      if (!item || !isExerciseItem(item)) return;
+      if (resolutionRef.current?.itemId === item.id) return;
+      const index = parseSpokenAnswer(text, item.options.length);
+      if (index === null) return;
+      resolveExercise(item.id, index, "voice", text);
+    },
+    [resolveExercise],
+  );
+
   const getLog = useCallback(() => logRef.current, []);
 
-  return { current, resolution, onToolCall, onTurnsChange, onResolve, getLog };
+  return { current, resolution, onToolCall, onTurnsChange, onResolve, onUserSpeech, getLog };
 }

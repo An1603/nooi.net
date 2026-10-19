@@ -82,8 +82,12 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
   // ── Lớp tương tác (1 nội dung hiện tại) + ghi log hội thoại ───────────────
   // `resolution` = kết quả bé ĐÃ trả lời (bấm màn hình HOẶC nói) — dùng cho cả
   // khung hiển thị (tô đúng/sai) lẫn khung "ghi chú" bên trái.
-  const { current, resolution, onToolCall, onTurnsChange, onResolve, getLog } =
-    useEkidInteractive(kid.id);
+  // `speak` ổn định để hook tương tác gọi được trước khi useAnswerSpeech sẵn sàng.
+  const speakRef = useRef<(text: string) => void>(() => {});
+  const speak = useCallback((text: string) => speakRef.current(text), []);
+
+  const { current, resolution, onToolCall, onTurnsChange, onResolve, onUserSpeech, getLog } =
+    useEkidInteractive(kid.id, { speak });
 
   // Gợi ý ngắn cho khung ghi chú (cột trái) — bám theo nội dung đang hiện.
   const hint = stageHint(current, resolution);
@@ -91,7 +95,12 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
   // ÉP AI nói ngay kết quả (bấm hoặc nói) — không chờ model tự phát lượt.
   // Cần trạng thái phiên để biết AI ĐÃ tự đáp hay chưa (khỏi nói chồng).
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
-  const { onSpeakReady } = useAnswerSpeech(resolution, voiceStatus);
+  const { onSpeakReady, speak: speakToAi } = useAnswerSpeech(resolution, voiceStatus);
+
+  // Nối hàm "gửi lượt văn bản" thật vào ref ổn định ở trên.
+  useEffect(() => {
+    speakRef.current = speakToAi;
+  }, [speakToAi]);
 
   // Đang có VIDEO trên sân khấu → TẠM DỪNG trò chuyện (bé nghe rõ + tiết kiệm voice live).
   const videoOnStage = mediaShouldPauseVoice(current);
@@ -172,6 +181,7 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
                 onTurnsChange={onTurnsChange}
                 tools={EKID_TOOLS}
                 onToolCall={onToolCall}
+                onUserSpeech={onUserSpeech}
                 onSpeakReady={onSpeakReady}
                 onStatusChange={setVoiceStatus}
                 paused={videoOnStage}

@@ -25,6 +25,8 @@ export const ANSWER_SPEECH_GRACE_MS = 1200;
 export interface AnswerSpeechController {
   /** Truyền vào `VoiceAssistant` prop `onSpeakReady`. */
   onSpeakReady: (speak: (text: string) => void) => void;
+  /** Gửi NGAY một lượt văn bản vào phiên Live (no-op khi chưa kết nối). */
+  speak: (text: string) => void;
 }
 
 /**
@@ -75,5 +77,9 @@ export function useAnswerSpeech(
     };
   }, [result, graceMs]);
 
-  return { onSpeakReady };
+  const speak = useCallback((text: string) => {
+    speakRef.current?.(text);
+  }, []);
+
+  return { onSpeakReady, speak };
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
 import type { VoiceStatus } from "@/components/voice/useVoiceAssistant";
 import { ExerciseCard } from "./ExerciseCard";
@@ -66,11 +66,17 @@ export function EkidVoiceSession({
 
   // Hội thoại thật của buổi (bé ↔ AI) + sự kiện công cụ (bài tập/ảnh/video)
   // — gom qua useEkidInteractive để lưu cùng phiên.
-  const interactive = useEkidInteractive(kid.id);
+  // `speak` ổn định để hook tương tác gọi được trước khi useAnswerSpeech sẵn sàng.
+  const speakRef = useRef<(text: string) => void>(() => {});
+  const speak = useCallback((text: string) => speakRef.current(text), []);
+  const interactive = useEkidInteractive(kid.id, { speak });
   // ÉP AI nói ngay kết quả bài tập (bấm hoặc nói) trong buổi học — cần trạng thái
   // phiên để biết AI đã tự đáp hay chưa (khỏi nói chồng).
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
-  const { onSpeakReady } = useAnswerSpeech(interactive.resolution, voiceStatus);
+  const { onSpeakReady, speak: speakToAi } = useAnswerSpeech(interactive.resolution, voiceStatus);
+  useEffect(() => {
+    speakRef.current = speakToAi;
+  }, [speakToAi]);
   // Đang có VIDEO trên màn hình → tạm dừng trò chuyện (bé nghe rõ + tiết kiệm voice live).
   const videoOnStage = mediaShouldPauseVoice(interactive.current);
 
@@ -122,6 +128,7 @@ export function EkidVoiceSession({
             onTurnsChange={interactive.onTurnsChange}
             tools={EKID_TOOLS}
             onToolCall={interactive.onToolCall}
+            onUserSpeech={interactive.onUserSpeech}
             onSpeakReady={onSpeakReady}
             onStatusChange={setVoiceStatus}
             paused={videoOnStage}

@@ -166,8 +166,70 @@ export function answerSpeechInstruction(result: ExerciseResult): string {
 }
 
 /**
- * Lời nhắc NGẮN gắn ngay trong kết quả `answer_exercise` trả về model — để model phản
- * hồi trong CHÍNH lượt đang xử lý (đường bé nói thường bị model kết thúc lượt im lặng).
+ * Câu lệnh gửi NGAY sau khi thẻ bài tập đã hiện — ĐO ĐƯỢC trên Gemini Live:
+ * model KHÔNG tự nói tiếp sau khi gọi công cụ; chỉ khi nhận một lượt văn bản
+ * chứa ĐÚNG nội dung đã hiện thì nó mới đọc khớp (thí nghiệm: khớp 100%).
+ *
+ * Vì vậy câu lệnh này chứa nguyên văn câu hỏi + lựa chọn, không để model tự nhớ.
+ */
+export function exerciseShownInstruction(item: Pick<ExerciseItem, "question" | "options">): string {
+  const opts = item.options
+    .slice(0, 6)
+    .map((o, i) => `${optionLetter(i)}. ${o}`)
+    .join(", ");
+  return (
+    `[HỆ THỐNG] Thẻ bài tập ĐÃ hiện trên màn hình. Câu hỏi: "${item.question}". ` +
+    `Các lựa chọn: ${opts}. Hãy ĐỌC TO đúng câu hỏi và các lựa chọn này cho bé nghe ngay, ` +
+    `rồi mời bé chọn. KHÔNG đổi nội dung, KHÔNG nói đáp án đúng, KHÔNG thêm câu hỏi khác.`
+  );
+}
+
+/**
+ * Đọc ĐÁP ÁN BẰNG LỜI từ câu bé nói — lưới an toàn khi model không gọi
+ * `answer_exercise` (đo được: có lượt model bỏ qua, bé nói mà không ai chấm).
+ *
+ * Chỉ nhận những câu RÕ RÀNG là chọn đáp án; nói chuyện bình thường → null.
+ * Trả về vị trí (0-based) hoặc null.
+ */
+export function parseSpokenAnswer(text: string | null | undefined, optionCount: number): number | null {
+  if (!text || optionCount <= 0) return null;
+  const t = text.toLowerCase().replace(/\s+/g, " ").trim();
+  if (!t) return null;
+
+  const letterToIndex = (ch: string): number | null => {
+    const i = OPTION_LETTERS.toLowerCase().indexOf(ch);
+    return i >= 0 && i < optionCount ? i : null;
+  };
+
+  // "con chọn b", "đáp án là c", "chọn đáp án a", "chọn câu b"
+  const byLetter = t.match(/(?:chọn|chon|đáp án|dap an|khoanh)\s*(?:là|la|số|so|câu|cau)?\s*([a-f])(?![a-zà-ỹ])/);
+  if (byLetter) {
+    const idx = letterToIndex(byLetter[1]);
+    if (idx !== null) return idx;
+  }
+
+  // "con chọn 2", "đáp án số 3", "chọn cái thứ 2"
+  const byNumber = t.match(/(?:chọn|chon|đáp án|dap an|số|so|cái|cai|thứ|thu)\s*(?:là|la)?\s*(\d{1,2})(?!\d)/);
+  if (byNumber) {
+    const n = Number(byNumber[1]);
+    // Chấp nhận cả cách đếm từ 1 và cách đọc "số 0/1" của trẻ lớn.
+    if (n >= 1 && n <= optionCount) return n - 1;
+    if (n >= 0 && n < optionCount) return n;
+  }
+
+  // Câu RẤT NGẮN chỉ là một chữ cái: "b", "ý b"
+  if (t.length <= 4) {
+    const m = t.match(/^(?:ý|y)?\s*([a-f])$/);
+    if (m) return letterToIndex(m[1]);
+  }
+
+  return null;
+}
+
+/**
+ * Lời nhắc NGẮN gắn ngay trong kết quả `answer_exercise` trả về model — để model
+ * phản hồi trong CHÍNH lượt đang xử lý (đường bé nói thường bị model kết thúc lượt
+ * im lặng).
  */
 export function answerNudge(result: ExerciseResult): string {
   const letter = optionLetter(result.chosen_index);
@@ -371,6 +433,9 @@ export function toolsPromptSection(): string {
     "- `show_exercise`: hiện thẻ BÀI TẬP trắc nghiệm lên màn hình. Dùng khi bạn muốn bé",
     "  luyện tập/kiểm tra qua đồng hồ: đọc to câu hỏi + các lựa chọn, rồi để bé chạm chọn.",
     "  Bé luôn quan sát được màn hình trong khi vẫn nói chuyện với bạn.",
+    "  NỘI DUNG KHỚP: câu hỏi và các lựa chọn bạn đưa vào công cụ CHÍNH LÀ nội dung bé",
+    "  nhìn thấy. Khi đọc, phải đọc ĐÚNG NGUYÊN VĂN câu hỏi và đúng thứ tự lựa chọn đó —",
+    "  KHÔNG đổi số liệu, KHÔNG đọc đáp án khác, KHÔNG hỏi sang câu khác trong cùng lượt.",
   ];
 
   if (EKID_MEDIA_VIEW_ENABLED) {

@@ -9,6 +9,7 @@ import type { AgeBand } from "@/lib/ekid/ekid-system";
 import {
   filterLessonsByQuery,
   filterLessonsBySubject,
+  libraryViewMode,
   subjectChips,
 } from "@/lib/ekid/lesson-filter";
 
@@ -44,8 +45,7 @@ export default function EkidLibraryPage() {
   const [subject, setSubject] = useState<string | null>(null);
 
   const band = asAgeBand(kid?.placement_age_band);
-  const showSearch = band !== "mam-non";
-  const bigChips = band === "mam-non";
+  const { showSearch, bigChips } = libraryViewMode(band);
 
   const load = useCallback(async () => {
     setLoading(true);

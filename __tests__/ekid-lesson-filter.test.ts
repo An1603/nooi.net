@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   filterLessonsByQuery,
   filterLessonsBySubject,
+  libraryViewMode,
   subjectChips,
 } from "@/lib/ekid/lesson-filter";
 
@@ -61,6 +62,21 @@ describe("ekid lesson-filter — chip chủ đề", () => {
     expect(other?.count).toBe(1);
     // Vẫn lọc được bài đó qua chip "Khác".
     expect(filterLessonsBySubject([{ title: "X", subject: "mon-moi" }], "__khac__")).toHaveLength(1);
+  });
+});
+
+describe("ekid lesson-filter — chế độ hiển thị theo lứa tuổi", () => {
+  it("mầm non: KHÔNG có ô tìm chữ, chip to", () => {
+    expect(libraryViewMode("mam-non")).toEqual({ showSearch: false, bigChips: true });
+  });
+
+  it("tiểu học và thiếu niên: có ô tìm chữ, chip thường", () => {
+    expect(libraryViewMode("tieu-hoc")).toEqual({ showSearch: true, bigChips: false });
+    expect(libraryViewMode("thieu-nien")).toEqual({ showSearch: true, bigChips: false });
+  });
+
+  it("chưa rõ lứa tuổi → có ô tìm chữ (không chặn nhầm người lớn tìm bài)", () => {
+    expect(libraryViewMode(null)).toEqual({ showSearch: true, bigChips: false });
   });
 });
 

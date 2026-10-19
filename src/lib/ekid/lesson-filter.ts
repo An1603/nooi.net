@@ -81,6 +81,20 @@ export function subjectChips(
   return chips;
 }
 
+/**
+ * Chế độ hiển thị thư viện theo lứa tuổi:
+ * - Mầm non: KHÔNG hiện ô tìm chữ (bé chưa đọc/không gõ bàn phím), chip TO hơn.
+ * - Tiểu học trở lên: có ô tìm chữ, chip cỡ thường.
+ * Tách thành hàm thuần để kiểm thử được (đây là quyết định sư phạm, không phải style).
+ */
+export function libraryViewMode(band: AgeBand | null | undefined): {
+  showSearch: boolean;
+  bigChips: boolean;
+} {
+  const isPreschool = band === "mam-non";
+  return { showSearch: !isPreschool, bigChips: isPreschool };
+}
+
 /** Lọc theo chip đang chọn; `null` hoặc slug không còn tồn tại → trả TẤT CẢ. */
 export function filterLessonsBySubject<T extends FilterableLesson>(
   lessons: readonly T[],

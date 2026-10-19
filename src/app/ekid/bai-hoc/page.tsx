@@ -5,6 +5,12 @@ import Link from "next/link";
 import { LessonCard } from "@/components/ekid/child/LessonCard";
 import { KID } from "@/components/ekid/child/kid-theme";
 import type { LibraryKid, LibraryLesson } from "@/components/ekid/child/types";
+import type { AgeBand } from "@/lib/ekid/ekid-system";
+import {
+  filterLessonsByQuery,
+  filterLessonsBySubject,
+  subjectChips,
+} from "@/lib/ekid/lesson-filter";
 
 async function readJson(r: Response): Promise<Record<string, unknown>> {
   try {
@@ -14,14 +20,20 @@ async function readJson(r: Response): Promise<Record<string, unknown>> {
   }
 }
 
-const PART_LABEL: Record<string, string> = {
-  chung: "Bài chung",
-  rieng: "Bài riêng",
-};
+const BANDS: readonly string[] = ["mam-non", "tieu-hoc", "thieu-nien"];
+
+function asAgeBand(v: string | null | undefined): AgeBand | null {
+  return v && BANDS.includes(v) ? (v as AgeBand) : null;
+}
 
 /**
- * Trang bài học riêng của con (eKid) — thư viện gốc (tìm/lọc/lưới) chuyển từ trang chủ.
+ * Trang bài học riêng của con (eKid) — thư viện + LỌC THEO CHỦ ĐỀ.
  * URL ngắn `/bai-hoc` (middleware rewrite → `/ekid/bai-hoc`).
+ *
+ * - Chip chủ đề CHỈ sinh ra từ chủ đề CÓ BÀI thật → không bao giờ có ô trống.
+ * - Chip lớn, chạm được bằng ngón tay bé; mầm non dùng chip to hơn.
+ * - Bé mầm non KHÔNG phải gõ chữ: ô tìm kiếm chỉ hiện từ tiểu học trở lên.
+ * - Bộ lọc "Nhóm bài" (chung/riêng) đã BỎ — khái niệm vận hành, không phải của bé.
  */
 export default function EkidLibraryPage() {
   const [kid, setKid] = useState<LibraryKid | null>(null);
@@ -29,7 +41,11 @@ export default function EkidLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const [part, setPart] = useState<string>("all");
+  const [subject, setSubject] = useState<string | null>(null);
+
+  const band = asAgeBand(kid?.placement_age_band);
+  const showSearch = band !== "mam-non";
+  const bigChips = band === "mam-non";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,22 +67,17 @@ export default function EkidLibraryPage() {
     void load();
   }, [load]);
 
-  // Danh sách nhóm có thật trong dữ liệu (để dựng bộ lọc).
-  const parts = useMemo(() => {
-    const set = new Set<string>();
-    for (const l of lessons) if (l.part) set.add(l.part);
-    return Array.from(set);
-  }, [lessons]);
+  const chips = useMemo(() => subjectChips(lessons, band), [lessons, band]);
+
+  // Dữ liệu đổi (tải lại/đổi hồ sơ) → bỏ chọn chủ đề không còn tồn tại.
+  useEffect(() => {
+    if (subject && !chips.some((c) => c.slug === subject)) setSubject(null);
+  }, [chips, subject]);
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return lessons.filter((l) => {
-      if (part !== "all" && l.part !== part) return false;
-      if (!needle) return true;
-      const hay = `${l.title} ${l.core_topic ?? ""}`.toLowerCase();
-      return hay.includes(needle);
-    });
-  }, [lessons, q, part]);
+    const bySubject = filterLessonsBySubject(lessons, subject);
+    return filterLessonsByQuery(bySubject, showSearch ? q : "");
+  }, [lessons, subject, q, showSearch]);
 
   if (loading) {
     return (
@@ -111,30 +122,46 @@ export default function EkidLibraryPage() {
         </div>
       </div>
 
-      {/* Ô tìm + lọc theo nhóm bài. */}
-      <div className="flex flex-col gap-3 sm:flex-row">
+      {/* ── Chip chủ đề: chỉ chủ đề CÓ BÀI, chạm lớn, rõ trạng thái đang chọn ── */}
+      {chips.length > 1 ? (
+        <div role="group" aria-label="Chọn chủ đề" className="flex flex-wrap gap-2 sm:gap-3">
+          {chips.map((c) => {
+            const active = c.slug === subject;
+            const size = bigChips
+              ? "min-h-[60px] px-5 py-3 text-lg"
+              : "min-h-[48px] px-4 py-2 text-base";
+            const tone = active
+              ? "border-[#4ecdc4] bg-[#4ecdc4] text-white shadow-md shadow-[#4ecdc4]/40"
+              : "border-[#e0f2fe] bg-white/90 text-[#3b2a20] hover:border-[#bae6fd]";
+            return (
+              <button
+                key={c.slug ?? "all"}
+                type="button"
+                aria-pressed={active}
+                data-chip={c.slug ?? "all"}
+                onClick={() => setSubject(c.slug)}
+                className={`inline-flex items-center justify-center gap-2 rounded-full border-2 font-extrabold transition-transform active:scale-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#4ecdc4]/40 ${size} ${tone}`}
+              >
+                <span aria-hidden className={bigChips ? "text-2xl" : "text-xl"}>
+                  {c.emoji}
+                </span>
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {/* Ô tìm chữ: chỉ từ tiểu học (bé mầm non không gõ bàn phím). */}
+      {showSearch ? (
         <input
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="🔍 Tìm bài học theo tên..."
-          className={`flex-1 ${KID.input}`}
+          className={`w-full ${KID.input}`}
         />
-        {parts.length > 0 ? (
-          <select
-            value={part}
-            onChange={(e) => setPart(e.target.value)}
-            className="min-h-[52px] rounded-2xl border-2 border-[#bae6fd] bg-white px-4 py-3 text-xl font-bold text-[#3b2a20] focus:border-[#4ecdc4] focus:ring-4 focus:ring-[#4ecdc4]/20 focus:outline-none"
-          >
-            <option value="all">Tất cả nhóm</option>
-            {parts.map((p) => (
-              <option key={p} value={p}>
-                {PART_LABEL[p] ?? p}
-              </option>
-            ))}
-          </select>
-        ) : null}
-      </div>
+      ) : null}
 
       {filtered.length === 0 ? (
         <p className="py-10 text-center text-xl font-bold text-[#6b5648]">

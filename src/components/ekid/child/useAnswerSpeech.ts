@@ -43,6 +43,11 @@ export function useAnswerSpeech(
   const saidRef = useRef<string | null>(null);
   const spokeRef = useRef(false); // AI đã lên tiếng kể từ kết quả này?
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Trạng thái mới nhất của phiên — để KHÔNG cắt lời AI đang nói.
+  const statusRef = useRef<VoiceStatus | null>(status ?? null);
+  useEffect(() => {
+    statusRef.current = status ?? null;
+  }, [status]);
 
   const onSpeakReady = useCallback((speak: (text: string) => void) => {
     speakRef.current = speak;
@@ -62,12 +67,21 @@ export function useAnswerSpeech(
     // Lượt mới → chưa lên tiếng; chờ trong ân hạn rồi mới quyết định.
     spokeRef.current = false;
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
+
+    let waits = 0;
+    const trySpeak = () => {
       timerRef.current = null;
       if (spokeRef.current) return; // AI đã tự đáp → KHÔNG nói chồng.
+      // AI đang nói (tổng kết / đọc câu hỏi) → HOÃN, không cắt lời.
+      if (statusRef.current === "speaking" && waits < 20) {
+        waits += 1;
+        timerRef.current = setTimeout(trySpeak, 600);
+        return;
+      }
       // Hàm `speak` ổn định và tự bỏ qua khi phiên chưa kết nối.
       speakRef.current?.(answerSpeechInstruction(result));
-    }, graceMs);
+    };
+    timerRef.current = setTimeout(trySpeak, graceMs);
 
     return () => {
       if (timerRef.current) {

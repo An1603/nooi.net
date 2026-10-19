@@ -13,7 +13,7 @@
 // trò chuyện diễn ra bình thường (không cần nhánh code thừa).
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { OnToolCall, VoiceTurn } from "@/components/voice/useVoiceAssistant";
+import type { OnToolCall, VoiceStatus, VoiceTurn } from "@/components/voice/useVoiceAssistant";
 import type { ToolFunctionCall, ToolFunctionResponse } from "@/lib/voice/gemini-live";
 import {
   answerNudge,
@@ -22,6 +22,7 @@ import {
   exerciseShownInstruction,
   gradeExercise,
   isExerciseItem,
+  overlapsQuestion,
   parseSpokenAnswer,
   proxiedMediaUrl,
   type AnswerSource,
@@ -30,6 +31,10 @@ import {
   type InteractiveItem,
   type MediaItem,
 } from "@/lib/ekid/interactive";
+
+// Độ trễ "im lặng" trước khi ép AI đọc bài mới: đủ để AI nói hết câu tổng kết và
+// không chen vào đầu lượt kế tiếp, đủ ngắn để bé không phải chờ.
+const ANNOUNCE_QUIET_MS = 800;
 
 /** Sự kiện lớp tương tác (gọi công cụ / kết quả bé tương tác) — lưu vào log. */
 export interface ToolLogMeta {
@@ -114,6 +119,12 @@ export function useEkidInteractive(
   opts?: {
     /** Gửi một lượt văn bản vào phiên Live (ép AI đọc đúng nội dung vừa hiện). */
     speak?: (text: string) => void;
+    /**
+     * Trạng thái phiên giọng nói. Dùng để KHÔNG cắt lời AI đang nói: khi AI đang
+     * tổng kết câu trả lời, việc chuyển bài chỉ hiện thẻ, còn lời đọc bài mới được
+     * gửi sau khi AI nói xong.
+     */
+    status?: VoiceStatus | null;
   },
 ): EkidInteractiveController {
   const [current, setCurrent] = useState<InteractiveItem | null>(null);
@@ -140,10 +151,55 @@ export function useEkidInteractive(
     speakRef.current = opts?.speak ?? null;
   }, [opts?.speak]);
 
+  // ── Hàng đợi "đọc bài mới" — KHÔNG cắt lời AI đang nói ─────────────────────
+  // Thẻ bài hiện NGAY (bé thấy ngay), nhưng lượt văn bản ép AI đọc chỉ gửi khi:
+  //   - AI đã nói xong lượt hiện tại (status ≠ speaking), VÀ
+  //   - im lặng thêm một nhịp ngắn (tránh gửi chen vào đầu lượt kế tiếp).
+  // Nếu model tự đọc bài mới luôn thì nhịp im lặng này giữ client không đọc lặp.
+  const statusRef = useRef<VoiceStatus | null>(opts?.status ?? null);
+  const pendingAnnounceRef = useRef<string | null>(null);
+  const pendingQuestionRef = useRef<string | null>(null);
+  const announceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearAnnounceTimer = useCallback(() => {
+    if (announceTimerRef.current) {
+      clearTimeout(announceTimerRef.current);
+      announceTimerRef.current = null;
+    }
+  }, []);
+
+  const flushAnnounce = useCallback(() => {
+    clearAnnounceTimer();
+    const text = pendingAnnounceRef.current;
+    if (!text) return;
+    if (statusRef.current === "speaking") return; // AI đang nói → để effect sau xử lý
+    pendingAnnounceRef.current = null;
+    pendingQuestionRef.current = null;
+    speakRef.current?.(text);
+  }, [clearAnnounceTimer]);
+
+  const scheduleAnnounce = useCallback(() => {
+    clearAnnounceTimer();
+    if (!pendingAnnounceRef.current || statusRef.current === "speaking") return;
+    announceTimerRef.current = setTimeout(flushAnnounce, ANNOUNCE_QUIET_MS);
+  }, [clearAnnounceTimer, flushAnnounce]);
+
+  useEffect(() => {
+    statusRef.current = opts?.status ?? null;
+    if (!pendingAnnounceRef.current) return;
+    if (opts?.status === "speaking") {
+      // AI đang tổng kết/chuyển ý → hoãn, không cắt lời.
+      clearAnnounceTimer();
+      return;
+    }
+    scheduleAnnounce();
+  }, [opts?.status, clearAnnounceTimer, scheduleAnnounce]);
+
+  useEffect(() => clearAnnounceTimer, [clearAnnounceTimer]);
+
   /**
    * Sau khi hiện bài: (1) trả toolResponse NGAY để model không bị treo chờ,
-   * (2) gửi luôn một lượt văn bản chứa ĐÚNG nội dung đã hiện — đo trên Gemini Live:
-   * model chỉ đọc khớp khi có bước (2).
+   * (2) xếp hàng lượt văn bản chứa ĐÚNG nội dung đã hiện — gửi khi AI nói xong.
    */
   const announceExercise = useCallback(
     (item: ExerciseItem, respond: (res: ToolFunctionResponse[]) => void, callId?: string) => {
@@ -154,9 +210,12 @@ export function useEkidInteractive(
           response: { shown: true, question: item.question, options: item.options },
         },
       ]);
-      speakRef.current?.(exerciseShownInstruction(item));
+      pendingAnnounceRef.current = exerciseShownInstruction(item);
+      pendingQuestionRef.current = item.question;
+      // AI đang nói → KHÔNG gửi ngay (sẽ cắt câu tổng kết); effect theo status sẽ gửi sau.
+      if (statusRef.current !== "speaking") scheduleAnnounce();
     },
-    [],
+    [scheduleAnnounce],
   );
 
   // Nạp các lượt hội thoại MỚI vào log (giữ đúng thứ tự với sự kiện công cụ).
@@ -168,10 +227,17 @@ export function useEkidInteractive(
     }
     for (let i = convLenRef.current; i < turns.length; i++) {
       const t = turns[i];
-      if (t) logRef.current = [...logRef.current, t];
+      if (!t) continue;
+      logRef.current = [...logRef.current, t];
+      // AI đã TỰ đọc câu hỏi của bài mới → huỷ lời đọc đang xếp hàng (chống lặp).
+      if (t.role === "ai" && overlapsQuestion(t.text, pendingQuestionRef.current)) {
+        pendingAnnounceRef.current = null;
+        pendingQuestionRef.current = null;
+        clearAnnounceTimer();
+      }
     }
     convLenRef.current = turns.length;
-  }, []);
+  }, [clearAnnounceTimer]);
 
   // Sinh id item tăng dần (mọi loại item dùng chung một dãy để không trùng id).
   const nextItemId = useCallback((): string => {

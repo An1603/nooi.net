@@ -4,6 +4,7 @@ import {
   EKID_TOOLS,
   EKID_TOOL_DECLARATIONS,
   exerciseShownInstruction,
+  overlapsQuestion,
   parseSpokenAnswer,
   toolsPromptSection,
   isExerciseItem,
@@ -122,6 +123,13 @@ describe("ekid interactive — khớp nội dung & đáp án bằng lời (v3.5)
     expect(s).toContain("C. 9");
     expect(s).toContain("ĐỌC TO");
     expect(s).toContain("KHÔNG đổi nội dung");
+  });
+
+  it("overlapsQuestion: nhận ra AI đã tự đọc câu hỏi (dù khác dấu/khoảng trắng)", () => {
+    expect(overlapsQuestion("Nào, 5 cộng 3 bằng mấy các con?", "5 + 3 bằng mấy?")).toBe(true);
+    expect(overlapsQuestion("Con giỏi lắm! Giờ mình sang bài mới nhé.", "5 + 3 bằng mấy?")).toBe(false);
+    expect(overlapsQuestion("", "5 + 3 bằng mấy?")).toBe(false);
+    expect(overlapsQuestion("bất kỳ", null)).toBe(false);
   });
 
   it("parseSpokenAnswer: nhận đáp án bằng chữ cái", () => {

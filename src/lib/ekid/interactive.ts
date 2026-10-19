@@ -227,6 +227,38 @@ export function parseSpokenAnswer(text: string | null | undefined, optionCount: 
 }
 
 /**
+ * AI đã nói nội dung của câu hỏi này chưa? Dùng để HUỶ lời đọc đang xếp hàng khi
+ * model tự đọc bài mới (tránh đọc lặp).
+ */
+export function overlapsQuestion(spoken: string | null | undefined, question: string | null | undefined): boolean {
+  if (!spoken || !question) return false;
+  // AI ĐỌC ký hiệu thành lời ("5 + 3" → "5 cộng 3") nên phải quy đổi trước khi so.
+  const SYMBOL_WORDS: Array<[RegExp, string]> = [
+    [/\+/g, " cộng "],
+    [/[−–]/g, " trừ "],
+    [/[×*]/g, " nhân "],
+    [/[:÷]/g, " chia "],
+    [/=/g, " bằng "],
+  ];
+  const norm = (s: string) => {
+    let x = s.toLowerCase();
+    for (const [re, word] of SYMBOL_WORDS) x = x.replace(re, word);
+    return x.replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  };
+  const q = norm(question);
+  const t = norm(spoken);
+  if (!q || !t) return false;
+  if (t.includes(q)) return true;
+  // Câu hỏi dài: khớp một mảnh đủ dài (12 ký tự) là coi như đã đọc.
+  const probeLen = 12;
+  if (q.length <= probeLen) return false;
+  for (let i = 0; i + probeLen <= q.length; i += 4) {
+    if (t.includes(q.slice(i, i + probeLen))) return true;
+  }
+  return false;
+}
+
+/**
  * Lời nhắc NGẮN gắn ngay trong kết quả `answer_exercise` trả về model — để model
  * phản hồi trong CHÍNH lượt đang xử lý (đường bé nói thường bị model kết thúc lượt
  * im lặng).

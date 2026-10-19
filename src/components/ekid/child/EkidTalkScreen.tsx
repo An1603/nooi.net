@@ -86,15 +86,17 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
   const speakRef = useRef<(text: string) => void>(() => {});
   const speak = useCallback((text: string) => speakRef.current(text), []);
 
+  // Trạng thái phiên giọng nói: dùng để hoãn lời đọc bài mới tới khi AI nói xong.
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
+
   const { current, resolution, onToolCall, onTurnsChange, onResolve, onUserSpeech, getLog } =
-    useEkidInteractive(kid.id, { speak });
+    useEkidInteractive(kid.id, { speak, status: voiceStatus });
 
   // Gợi ý ngắn cho khung ghi chú (cột trái) — bám theo nội dung đang hiện.
   const hint = stageHint(current, resolution);
 
   // ÉP AI nói ngay kết quả (bấm hoặc nói) — không chờ model tự phát lượt.
   // Cần trạng thái phiên để biết AI ĐÃ tự đáp hay chưa (khỏi nói chồng).
-  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
   const { onSpeakReady, speak: speakToAi } = useAnswerSpeech(resolution, voiceStatus);
 
   // Nối hàm "gửi lượt văn bản" thật vào ref ổn định ở trên.

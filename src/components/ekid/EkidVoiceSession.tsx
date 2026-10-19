@@ -69,10 +69,11 @@ export function EkidVoiceSession({
   // `speak` ổn định để hook tương tác gọi được trước khi useAnswerSpeech sẵn sàng.
   const speakRef = useRef<(text: string) => void>(() => {});
   const speak = useCallback((text: string) => speakRef.current(text), []);
-  const interactive = useEkidInteractive(kid.id, { speak });
+  // Trạng thái phiên giọng nói: dùng để hoãn lời đọc bài mới tới khi AI nói xong.
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
+  const interactive = useEkidInteractive(kid.id, { speak, status: voiceStatus });
   // ÉP AI nói ngay kết quả bài tập (bấm hoặc nói) trong buổi học — cần trạng thái
   // phiên để biết AI đã tự đáp hay chưa (khỏi nói chồng).
-  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
   const { onSpeakReady, speak: speakToAi } = useAnswerSpeech(interactive.resolution, voiceStatus);
   useEffect(() => {
     speakRef.current = speakToAi;

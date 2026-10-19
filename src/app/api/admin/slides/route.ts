@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * API quản trị mật khẩu slides.nooi.net.
+ * API quản trị mật khẩu + chế độ công khai của slides.nooi.net.
  * Gọi server-side sang dịch vụ tĩnh (127.0.0.1:3101) bằng token dùng chung.
  * Token KHÔNG bao giờ lộ ra trình duyệt.
  */
@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
   const payload: Record<string, unknown> = {};
   if (typeof body.master === "string") payload.master = body.master;
   if (body.decks && typeof body.decks === "object") payload.decks = body.decks;
+  if (body.public && typeof body.public === "object") payload.public = body.public;
   if (body.rotate) payload.rotate = true;
   const r = await callSlides("POST", payload);
   return NextResponse.json(r.data, { status: r.status });

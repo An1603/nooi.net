@@ -16,6 +16,7 @@ import {
   ShieldAlert,
   CheckCircle2,
   RefreshCw,
+  Globe,
 } from "lucide-react";
 
 const DECK_LABELS: Record<string, string> = {
@@ -39,6 +40,10 @@ export default function AdminSlidesPage() {
   const [newMaster, setNewMaster] = useState("");
   const [decks, setDecks] = useState<Record<string, string>>({});
   const [newDecks, setNewDecks] = useState<Record<string, string>>({});
+  /** Deck đang công khai (trạng thái trên server) */
+  const [publicDecks, setPublicDecks] = useState<Record<string, boolean>>({});
+  /** Trạng thái công khai đang chỉnh (chỉ gửi khi có thay đổi) */
+  const [newPublic, setNewPublic] = useState<Record<string, boolean>>({});
   const [rotate, setRotate] = useState(false);
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
@@ -56,6 +61,10 @@ export default function AdminSlidesPage() {
         setDecks(data.decks || {});
         setNewDecks({});
         setNewMaster("");
+        const pub: Record<string, boolean> = {};
+        for (const slug of (data.public as string[]) || []) pub[slug] = true;
+        setPublicDecks(pub);
+        setNewPublic({});
       }
     } catch {
       setError("Không kết nối được dịch vụ slides");
@@ -71,6 +80,7 @@ export default function AdminSlidesPage() {
     setSaving(true);
     try {
       const payload: Record<string, unknown> = { decks: newDecks };
+      if (Object.keys(publicPatch).length) payload.public = publicPatch;
       if (newMaster.trim()) payload.master = newMaster.trim();
       if (rotate) payload.rotate = true;
       const res = await fetch("/api/admin/slides", {
@@ -97,9 +107,21 @@ export default function AdminSlidesPage() {
     setSaving(false);
   };
 
+  /** Chỉ những deck có trạng thái công khai THAY ĐỔI so với server */
+  const publicPatch: Record<string, boolean> = {};
+  for (const slug of Object.keys(newPublic)) {
+    if (!!newPublic[slug] !== !!publicDecks[slug]) publicPatch[slug] = newPublic[slug];
+  }
+
+  const isPublic = (slug: string) =>
+    slug in newPublic ? !!newPublic[slug] : !!publicDecks[slug];
+  const togglePublic = (slug: string, on: boolean) =>
+    setNewPublic((d) => ({ ...d, [slug]: on }));
+
   const changedCount =
     (newMaster.trim() ? 1 : 0) +
     Object.values(newDecks).filter((v) => (v || "").trim()).length +
+    Object.keys(publicPatch).length +
     (rotate ? 1 : 0);
 
   return (
@@ -177,33 +199,51 @@ export default function AdminSlidesPage() {
             </div>
           </Card>
 
-          {/* Mật mã từng tài liệu */}
+          {/* Mật mã + công khai từng tài liệu */}
           <Card className="p-5 space-y-4">
             <div>
-              <h2 className="font-semibold">Mật mã riêng từng tài liệu</h2>
+              <h2 className="font-semibold">Mật mã &amp; chế độ công khai từng tài liệu</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Chia sẻ link + mật mã của đúng tài liệu đó cho đối tác. Ô trống = giữ nguyên.
+                Chia sẻ link + mật mã của đúng tài liệu đó cho đối tác. Ô trống = giữ nguyên mã.
+              </p>
+              <p className="text-xs text-amber-400/90 mt-2 flex items-start gap-1.5">
+                <Globe className="size-3.5 mt-0.5 shrink-0" />
+                <span>
+                  <b>Công khai</b> = mở link là xem được, <b>không cần mật mã</b> (dùng cho
+                  trang giới thiệu gửi rộng rãi). Vẫn giữ <code>noindex</code> để Google
+                  không đưa lên tìm kiếm. Tài liệu nội bộ nên để <b>riêng tư</b>.
+                </span>
               </p>
             </div>
             <div className="space-y-3">
               {Object.keys(decks).map((slug) => (
-                <div key={slug} className="grid gap-2 sm:grid-cols-[1fr_auto] items-end">
+                <div
+                  key={slug}
+                  className="grid gap-2 sm:grid-cols-[1fr_auto] items-end rounded-lg border border-border/60 p-3"
+                >
                   <div>
-                    <Label className="text-xs">
+                    <Label className="text-xs flex items-center gap-2">
                       {DECK_LABELS[slug] || slug}
-                      <span className="text-muted-foreground font-normal"> · /{slug}/</span>
+                      <span className="text-muted-foreground font-normal">· /{slug}/</span>
+                      {isPublic(slug) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-400 px-2 py-0.5 text-[10px] font-medium">
+                          <Globe className="size-3" /> Công khai
+                        </span>
+                      )}
                     </Label>
                     <div className="flex gap-2 mt-1">
                       <Input
                         readOnly
                         type={show ? "text" : "password"}
                         value={decks[slug] || ""}
+                        disabled={isPublic(slug)}
                         className="font-mono text-sm bg-muted/40"
                       />
                       <Input
                         type="text"
                         placeholder="mã mới"
                         value={newDecks[slug] || ""}
+                        disabled={isPublic(slug)}
                         onChange={(e) =>
                           setNewDecks((d) => ({ ...d, [slug]: e.target.value }))
                         }
@@ -212,6 +252,17 @@ export default function AdminSlidesPage() {
                       />
                     </div>
                   </div>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs whitespace-nowrap pb-2">
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-emerald-500"
+                      checked={isPublic(slug)}
+                      onChange={(e) => togglePublic(slug, e.target.checked)}
+                    />
+                    <span className={isPublic(slug) ? "text-emerald-400 font-medium" : ""}>
+                      {isPublic(slug) ? "Đang công khai" : "Bật công khai"}
+                    </span>
+                  </label>
                 </div>
               ))}
             </div>
@@ -257,8 +308,8 @@ export default function AdminSlidesPage() {
           </Card>
 
           <p className="text-xs text-muted-foreground">
-            Ghi chú: mật khẩu được lưu trong cấu hình của dịch vụ slides và tự động đồng bộ về
-            vault. Đổi mật khẩu có hiệu lực ngay, không cần khởi động lại.
+            Ghi chú: mật khẩu và chế độ công khai được lưu trong cấu hình của dịch vụ slides và
+            tự động đồng bộ về vault. Thay đổi có hiệu lực ngay, không cần khởi động lại.
           </p>
         </>
       )}

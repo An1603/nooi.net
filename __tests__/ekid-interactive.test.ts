@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
+  EKID_MEDIA_VIEW_ENABLED,
   EKID_TOOLS,
+  EKID_TOOL_DECLARATIONS,
   toolsPromptSection,
   isExerciseItem,
   isMediaItem,
@@ -21,13 +23,25 @@ import { BAND_ADDRESS, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { normalizeTurns } from "@/lib/ekid/kid-memory";
 
 describe("ekid interactive — EKID_TOOLS", () => {
-  it("có 4 khai báo: find_media, show_exercise, show_media, answer_exercise", () => {
+  it("bật media: đủ 4 khai báo; tạm dừng: chỉ còn bài tập", () => {
     const names = EKID_TOOLS.map((t) => t.name);
+    if (EKID_MEDIA_VIEW_ENABLED) {
+      expect(names).toEqual(["find_media", "show_exercise", "show_media", "answer_exercise"]);
+    } else {
+      // Công tắc TẮT → model không được cấp công cụ ảnh/video nào.
+      expect(names).toEqual(["show_exercise", "answer_exercise"]);
+      expect(names).not.toContain("find_media");
+      expect(names).not.toContain("show_media");
+    }
+  });
+
+  it("khai báo gốc vẫn giữ đủ 4 công cụ (để bật lại không phải viết lại)", () => {
+    const names = EKID_TOOL_DECLARATIONS.map((t) => t.name);
     expect(names).toEqual(["find_media", "show_exercise", "show_media", "answer_exercise"]);
   });
 
   it("find_media yêu cầu query + kind (image|video)", () => {
-    const fm = EKID_TOOLS.find((t) => t.name === "find_media");
+    const fm = EKID_TOOL_DECLARATIONS.find((t) => t.name === "find_media");
     expect(fm?.parameters.required).toContain("query");
     expect(fm?.parameters.required).toContain("kind");
     const props = fm?.parameters.properties as Record<string, { enum?: string[] }>;
@@ -35,7 +49,7 @@ describe("ekid interactive — EKID_TOOLS", () => {
   });
 
   it("answer_exercise yêu cầu chosen_index (vị trí lựa chọn bé nói)", () => {
-    const ans = EKID_TOOLS.find((t) => t.name === "answer_exercise");
+    const ans = EKID_TOOL_DECLARATIONS.find((t) => t.name === "answer_exercise");
     expect(ans).toBeDefined();
     expect(ans?.parameters.required).toContain("chosen_index");
     const props = ans?.parameters.properties as Record<string, { type?: string }>;
@@ -44,7 +58,7 @@ describe("ekid interactive — EKID_TOOLS", () => {
   });
 
   it("show_exercise yêu cầu question + options", () => {
-    const ex = EKID_TOOLS.find((t) => t.name === "show_exercise");
+    const ex = EKID_TOOL_DECLARATIONS.find((t) => t.name === "show_exercise");
     expect(ex).toBeDefined();
     expect(ex?.parameters.type).toBe("object");
     expect(ex?.parameters.required).toContain("question");
@@ -55,7 +69,7 @@ describe("ekid interactive — EKID_TOOLS", () => {
   });
 
   it("show_media yêu cầu url + kind (image | video)", () => {
-    const md = EKID_TOOLS.find((t) => t.name === "show_media");
+    const md = EKID_TOOL_DECLARATIONS.find((t) => t.name === "show_media");
     expect(md?.parameters.required).toContain("url");
     expect(md?.parameters.required).toContain("kind");
     const props = md?.parameters.properties as Record<string, { enum?: string[] }>;
@@ -71,15 +85,29 @@ describe("ekid interactive — toolsPromptSection", () => {
     expect(p.toLowerCase()).toContain("bài tiếp theo");
   });
 
-  it("toolsPromptSection mô tả các công cụ và hướng dẫn khi nào dùng", () => {
+  it("toolsPromptSection luôn mô tả công cụ bài tập", () => {
     const p = toolsPromptSection();
     expect(p).toContain("show_exercise");
-    expect(p).toContain("find_media");
-    expect(p).toContain("show_media");
-    // Cách CHÍNH để xem hình/video là TÌM THẬT, không tự bịa link.
-    expect(p).toContain("KHÔNG tự bịa link");
+    expect(p).toContain("answer_exercise");
     expect(p.toLowerCase()).toContain("bài tập");
-    expect(p.toLowerCase()).toContain("ảnh");
+  });
+
+  it("prompt khớp công tắc ảnh/video (bật: mô tả công cụ; tắt: dặn mô tả bằng lời)", () => {
+    const p = toolsPromptSection();
+    if (EKID_MEDIA_VIEW_ENABLED) {
+      expect(p).toContain("find_media");
+      expect(p).toContain("show_media");
+      // Cách CHÍNH để xem hình/video là TÌM THẬT, không tự bịa link.
+      expect(p).toContain("KHÔNG tự bịa link");
+    } else {
+      // Không được nhắc tên công cụ model không có → tránh gọi tool không tồn tại.
+      expect(p).not.toContain("find_media");
+      expect(p).not.toContain("show_media");
+      expect(p.toUpperCase()).toContain("MÔ TẢ");
+      // Dặn rõ KHÔNG hứa mở hình/video + KHÔNG đọc link.
+      expect(p).toContain("TUYỆT ĐỐI KHÔNG hứa");
+      expect(p).toContain("KHÔNG đọc link");
+    }
   });
 });
 
@@ -145,7 +173,8 @@ describe("ekid — buildSystemInstruction persona & xưng hô", () => {
     });
     expect(s).toContain("CÔNG CỤ HIỂN THỊ LÊN MÀN HÌNH");
     expect(s).toContain("show_exercise");
-    expect(s).toContain("show_media");
+    // Công cụ media chỉ xuất hiện trong prompt khi công tắc đang bật.
+    expect(s.includes("show_media")).toBe(EKID_MEDIA_VIEW_ENABLED);
   });
 });
 

@@ -8,6 +8,21 @@
 // Task 1. File này chỉ khai báo schema công cụ + đoạn prompt mô tả công cụ để chèn
 // vào system instruction (AI biết KHI NÀO nên gọi).
 
+/**
+ * BẬT/TẮT hiển thị ẢNH – VIDEO trong phiên trò chuyện với AI.
+ *
+ * `false` = TẠM DỪNG (đang dùng): AI chỉ hiện BÀI TẬP lên màn hình; khi bé muốn xem
+ * con vật/đồ vật/sự việc, AI mô tả bằng lời, mời bé tưởng tượng — không tìm/hiện media.
+ * `true`  = bật lại đầy đủ như trước (find_media + show_media).
+ *
+ * Đây là CÔNG TẮC DUY NHẤT: đổi giá trị này là đổi cả khai báo công cụ gửi model,
+ * đoạn prompt dặn AI, và bộ chặn ở client. Không phải sửa chỗ nào khác.
+ */
+export const EKID_MEDIA_VIEW_ENABLED = false;
+
+/** Tên các công cụ liên quan hiển thị ảnh/video (bị gỡ khi tạm dừng). */
+const MEDIA_TOOL_NAMES: readonly string[] = ["find_media", "show_media"];
+
 /** Một khai báo hàm theo chuẩn Gemini (functionDeclarations). */
 export interface EkidToolDeclaration {
   name: string;
@@ -212,7 +227,7 @@ export function stageHint(
  * Khai báo 2 công cụ eKid theo chuẩn Gemini function calling.
  * Truyền vào `VoiceAssistant tools={EKID_TOOLS}`.
  */
-export const EKID_TOOLS: EkidToolDeclaration[] = [
+export const EKID_TOOL_DECLARATIONS: EkidToolDeclaration[] = [
   {
     name: "find_media",
     description:
@@ -330,28 +345,57 @@ export const EKID_TOOLS: EkidToolDeclaration[] = [
   },
 ];
 
+/**
+ * Công cụ gửi kèm setup Gemini Live — LỌC theo công tắc {@link EKID_MEDIA_VIEW_ENABLED}.
+ * Khi tạm dừng xem ảnh/video, model KHÔNG còn thấy `find_media`/`show_media` nên
+ * không thể gọi; phần còn lại (bài tập) giữ nguyên.
+ */
+export const EKID_TOOLS: EkidToolDeclaration[] = EKID_MEDIA_VIEW_ENABLED
+  ? EKID_TOOL_DECLARATIONS
+  : EKID_TOOL_DECLARATIONS.filter((t) => !MEDIA_TOOL_NAMES.includes(t.name));
+
 // ─── Prompt mô tả công cụ (chèn vào system instruction) ───────────────────────
 
 /**
  * Đoạn mô tả công cụ để GHÉP vào system instruction — giúp AI biết mình có thể
- * hiện bài tập/ảnh/video lên màn hình và KHI NÀO nên dùng.
+ * hiện BÀI TẬP (và ảnh/video khi {@link EKID_MEDIA_VIEW_ENABLED}) lên màn hình,
+ * cùng KHI NÀO nên dùng.
+ *
+ * Khi tạm dừng xem ảnh/video: KHÔNG nhắc tên công cụ media (model không còn thấy
+ * chúng) mà dặn rõ AI mô tả bằng lời — tránh việc model gọi công cụ không tồn tại
+ * làm nghẽn lượt nói.
  */
 export function toolsPromptSection(): string {
-  return [
+  const lines = [
     "CÔNG CỤ HIỂN THỊ LÊN MÀN HÌNH (dùng khi hội thoại cần bé XEM hoặc LÀM ngay):",
     "- `show_exercise`: hiện thẻ BÀI TẬP trắc nghiệm lên màn hình. Dùng khi bạn muốn bé",
     "  luyện tập/kiểm tra qua đồng hồ: đọc to câu hỏi + các lựa chọn, rồi để bé chạm chọn.",
     "  Bé luôn quan sát được màn hình trong khi vẫn nói chuyện với bạn.",
-    "- `find_media`: TÌM VÀ HIỆN ảnh/video THẬT theo từ khoá — ĐÂY LÀ CÁCH CHÍNH để bé xem",
-    "  hình/video. Chỉ đưa TỪ KHOÁ ngắn tiếng Việt (vd \"con mèo\", \"khủng long\", \"biển\");",
-    "  `kind`: \"image\" hoặc \"video\". Hệ thống tự tìm nội dung thật + kiểm chứng xem được.",
-    "  TUYỆT ĐỐI KHÔNG tự bịa link, KHÔNG đưa link trang web.",
-    "- `show_media`: chỉ dùng khi bạn ĐÃ có sẵn link ảnh trực tiếp (.jpg/.png/.webp) hoặc link",
-    "  YouTube cụ thể. Nếu không chắc → dùng `find_media`.",
-    "  VIDEO: CHỈ dùng link YouTube (video còn tồn tại và cho phép nhúng). TUYỆT ĐỐI KHÔNG",
-    "  dùng file .mp4/.webm hay link tải video — hệ thống sẽ từ chối.",
-    "  Dùng khi bé hỏi về con vật, đồ vật, sự việc, bài hát, hoạt động… mà một hình ảnh",
-    "  hoặc đoạn video sẽ giúp bé dễ hiểu hơn.",
+  ];
+
+  if (EKID_MEDIA_VIEW_ENABLED) {
+    lines.push(
+      "- `find_media`: TÌM VÀ HIỆN ảnh/video THẬT theo từ khoá — ĐÂY LÀ CÁCH CHÍNH để bé xem",
+      "  hình/video. Chỉ đưa TỪ KHOÁ ngắn tiếng Việt (vd \"con mèo\", \"khủng long\", \"biển\");",
+      "  `kind`: \"image\" hoặc \"video\". Hệ thống tự tìm nội dung thật + kiểm chứng xem được.",
+      "  TUYỆT ĐỐI KHÔNG tự bịa link, KHÔNG đưa link trang web.",
+      "- `show_media`: chỉ dùng khi bạn ĐÃ có sẵn link ảnh trực tiếp (.jpg/.png/.webp) hoặc link",
+      "  YouTube cụ thể. Nếu không chắc → dùng `find_media`.",
+      "  VIDEO: CHỈ dùng link YouTube (video còn tồn tại và cho phép nhúng). TUYỆT ĐỐI KHÔNG",
+      "  dùng file .mp4/.webm hay link tải video — hệ thống sẽ từ chối.",
+      "  Dùng khi bé hỏi về con vật, đồ vật, sự việc, bài hát, hoạt động… mà một hình ảnh",
+      "  hoặc đoạn video sẽ giúp bé dễ hiểu hơn.",
+    );
+  } else {
+    lines.push(
+      "- HIỆN TẠI CHƯA HIỂN THỊ ĐƯỢC ẢNH/VIDEO lên màn hình. Khi bé muốn xem con vật, đồ vật,",
+      "  sự việc hay bài hát nào, hãy MÔ TẢ THẬT SINH ĐỘNG bằng lời (hình dáng, màu sắc, âm",
+      "  thanh) và mời bé tưởng tượng, đặt câu hỏi để bé cùng nghĩ. TUYỆT ĐỐI KHÔNG hứa",
+      "  \"để thầy/cô mở hình/video cho con xem\", KHÔNG đọc link, KHÔNG nói về lỗi kỹ thuật.",
+    );
+  }
+
+  lines.push(
     "- `answer_exercise`: GHI NHẬN câu trả lời khi bé trả lời BẰNG LỜI NÓI cho thẻ bài tập",
     "  đang hiện trên màn hình (ví dụ bé nói \"con chọn B\"). Bé có thể trả lời bằng cách",
     "  BẤM trên màn hình hoặc NÓI — cả hai đường đều được ghi nhận như nhau, kết quả hiện",
@@ -362,13 +406,23 @@ export function toolsPromptSection(): string {
     "- CHUYỂN TIẾP NHANH: trong CÙNG lượt đó, hãy gọi luôn `show_exercise` để hiện BÀI TIẾP THEO",
     "  (không chờ bé giục, không hỏi lại \"con làm tiếp không\"). Bé chỉ cần nghe bạn nhận xét",
     "  ngắn 1 câu là đã thấy bài mới trên màn hình.",
-    "- Khi hiện ảnh/video: chỉ dùng link THẬT SỰ xem được. Video YouTube phải là video",
-    "  còn tồn tại và cho phép nhúng; nếu hệ thống báo không hiện được thì hãy mô tả bằng",
-    "  lời và mời bé hỏi tiếp, đừng thử lại y nguyên link đó.",
+  );
+
+  if (EKID_MEDIA_VIEW_ENABLED) {
+    lines.push(
+      "- Khi hiện ảnh/video: chỉ dùng link THẬT SỰ xem được. Video YouTube phải là video",
+      "  còn tồn tại và cho phép nhúng; nếu hệ thống báo không hiện được thì hãy mô tả bằng",
+      "  lời và mời bé hỏi tiếp, đừng thử lại y nguyên link đó.",
+    );
+  }
+
+  lines.push(
     "Nguyên tắc dùng công cụ:",
     "- Chỉ gọi khi thực sự hữu ích cho bài học/buổi trò chuyện; KHÔNG lạm dụng dồn dập.",
     "- Trước/sau khi gọi, hãy NÓI cho bé biết: gọi công cụ ở giữa lượt bạn đang nói,",
     "  sau đó nhận kết quả bé tương tác và phản hồi bằng giọng (khen khi đúng, gợi mở khi sai).",
     "- Nếu công cụ không sẵn sàng, hãy mô tả bằng lời — vẫn giữ buổi học trọn vẹn.",
-  ].join("\n");
+  );
+
+  return lines.join("\n");
 }

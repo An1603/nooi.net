@@ -18,6 +18,7 @@ import type { ToolFunctionCall, ToolFunctionResponse } from "@/lib/voice/gemini-
 import {
   answerNudge,
   describeAnswer,
+  EKID_MEDIA_VIEW_ENABLED,
   gradeExercise,
   isExerciseItem,
   proxiedMediaUrl,
@@ -385,6 +386,13 @@ export function useEkidInteractive(kidId?: string): EkidInteractiveController {
                 : { ok: false, reason: done.reason ?? "unknown" };
           }
           respond([{ name: call.name, response }]);
+          continue;
+        }
+
+        // ẢNH/VIDEO đang TẠM DỪNG: model không được cấp công cụ này, nhưng nếu vẫn gọi
+        // (prompt cũ/hallucination) → từ chối gọn để lượt nói không bị treo.
+        if (!EKID_MEDIA_VIEW_ENABLED && (call.name === "find_media" || call.name === "show_media")) {
+          respond([{ name: call.name, response: { shown: false, reason: "media_disabled" } }]);
           continue;
         }
 

@@ -201,7 +201,7 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
                   Bấm mic để trò chuyện cùng thầy/cô AI
                 </p>
                 <p className="text-base font-semibold text-[#6b5648]">
-                  Con có thể hỏi bài, kể chuyện hoặc luyện nói — thầy/cô AI sẽ hiện hình ảnh và bài tập lên đây nhé!
+                  Con có thể hỏi bài, kể chuyện hoặc luyện nói — thầy/cô AI sẽ hiện bài tập lên đây nhé!
                 </p>
               </div>
             )}

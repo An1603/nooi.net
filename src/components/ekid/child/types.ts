@@ -18,6 +18,8 @@ export interface LibraryLesson {
   id: string;
   title: string;
   part?: string | null;
+  /** Slug chủ đề/môn chuẩn (vd "toan", "tieng-viet") — nhãn hiển thị tra ở lib/ekid/subject. */
+  subject?: string | null;
   core_topic?: string | null;
   difficulty?: number | null;
   video_url?: string | null;

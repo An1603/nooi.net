@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { lessonEmoji, statusLabel, type LibraryLesson } from "./types";
+import { subjectMeta } from "@/lib/ekid/subject";
 
 // Màu viền/nền theo trạng thái tiến độ (trẻ em: tươi sáng, rõ ràng, dễ nhìn).
 function stateStyle(status: string): string {
@@ -16,6 +17,9 @@ function stateStyle(status: string): string {
  */
 export function LessonCard({ lesson }: { lesson: LibraryLesson }) {
   const locked = lesson.locked === true;
+  // Chip chủ đề (bước A: chỉ hiện nhãn, KHÔNG đổi bộ lọc). Slug lạ → ẩn chip,
+  // không làm hỏng thẻ bài của bé.
+  const subject = subjectMeta(lesson.subject);
 
   const inner = (
     <>
@@ -23,6 +27,12 @@ export function LessonCard({ lesson }: { lesson: LibraryLesson }) {
         {lessonEmoji(lesson)}
         {locked ? <span className="absolute -right-3 -top-2 text-2xl">🔒</span> : null}
       </span>
+      {subject ? (
+        // Chỉ chữ: emoji lớn phía trên đã là biểu tượng chính, tránh lặp hình.
+        <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-bold text-[#6b5648]">
+          {subject.short}
+        </span>
+      ) : null}
       <span className="text-lg font-extrabold leading-tight text-[#3b2a20]">
         {lesson.title}
       </span>

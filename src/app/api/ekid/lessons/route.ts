@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // luyện giọng nói (EkidVoiceSession/ExerciseCard) chấm điểm phía client và dựng
 // chỉ dẫn giọng nói từ đáp án. Bài THI đã tách riêng (chấm ở server: /api/ekid/quiz).
 const LESSON_COLUMNS =
-  "id, age_band, title, part, core_topic, exercises, difficulty, status, video_url, sort_order";
+  "id, age_band, title, part, subject, core_topic, exercises, difficulty, status, video_url, sort_order";
 
 /**
  * GET /api/ekid/lessons — bài học eKid đang ở trạng thái active.

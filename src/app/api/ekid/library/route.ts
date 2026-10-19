@@ -78,7 +78,9 @@ export async function GET(req: Request) {
       .from("ekid_lessons")
       // KHÔNG select system_prompt — không đưa chỉ dẫn nội bộ ra client.
       // KHÔNG select answer_index bên trong exercises — chấm điểm chỉ ở server (quiz route).
-      .select("id, age_band, title, part, core_topic, exercises, difficulty, status, video_url, sort_order")
+      .select(
+        "id, age_band, title, part, subject, core_topic, exercises, difficulty, status, video_url, sort_order",
+      )
       .eq("status", "active")
       .eq("age_band", band)
       .order("sort_order", { ascending: true })

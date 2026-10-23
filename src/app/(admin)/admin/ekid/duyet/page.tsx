@@ -263,7 +263,7 @@ export default function DuyetNoiDungPage() {
                   <button
                     disabled={busy}
                     onClick={() => void act("dat")}
-                    className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
                   >
                     <Check className="size-4" /> Duyệt cả bài
                   </button>

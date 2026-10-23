@@ -145,13 +145,15 @@ export async function POST(req: Request) {
       body = {};
     }
   }
-  const { kid_id, lesson_id, transcript, exercises_done, duration_min, ai_notes } = body as {
+  const { kid_id, lesson_id, transcript, exercises_done, duration_min, ai_notes, session_id } = body as {
     kid_id?: string;
     lesson_id?: string | null;
     transcript?: unknown;
     exercises_done?: unknown;
     duration_min?: number;
     ai_notes?: string | null;
+    /** Phiên đã mở qua /api/ekid/session/start — có thì CẬP NHẬT, không tạo dòng mới. */
+    session_id?: string | null;
   };
   if (!kid_id) return NextResponse.json({ error: "Thiếu kid_id" }, { status: 400 });
 
@@ -177,12 +179,17 @@ export async function POST(req: Request) {
   // (b) Số buổi học tối đa trong ngày — đếm số phiên đã tạo hôm nay (mốc 00:00 GIỜ VN,
   //     khớp khoá ngày của ekid_daily/todayStr). Đã đủ → chặn mở buổi mới.
   const maxLessons = settings.rules.maxLessonsPerDay;
-  const { count: todayCount } = await admin
-    .from("ekid_sessions")
-    .select("id", { count: "exact", head: true })
-    .eq("kid_id", kid_id)
-    .gte("started_at", vnDayStart().toISOString());
-  if ((todayCount ?? 0) >= maxLessons) {
+  // (M1) Đóng một phiên ĐÃ MỞ (có session_id) không tính là mở buổi mới — nếu kiểm
+  // trần ở đây thì chính phiên vừa mở sẽ làm chính nó bị chặn lúc kết thúc.
+  const continuingSession = typeof session_id === "string" && session_id.length > 0;
+  const { count: todayCount } = continuingSession
+    ? { count: 0 }
+    : await admin
+        .from("ekid_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("kid_id", kid_id)
+        .gte("started_at", vnDayStart().toISOString());
+  if (!continuingSession && (todayCount ?? 0) >= maxLessons) {
     return NextResponse.json(
       {
         error: `Hôm nay con đã học đủ ${maxLessons} buổi rồi. Nghỉ ngơi một chút, mai mình học tiếp nhé!`,
@@ -216,20 +223,32 @@ export async function POST(req: Request) {
   const correct = done.filter((d: { correct?: boolean }) => d?.correct).length;
   const score = done.length ? Math.round((correct / done.length) * 100) : null;
 
-  const { data, error } = await admin
-    .from("ekid_sessions")
-    .insert({
-      kid_id,
-      lesson_id: lesson_id ?? null,
-      ended_at: new Date().toISOString(),
-      duration_min: dur,
-      transcript: cleanTurns,
-      exercises_done: done,
-      score,
-      ai_notes: ai_notes ?? null,
-    })
-    .select("*")
-    .single();
+  // (M1) Phiên mở trước (có session_id) → cập nhật; nếu id không hợp lệ/rơi vào phiên
+  // khác/đã đóng thì rơi về tạo mới (không mất dữ liệu buổi học).
+  let openedSessionId: string | null = typeof session_id === "string" ? session_id : null;
+  if (openedSessionId) {
+    const { data: opened } = await admin
+      .from("ekid_sessions")
+      .select("id, kid_id, ended_at")
+      .eq("id", openedSessionId)
+      .maybeSingle();
+    if (!opened || opened.kid_id !== kid_id || opened.ended_at) openedSessionId = null;
+  }
+
+  const payload = {
+    kid_id,
+    lesson_id: lesson_id ?? null,
+    ended_at: new Date().toISOString(),
+    duration_min: dur,
+    transcript: cleanTurns,
+    exercises_done: done,
+    score,
+    ai_notes: ai_notes ?? null,
+  };
+
+  const { data, error } = openedSessionId
+    ? await admin.from("ekid_sessions").update(payload).eq("id", openedSessionId).select("*").single()
+    : await admin.from("ekid_sessions").insert(payload).select("*").single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // (I-C1) Khi con vừa học xong một bài có lesson_id: đánh dấu tiến độ 'da-hoc'

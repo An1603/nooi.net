@@ -26,16 +26,36 @@ import { BAND_ADDRESS, buildSystemInstruction } from "@/lib/ekid/ekid-system";
 import { normalizeTurns } from "@/lib/ekid/kid-memory";
 
 describe("ekid interactive — EKID_TOOLS", () => {
-  it("bật media: đủ 4 khai báo; tạm dừng: chỉ còn bài tập", () => {
+  it("bật media: đủ 4 khai báo; tạm dừng: chỉ còn bài tập — luôn kèm 2 công cụ M1", () => {
     const names = EKID_TOOLS.map((t) => t.name);
     if (EKID_MEDIA_VIEW_ENABLED) {
-      expect(names).toEqual(["find_media", "show_exercise", "show_media", "answer_exercise"]);
+      expect(names).toEqual([
+        "find_media",
+        "show_exercise",
+        "show_media",
+        "answer_exercise",
+        "log_answer",
+        "ask_hint",
+      ]);
     } else {
       // Công tắc TẮT → model không được cấp công cụ ảnh/video nào.
-      expect(names).toEqual(["show_exercise", "answer_exercise"]);
+      expect(names).toEqual(["show_exercise", "answer_exercise", "log_answer", "ask_hint"]);
       expect(names).not.toContain("find_media");
       expect(names).not.toContain("show_media");
     }
+  });
+
+  it("M1: KHÔNG có công cụ nào trả đáp án", () => {
+    const names = EKID_TOOLS.map((t) => t.name);
+    for (const forbidden of ["get_answer", "solve", "show_solution", "reveal"]) {
+      expect(names).not.toContain(forbidden);
+    }
+    const hint = EKID_TOOL_DECLARATIONS.find((t) => t.name === "ask_hint");
+    expect(hint).toBeUndefined(); // ask_hint nằm ở bộ M1, không lẫn vào bộ media/bài tập
+    const askHint = EKID_TOOLS.find((t) => t.name === "ask_hint");
+    expect(askHint?.parameters.required).toEqual(["item_id"]);
+    const logAnswer = EKID_TOOLS.find((t) => t.name === "log_answer");
+    expect(logAnswer?.parameters.required).toEqual(["item_id", "spoken"]);
   });
 
   it("khai báo gốc vẫn giữ đủ 4 công cụ (để bật lại không phải viết lại)", () => {
@@ -426,5 +446,37 @@ describe("ekid memory — normalizeTurns giữ lượt công cụ (role tool)", 
       { role: "tool", text: "AI hiện bài tập lên màn hình." },
       { role: "ai", text: "ừ" },
     ]);
+  });
+});
+
+describe("eKid M1 — system prompt với ngân hàng câu hỏi", () => {
+  const instruction = () =>
+    buildSystemInstruction({
+      kidName: "Bo",
+      placement: { ageBand: "tieu-hoc", level: 1 },
+      lessonTopic: "Đọc, viết số đến 100 000",
+      questionBank: [
+        { id: "itm-1", prompt: "Số 45 230 đọc thế nào?" },
+        { id: "itm-2", prompt: "Số nào là số tròn nghìn?" },
+      ],
+    });
+
+  it("liệt kê đúng item_id + câu hỏi, theo thứ tự", () => {
+    const s = instruction();
+    expect(s).toContain("[itm-1] Số 45 230 đọc thế nào?");
+    expect(s).toContain("[itm-2] Số nào là số tròn nghìn?");
+    expect(s.indexOf("itm-1")).toBeLessThan(s.indexOf("itm-2"));
+  });
+
+  it("KHÔNG chứa đáp án trong prompt", () => {
+    const s = instruction();
+    expect(s).not.toContain("bốn mươi lăm nghìn");
+    expect(s).not.toContain("Đáp án:");
+  });
+
+  it("có luật 'không nêu đáp án trước khi bé thử' và cấm hỏi 'con muốn học gì'", () => {
+    const s = instruction();
+    expect(s).toContain("KHÔNG nêu đáp án khi học sinh chưa thử");
+    expect(s).toContain('TUYỆT ĐỐI KHÔNG hỏi "con muốn học gì"');
   });
 });

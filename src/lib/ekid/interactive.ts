@@ -440,13 +440,58 @@ export const EKID_TOOL_DECLARATIONS: EkidToolDeclaration[] = [
 ];
 
 /**
+ * Công cụ của vòng lặp học M1 (lớp 3) — KHÔNG có công cụ nào trả đáp án.
+ *
+ * - `log_answer`: bé vừa trả lời một câu trong ngân hàng câu hỏi; server chấm và trả
+ *   `correct` + `hints_used`. Đây là nguồn duy nhất tạo ra chỉ số "đúng khi không gợi ý".
+ * - `ask_hint`: xin mở MỘT bậc gợi ý; server quyết bậc (1→4) và trả nguyên văn.
+ *   Model bắt buộc đọc đúng nguyên văn, không được tự nghĩ gợi ý khác.
+ */
+export const EKID_M1_TOOL_DECLARATIONS: EkidToolDeclaration[] = [
+  {
+    name: "log_answer",
+    description:
+      "GHI NHẬN câu trả lời của bé cho một câu hỏi trong DANH SÁCH CÂU HỎI của bài. " +
+      "Gọi NGAY sau khi bé trả lời (bằng lời), với `item_id` đúng câu đang hỏi và `spoken` là " +
+      "nguyên văn lời bé nói. Hệ thống sẽ trả `correct` (đúng/sai) và `hints_used`. " +
+      "Sau khi nhận kết quả: nói kết quả cho bé nghe (khen cụ thể hoặc gợi mở nhẹ nhàng), " +
+      "TUYỆT ĐỐI không đọc đáp án trừ khi `hints_used` đã bằng 4.",
+    parameters: {
+      type: "object",
+      properties: {
+        item_id: { type: "string", description: "Mã câu hỏi (id) trong danh sách hệ thống cấp." },
+        spoken: { type: "string", description: "Nguyên văn lời bé vừa nói." },
+      },
+      required: ["item_id", "spoken"],
+    },
+  },
+  {
+    name: "ask_hint",
+    description:
+      "MỞ MỘT BẬC GỢI Ý cho câu đang hỏi. Dùng khi bé làm sai, xin giúp, hoặc im lặng quá lâu. " +
+      "Hệ thống tự quyết bậc tiếp theo (1→4) và trả `text`. Bạn phải ĐỌC ĐÚNG NGUYÊN VĂN `text`, " +
+      "không thêm bớt, không tự nghĩ gợi ý khác. Mỗi lượt chỉ mở MỘT bậc.",
+    parameters: {
+      type: "object",
+      properties: {
+        item_id: { type: "string", description: "Mã câu hỏi đang hỏi." },
+      },
+      required: ["item_id"],
+    },
+  },
+];
+
+/**
  * Công cụ gửi kèm setup Gemini Live — LỌC theo công tắc {@link EKID_MEDIA_VIEW_ENABLED}.
  * Khi tạm dừng xem ảnh/video, model KHÔNG còn thấy `find_media`/`show_media` nên
- * không thể gọi; phần còn lại (bài tập) giữ nguyên.
+ * không thể gọi; phần còn lại (bài tập + vòng lặp học M1) giữ nguyên.
  */
-export const EKID_TOOLS: EkidToolDeclaration[] = EKID_MEDIA_VIEW_ENABLED
-  ? EKID_TOOL_DECLARATIONS
-  : EKID_TOOL_DECLARATIONS.filter((t) => !MEDIA_TOOL_NAMES.includes(t.name));
+export const EKID_TOOLS: EkidToolDeclaration[] = [
+  ...(EKID_MEDIA_VIEW_ENABLED
+    ? EKID_TOOL_DECLARATIONS
+    : EKID_TOOL_DECLARATIONS.filter((t) => !MEDIA_TOOL_NAMES.includes(t.name))),
+  ...EKID_M1_TOOL_DECLARATIONS,
+];
 
 // ─── Prompt mô tả công cụ (chèn vào system instruction) ───────────────────────
 
@@ -493,6 +538,13 @@ export function toolsPromptSection(): string {
   }
 
   lines.push(
+    "VÒNG LẶP HỌC (bắt buộc khi phiên có DANH SÁCH CÂU HỎI của bài):",
+    "- Hỏi lần lượt từng câu trong danh sách, đúng thứ tự. Mỗi lượt một câu, đọc nguyên văn câu hỏi.",
+    "- Bé trả lời xong → gọi `log_answer` với `item_id` của câu đó và `spoken` là lời bé nói.",
+    "- Bé làm sai, xin giúp, hoặc im lặng quá lâu → gọi `ask_hint` (mỗi lượt MỘT bậc) rồi đọc",
+    "  ĐÚNG NGUYÊN VĂN `text` hệ thống trả về. KHÔNG tự nghĩ gợi ý khác, KHÔNG đọc đáp án.",
+    "- Tuyệt đối KHÔNG tự bịa câu hỏi ngoài danh sách. Hết danh sách thì hỏi bé nói lại 1 điều",
+    "  vừa học rồi chào tạm biệt.",
     "- `answer_exercise`: GHI NHẬN câu trả lời khi bé trả lời BẰNG LỜI NÓI cho thẻ bài tập",
     "  đang hiện trên màn hình (ví dụ bé nói \"con chọn B\"). Bé có thể trả lời bằng cách",
     "  BẤM trên màn hình hoặc NÓI — cả hai đường đều được ghi nhận như nhau, kết quả hiện",

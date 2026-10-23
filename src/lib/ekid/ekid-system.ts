@@ -392,8 +392,13 @@ export function buildSystemInstruction(params: {
   exercises?: EkidExercise[];
   /** Phiên trò chuyện tự do (không gắn bài học) — không mời bé làm bài tập. */
   freeSession?: boolean;
+  /**
+   * Ngân hàng câu hỏi của bài (M1): CHỈ id + câu hỏi, KHÔNG đáp án.
+   * Đáp án nằm ở server; AI hỏi theo thứ tự này và gọi `log_answer` sau mỗi câu.
+   */
+  questionBank?: Array<{ id: string; prompt: string }>;
 }): string {
-  const { kidName, placement, lessonTopic, recentNotes, exercises, freeSession } = params;
+  const { kidName, placement, lessonTopic, recentNotes, exercises, freeSession, questionBank } = params;
   const band = BAND_LABEL[placement.ageBand];
   const addr = BAND_ADDRESS[placement.ageBand];
   const styleNote = BAND_STYLE_NOTE[placement.ageBand];
@@ -425,6 +430,13 @@ export function buildSystemInstruction(params: {
     "9. Kết phiên: hỏi bé nói lại 1 điều vừa học, rồi mới chào tạm biệt.",
     `Khen ngợi cụ thể khi ${addr.student} đúng, động viên nhẹ nhàng khi ${addr.student} sai, KHÔNG chê.`,
     lessonTopic ? `Chủ đề hôm nay: ${lessonTopic}.` : "",
+    (questionBank ?? []).length > 0
+      ? [
+          `DANH SÁCH CÂU HỎI của bài (hỏi LẦN LƯỢT, đúng thứ tự; mỗi câu hỏi xong, chờ ${addr.student} trả lời rồi mới sang câu sau):`,
+          ...(questionBank ?? []).map((q, i) => `${i + 1}. [${q.id}] ${q.prompt}`),
+          `Sau mỗi câu ${addr.student} trả lời, gọi \`log_answer\` với item_id tương ứng. Khi cần gợi ý, gọi \`ask_hint\`.`,
+        ].join("\n")
+      : "",
     exLines ? `Các bài tập sẽ hiện trên màn hình (đọc câu hỏi cho ${addr.student} nghe):\n${exLines}` : "",
     recentNotes ? `Ghi chú về ${addr.student} từ buổi trước: ${recentNotes}` : "",
     exLines ? `Mỗi khi ra bài, đọc to câu hỏi và các lựa chọn để ${addr.student} chọn hoặc nói đáp án.` : "",

@@ -112,6 +112,11 @@ export interface EkidInteractiveController {
    * đáp án mà model không gọi `answer_exercise`.
    */
   onUserSpeech: (text: string) => void;
+  /**
+   * Mở MỘT bậc gợi ý cho câu đang hỏi (server quyết bậc) và cho AI đọc nguyên văn.
+   * Dùng cho nút "Gợi ý" trên màn hình — cùng đường với tool `ask_hint`.
+   */
+  requestHint: (itemId?: string) => Promise<{ tier: number; text: string } | null>;
 }
 
 export function useEkidInteractive(
@@ -125,6 +130,14 @@ export function useEkidInteractive(
      * gửi sau khi AI nói xong.
      */
     status?: VoiceStatus | null;
+    /**
+     * Phiên học đã mở (POST /api/ekid/session/start). Có session_id thì mọi lượt
+     * gợi ý / trả lời mới ghi được log có ngữ cảnh, và chỉ số "đúng khi không gợi ý"
+     * mới đếm đúng.
+     */
+    sessionId?: string | null;
+    /** Ngân hàng câu hỏi của bài (chỉ id + prompt; đáp án nằm ở server). */
+    items?: Array<{ id: string }>;
   },
 ): EkidInteractiveController {
   const [current, setCurrent] = useState<InteractiveItem | null>(null);
@@ -150,6 +163,36 @@ export function useEkidInteractive(
   useEffect(() => {
     speakRef.current = opts?.speak ?? null;
   }, [opts?.speak]);
+
+  // ── Vòng lặp học M1: phiên + câu hỏi đang hỏi ──────────────────────────────
+  const m1Ref = useRef<{ sessionId: string | null }>({ sessionId: opts?.sessionId ?? null });
+  useEffect(() => {
+    m1Ref.current = { sessionId: opts?.sessionId ?? null };
+  }, [opts?.sessionId]);
+  const activeItemRef = useRef<string | null>(null);
+
+  /** Gọi API gợi ý (server quyết bậc) và cho AI đọc nguyên văn. Dùng cho nút "Gợi ý". */
+  const requestHint = useCallback(
+    async (itemId?: string): Promise<{ tier: number; text: string } | null> => {
+      const id = itemId ?? activeItemRef.current;
+      const sessionId = m1Ref.current.sessionId;
+      if (!kidId || !id || !sessionId) return null;
+      try {
+        const r = await fetch("/api/ekid/hint", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kid_id: kidId, session_id: sessionId, item_id: id }),
+        });
+        if (!r.ok) return null;
+        const d = (await r.json()) as { tier: number; text: string };
+        speakRef.current?.(d.text);
+        return d;
+      } catch {
+        return null;
+      }
+    },
+    [kidId],
+  );
 
   // ── Hàng đợi "đọc bài mới" — KHÔNG cắt lời AI đang nói ─────────────────────
   // Thẻ bài hiện NGAY (bé thấy ngay), nhưng lượt văn bản ép AI đọc chỉ gửi khi:
@@ -471,7 +514,109 @@ export function useEkidInteractive(
 
   const onToolCall = useCallback<OnToolCall>(
     (calls, respond) => {
+      // M1 cần gọi API (chấm câu trả lời / mở gợi ý) nên phần thân chạy async;
+      // `respond` vẫn được gọi đúng thứ tự trong từng nhánh.
+      void (async () => {
       for (const call of calls) {
+        // ── M1: bé trả lời một câu trong ngân hàng câu hỏi ───────────────────
+        // Server chấm + đếm số bậc gợi ý đã mở. Không bao giờ trả đáp án ở đây
+        // trừ khi bé đã đi hết 4 bậc.
+        if (call.name === "log_answer") {
+          const itemId = asString(call.args.item_id);
+          const spoken = asString(call.args.spoken) ?? "";
+          const sessionId = m1Ref.current.sessionId;
+          if (!kidId || !itemId) {
+            respond([{ name: call.name, response: { ok: false, reason: "thieu_item_id" } }]);
+            continue;
+          }
+          activeItemRef.current = itemId;
+          if (!sessionId) {
+            respond([{ name: call.name, response: { ok: false, reason: "phien_chua_mo" } }]);
+            continue;
+          }
+          try {
+            const r = await fetch("/api/ekid/attempt", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ kid_id: kidId, session_id: sessionId, item_id: itemId, spoken }),
+            });
+            const d = (await r.json()) as {
+              correct?: boolean;
+              hints_used?: number;
+              answer?: string | null;
+              next_step?: string;
+              error?: string;
+            };
+            if (!r.ok) {
+              respond([{ name: call.name, response: { ok: false, reason: d.error ?? "loi_cham" } }]);
+              continue;
+            }
+            pushLog({
+              role: "tool",
+              text: d.correct ? "Bé trả lời đúng." : "Bé trả lời chưa đúng.",
+              meta: {
+                event: "result",
+                tool: "log_answer",
+                item_id: itemId,
+                spoken,
+                result: { correct: Boolean(d.correct), hints_used: d.hints_used ?? 0 },
+              },
+            });
+            respond([
+              {
+                name: call.name,
+                response: {
+                  ok: true,
+                  correct: Boolean(d.correct),
+                  hints_used: d.hints_used ?? 0,
+                  ...(d.answer ? { answer: d.answer } : {}),
+                  instruction: d.correct
+                    ? "Khen CỤ THỂ hành vi của bé trong 1 câu, rồi hỏi câu tiếp theo trong danh sách."
+                    : (d.hints_used ?? 0) >= 4
+                      ? "Nói lời giải ngắn gọn, rồi yêu cầu bé nói lại cách làm."
+                      : "Nói nhẹ nhàng 'chưa đúng chỗ này', rồi gọi ask_hint để mở MỘT bậc gợi ý.",
+                },
+              },
+            ]);
+          } catch {
+            respond([{ name: call.name, response: { ok: false, reason: "khong_ket_noi" } }]);
+          }
+          continue;
+        }
+
+        // ── M1: xin mở một bậc gợi ý (server quyết bậc) ─────────────────────
+        if (call.name === "ask_hint") {
+          const itemId = asString(call.args.item_id) ?? activeItemRef.current;
+          if (!itemId) {
+            respond([{ name: call.name, response: { ok: false, reason: "thieu_item_id" } }]);
+            continue;
+          }
+          activeItemRef.current = itemId;
+          const hint = await requestHint(itemId);
+          if (!hint) {
+            respond([{ name: call.name, response: { ok: false, reason: "khong_mo_duoc_goi_y" } }]);
+            continue;
+          }
+          pushLog({
+            role: "tool",
+            text: `Mở gợi ý bậc ${hint.tier}.`,
+            meta: { event: "result", tool: "ask_hint", item_id: itemId, result: { tier: hint.tier } },
+          });
+          respond([
+            {
+              name: call.name,
+              response: {
+                ok: true,
+                tier: hint.tier,
+                text: hint.text,
+                instruction:
+                  "Đọc ĐÚNG NGUYÊN VĂN `text` cho bé nghe, rồi dừng và chờ bé trả lời. Không thêm đáp án.",
+              },
+            },
+          ]);
+          continue;
+        }
+
         // ── Bé TRẢ LỜI BẰNG LỜI cho bài tập đang hiện ────────────────────────
         // AI tự gọi `answer_exercise` khi bé nói câu trả lời; ghi nhận vào CÙNG
         // một đường với bấm trên màn hình → kết quả đồng bộ ở mọi nơi.
@@ -538,8 +683,9 @@ export function useEkidInteractive(
           meta: { event: "call", tool: call.name, item_id: item.id, args: call.args },
         });
       }
+      })();
     },
-    [announceExercise, buildExercise, handleFindMedia, handleShowMedia, pushLog, resolveExercise],
+    [announceExercise, buildExercise, handleFindMedia, handleShowMedia, pushLog, requestHint, resolveExercise],
   );
 
   const onResolve = useCallback<EkidInteractiveController["onResolve"]>(
@@ -579,5 +725,5 @@ export function useEkidInteractive(
 
   const getLog = useCallback(() => logRef.current, []);
 
-  return { current, resolution, onToolCall, onTurnsChange, onResolve, onUserSpeech, getLog };
+  return { current, resolution, onToolCall, onTurnsChange, onResolve, onUserSpeech, requestHint, getLog };
 }

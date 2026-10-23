@@ -43,7 +43,10 @@ export async function GET() {
     stats.set(it.lesson_id, s);
   }
 
-  const rows = (lessons ?? []).map((l) => {
+  // Bài chưa có câu nào thì chưa có gì để duyệt — ẩn khỏi danh sách cho đỡ nhiễu.
+  const rows = (lessons ?? [])
+    .filter((l) => (stats.get(l.id)?.total ?? 0) > 0)
+    .map((l) => {
     const s = stats.get(l.id) ?? { total: 0, dat: 0, canSua: 0, cho: 0 };
     return {
       id: l.id,

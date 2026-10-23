@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { EkidTalkScreen, type TalkKid } from "@/components/ekid/child/EkidTalkScreen";
+import { TodayPlanBanner } from "@/components/ekid/child/TodayPlanBanner";
 import { KID } from "@/components/ekid/child/kid-theme";
 import type { LibraryKid } from "@/components/ekid/child/types";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
@@ -98,5 +99,10 @@ export default function EkidHomePage() {
     );
   }
 
-  return <EkidTalkScreen kid={kid} remaining={remaining} />;
+  return (
+    <div>
+      <TodayPlanBanner kidId={kid.id} />
+      <EkidTalkScreen kid={kid} remaining={remaining} />
+    </div>
+  );
 }

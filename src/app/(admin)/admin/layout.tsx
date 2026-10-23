@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Palette,
   Lock,
+  CheckSquare,
 } from "lucide-react";
 import { RouteLoader } from "@/components/Loading";
 
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   // Quản lý nội dung
   { href: "/admin/live", label: "Lớp Live", icon: Video },
   { href: "/admin/lessons", label: "Bài giảng", icon: BookOpen },
+  { href: "/admin/ekid/duyet", label: "Duyệt nội dung eKid", icon: CheckSquare },
   { href: "/admin/learning", label: "Tiến độ học", icon: TrendingUp },
   { href: "/admin/documents", label: "Tài liệu", icon: FileText },
   { href: "/admin/videos", label: "Video", icon: Video },

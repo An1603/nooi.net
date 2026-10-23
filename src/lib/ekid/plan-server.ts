@@ -3,6 +3,7 @@
  * quyền truy cập đã được kiểm ở route (chủ hồ sơ / chính bé / người chăm sóc).
  */
 import { createAdminClient } from "@/lib/supabase/admin";
+import { gradeSpokenAnswer } from "@/lib/ekid/answer-grade";
 import { vnDayString } from "@/lib/ekid/ekid-system";
 import {
   buildDailyPlan,
@@ -196,15 +197,13 @@ export function normalizeAnswer(s: string): string {
     .trim();
 }
 
+/**
+ * Chấm câu trả lời nói. Ủy quyền cho {@link gradeSpokenAnswer} — bản cũ so chuỗi thô nên
+ * chấm SAI khi bé nói "bảy mươi nghìn không trăm linh năm" cho đáp án "70 005", hoặc nói
+ * "đáp án bê" cho đáp án "B". Xem `answer-grade.ts` + test `ekid-answer-grade`.
+ */
 export function isCorrectAnswer(item: Pick<ItemRow, "answer">, spoken: string): boolean {
-  const target = normalizeAnswer(item.answer?.value ?? "");
-  const got = normalizeAnswer(spoken ?? "");
-  if (!target || !got) return false;
-  if (got === target) return true;
-  const alts = (item.answer?.alt ?? []).map(normalizeAnswer);
-  if (alts.includes(got)) return true;
-  // Chấp nhận khi câu nói chứa trọn đáp án (bé nói cả câu) nhưng không chứa đáp án khác.
-  return got.includes(target) && target.length >= 2;
+  return gradeSpokenAnswer(item.answer ?? null, spoken ?? "");
 }
 
 export async function recordAttempt(input: {

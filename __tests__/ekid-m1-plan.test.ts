@@ -129,7 +129,8 @@ describe("chấm đáp án nói tiếng Việt", () => {
 
   it("chấp nhận đáp án đúng và alt", () => {
     const item = { answer: { value: "70 005", alt: ["70005"] } };
-    expect(isCorrectAnswer(item, "bảy mươi nghìn không trăm linh năm")).toBe(false);
+    // Bé đọc bằng chữ cho đáp án số — PHẢI đúng (bản cũ chấm sai, xem answer-grade).
+    expect(isCorrectAnswer(item, "bảy mươi nghìn không trăm linh năm")).toBe(true);
     expect(isCorrectAnswer(item, "70005")).toBe(true);
     expect(isCorrectAnswer(item, "70 005")).toBe(true);
   });

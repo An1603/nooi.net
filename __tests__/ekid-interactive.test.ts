@@ -200,7 +200,7 @@ describe("ekid — buildSystemInstruction persona & xưng hô", () => {
       ...base,
       placement: { ageBand: "mam-non", level: 1 },
     });
-    expect(s).toContain('"thầy AI"');
+    expect(s).toContain('"Cô Mây"');
     expect(s).toContain('gọi con');
     expect(s).toContain('Bo');
     // không xưng "tôi" lạnh lùng

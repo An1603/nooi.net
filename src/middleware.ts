@@ -151,13 +151,17 @@ export async function middleware(request: NextRequest) {
 
     // Admin login page — allow without auth, redirect /login to it
     if (pathname === "/login") {
-      return withCookies(NextResponse.redirect(new URL("/admin-login", request.url)), supabaseResponse);
+      const veDangNhap = new URL("/admin-login", request.url);
+      veDangNhap.searchParams.set("next", pathname);
+      return withCookies(NextResponse.redirect(veDangNhap), supabaseResponse);
     }
     if (pathname === "/admin-login") return supabaseResponse;
 
     // Not logged in → show admin login
     if (!user) {
-      return withCookies(NextResponse.redirect(new URL("/admin-login", request.url)), supabaseResponse);
+      const veDangNhap = new URL("/admin-login", request.url);
+      veDangNhap.searchParams.set("next", pathname);
+      return withCookies(NextResponse.redirect(veDangNhap), supabaseResponse);
     }
 
     // Check admin role
@@ -168,7 +172,9 @@ export async function middleware(request: NextRequest) {
       .maybeSingle();
 
     if (!adminUser) {
-      const resp = withCookies(NextResponse.redirect(new URL("/admin-login", request.url)), supabaseResponse);
+      const veDangNhap3 = new URL("/admin-login", request.url);
+      veDangNhap3.searchParams.set("next", pathname);
+      const resp = withCookies(NextResponse.redirect(veDangNhap3), supabaseResponse);
       // Đặt sau khi sao chép để CÁC LỆNH CLEAR này THẮNG (đăng xuất phiên không phải admin).
       resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.0", "", { maxAge: 0, path: "/" });
       resp.cookies.set("sb-gsnuqrutiauhnsacgzym-auth-token.1", "", { maxAge: 0, path: "/" });

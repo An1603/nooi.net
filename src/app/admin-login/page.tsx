@@ -35,7 +35,8 @@ export default function AdminLoginPage() {
       const { data: au } = await supabase.from("admin_users").select("role").eq("user_id", data.user.id).maybeSingle();
       if (!au) { await supabase.auth.signOut(); toast.error("Không có quyền quản trị."); return; }
       toast.success("Đăng nhập thành công!");
-      router.push("/admin");
+      const next = new URLSearchParams(window.location.search).get("next") || "/admin";
+      router.push(next.startsWith("/") ? next : "/admin");
     } catch (err: unknown) {
       toast.error(translateAuthError(err instanceof Error ? err.message : "Đăng nhập thất bại"));
     } finally { setLoading(false); }

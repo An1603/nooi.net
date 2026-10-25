@@ -23,6 +23,13 @@ interface Props {
 
 /* ─── Helpers ─── */
 
+/** Đích sau khi đăng nhập: ưu tiên ?redirect= (đường dẫn nội bộ), mặc định /app */
+function sauDangNhap(): string {
+  if (typeof window === "undefined") return "/app";
+  const r = new URLSearchParams(window.location.search).get("redirect");
+  return r && r.startsWith("/") && !r.startsWith("//") ? r : "/app";
+}
+
 function translateAuthError(message: string): string {
   const msg = message.toLowerCase();
   if (msg.includes("user already registered")) return "Email này đã được đăng ký. Vui lòng đăng nhập.";
@@ -199,7 +206,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
           return;
         }
         toast.success("Tài khoản đã được tạo thành công!");
-        router.push("/app");
+        router.push(sauDangNhap());
       } else {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: emailTrimmed, password,
@@ -216,7 +223,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
         }
 
         toast.success("Đăng nhập thành công!");
-        router.push("/app");
+        router.push(sauDangNhap());
       }
     } catch (err) { toast.error(extractErrorMessage(err)); }
     finally { setLoading(false); }

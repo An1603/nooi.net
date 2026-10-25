@@ -23,6 +23,7 @@ import {
   Search,
   Users,
   X,
+  MessageSquare,
 } from "lucide-react";
 
 /* ───────────────────────── kiểu dữ liệu ───────────────────────── */
@@ -38,7 +39,11 @@ type Dong = {
   nhan_luc: string | null;
   link: string | null;
   ghi_chu: string | null;
+  chua_doc?: number;
+  so_tin?: number;
 };
+
+type Tin = { id: number; vai_tro: string; ten: string; noi_dung: string; luc: string };
 
 type Hat = {
   ma: string;
@@ -229,6 +234,10 @@ export default function AdminVuonPage() {
   const [mucMap, setMucMap] = useState<Record<number, number>>({});
   const [dongThoiGian, setDongThoiGian] = useState<Record<number, Muc[]>>({});
   const [nguoiCapQuyen, setNguoiCapQuyen] = useState<Record<number, Nguoi | null>>({});
+  const [chatMo, setChatMo] = useState<number | null>(null);
+  const [chatDs, setChatDs] = useState<Record<number, Tin[]>>({});
+  const [chatNd, setChatNd] = useState<Record<number, string>>({});
+  const [dangGuiChat, setDangGuiChat] = useState(false);
 
   /* danh mục hạt */
   const [hats, setHats] = useState<Hat[]>([]);
@@ -352,6 +361,47 @@ export default function AdminVuonPage() {
       setDangChay(null);
     }
   };
+
+  const taiChat = useCallback(async (id: number) => {
+    try {
+      const res = await fetch(`/api/admin/vuon?nhan_id=${id}`, { cache: "no-store" });
+      const d = await res.json();
+      if (res.ok) setChatDs((v) => ({ ...v, [id]: d.ds || [] }));
+    } catch {
+      /* im lặng */
+    }
+  }, []);
+
+  const moChat = (r: Dong) => {
+    if (chatMo === r.id) {
+      setChatMo(null);
+      return;
+    }
+    setChatMo(r.id);
+    taiChat(r.id);
+  };
+
+  const guiChat = async (r: Dong) => {
+    const nd = (chatNd[r.id] || "").trim();
+    if (!nd) return;
+    setDangGuiChat(true);
+    try {
+      await goi({ action: "chat-gui", nhan_id: r.id, noi_dung: nd });
+      setChatNd((v) => ({ ...v, [r.id]: "" }));
+      await taiChat(r.id);
+      await taiLuot();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Lỗi gửi tin");
+    } finally {
+      setDangGuiChat(false);
+    }
+  };
+
+  useEffect(() => {
+    if (chatMo == null) return;
+    const t = setInterval(() => taiChat(chatMo), 10000);
+    return () => clearInterval(t);
+  }, [chatMo, taiChat]);
 
   const xem = async (r: Dong) => {
     if (mo === r.id) {
@@ -631,6 +681,19 @@ export default function AdminVuonPage() {
                     >
                       Chấm
                     </Button>
+                    <Button
+                      size="sm"
+                      variant={chatMo === r.id ? "default" : "outline"}
+                      onClick={() => moChat(r)}
+                    >
+                      <MessageSquare className="size-4" />
+                      <span className="ml-1">Trao đổi</span>
+                      {(r.chua_doc || 0) > 0 && chatMo !== r.id && (
+                        <span className="ml-1 text-[10px] px-1.5 rounded-full bg-red-500 text-white">
+                          {r.chua_doc}
+                        </span>
+                      )}
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => xem(r)}>
                       {mo === r.id ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
                       <span className="ml-1">Báo cáo</span>
@@ -686,6 +749,59 @@ export default function AdminVuonPage() {
                     Cấp quyền
                   </Button>
                 </div>
+
+                {chatMo === r.id && (
+                  <div className="border-t border-border/30 pt-3 space-y-2">
+                    <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                      {!chatDs[r.id] && (
+                        <div className="text-sm text-muted-foreground flex items-center gap-2">
+                          <Loader2 className="size-4 animate-spin" /> Đang tải…
+                        </div>
+                      )}
+                      {chatDs[r.id]?.length === 0 && (
+                        <div className="text-sm text-muted-foreground">
+                          Chưa có tin nào. Nhắn để trao đổi với {r.ten_nguoi}.
+                        </div>
+                      )}
+                      {(chatDs[r.id] || []).map((m) => (
+                        <div
+                          key={m.id}
+                          className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
+                            m.vai_tro === "quan_tri"
+                              ? "ml-auto bg-emerald-500/15 border border-emerald-500/30"
+                              : "bg-white/5 border border-border/40"
+                          }`}
+                        >
+                          <div className="whitespace-pre-wrap break-words">{m.noi_dung}</div>
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            {m.vai_tro === "quan_tri" ? "Ban quản trị" : m.ten} · {m.luc?.slice(5, 16)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 items-end">
+                      <textarea
+                        rows={2}
+                        value={chatNd[r.id] || ""}
+                        onChange={(e) => setChatNd((v) => ({ ...v, [r.id]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                            e.preventDefault();
+                            guiChat(r);
+                          }
+                        }}
+                        placeholder={`Nhắn cho ${r.ten_nguoi}… (Ctrl+Enter để gửi)`}
+                        className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      />
+                      <Button size="sm" onClick={() => guiChat(r)} disabled={dangGuiChat || !(chatNd[r.id] || "").trim()}>
+                        Gửi
+                      </Button>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Người làm thấy tin trong tab <b>Của tôi</b> → <b>💬 Trao đổi</b>. Tự làm mới mỗi 10 giây.
+                    </div>
+                  </div>
+                )}
 
                 {mo === r.id && (
                   <div className="border-t border-border/30 pt-3 space-y-3">

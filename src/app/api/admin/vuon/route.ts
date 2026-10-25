@@ -33,6 +33,19 @@ async function goiVuon(path: string, body: Record<string, unknown>) {
   return NextResponse.json(data, { status: res.status });
 }
 
+export async function GET(req: NextRequest) {
+  if (!TOKEN) return NextResponse.json({ loi: "Chưa cấu hình VUON_ADMIN_TOKEN" }, { status: 500 });
+  if (!(await laQuanTri())) return NextResponse.json({ loi: "Không có quyền" }, { status: 403 });
+  const id = new URL(req.url).searchParams.get("nhan_id");
+  if (!id) return NextResponse.json({ loi: "Thiếu nhan_id" }, { status: 400 });
+  const res = await fetch(`${VUON}/api/trao-doi?nhan_id=${encodeURIComponent(id)}`, {
+    headers: { "X-Admin-Token": TOKEN },
+    cache: "no-store",
+  });
+  const data = await res.json().catch(() => ({ loi: `Vườn trả ${res.status}` }));
+  return NextResponse.json(data, { status: res.status });
+}
+
 export async function POST(req: NextRequest) {
   if (!TOKEN) return NextResponse.json({ loi: "Chưa cấu hình VUON_ADMIN_TOKEN" }, { status: 500 });
   if (!(await laQuanTri())) return NextResponse.json({ loi: "Không có quyền" }, { status: 403 });
@@ -47,6 +60,8 @@ export async function POST(req: NextRequest) {
       return goiVuon("/api/admin/cham", { id: b.id, ma: b.ma, nguoi: b.nguoi, muc: b.muc });
     case "tra":
       return goiVuon("/api/admin/tra", { id: b.id });
+    case "chat-gui":
+      return goiVuon("/api/trao-doi", { nhan_id: b.nhan_id, noi_dung: b.noi_dung });
     case "nhan-xoa":
       return goiVuon("/api/admin/nhan-xoa", { id: b.id });
     case "quyen":

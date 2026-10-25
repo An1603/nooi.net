@@ -53,6 +53,20 @@ export async function POST(req: NextRequest) {
       return goiVuon("/api/admin/quyen-ds", { ma: b.ma });
     case "nhatky":
       return goiVuon("/api/admin/nhatky", { id: b.id });
+    case "hat-ds":
+      return goiVuon("/api/admin/hat/ds", {});
+    case "hat-luu":
+      return goiVuon("/api/admin/hat/luu", { hat: b.hat });
+    case "hat-an":
+      return goiVuon("/api/admin/hat/an", { ma: b.ma, an: b.an });
+    case "hat-xoa":
+      return goiVuon("/api/admin/hat/xoa", { ma: b.ma });
+    case "nguoi-ds":
+      return goiVuon("/api/admin/nguoi/ds", {});
+    case "nguoi-them":
+      return goiVuon("/api/admin/nguoi/them", { email: b.email, ten: b.ten, vai_tro: b.vai_tro });
+    case "nguoi-xoa":
+      return goiVuon("/api/admin/nguoi/xoa", { email: b.email });
     default:
       return NextResponse.json({ loi: "Hành động không hợp lệ" }, { status: 400 });
   }

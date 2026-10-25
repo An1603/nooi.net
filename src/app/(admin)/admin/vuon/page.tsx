@@ -318,6 +318,26 @@ export default function AdminVuonPage() {
     }
   };
 
+  const xoaLuot = async (r: Dong) => {
+    if (
+      !confirm(
+        `Xoá lượt nhận ${r.ma} của ${r.ten_nguoi}?\n\nHạt trở lại trống trên chợ, người này không còn trong danh sách. Chỉ xoá được khi chưa nộp báo cáo.`
+      )
+    )
+      return;
+    setDangChay(r.id);
+    try {
+      await goi({ action: "nhan-xoa", id: r.id });
+      toast.success(`Đã xoá lượt nhận ${r.ma} của ${r.ten_nguoi}`);
+      await taiLuot();
+      await taiHat();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Lỗi xoá lượt nhận");
+    } finally {
+      setDangChay(null);
+    }
+  };
+
   const capQuyen = async (r: Dong) => {
     const n = nguoiCapQuyen[r.id];
     if (!n) return toast.error("Chọn người cần cấp quyền trước");
@@ -621,6 +641,19 @@ export default function AdminVuonPage() {
                         <span className="ml-1">Trả quả</span>
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => xoaLuot(r)}
+                      disabled={r.trang_thai !== "da_nhan" || dangChay === r.id}
+                      title={
+                        r.trang_thai === "da_nhan"
+                          ? "Xoá lượt nhận (hạt trở lại trống)"
+                          : "Đã có báo cáo — dùng Trả về chợ, không xoá"
+                      }
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
                   </div>
                 </div>
 

@@ -379,6 +379,7 @@ export default function AdminVuonPage() {
     }
     setChatMo(r.id);
     taiChat(r.id);
+    taiLuot();
   };
 
   const guiChat = async (r: Dong) => {

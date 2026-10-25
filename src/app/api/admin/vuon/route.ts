@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     case "ds":
       return goiVuon("/api/admin/ds", {});
     case "cham":
-      return goiVuon("/api/admin/cham", { ma: b.ma, nguoi: b.nguoi, muc: b.muc });
+      return goiVuon("/api/admin/cham", { id: b.id, ma: b.ma, nguoi: b.nguoi, muc: b.muc });
     case "tra":
       return goiVuon("/api/admin/tra", { id: b.id });
     case "quyen":

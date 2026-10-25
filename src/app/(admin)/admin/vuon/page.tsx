@@ -294,7 +294,7 @@ export default function AdminVuonPage() {
   const cham = async (r: Dong, muc: number) => {
     setDangChay(r.id);
     try {
-      const d = await goi({ action: "cham", ma: r.ma, nguoi: r.ten_nguoi, muc });
+      const d = await goi({ action: "cham", id: r.id, ma: r.ma, nguoi: r.ten_nguoi, muc });
       toast.success(`Đã chấm ${r.ma}: ${muc}% → ${fmt(d.diem_chot)} điểm`);
       await taiLuot();
     } catch (e) {
@@ -445,9 +445,9 @@ export default function AdminVuonPage() {
     const k = q.trim().toLowerCase();
     if (!k) return true;
     return (
-      r.ma.toLowerCase().includes(k) ||
-      r.ten.toLowerCase().includes(k) ||
-      r.ten_nguoi.toLowerCase().includes(k)
+      String(r.ma || "").toLowerCase().includes(k) ||
+      String(r.ten || "").toLowerCase().includes(k) ||
+      String(r.ten_nguoi || "").toLowerCase().includes(k)
     );
   });
 
@@ -455,9 +455,9 @@ export default function AdminVuonPage() {
     const k = qHat.trim().toLowerCase();
     if (!k) return true;
     return (
-      h.ma.toLowerCase().includes(k) ||
-      h.ten.toLowerCase().includes(k) ||
-      (h.ten_nhom || "").toLowerCase().includes(k)
+      String(h.ma || "").toLowerCase().includes(k) ||
+      String(h.ten || "").toLowerCase().includes(k) ||
+      String(h.ten_nhom || "").toLowerCase().includes(k)
     );
   });
 

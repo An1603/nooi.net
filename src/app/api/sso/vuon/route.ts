@@ -36,7 +36,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { searchParams, origin, pathname, search } = request.nextUrl;
+  const { searchParams, pathname, search } = request.nextUrl;
+  // Sau Traefik, origin nội bộ là localhost:3000 → dựng lại địa chỉ công khai
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "nooi.net";
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const origin = `${proto}://${host}`;
   const back = safeBack(searchParams.get("back"));
   const silent = searchParams.get("silent") === "1";
   const logout = searchParams.get("logout") === "1";

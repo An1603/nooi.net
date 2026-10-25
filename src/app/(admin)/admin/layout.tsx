@@ -19,10 +19,18 @@ import {
   Palette,
   Lock,
   CheckSquare,
+  Sprout,
 } from "lucide-react";
 import { RouteLoader } from "@/components/Loading";
 
-const NAV_ITEMS = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  external?: boolean;
+};
+
+const NAV_ITEMS: NavItem[] = [
   // Dashboard
   { href: "/admin", label: "Tổng quan", icon: LayoutDashboard },
 
@@ -40,6 +48,9 @@ const NAV_ITEMS = [
   { href: "/admin/documents", label: "Tài liệu", icon: FileText },
   { href: "/admin/videos", label: "Video", icon: Video },
   { href: "/admin/projects", label: "Dự án", icon: FolderOpen },
+
+  // Sàn việc NOOI (Vườn) — ứng dụng riêng, mở tab mới
+  { href: "https://vuon.nooi.net/?tab=quantri", label: "Sàn việc (Vườn)", icon: Sprout, external: true },
 
   // Theo dõi & Cấu hình
   { href: "/admin/activity", label: "Hoạt động", icon: Activity },
@@ -101,12 +112,18 @@ export default async function AdminLayout({
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
+            const cls =
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors";
+            if (item.external) {
+              return (
+                <a key={item.href} href={item.href} target="_blank" rel="noopener" className={cls}>
+                  <Icon className="size-4" />
+                  {item.label}
+                </a>
+              );
+            }
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
-              >
+              <Link key={item.href} href={item.href} className={cls}>
                 <Icon className="size-4" />
                 {item.label}
               </Link>

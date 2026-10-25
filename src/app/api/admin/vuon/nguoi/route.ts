@@ -11,6 +11,9 @@ type Nguoi = {
   email: string;
   dien_thoai: string;
   cap_do?: number;
+  ngay_tao?: string;
+  avatar?: string;
+  slug?: string;
 };
 
 async function laQuanTri(): Promise<boolean> {
@@ -34,7 +37,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
 
   // 1. Danh sách tài khoản (email + số điện thoại nằm ở auth.users)
-  const taiKhoan: { id: string; email: string; phone: string; ten: string }[] = [];
+  const taiKhoan: { id: string; email: string; phone: string; ten: string; tao: string }[] = [];
   for (let page = 1; page <= 10; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
     if (error) break;
@@ -45,6 +48,7 @@ export async function GET(req: NextRequest) {
         email: (u.email || "").toLowerCase(),
         phone: (u.phone || "").toLowerCase(),
         ten: String((u.user_metadata as Record<string, unknown> | null)?.full_name || ""),
+        tao: u.created_at || "",
       });
     }
     if (users.length < 200) break;
@@ -53,7 +57,7 @@ export async function GET(req: NextRequest) {
   // 2. Hồ sơ (tên hiển thị + cấp độ)
   const { data: hoSo } = await admin
     .from("profiles")
-    .select("user_id, full_name, level")
+    .select("user_id, full_name, level, public_avatar_url, public_slug")
     .limit(2000);
   const theoTen = new Map((hoSo ?? []).map((p) => [p.user_id as string, p]));
 
@@ -65,6 +69,9 @@ export async function GET(req: NextRequest) {
       email: u.email,
       dien_thoai: u.phone,
       cap_do: (p?.level as number) ?? undefined,
+      ngay_tao: u.tao,
+      avatar: (p?.public_avatar_url as string) || undefined,
+      slug: (p?.public_slug as string) || undefined,
     };
   });
 

@@ -70,7 +70,16 @@ type Muc = {
   tien_do: number | null;
 };
 
-type Nguoi = { user_id: string; ten: string; email: string; dien_thoai: string; cap_do?: number };
+type Nguoi = {
+  user_id: string;
+  ten: string;
+  email: string;
+  dien_thoai: string;
+  cap_do?: number;
+  ngay_tao?: string;
+  avatar?: string;
+  slug?: string;
+};
 type Quyen = { email: string; ten: string; vai_tro: string; luc: string };
 
 const NHOM = [
@@ -181,14 +190,22 @@ function ChonNguoi({
                 setMo(false);
                 setDs([]);
               }}
-              className="w-full text-left px-3 py-2 hover:bg-white/5 border-b border-border/20 last:border-0"
+              className="w-full text-left px-3 py-2.5 hover:bg-white/5 border-b border-border/20 last:border-0 flex items-center gap-3"
             >
-              <div className="text-sm font-medium">{n.ten}</div>
-              <div className="text-xs text-muted-foreground">
-                {n.email}
-                {n.dien_thoai ? ` · ${n.dien_thoai}` : ""}
-                {n.cap_do ? ` · cấp ${n.cap_do}` : ""}
-              </div>
+              <span className="size-9 rounded-full bg-primary/15 text-primary text-xs font-semibold grid place-items-center shrink-0">
+                {n.ten.trim().split(/\s+/).slice(-1)[0]?.slice(0, 2).toUpperCase() || "?"}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium truncate">{n.ten}</span>
+                <span className="block text-xs text-muted-foreground truncate">
+                  {n.email || "(không email)"}
+                  {n.dien_thoai ? ` · ${n.dien_thoai}` : " · chưa có SĐT"}
+                </span>
+                <span className="block text-[11px] text-muted-foreground/80">
+                  {n.cap_do ? `Cấp ${n.cap_do}` : "Chưa xếp cấp"}
+                  {n.ngay_tao ? ` · tham gia ${n.ngay_tao.slice(0, 10).split("-").reverse().join("/")}` : ""}
+                </span>
+              </span>
             </button>
           ))}
         </div>
@@ -221,6 +238,8 @@ export default function AdminVuonPage() {
   /* phân quyền */
   const [quyen, setQuyen] = useState<Quyen[]>([]);
   const [quyenGoc, setQuyenGoc] = useState<string[]>([]);
+  const [chon, setChon] = useState<Nguoi | null>(null);
+  const [vaiTro, setVaiTro] = useState<"" | "quan_tri" | "nguoi_duyet">("");
 
   const goi = useCallback(async (body: Record<string, unknown>) => {
     const res = await fetch("/api/admin/vuon", {
@@ -790,19 +809,133 @@ export default function AdminVuonPage() {
                 <Users className="size-4" /> Gán quyền cho người trong hệ thống NOOI
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Tìm theo tên, email hoặc số điện thoại. <b>Quản trị sàn</b>: toàn quyền (tạo/sửa hạt, chấm, trả
-                quả, phân quyền). <b>Người duyệt</b>: chỉ xem và chấm điểm nghiệm thu.
+                Bước 1: tìm người (tên / email / số điện thoại). Bước 2: chọn quyền. Bước 3: bấm{" "}
+                <b>Xác nhận gắn quyền</b> — chưa xác nhận thì chưa có hiệu lực.
               </p>
             </div>
-            <ChonNguoi
-              onChon={(n) => {
-                const quanTri = confirm(
-                  `Gán quyền cho ${n.ten} — ${n.email}\n\nOK = Quản trị sàn · Cancel = Người duyệt`
-                );
-                themQuyen(n, quanTri ? "quan_tri" : "nguoi_duyet");
-              }}
-              placeholder="Tìm người để gán quyền (tên / email / SĐT)…"
-            />
+
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                1 · Chọn người
+              </div>
+              {chon ? (
+                <div className="flex items-start gap-3 rounded-lg border border-primary/40 bg-primary/5 p-3">
+                  <span className="size-11 rounded-full bg-primary/20 text-primary font-semibold grid place-items-center shrink-0">
+                    {chon.ten.trim().split(/\s+/).slice(-1)[0]?.slice(0, 2).toUpperCase() || "?"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold truncate">{chon.ten}</div>
+                    <div className="text-sm text-muted-foreground break-all">
+                      {chon.email || "(không email)"}
+                      {chon.dien_thoai ? ` · ${chon.dien_thoai}` : " · chưa khai số điện thoại"}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {chon.cap_do ? `Cấp ${chon.cap_do}` : "Chưa xếp cấp"}
+                      {chon.ngay_tao
+                        ? ` · tham gia ${chon.ngay_tao.slice(0, 10).split("-").reverse().join("/")}`
+                        : ""}
+                      {chon.slug ? ` · /u/${chon.slug}` : ""}
+                    </div>
+                  </div>
+                  <button
+                    className="text-muted-foreground hover:text-foreground shrink-0"
+                    onClick={() => {
+                      setChon(null);
+                      setVaiTro("");
+                    }}
+                    title="Chọn người khác"
+                  >
+                    <X className="size-5" />
+                  </button>
+                </div>
+              ) : (
+                <ChonNguoi onChon={(n) => setChon(n)} placeholder="Tìm theo tên, email hoặc số điện thoại…" />
+              )}
+            </div>
+
+            <div className={chon ? "" : "opacity-50 pointer-events-none"}>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">2 · Chọn quyền</div>
+              <div className="grid md:grid-cols-2 gap-3">
+                {[
+                  {
+                    ma: "quan_tri" as const,
+                    ten: "Quản trị sàn",
+                    mo_ta:
+                      "Toàn quyền trên sàn việc: tạo / sửa / đóng / xoá hạt, chấm điểm nghiệm thu, trả quả, cấp quyền xem minh chứng và gán quyền cho người khác.",
+                    duoc: ["Tạo, sửa, đóng, xoá hạt", "Chấm điểm & trả quả", "Cấp quyền xem minh chứng", "Gán quyền cho người khác"],
+                    khong: [],
+                  },
+                  {
+                    ma: "nguoi_duyet" as const,
+                    ten: "Người duyệt",
+                    mo_ta:
+                      "Chỉ làm việc nghiệm thu: xem danh sách lượt nhận, đọc báo cáo và tải minh chứng, chấm điểm 0/50/80/100/130%. Không đụng vào danh mục hạt và quyền hạn.",
+                    duoc: ["Xem lượt nhận hạt", "Đọc báo cáo & minh chứng", "Chấm điểm nghiệm thu"],
+                    khong: ["Không sửa/xoá hạt", "Không trả quả", "Không phân quyền"],
+                  },
+                ].map((q) => {
+                  const on = vaiTro === q.ma;
+                  return (
+                    <button
+                      key={q.ma}
+                      type="button"
+                      onClick={() => setVaiTro(q.ma)}
+                      className={`text-left rounded-lg border p-3 transition-colors ${
+                        on ? "border-primary bg-primary/10" : "border-border/50 hover:border-border"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`size-4 rounded-full border grid place-items-center ${
+                            on ? "border-primary" : "border-muted-foreground/50"
+                          }`}
+                        >
+                          {on && <span className="size-2 rounded-full bg-primary" />}
+                        </span>
+                        <span className="font-medium">{q.ten}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">{q.mo_ta}</p>
+                      <div className="mt-2 space-y-0.5 text-xs">
+                        {q.duoc.map((x) => (
+                          <div key={x} className="text-emerald-300">
+                            ✓ {x}
+                          </div>
+                        ))}
+                        {q.khong.map((x) => (
+                          <div key={x} className="text-red-300/80">
+                            ✕ {x}
+                          </div>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 justify-end border-t border-border/30 pt-3">
+              <span className="text-sm text-muted-foreground mr-auto">
+                {!chon
+                  ? "Chưa chọn người"
+                  : !vaiTro
+                    ? "Chưa chọn quyền"
+                    : `Sắp gán: ${chon.ten} → ${vaiTro === "quan_tri" ? "Quản trị sàn" : "Người duyệt"}`}
+              </span>
+              <Button variant="ghost" disabled={!chon && !vaiTro} onClick={() => { setChon(null); setVaiTro(""); }}>
+                Huỷ
+              </Button>
+              <Button
+                disabled={!chon || !vaiTro}
+                onClick={async () => {
+                  if (!chon || !vaiTro) return;
+                  await themQuyen(chon, vaiTro);
+                  setChon(null);
+                  setVaiTro("");
+                }}
+              >
+                Xác nhận gắn quyền
+              </Button>
+            </div>
           </Card>
 
           <Card className="p-0 overflow-x-auto">

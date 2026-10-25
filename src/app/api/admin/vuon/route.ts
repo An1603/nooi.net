@@ -36,9 +36,14 @@ async function goiVuon(path: string, body: Record<string, unknown>) {
 export async function GET(req: NextRequest) {
   if (!TOKEN) return NextResponse.json({ loi: "Chưa cấu hình VUON_ADMIN_TOKEN" }, { status: 500 });
   if (!(await laQuanTri())) return NextResponse.json({ loi: "Không có quyền" }, { status: 403 });
-  const id = new URL(req.url).searchParams.get("nhan_id");
+  const sp = new URL(req.url).searchParams;
+  const id = sp.get("nhan_id");
   if (!id) return NextResponse.json({ loi: "Thiếu nhan_id" }, { status: 400 });
-  const res = await fetch(`${VUON}/api/trao-doi?nhan_id=${encodeURIComponent(id)}`, {
+  const sau = sp.get("sau");
+  const duong = sau == null
+    ? `/api/trao-doi?nhan_id=${encodeURIComponent(id)}`
+    : `/api/trao-doi/cho?nhan_id=${encodeURIComponent(id)}&sau=${encodeURIComponent(sau)}&giay=25`;
+  const res = await fetch(`${VUON}${duong}`, {
     headers: { "X-Admin-Token": TOKEN },
     cache: "no-store",
   });

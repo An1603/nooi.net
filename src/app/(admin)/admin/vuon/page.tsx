@@ -238,6 +238,7 @@ export default function AdminVuonPage() {
   const [chatDs, setChatDs] = useState<Record<number, Tin[]>>({});
   const [chatNd, setChatNd] = useState<Record<number, string>>({});
   const [dangGuiChat, setDangGuiChat] = useState(false);
+  const chatLast = useRef<Record<number, number>>({});
 
   /* danh mục hạt */
   const [hats, setHats] = useState<Hat[]>([]);
@@ -366,7 +367,11 @@ export default function AdminVuonPage() {
     try {
       const res = await fetch(`/api/admin/vuon?nhan_id=${id}`, { cache: "no-store" });
       const d = await res.json();
-      if (res.ok) setChatDs((v) => ({ ...v, [id]: d.ds || [] }));
+      if (res.ok) {
+        const ds: Tin[] = d.ds || [];
+        chatLast.current[id] = ds.length ? ds[ds.length - 1].id : chatLast.current[id] || 0;
+        setChatDs((v) => ({ ...v, [id]: ds }));
+      }
     } catch {
       /* im lặng */
     }
@@ -398,11 +403,42 @@ export default function AdminVuonPage() {
     }
   };
 
+  /* long-poll: giữ kết nối, có tin mới là cập nhật ngay */
   useEffect(() => {
     if (chatMo == null) return;
-    const t = setInterval(() => taiChat(chatMo), 10000);
-    return () => clearInterval(t);
-  }, [chatMo, taiChat]);
+    const id = chatMo;
+    let huy = false;
+    const chay = async () => {
+      while (!huy) {
+        try {
+          const res = await fetch(`/api/admin/vuon?nhan_id=${id}&sau=${chatLast.current[id] || 0}`, {
+            cache: "no-store",
+          });
+          if (huy) return;
+          if (res.ok) {
+            const d = await res.json();
+            if (d.ds && d.ds.length) {
+              const ds: Tin[] = d.ds;
+              chatLast.current[id] = ds[ds.length - 1].id;
+              setChatDs((v) => {
+                const cu = v[id] || [];
+                const co = new Set(cu.map((x) => x.id));
+                return { ...v, [id]: [...cu, ...ds.filter((x) => !co.has(x.id))] };
+              });
+            }
+          }
+        } catch {
+          /* im lặng, thử lại */
+        }
+        if (huy) return;
+        await new Promise((r) => setTimeout(r, 250));
+      }
+    };
+    chay();
+    return () => {
+      huy = true;
+    };
+  }, [chatMo]);
 
   const xem = async (r: Dong) => {
     if (mo === r.id) {

@@ -708,7 +708,15 @@ export default function AdminVuonPage() {
             <span className="text-sm text-muted-foreground">{hatHien.length} hạt</span>
           </div>
 
-          {dangSua && <FormHat hat={dangSua} setHat={setDangSua} onLuu={luuHat} onHuy={() => setDangSua(null)} />}
+          {dangSua && (
+            <FormHat
+              hat={dangSua}
+              setHat={setDangSua}
+              khoaMa={hats.some((x) => x.ma === dangSua.ma)}
+              onLuu={luuHat}
+              onHuy={() => setDangSua(null)}
+            />
+          )}
 
           <Card className="p-0 overflow-x-auto">
             <table className="w-full text-sm">
@@ -854,11 +862,13 @@ export default function AdminVuonPage() {
 function FormHat({
   hat,
   setHat,
+  khoaMa,
   onLuu,
   onHuy,
 }: {
   hat: Hat;
   setHat: (h: Hat) => void;
+  khoaMa?: boolean;
   onLuu: (h: Hat) => void;
   onHuy: () => void;
 }) {
@@ -882,12 +892,18 @@ function FormHat({
       <div className="grid md:grid-cols-4 gap-4">
         {o(
           "Mã hạt",
-          <Input value={hat.ma} onChange={(e) => set("ma", e.target.value.toUpperCase())} className="font-mono" />
+          <Input
+            value={hat.ma}
+            disabled={khoaMa}
+            onChange={(e) => set("ma", e.target.value.toUpperCase())}
+            className="font-mono disabled:opacity-60"
+          />
         )}
         {o(
           "Nhóm",
           <select
             value={hat.nhom}
+            disabled={khoaMa}
             onChange={(e) =>
               setHat({
                 ...hat,

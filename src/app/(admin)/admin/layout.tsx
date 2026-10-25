@@ -28,6 +28,8 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   external?: boolean;
+  /** Vai trò được thấy mục này. Bỏ trống = mọi vai trò quản trị. */
+  roles?: string[];
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -36,9 +38,9 @@ const NAV_ITEMS: NavItem[] = [
 
   // Quản lý con người
   { href: "/admin/users", label: "Người dùng", icon: Users },
-  { href: "/admin/mentors", label: "Mentor (Lv6+)", icon: UserPlus },
+  { href: "/admin/mentors", label: "Mentor (Lv6+)", icon: UserPlus, roles: ["super_admin", "admin"] },
   { href: "/admin/groups", label: "Nhóm", icon: Users2 },
-  { href: "/admin/roles", label: "Phân quyền", icon: Shield },
+  { href: "/admin/roles", label: "Phân quyền", icon: Shield, roles: ["super_admin"] },
 
   // Quản lý nội dung
   { href: "/admin/live", label: "Lớp Live", icon: Video },
@@ -49,16 +51,16 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/videos", label: "Video", icon: Video },
   { href: "/admin/projects", label: "Dự án", icon: FolderOpen },
 
-  // Sàn việc NOOI (Vườn) — ứng dụng riêng, mở tab mới
-  { href: "https://vuon.nooi.net/?tab=quantri", label: "Sàn việc (Vườn)", icon: Sprout, external: true },
+  // Sàn việc NOOI (Vườn) — quản trị tập trung tại đây
+  { href: "/admin/vuon", label: "Sàn việc (Vườn)", icon: Sprout, roles: ["super_admin", "admin"] },
 
   // Theo dõi & Cấu hình
   { href: "/admin/activity", label: "Hoạt động", icon: Activity },
   { href: "/admin/evaluate", label: "Đánh giá", icon: UserCheck },
-  { href: "/admin/brand", label: "Thương hiệu", icon: Palette },
-  { href: "/admin/brand/files", label: "Kho file", icon: FolderOpen },
-  { href: "/admin/slides", label: "Slides & Bảo mật", icon: Lock },
-  { href: "/admin/settings", label: "Cấu hình", icon: Settings },
+  { href: "/admin/brand", label: "Thương hiệu", icon: Palette, roles: ["super_admin", "admin"] },
+  { href: "/admin/brand/files", label: "Kho file", icon: FolderOpen, roles: ["super_admin", "admin"] },
+  { href: "/admin/slides", label: "Slides & Bảo mật", icon: Lock, roles: ["super_admin"] },
+  { href: "/admin/settings", label: "Cấu hình", icon: Settings, roles: ["super_admin"] },
 ];
 
 export default async function AdminLayout({
@@ -110,7 +112,7 @@ export default async function AdminLayout({
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((i) => !i.roles || i.roles.includes(adminUser.role)).map((item) => {
             const Icon = item.icon;
             const cls =
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors";

@@ -835,7 +835,7 @@ export default function AdminVuonPage() {
                       </Button>
                     </div>
                     <div className="text-[11px] text-muted-foreground">
-                      Người làm thấy tin trong tab <b>Của tôi</b> → <b>💬 Trao đổi</b>. Tự làm mới mỗi 10 giây.
+                      Người làm thấy tin trong tab <b>Của tôi</b> → <b>💬 Trao đổi</b>. Tin mới hiện ngay (kết nối giữ mở).
                     </div>
                   </div>
                 )}

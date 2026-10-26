@@ -63,12 +63,13 @@ export const viewport: Viewport = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Host ekid.nooi.net KHÔNG dùng service worker: cache của SW khoá theo URL (không
-  // theo người dùng) → dễ phục vụ dữ liệu cũ/của bé khác. Trên host ekid ta chủ động
-  // GỠ mọi SW + xoá cache cũ; các host khác giữ nguyên đăng ký PWA như trước.
+  // Host ekid.nooi.net và opc.nooi.net KHÔNG dùng service worker: cache của SW khoá
+  // theo URL (không theo người dùng) → dễ phục vụ dữ liệu cũ/của người khác. Trên hai
+  // host này ta chủ động GỠ mọi SW + xoá cache cũ; các host khác giữ nguyên PWA.
   const host = (await headers()).get("host") || "";
   const isEkidHost = host === "ekid.nooi.net";
-  const swScript = isEkidHost
+  const isOpcHost = host === "opc.nooi.net";
+  const swScript = isEkidHost || isOpcHost
     ? `
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.getRegistrations().then(function (regs) {
@@ -100,7 +101,7 @@ export default async function RootLayout({
         <div id="toast-debug" className="hidden">toast marker</div>
         <BrandProvider>{children}</BrandProvider>
         <ToastProvider />
-        <PWAUpdateToast />
+        {!isOpcHost && <PWAUpdateToast />}
       </body>
     </html>
   );

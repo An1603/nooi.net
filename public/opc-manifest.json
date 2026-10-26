@@ -1,0 +1,21 @@
+{
+  "name": "NOOI OPC Center",
+  "short_name": "OPC Center",
+  "description": "Nền tảng vận hành OPC Center — CRM, cộng đồng, hồ sơ và dòng tiền.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0718",
+  "theme_color": "#C8943E",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

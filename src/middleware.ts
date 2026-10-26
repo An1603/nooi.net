@@ -6,6 +6,7 @@ const publicRoutes = ["/api/sso", "/", "/login", "/signup", "/gallery", "/auth/c
 
 const ADMIN_HOST = "admin.nooi.net";
 const EKID_HOST = "ekid.nooi.net";
+const OPC_HOST = "opc.nooi.net";
 
 /** Host riêng cho phân hệ eKid của bé. */
 function isEkidHost(host: string): boolean {
@@ -187,6 +188,55 @@ export async function middleware(request: NextRequest) {
     }
 
     return supabaseResponse;
+  }
+
+  /* ── OPC Center subdomain guard ── */
+  // opc.nooi.net là nền tảng vận hành OPC Center. URL công khai ngắn (/leads,
+  // /cong-dong…) được rewrite nội bộ sang /opc/*, giữ nguyên thanh địa chỉ.
+  if (host === OPC_HOST) {
+    if (pathname === "/manifest.json") {
+      return withCookies(NextResponse.rewrite(new URL("/opc-manifest.json", request.url)), supabaseResponse);
+    }
+    if (pathname === "/opc-manifest.json") return supabaseResponse;
+
+    // Auth + API riêng của OPC đi nguyên vẹn.
+    if (pathname.startsWith("/auth/")) return supabaseResponse;
+    if (pathname.startsWith("/api/opc")) return supabaseResponse;
+
+    // Đăng nhập dùng chung trang /login của nooi.net.
+    if (pathname === "/login") {
+      if (user) return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
+      if (!request.nextUrl.searchParams.get("redirect")) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("redirect", "/");
+        return withCookies(NextResponse.redirect(loginUrl), supabaseResponse);
+      }
+      return supabaseResponse;
+    }
+
+    // Đăng ký mới → về trang đăng ký của nooi.net, quay lại OPC sau khi xong.
+    if (pathname === "/signup") {
+      return withCookies(NextResponse.redirect(new URL("https://nooi.net/signup")), supabaseResponse);
+    }
+
+    // Không lộ khu quản trị chung trên host OPC.
+    if (pathname.startsWith("/admin")) {
+      return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
+    }
+
+    // Chưa đăng nhập → về /login, giữ đường dẫn để quay lại.
+    if (!user) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
+      return withCookies(NextResponse.redirect(loginUrl), supabaseResponse);
+    }
+
+    // Đã ở đúng path nội bộ /opc/* → cho qua.
+    if (pathname === "/opc" || pathname.startsWith("/opc/")) return supabaseResponse;
+
+    // URL ngắn → rewrite sang /opc + path, giữ query.
+    const target = "/opc" + (pathname === "/" ? "" : pathname) + request.nextUrl.search;
+    return withCookies(NextResponse.rewrite(new URL(target, request.url)), supabaseResponse);
   }
 
   /* ── Main site guard ── */

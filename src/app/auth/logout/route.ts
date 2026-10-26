@@ -28,6 +28,15 @@ async function handleLogout(request: NextRequest) {
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net";
 
+  // OPC Center host → về trang đăng nhập OPC + xóa cookie phiên RIÊNG (host-only).
+  if (host === "opc.nooi.net") {
+    const resp = NextResponse.redirect(new URL("/login", "https://opc.nooi.net"));
+    for (const n of ["sb-opc-auth-token", "sb-opc-auth-token.0", "sb-opc-auth-token.1"]) {
+      resp.cookies.set(n, "", { maxAge: 0, path: "/" });
+    }
+    return resp;
+  }
+
   // eKid host → về trang đăng nhập CỦA CON + xóa cookie phiên RIÊNG của ekid
   // (tên sb-ekid-auth-token), không đụng phiên người lớn.
   if (host === "ekid.nooi.net") {

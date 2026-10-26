@@ -206,11 +206,7 @@ export async function middleware(request: NextRequest) {
     // Đăng nhập dùng chung trang /login của nooi.net.
     if (pathname === "/login") {
       if (user) return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
-      if (!request.nextUrl.searchParams.get("redirect")) {
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", "/");
-        return withCookies(NextResponse.redirect(loginUrl), supabaseResponse);
-      }
+      // Không tự thêm ?redirect=/ — tránh 307 vô ích; form đăng nhập tự về "/".
       return supabaseResponse;
     }
 

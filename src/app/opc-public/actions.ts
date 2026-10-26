@@ -321,5 +321,5 @@ export async function datMua(
   revalidatePath("/opc/don-hang");
   revalidatePath("/don-hang");
 
-  redirect(`/cam-on?loai=dat-mua&goi=${encodeURIComponent(goi.ma)}`);
+  return { ok: "Đã ghi nhận yêu cầu. OPC sẽ liên hệ trong 4 giờ làm việc." };
 }

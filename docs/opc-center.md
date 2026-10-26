@@ -175,7 +175,7 @@ curl -sL -o /dev/null -w "%{http_code}\n" https://opc.nooi.net/login
 
 Kiểm thử đã chạy 26/10/2026:
 
-- 343/343 unit test pass (20 file).
+- 344/344 unit test pass (20 file).
 - Build production pass.
 - Cửa hàng công khai: 5 route 200; chẩn đoán tạo lead 62/100 (`sql`, Pro);
   đặt mua tạo đơn `membership` 399.000đ (`cho_tt`) gắn `lead_id`.

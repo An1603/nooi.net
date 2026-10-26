@@ -62,6 +62,14 @@ describe("middleware OPC — cửa hàng công khai", () => {
     expect(new URL(target!).pathname).toBe("/opc-public/goi");
   });
 
+  it("đã đăng nhập vẫn xem được /goi (không 404)", async () => {
+    mockSession({ id: "user-1" });
+    const res = await middleware(makeReq("/goi"));
+    const target = rewriteTarget(res);
+    expect(target).not.toBeNull();
+    expect(new URL(target!).pathname).toBe("/opc-public/goi");
+  });
+
   it("chưa đăng nhập vào /chan-doan → rewrite /opc-public/chan-doan", async () => {
     mockSession(null);
     const res = await middleware(makeReq("/chan-doan"));

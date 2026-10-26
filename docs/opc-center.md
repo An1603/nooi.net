@@ -2,7 +2,7 @@
 
 **Phiên bản:** MVP 1 — 26/10/2026  
 **Host:** https://opc.nooi.net  
-**Mã nguồn:** `src/app/opc`, `src/components/opc`, `src/lib/opc`  
+**Mã nguồn:** `src/app/opc`, `src/app/opc-public`, `src/components/opc`, `src/lib/opc`  
 **Dữ liệu:** Supabase project `gsnuqrutiauhnsacgzym`
 
 ---
@@ -12,7 +12,12 @@
 `opc.nooi.net` trỏ về cùng service `nooi-web:3000` qua Traefik. Không có process riêng, không thêm RAM.
 
 ```
-opc.nooi.net/            → middleware rewrite → /opc
+opc.nooi.net/            → chưa đăng nhập: /opc-public (cửa hàng)
+                         → đã đăng nhập:  /opc (dashboard)
+opc.nooi.net/goi         → rewrite → /opc-public/goi
+opc.nooi.net/chan-doan   → rewrite → /opc-public/chan-doan
+opc.nooi.net/dat-mua/... → rewrite → /opc-public/dat-mua/...
+opc.nooi.net/cam-on      → rewrite → /opc-public/cam-on
 opc.nooi.net/leads       → rewrite → /opc/leads
 opc.nooi.net/leads/<id>  → rewrite → /opc/leads/<id>
 opc.nooi.net/login       → trang /login dùng chung
@@ -76,8 +81,8 @@ RLS chặn tự nâng quyền: trigger `opc_guard_vai_tro`.
 | `opc_lead` | Phễu 7 trạng thái: lead → mql → sql → customer → active → at_risk → churned |
 | `opc_hoat_dong` | Dòng thời gian chăm sóc lead |
 | `opc_ticket` | Yêu cầu hỗ trợ |
-| `opc_goi` | 6 gói niêm yết |
-| `opc_don_hang` | Đơn hàng, đối soát |
+| `opc_goi` | 10 gói niêm yết (6 lõi + 4 mở rộng) |
+| `opc_don_hang` | Đơn hàng, đối soát; `lead_id` nối lead công khai |
 | `opc_bai_dang` | Bài cộng đồng |
 | `opc_binh_luan` | Bình luận |
 | `opc_kpi_ngay` | KPI theo ngày |
@@ -90,6 +95,7 @@ Migration:
 cd ~/nooi.net
 python3 scripts/apply-sql-api.py supabase/migrations/20261026000001_opc_center.sql
 python3 scripts/apply-sql-api.py supabase/migrations/20261026000002_opc_public_view.sql
+python3 scripts/apply-sql-api.py supabase/migrations/20261026000003_opc_public_storefront.sql
 ```
 
 ---
@@ -98,7 +104,12 @@ python3 scripts/apply-sql-api.py supabase/migrations/20261026000002_opc_public_v
 
 | Đường dẫn | Đối tượng | Chức năng |
 |---|---|---|
-| `/` | Tất cả | Dashboard theo vai trò |
+| `/` | Chưa đăng nhập | Landing cửa hàng: sản phẩm, cách hoạt động, Forest |
+| `/goi` | Công khai | Danh mục 10 sản phẩm + FAQ |
+| `/chan-doan` | Công khai | 10 câu hỏi, kết quả sơ bộ, thu lead |
+| `/dat-mua/[ma]` | Công khai | Đặt mua hoặc nhận tư vấn |
+| `/cam-on` | Công khai | Xác nhận dự phòng |
+| `/` | Đã đăng nhập | Dashboard theo vai trò |
 | `/leads` | Nhân sự | Danh sách, tìm, lọc, thêm lead |
 | `/leads/[id]` | Nhân sự | Chi tiết, đổi trạng thái, ghi chú, dòng thời gian |
 | `/cong-dong` | Tất cả | Feed, đăng bài, bình luận |
@@ -144,8 +155,16 @@ Traefik: `/docker/traefik/config/nooi.yml`, rule `nooi-http` và `nooi-https`
 ## 7. Kiểm thử production
 
 ```bash
-# Chưa đăng nhập → 307 về /login
+# Chưa đăng nhập → 200 cửa hàng công khai
 curl -sI https://opc.nooi.net/ | head
+
+# Các trang công khai → 200
+curl -sL -o /dev/null -w "%{http_code}\n" https://opc.nooi.net/goi
+curl -sL -o /dev/null -w "%{http_code}\n" https://opc.nooi.net/chan-doan
+curl -sL -o /dev/null -w "%{http_code}\n" https://opc.nooi.net/dat-mua/pro
+
+# Khu vực nội bộ chưa đăng nhập → 307 về /login
+curl -sI https://opc.nooi.net/leads | head
 
 # Trang login → 200
 curl -sL -o /dev/null -w "%{http_code}\n" https://opc.nooi.net/login
@@ -156,26 +175,33 @@ curl -sL -o /dev/null -w "%{http_code}\n" https://opc.nooi.net/login
 
 Kiểm thử đã chạy 26/10/2026:
 
-- 329/329 unit test pass.
+- 343/343 unit test pass (20 file).
 - Build production pass.
-- 6 trang trả 200 với phiên nhân sự.
+- Cửa hàng công khai: 5 route 200; chẩn đoán tạo lead 62/100 (`sql`, Pro);
+  đặt mua tạo đơn `membership` 399.000đ (`cho_tt`) gắn `lead_id`.
+- 6 trang nội bộ trả 200 với phiên nhân sự.
 - Thành viên thường: `/leads`, `/don-hang` bị chặn; RLS `opc_lead` trả rỗng.
 - Tạo lead, đổi trạng thái, đăng bài, bình luận: đã chạy thật rồi xoá dữ liệu thử.
+- Dữ liệu QA của cửa hàng công khai đã xoá sau kiểm thử.
 
 ---
 
 ## 8. Giới hạn MVP hiện tại
 
 - Chưa nối cổng thanh toán; đơn hàng hiển thị để đối soát thủ công.
+- Cửa hàng công khai chưa gửi email/Zalo xác nhận tự động; nhân sự liên hệ tay trong 4 giờ.
 - Chưa có LMS/khóa học, email/Zalo tự động, báo cáo xuất file.
 - Audit mới ghi thao tác CRM (`opc_nhat_ky`), chưa ghi mọi thao tác cộng đồng.
 - Chưa có trang quản trị gói/giá; sửa trực tiếp bảng `opc_goi` (chỉ quản trị).
 - Phiên dùng chung `.nooi.net`; chưa có đăng xuất theo từng thiết bị (logout là toàn bộ).
+- Rate limit form công khai lưu in-memory theo process; restart sẽ reset.
+- Chưa có analytics phễu view → chẩn đoán → đặt mua.
 
 ## 9. Việc tiếp theo (theo thứ tự)
 
 1. Nhập danh sách lead thật + gán chủ.
 2. Cấp vai trò cho 13 nhân sự lõi.
 3. Nối cổng thanh toán (PayOS/SePay) → tự tạo `opc_don_hang`.
-4. Đồng bộ lead từ Facebook/Zalo về `opc_lead`.
-5. Báo cáo tuần tự động từ `opc_kpi_ngay`.
+4. Gửi email/Zalo xác nhận tự động sau khi đặt mua.
+5. Đồng bộ lead từ Facebook/Zalo về `opc_lead`.
+6. Báo cáo tuần tự động từ `opc_kpi_ngay`.

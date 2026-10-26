@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
             response.cookies.set(name, value, cookieOptions({
               ...options,
               maxAge: 60 * 60 * 24 * 365,
-              httpOnly: true,
               path: "/",
             }))
           );

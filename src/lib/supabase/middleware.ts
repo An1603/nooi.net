@@ -1,30 +1,32 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
-  cookieOptions,
+  authCookieOptions,
   authCookieName,
-  authCookieChunkNames,
+  authCookieNames,
   AUTH_COOKIE_NAME,
   EKID_HOST,
   OPC_HOST,
 } from "@/lib/supabase/cookies";
 
-// Chunk cookie TÊN MẶC ĐỊNH (legacy) — dùng để dọn biến thể mồ côi trên host ekid.
-const LEGACY_DEFAULT_CHUNKS = authCookieChunkNames(AUTH_COOKIE_NAME);
+// Cookie legacy cần dọn:
+// - `sb-opc-auth-token*`: phiên OPC tách riêng thời kỳ đầu (host-only).
+// - tên mặc định host-only trên ekid: di sản giai đoạn chuyển tiếp.
+const LEGACY_OPC_CHUNKS = authCookieNames("sb-opc-auth-token");
+const LEGACY_DEFAULT_CHUNKS = authCookieNames(AUTH_COOKIE_NAME);
 
 export const updateSession = async (request: NextRequest) => {
   let supabaseResponse = NextResponse.next({ request });
 
-  // Phiên eKid (ekid.nooi.net) là host-only + TÊN COOKIE RIÊNG → tách biệt hoàn
-  // toàn với phiên nooi.net/app/admin, cả chiều GHI (không set domain) lẫn chiều
-  // ĐỌC (không đọc chunk tên mặc định do người lớn đặt ở .nooi.net).
   const host = request.headers.get("host") || "";
   const isEkid = host === EKID_HOST;
   const isOpc = host === OPC_HOST;
-  // OPC Center dùng cookie host-only + tên riêng: tránh xung đột chunk với
-  // cookie phiên `.nooi.net` của người lớn (đã gây mất phiên khi rewrite).
-  const hostOnly = isEkid || isOpc;
+
+  // eKid: host-only + tên riêng → tách hoàn toàn khỏi người lớn.
+  // OPC: DÙNG CHUNG cookie `.nooi.net` với nooi.net/app/admin (SSO thật).
   const cookieName = authCookieName(host);
+  const cookieOpts = authCookieOptions(host);
+  const { name: _cookieName, ...baseCookieOptions } = cookieOpts;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,19 +42,18 @@ export const updateSession = async (request: NextRequest) => {
           );
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, cookieOptions({
+            supabaseResponse.cookies.set(name, value, {
+              ...baseCookieOptions,
               ...options,
-              maxAge: 60 * 60 * 24 * 365,
-              sameSite: "lax",
-              secure: process.env.NODE_ENV === "production",
               path: "/",
-            }, { hostOnly }))
+              maxAge: 60 * 60 * 24 * 365,
+            })
           );
         },
       },
-      // storageKey = tên cookie → trên ekid chỉ đọc chunk `sb-ekid-auth-token*`,
-      // KHÔNG bao giờ chạm cookie `sb-gsnuqrutiauhnsacgzym-auth-token*` của nooi.net.
-      cookieOptions: { name: cookieName },
+      // storageKey = tên cookie. Trên ekid chỉ đọc `sb-ekid-auth-token*`,
+      // không bao giờ chạm cookie `.nooi.net` của người lớn.
+      cookieOptions: cookieOpts,
     }
   );
 
@@ -61,26 +62,37 @@ export const updateSession = async (request: NextRequest) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    // User not authenticated — CLEAR auth cookies đang dùng trên host này.
-    for (const name of authCookieChunkNames(cookieName)) {
-      const cookie = request.cookies.get(name);
-      if (cookie) {
+    // Xoá phiên đang dùng trên host này (cả bản gốc lẫn chunk).
+    for (const name of authCookieNames(cookieName)) {
+      if (request.cookies.get(name)) {
         supabaseResponse.cookies.set(name, "", {
-          ...cookieOptions({ path: "/", maxAge: 0 }, { hostOnly }),
+          ...baseCookieOptions,
           maxAge: 0,
         });
       }
     }
 
-    // Trên host ekid: dọn thêm biến thể TÊN MẶC ĐỊNH cũ đang nằm HOST-ONLY trên
-    // ekid (di sản của giai đoạn chuyển tiếp: tên mặc định + host-only). Cookie
-    // tên mặc định ở scope `.nooi.net` thuộc về người lớn (nooi.net/app/admin) —
-    // KHÔNG đụng tới để tránh đăng xuất người lớn (giữ nguyên hành vi nooi.net).
-    if (isEkid || isOpc) {
+    if (isOpc) {
+      // Dọn phiên OPC cũ (host-only) để không còn hai biến thể cùng tồn tại.
+      for (const name of LEGACY_OPC_CHUNKS) {
+        if (request.cookies.get(name)) {
+          supabaseResponse.cookies.set(name, "", { path: "/", maxAge: 0 });
+        }
+      }
+      // Dọn biến thể host-only của tên mặc định (lỗi cũ client ghi thiếu domain).
+      for (const name of LEGACY_DEFAULT_CHUNKS) {
+        if (request.cookies.get(name)) {
+          supabaseResponse.cookies.set(name, "", { path: "/", maxAge: 0 });
+        }
+      }
+    }
+
+    if (isEkid) {
+      // Chỉ dọn biến thể host-only trên ekid; KHÔNG đụng cookie `.nooi.net`.
       for (const name of LEGACY_DEFAULT_CHUNKS) {
         if (request.cookies.get(name)) {
           supabaseResponse.cookies.set(name, "", {
-            ...cookieOptions({ path: "/", maxAge: 0 }, { hostOnly: true }),
+            path: "/",
             maxAge: 0,
           });
         }

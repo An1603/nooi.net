@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { authCookieName, cookieOptions, EKID_HOST, OPC_HOST } from "@/lib/supabase/cookies";
+import { authCookieOptions, OPC_HOST } from "@/lib/supabase/cookies";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const response = NextResponse.redirect(`${origin}${next}`);
+    const cookieOpts = authCookieOptions(host);
+    const { name: _cookieName, ...baseCookieOptions } = cookieOpts;
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,19 +27,20 @@ export async function GET(request: NextRequest) {
           getAll() { return request.cookies.getAll(); },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) =>
-              response.cookies.set(name, value, cookieOptions({
+              response.cookies.set(name, value, {
+                ...baseCookieOptions,
                 ...options,
                 maxAge: 60 * 60 * 24 * 365,
                 // NOTE: do NOT set httpOnly — client-side supabase (createBrowserClient)
                 // must read the session via document.cookie. httpOnly would make
                 // supabase.auth.getUser() return null on client components (e.g. /app/setup).
                 path: "/",
-              }, { hostOnly: laOpc || host === EKID_HOST }))
+              })
             );
           },
         },
-        // OPC và eKid dùng tên cookie riêng; host khác giữ tên mặc định.
-        cookieOptions: { name: authCookieName(host) },
+        // Cùng options với browser/middleware: OPC dùng chung `.nooi.net`.
+        cookieOptions: cookieOpts,
       }
     );
 

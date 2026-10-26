@@ -1,13 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
-import { cookieOptions } from "@/lib/supabase/cookies";
+import { authCookieOptions, OPC_HOST } from "@/lib/supabase/cookies";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? "/app";
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net";
+  const host = request.headers.get("host") || "";
+  const laOpc = host === OPC_HOST;
+  const next = searchParams.get("next") ?? (laOpc ? "/" : "/app");
+  const origin = laOpc
+    ? "https://opc.nooi.net"
+    : process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net";
+  const cookieOpts = authCookieOptions(host);
+  const { name: _cookieName, ...baseCookieOptions } = cookieOpts;
 
   if (token_hash && type) {
     const response = NextResponse.redirect(`${origin}${next}?verified=true`);
@@ -20,15 +26,16 @@ export async function GET(request: NextRequest) {
           getAll() { return request.cookies.getAll(); },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) =>
-              response.cookies.set(name, value, cookieOptions({
+              response.cookies.set(name, value, {
+                ...baseCookieOptions,
                 ...options,
                 maxAge: 60 * 60 * 24 * 365,
-                httpOnly: true,
                 path: "/",
-              }))
+              })
             );
           },
         },
+        cookieOptions: cookieOpts,
       }
     );
 

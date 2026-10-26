@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/AuthForm";
-import { authCookieName, OPC_HOST } from "@/lib/supabase/cookies";
+import { authCookieOptions, OPC_HOST } from "@/lib/supabase/cookies";
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +19,7 @@ export default async function LoginPage() {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} },
-        cookieOptions: { name: authCookieName(host) },
+        cookieOptions: authCookieOptions(host),
       }
     );
     const { data: { user } } = await supabase.auth.getUser();

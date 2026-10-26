@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
-import { authCookieName } from "@/lib/supabase/cookies";
+import { authCookieOptions } from "@/lib/supabase/cookies";
 
 export const createClient = async () => {
   const cookieStore = await cookies();
@@ -26,8 +26,8 @@ export const createClient = async () => {
           }
         },
       },
-      // storageKey = tên cookie theo host (ekid dùng tên riêng).
-      cookieOptions: { name: authCookieName(host) },
+      // Cùng options với browser + middleware (domain `.nooi.net`).
+      cookieOptions: authCookieOptions(host),
     }
   );
 };

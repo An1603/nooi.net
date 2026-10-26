@@ -104,7 +104,25 @@ python3 scripts/apply-sql-api.py supabase/migrations/20261026000002_opc_public_v
 
 ---
 
-## 5. Triển khai
+## 5. Nhập lead từ CSV
+
+Mẫu: `docs/opc-lead-import-template.csv`
+
+```bash
+# Kiểm tra trước, không ghi
+python3 scripts/opc_import_leads.py --file docs/opc-lead-import-template.csv --dry-run
+
+# Nhập thật
+python3 scripts/opc_import_leads.py --file /duong/dan/leads.csv
+```
+
+Cột: `ten` (bắt buộc), `sdt`, `email`, `nguon`, `kenh`, `trang_thai`, `diem`, `ghi_chu`,
+`chu_so_huu_email`. Nếu `chu_so_huu_email` không khớp `opc_nguoi.email`, lead vẫn được
+nhập nhưng chưa gán chủ (có cảnh báo).
+
+---
+
+## 6. Triển khai
 
 ```bash
 cd ~/nooi.net
@@ -120,7 +138,7 @@ Traefik: `/docker/traefik/config/nooi.yml`, rule `nooi-http` và `nooi-https`
 
 ---
 
-## 6. Kiểm thử production
+## 7. Kiểm thử production
 
 ```bash
 # Chưa đăng nhập → 307 về /login
@@ -143,7 +161,7 @@ Kiểm thử đã chạy 26/10/2026:
 
 ---
 
-## 7. Giới hạn MVP hiện tại
+## 8. Giới hạn MVP hiện tại
 
 - Chưa nối cổng thanh toán; đơn hàng hiển thị để đối soát thủ công.
 - Chưa có LMS/khóa học, email/Zalo tự động, báo cáo xuất file.
@@ -151,7 +169,7 @@ Kiểm thử đã chạy 26/10/2026:
 - Chưa có trang quản trị gói/giá; sửa trực tiếp bảng `opc_goi` (chỉ quản trị).
 - Phiên OPC tách khỏi nooi.net (đăng nhập riêng trên opc.nooi.net).
 
-## 8. Việc tiếp theo (theo thứ tự)
+## 9. Việc tiếp theo (theo thứ tự)
 
 1. Nhập danh sách lead thật + gán chủ.
 2. Cấp vai trò cho 13 nhân sự lõi.

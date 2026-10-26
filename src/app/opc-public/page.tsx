@@ -13,13 +13,13 @@ import {
   Target,
   Users,
 } from "lucide-react";
-import { getGoiCongKhai } from "@/lib/opc/public";
+import { getGoiCongKhai, CAP_DO, goiTheoCap } from "@/lib/opc/public";
 import GoiCard from "@/components/opc-public/GoiCard";
 
 export const metadata: Metadata = {
   title: { absolute: "OPC Center — Từ ý tưởng đến doanh nghiệp vận hành" },
   description:
-    "Chẩn đoán 10 câu miễn phí, 6 gói lõi và 3 gói mở rộng, online toàn quốc và offline tại NOOI Forest.",
+    "OPC Center đồng hành cùng người làm kinh doanh một mình: chẩn đoán 10 câu miễn phí, 3 cấp độ sản phẩm, online toàn quốc và offline tại NOOI Forest.",
 };
 
 const BUOC = [
@@ -51,8 +51,6 @@ const BUOC = [
 
 export default async function OpcPublicHome() {
   const danhSach = await getGoiCongKhai();
-  const goiLoi = danhSach.filter((g) => g.meta.nhom === "loi");
-  const goiMoi = danhSach.filter((g) => g.meta.nhom === "mo-rong");
 
   return (
     <main>
@@ -70,6 +68,9 @@ export default async function OpcPublicHome() {
               <Sparkles size={13} />
               Dành cho người làm kinh doanh một mình
             </p>
+            <p className="mt-2 text-xs font-medium tracking-wide text-[#9A88AD]">
+              OPC = One-Person Company — bạn không cần có công ty để bắt đầu.
+            </p>
             <h1
               className="mt-5 max-w-2xl text-4xl font-bold leading-[1.08] tracking-tight text-[#F5EFE6] md:text-5xl lg:text-6xl"
               style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
@@ -80,8 +81,9 @@ export default async function OpcPublicHome() {
               <span className="text-[#C8943E]"> vận hành.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-[#C9BCD7] md:text-lg">
-              OPC Center không bán thêm một khóa học. Chúng tôi giúp bạn chẩn đoán đúng chỗ đang kẹt,
-              chọn đúng việc tiếp theo và có người đồng hành cho đến khi việc đó chạy.
+              OPC Center giúp bạn nhìn rõ mình đang kẹt ở đâu, chọn đúng việc tiếp theo và có người đồng hành
+              đến khi việc đó chạy. Dù bạn mới có ý tưởng, đang vận hành hay cần một không gian để đi xa hơn —
+              bắt đầu từ đúng cấp độ của bạn.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -96,15 +98,19 @@ export default async function OpcPublicHome() {
                 href="/goi"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3.5 text-sm font-semibold text-[#F5EFE6] transition-colors hover:bg-white/5"
               >
-                Xem sản phẩm &amp; giá
+                Xem 10 sản phẩm
                 <ArrowUpRight size={16} />
               </Link>
             </div>
 
-            <div className="mt-8 grid max-w-lg grid-cols-3 gap-3">
+            <p className="mt-4 text-xs text-[#7C6A8E]">
+              Miễn phí để bắt đầu · Không cần thẻ · Online toàn quốc
+            </p>
+
+            <div className="mt-7 grid max-w-lg grid-cols-3 gap-3">
               {[
-                ["6", "gói lõi"],
-                ["3", "cửa tiếp cận"],
+                ["3", "cấp độ"],
+                ["10", "sản phẩm"],
                 ["90", "ngày có kết quả"],
               ].map(([so, nhan]) => (
                 <div key={nhan} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
@@ -120,17 +126,17 @@ export default async function OpcPublicHome() {
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-[#C8943E]/20 via-transparent to-violet-500/10 blur-2xl" />
             <div className="relative rounded-[1.75rem] border border-white/10 bg-[#1A0F2A]/90 p-5 shadow-2xl backdrop-blur md:p-6">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9A88AD]">Lộ trình OPC</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9A88AD]">Bạn mới bắt đầu?</p>
                 <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-bold text-emerald-300">
-                  Cá nhân hóa
+                  Bắt đầu trong 20 phút
                 </span>
               </div>
               <div className="mt-5 space-y-4">
                 {[
-                  { buoc: "1", ten: "Biết mình đang ở đâu", moTa: "Bản chẩn đoán 1 trang", mau: "bg-[#C8943E]" },
-                  { buoc: "2", ten: "Chọn việc tiếp theo", moTa: "Một ưu tiên, không mười việc", mau: "bg-emerald-400" },
-                  { buoc: "3", ten: "Làm cùng người thật", moTa: "Khóa, mentor hoặc AI", mau: "bg-violet-400" },
-                  { buoc: "4", ten: "Đo kết quả 90 ngày", moTa: "3 KPI, 1 báo cáo", mau: "bg-cyan-400" },
+                  { buoc: "1", ten: "Chẩn đoán 10 câu", moTa: "Biết điểm nghẽn lớn nhất", mau: "bg-[#C8943E]" },
+                  { buoc: "2", ten: "Nhận 1 việc ưu tiên", moTa: "Không phải mười việc", mau: "bg-emerald-400" },
+                  { buoc: "3", ten: "Chọn cấp độ phù hợp", moTa: "0đ, 2,5 triệu hoặc 9,8 triệu", mau: "bg-violet-400" },
+                  { buoc: "4", ten: "Làm đến khi chạy", moTa: "Đo kết quả 30/90 ngày", mau: "bg-cyan-400" },
                 ].map((item, index) => (
                   <div key={item.buoc} className="flex gap-3">
                     <div className="flex flex-col items-center">
@@ -161,41 +167,44 @@ export default async function OpcPublicHome() {
       <section className="border-y border-white/10 bg-white/[0.02]">
         <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
           <div className="max-w-2xl">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8943E]">Bắt đầu từ đúng chỗ</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8943E]">Ba cấp độ đồng hành</p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#F5EFE6] md:text-3xl">
-              Bạn đang ở đâu trong hành trình?
+              Bạn đang ở cấp độ nào?
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[#9A88AD]">
-              Ba cách bước vào OPC. Không cần chọn đúng ngay — chẩn đoán sẽ giúp bạn nhìn rõ hơn.
+              Chọn cấp độ gần nhất với trạng thái hiện tại. Không cần chọn đúng ngay — chẩn đoán sẽ giúp bạn nhìn rõ hơn.
             </p>
           </div>
           <div className="mt-7 grid gap-4 md:grid-cols-3">
             {[
               {
                 icon: Compass,
-                nhan: "Mới bắt đầu",
+                nhan: "Cấp 1 · Mới bắt đầu",
                 tieuDe: "Tôi có ý tưởng nhưng chưa biết bắt đầu từ đâu",
-                moTa: "Chẩn đoán 10 câu giúp bạn thấy việc nào nên làm trước, việc nào có thể để sau.",
+                moTa: "Chẩn đoán giúp bạn thấy việc ưu tiên. Nếu cần làm hộ pháp lý – thuế – ngân hàng trong 30 ngày, chọn OPC Launch.",
+                muc: "Từ 0đ đến 9,8 triệu",
                 href: "/chan-doan",
                 cta: "Chẩn đoán miễn phí",
                 mau: "text-[#E8C07A] bg-[#C8943E]/10 border-[#C8943E]/25",
               },
               {
                 icon: BriefcaseBusiness,
-                nhan: "Đang vận hành",
+                nhan: "Cấp 2 · Đang vận hành",
                 tieuDe: "Tôi đã có doanh thu nhưng hệ thống còn rời rạc",
-                moTa: "Chuẩn hóa một quy trình, hoặc vào Pro để có người đồng hành 90 ngày.",
-                href: "/goi",
-                cta: "Xem gói phù hợp",
+                moTa: "Chuẩn hóa một quy trình, vào Membership để giữ nhịp, hoặc Pro để có người đồng hành 90 ngày.",
+                muc: "Từ 399.000đ/tháng",
+                href: "/goi#van-hanh",
+                cta: "Xem gói vận hành",
                 mau: "text-emerald-300 bg-emerald-400/10 border-emerald-400/25",
               },
               {
                 icon: Leaf,
-                nhan: "Cần không gian",
-                tieuDe: "Tôi muốn sống và làm việc ở một nơi yên tĩnh",
-                moTa: "Retreat 3–7 ngày hoặc Residency 1–6 tháng tại NOOI Forest, Măng Đen.",
-                href: "/goi",
-                cta: "Khám phá Forest",
+                nhan: "Cấp 3 · Đi xa hơn",
+                tieuDe: "Tôi cần không gian, đối tác hoặc uy tín",
+                moTa: "Retreat/Residency tại NOOI Forest, Partner cho tổ chức, Certified cho năng lực cá nhân.",
+                muc: "Từ 1,5 triệu",
+                href: "/goi#mo-rong",
+                cta: "Xem cấp mở rộng",
                 mau: "text-violet-300 bg-violet-400/10 border-violet-400/25",
               },
             ].map((item) => (
@@ -210,7 +219,8 @@ export default async function OpcPublicHome() {
                 <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-[#9A88AD]">{item.nhan}</p>
                 <h3 className="mt-1.5 text-base font-bold leading-snug text-[#F5EFE6]">{item.tieuDe}</h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-[#9A88AD]">{item.moTa}</p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#C8943E] group-hover:text-[#E8C07A]">
+                <p className="mt-3 text-[11px] font-semibold text-[#8E7CA3]">{item.muc}</p>
+                <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#C8943E] group-hover:text-[#E8C07A]">
                   {item.cta} <ArrowRight size={14} />
                 </span>
               </Link>
@@ -219,16 +229,17 @@ export default async function OpcPublicHome() {
         </div>
       </section>
 
-      {/* ── SẢN PHẨM LÕI ────────────────────────────────────────────────── */}
+      {/* ── SẢN PHẨM THEO CẤP ĐỘ ────────────────────────────────────────── */}
       <section id="san-pham" className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div className="max-w-2xl">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8943E]">Sáu gói lõi</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8943E]">Ba cấp độ</p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#F5EFE6] md:text-3xl">
-              Một hệ sinh thái, không phải một danh mục rời rạc.
+              Đi từ đúng chỗ, không nhảy cóc.
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[#9A88AD]">
-              Đi từ hiểu mình, chuẩn hóa, duy trì, tăng tốc đến chuyển hóa. Mỗi gói có đầu ra và người chịu trách nhiệm.
+              Mỗi cấp độ có sản phẩm và đầu ra riêng. Bạn có thể bắt đầu ở cấp 1, 2 hoặc 3 —
+              chẩn đoán sẽ giúp xác nhận đâu là việc tiếp theo.
             </p>
           </div>
           <Link href="/goi" className="inline-flex items-center gap-2 text-sm font-bold text-[#C8943E] hover:text-[#E8C07A]">
@@ -236,34 +247,49 @@ export default async function OpcPublicHome() {
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {goiLoi.map((goi) => (
-            <GoiCard key={goi.ma} goi={goi} noiBat={goi.ma === "pro"} />
-          ))}
+        <div className="mt-10 space-y-12">
+          {CAP_DO.map((cap) => {
+            const ds = goiTheoCap(danhSach, cap.ma);
+            if (!ds.length) return null;
+            return (
+              <div key={cap.id} id={cap.id} className="scroll-mt-28">
+                <div className="flex flex-col gap-2 border-l-2 border-[#C8943E]/40 pl-4 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C8943E]">{cap.nhan}</p>
+                    <h3 className="mt-1 text-xl font-bold text-[#F5EFE6] md:text-2xl">{cap.ten}</h3>
+                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#9A88AD]">{cap.moTa}</p>
+                  </div>
+                  <p className="shrink-0 text-xs font-semibold text-[#7C6A8E]">{ds.length} sản phẩm</p>
+                </div>
+                <div className={`mt-5 grid gap-4 sm:grid-cols-2 ${ds.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+                  {ds.map((goi) => (
+                    <GoiCard key={goi.ma} goi={goi} noiBat={goi.ma === "pro"} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      {/* ── GÓI MỞ RỘNG ─────────────────────────────────────────────────── */}
-      {goiMoi.length > 0 ? (
-        <section className="border-y border-white/10 bg-white/[0.02]">
-          <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
-            <div className="max-w-2xl">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">Mở rộng</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#F5EFE6] md:text-3xl">
-                Khi bạn cần đi xa hơn một khóa học.
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-[#9A88AD]">
-                Làm hộ khởi tạo, ở dài tại Forest, hoặc mang OPC đến tổ chức của bạn. Đây là các gói đang mở thí điểm.
-              </p>
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {goiMoi.map((goi) => (
-                <GoiCard key={goi.ma} goi={goi} />
-              ))}
-            </div>
+      {/* ── KHÁCH HÀNG HIỆN HỮU ─────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-10 md:px-6">
+        <div className="flex flex-col justify-between gap-5 rounded-3xl border border-violet-400/20 bg-violet-400/[0.06] p-5 md:flex-row md:items-center md:p-6">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-violet-300">Đã là khách hàng OPC?</p>
+            <h2 className="mt-1.5 text-xl font-bold text-[#F5EFE6]">Tiếp tục từ nơi bạn đã dừng.</h2>
+            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-[#B9AAC8]">
+              Đăng nhập để xem lộ trình, đơn hàng, cộng đồng và người phụ trách của bạn.
+            </p>
           </div>
-        </section>
-      ) : null}
+          <Link
+            href="/login"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-violet-300/30 bg-violet-400/10 px-4 py-3 text-sm font-bold text-violet-100 hover:bg-violet-400/15"
+          >
+            Đăng nhập không gian của tôi <ArrowRight size={15} />
+          </Link>
+        </div>
+      </section>
 
       {/* ── CÁCH HOẠT ĐỘNG ──────────────────────────────────────────────── */}
       <section id="cach-hoat-dong" className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">

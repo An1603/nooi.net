@@ -11,12 +11,12 @@ export const metadata: Metadata = {
     template: "%s · OPC Center",
   },
   description:
-    "Hệ sinh thái sản phẩm và dịch vụ OPC: chẩn đoán 10 câu, chuẩn hóa quy trình, đồng hành 90 ngày, AI Agent và không gian làm việc tại NOOI Forest.",
+    "OPC Center giúp người làm kinh doanh một mình chẩn đoán điểm nghẽn, chọn đúng việc tiếp theo và có người đồng hành. Ba cấp độ, mười sản phẩm, online toàn quốc và offline tại NOOI Forest.",
   robots: { index: true, follow: true },
   openGraph: {
     title: "OPC Center — Từ ý tưởng đến doanh nghiệp vận hành",
     description:
-      "Chẩn đoán miễn phí, lộ trình rõ ràng, đồng hành thật. Online toàn quốc và offline tại NOOI Forest.",
+      "Chẩn đoán miễn phí, lộ trình theo 3 cấp độ, đồng hành thật. Online toàn quốc và offline tại NOOI Forest.",
     type: "website",
     locale: "vi_VN",
   },

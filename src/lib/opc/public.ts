@@ -23,6 +23,50 @@ export type GoiCongKhai = {
   meta: GoiMeta;
 };
 
+export type CapDo = {
+  id: string;
+  nhan: string;
+  ten: string;
+  moTa: string;
+  ma: readonly string[];
+};
+
+/**
+ * Ba cấp độ đồng hành — dùng cho trang chủ và trang sản phẩm.
+ * Thứ tự `ma` quyết định thứ tự thẻ trong từng cấp.
+ */
+export const CAP_DO: CapDo[] = [
+  {
+    id: "nen-tang",
+    nhan: "Cấp 1 · Mới bắt đầu",
+    ten: "Nền tảng",
+    moTa: "Biết mình đang ở đâu, có một quy trình đủ chuẩn để bán ổn định và bộ hồ sơ tối thiểu để vận hành.",
+    ma: ["khoi-tao", "chuan-hoa", "launch"],
+  },
+  {
+    id: "van-hanh",
+    nhan: "Cấp 2 · Đang có doanh thu",
+    ten: "Vận hành",
+    moTa: "Giữ nhịp mỗi tháng, giảm việc lặp bằng AI và có người đồng hành 90 ngày để tăng trưởng có kiểm soát.",
+    ma: ["membership", "pro", "ai-agent"],
+  },
+  {
+    id: "mo-rong",
+    nhan: "Cấp 3 · Đi xa hơn",
+    ten: "Mở rộng",
+    moTa: "Không gian chuyển hóa tại NOOI Forest, ở dài để làm việc, hợp tác với tổ chức và chứng nhận năng lực.",
+    ma: ["retreat", "residency", "partner", "certified"],
+  },
+];
+
+/** Lọc và sắp xếp gói theo đúng thứ tự của một cấp độ. */
+export function goiTheoCap(danhSach: GoiCongKhai[], ma: readonly string[]): GoiCongKhai[] {
+  const thuTu = new Map(ma.map((item, index) => [item, index]));
+  return danhSach
+    .filter((goi) => thuTu.has(goi.ma))
+    .sort((a, b) => (thuTu.get(a.ma) ?? 0) - (thuTu.get(b.ma) ?? 0));
+}
+
 const META: Record<string, GoiMeta> = {
   "khoi-tao": {
     nhom: "loi",

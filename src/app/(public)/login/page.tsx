@@ -1,10 +1,17 @@
+import type { Metadata } from "next";
 import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { authCookieOptions, OPC_HOST } from "@/lib/supabase/cookies";
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const host = (await headers()).get("host") || "";
+  return { title: host === OPC_HOST ? "Đăng nhập · OPC Center" : "Đăng nhập · NOOI" };
+}
 
 export default async function LoginPage() {
   // Nếu đã đăng nhập → redirect về dashboard.
@@ -12,6 +19,7 @@ export default async function LoginPage() {
   // điều khiển luồng, bắt nhầm sẽ nuốt redirect và hiện lại form đăng nhập.
   let daDangNhap = false;
   const host = (await headers()).get("host") || "";
+  const laOpc = host === OPC_HOST;
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -35,15 +43,25 @@ export default async function LoginPage() {
 
       <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-6">
-          <h1 className="text-xl font-bold">Chào mừng trở lại</h1>
+          <h1 className="text-xl font-bold">{laOpc ? "Tiếp tục hành trình OPC" : "Chào mừng trở lại"}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Đăng nhập vào tài khoản NOOI của bạn
+            {laOpc
+              ? "Đăng nhập để xem lộ trình, đơn hàng và cộng đồng của bạn."
+              : "Đăng nhập vào tài khoản NOOI của bạn"}
           </p>
         </div>
 
         <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-5 sm:p-6 shadow-xl">
           <AuthForm defaultTab="signin" />
         </div>
+
+        {laOpc ? (
+          <div className="mt-4 text-center">
+            <Link href="/" className="text-xs font-semibold text-muted-foreground hover:text-foreground">
+              ← Về trang OPC
+            </Link>
+          </div>
+        ) : null}
       </div>
     </div>
   );

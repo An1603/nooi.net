@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Check, CircleHelp, Compass, ShieldCheck, Wallet } from "lucide-react";
-import { getGoiCongKhai } from "@/lib/opc/public";
+import { getGoiCongKhai, CAP_DO, goiTheoCap } from "@/lib/opc/public";
 import GoiCard from "@/components/opc-public/GoiCard";
 
 export const metadata: Metadata = {
   title: "Sản phẩm & giá",
   description:
-    "Sáu gói lõi và ba gói mở rộng của OPC Center: Khởi tạo, Chuẩn hóa, Membership, Pro, AI Agent, Retreat, Launch, Residency, Partner.",
+    "Mười sản phẩm OPC Center theo ba cấp độ: nền tảng, vận hành và mở rộng — từ Khởi tạo miễn phí đến OPC Partner cho tổ chức.",
 };
 
 const FAQ = [
@@ -35,8 +35,6 @@ const FAQ = [
 
 export default async function GoiPage() {
   const danhSach = await getGoiCongKhai();
-  const goiLoi = danhSach.filter((g) => g.meta.nhom === "loi");
-  const goiMoi = danhSach.filter((g) => g.meta.nhom === "mo-rong");
 
   return (
     <main>
@@ -56,8 +54,8 @@ export default async function GoiPage() {
             không phải gói lớn nhất.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#C9BCD7]">
-            Sáu gói lõi đi từ hiểu mình đến chuyển hóa. Ba gói mở rộng dành cho người cần làm hộ, ở dài tại Forest
-            hoặc mang OPC về tổ chức. Mọi gói đều bắt đầu bằng một cuộc chẩn đoán.
+            Mười sản phẩm, ba cấp độ. Mỗi cấp độ có đầu ra riêng; bạn không cần mua tuần tự.
+            Mọi gói đều bắt đầu bằng một cuộc chẩn đoán.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -80,40 +78,38 @@ export default async function GoiPage() {
       <section className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
         <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8943E]">Gói lõi</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#F5EFE6] md:text-3xl">Sáu bước của một hành trình</h2>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8943E]">Ba cấp độ</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#F5EFE6] md:text-3xl">Mỗi cấp độ, một đầu ra</h2>
           </div>
           <p className="max-w-md text-xs leading-relaxed text-[#9A88AD]">
-            Bạn không cần mua tuần tự. Chọn điểm vào phù hợp với giai đoạn hiện tại — chẩn đoán sẽ giúp bạn xác nhận.
+            Chọn cấp độ gần nhất với trạng thái hiện tại. Bạn không cần mua tuần tự — chẩn đoán sẽ giúp xác nhận.
           </p>
         </div>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {goiLoi.map((goi) => (
-            <GoiCard key={goi.ma} goi={goi} noiBat={goi.ma === "pro"} />
-          ))}
+
+        <div className="mt-10 space-y-14">
+          {CAP_DO.map((cap) => {
+            const ds = goiTheoCap(danhSach, cap.ma);
+            if (!ds.length) return null;
+            return (
+              <div key={cap.id} id={cap.id} className="scroll-mt-28">
+                <div className="flex flex-col gap-2 border-l-2 border-[#C8943E]/40 pl-4 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C8943E]">{cap.nhan}</p>
+                    <h3 className="mt-1 text-xl font-bold text-[#F5EFE6] md:text-2xl">{cap.ten}</h3>
+                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#9A88AD]">{cap.moTa}</p>
+                  </div>
+                  <p className="shrink-0 text-xs font-semibold text-[#7C6A8E]">{ds.length} sản phẩm</p>
+                </div>
+                <div className={`mt-5 grid gap-4 sm:grid-cols-2 ${ds.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+                  {ds.map((goi) => (
+                    <GoiCard key={goi.ma} goi={goi} noiBat={goi.ma === "pro"} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
-
-      {goiMoi.length > 0 ? (
-        <section className="border-y border-white/10 bg-white/[0.02]">
-          <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
-            <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">Gói mở rộng</p>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#F5EFE6] md:text-3xl">Khi cần đi xa hơn</h2>
-              </div>
-              <p className="max-w-md text-xs leading-relaxed text-[#9A88AD]">
-                Đang mở thí điểm. OPC tư vấn trước khi nhận đặt chỗ để đảm bảo đúng nhu cầu và công suất.
-              </p>
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {goiMoi.map((goi) => (
-                <GoiCard key={goi.ma} goi={goi} />
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
 
       <section className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
         <div className="max-w-2xl">

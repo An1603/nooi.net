@@ -251,6 +251,10 @@ export default async function OpcPublicHome() {
               Mỗi cấp độ có sản phẩm và đầu ra riêng. Bạn có thể bắt đầu ở cấp 1, 2 hoặc 3 —
               chẩn đoán sẽ giúp xác nhận đâu là việc tiếp theo.
             </p>
+            <p className="mt-3 text-xs leading-relaxed text-[#8E7CA3]">
+              Mới bắt đầu? Bạn chỉ cần xem <span className="font-bold text-[#C8943E]">Cấp 1</span>.
+              Hai cấp còn lại để dành khi bạn sẵn sàng.
+            </p>
           </div>
           <Link href="/goi" className="inline-flex items-center gap-2 text-sm font-bold text-[#C8943E] hover:text-[#E8C07A]">
             So sánh tất cả <ArrowRight size={15} />

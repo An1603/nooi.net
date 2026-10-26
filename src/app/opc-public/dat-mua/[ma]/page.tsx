@@ -32,9 +32,19 @@ export default async function DatMuaPage({ params }: PageProps) {
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-16">
-        <Link href="/goi" className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#9A88AD] hover:text-[#F5EFE6]">
-          <ArrowLeft size={14} /> Tất cả sản phẩm
-        </Link>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Link href="/goi" className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#9A88AD] hover:text-[#F5EFE6]">
+            <ArrowLeft size={14} /> Tất cả sản phẩm
+          </Link>
+          <span className="text-xs text-[#5E4D70]" aria-hidden>/</span>
+          <Link
+            href={`/goi/${goi.ma}`}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-[#C8943E] hover:text-[#E8C07A]"
+          >
+            Xem chi tiết {goi.ten}
+            <ArrowRight size={13} />
+          </Link>
+        </div>
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
           <div>

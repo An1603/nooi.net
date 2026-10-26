@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, Sparkles } from "lucide-react";
 import {
   formatGia,
   hrefCuaGoi,
@@ -30,7 +30,11 @@ export default function GoiCard({ goi, noiBat = false }: { goi: GoiCongKhai; noi
           <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${mau.vien} ${mau.nen} ${mau.chu}`}>
             {goi.meta.badge ?? goi.meta.nhom}
           </span>
-          <h3 className="mt-3 text-xl font-bold tracking-tight text-[#F5EFE6]">{goi.ten}</h3>
+          <h3 className="mt-3 text-xl font-bold tracking-tight text-[#F5EFE6]">
+            <Link href={`/goi/${goi.ma}`} className="transition-colors hover:text-[#E8C07A]">
+              {goi.ten}
+            </Link>
+          </h3>
         </div>
         <span className={`mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border ${mau.vien} ${mau.nen} ${mau.chu}`}>
           <span className="text-xs font-black">OPC</span>
@@ -55,6 +59,13 @@ export default function GoiCard({ goi, noiBat = false }: { goi: GoiCongKhai; noi
       </ul>
 
       <div className="mt-auto pt-6">
+        <Link
+          href={`/goi/${goi.ma}`}
+          className="mb-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 px-4 py-2.5 text-xs font-bold text-[#C9BCD7] transition-colors hover:border-white/25 hover:text-[#F5EFE6]"
+        >
+          Xem chi tiết gói
+          <ArrowUpRight size={13} />
+        </Link>
         <Link
           href={hrefCuaGoi(goi)}
           className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-colors ${mau.nut}`}

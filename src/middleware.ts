@@ -220,6 +220,28 @@ export async function middleware(request: NextRequest) {
       return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
     }
 
+    // ── Cửa hàng công khai (không cần đăng nhập) ──────────────────────────
+    // URL sạch /, /goi, /chan-doan, /dat-mua/... được rewrite nội bộ sang
+    // /opc-public/*; thanh địa chỉ vẫn giữ URL công khai.
+    if (pathname === "/opc-public" || pathname.startsWith("/opc-public/")) {
+      return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
+    }
+    if (pathname === "/") {
+      if (user) {
+        return withCookies(NextResponse.rewrite(new URL("/opc", request.url)), supabaseResponse);
+      }
+      return withCookies(NextResponse.rewrite(new URL("/opc-public", request.url)), supabaseResponse);
+    }
+    const laCuaHangCongKhai =
+      pathname === "/goi" ||
+      pathname === "/chan-doan" ||
+      pathname === "/cam-on" ||
+      pathname.startsWith("/dat-mua");
+    if (laCuaHangCongKhai) {
+      const target = "/opc-public" + pathname + request.nextUrl.search;
+      return withCookies(NextResponse.rewrite(new URL(target, request.url)), supabaseResponse);
+    }
+
     // Chưa đăng nhập → về /login, giữ đường dẫn để quay lại.
     if (!user) {
       const loginUrl = new URL("/login", request.url);
@@ -245,6 +267,11 @@ export async function middleware(request: NextRequest) {
     return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
   }
   if (pathname.startsWith("/admin-login")) {
+    return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
+  }
+
+  // Route nội bộ của cửa hàng OPC không được lộ trên host chính.
+  if (pathname === "/opc-public" || pathname.startsWith("/opc-public/")) {
     return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
   }
 

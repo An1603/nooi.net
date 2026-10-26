@@ -1,13 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { cookieOptions } from "@/lib/supabase/cookies";
+import { authCookieName, cookieOptions, EKID_HOST, OPC_HOST } from "@/lib/supabase/cookies";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/app";
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net";
+  const host = request.headers.get("host") || "";
+  const laOpc = host === OPC_HOST;
+  const next = searchParams.get("next") ?? (laOpc ? "/" : "/app");
+  // OPC Center phải quay lại đúng host OPC, không nhảy về nooi.net.
+  const origin = laOpc
+    ? "https://opc.nooi.net"
+    : process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net";
 
   if (code) {
     const response = NextResponse.redirect(`${origin}${next}`);
@@ -27,10 +32,12 @@ export async function GET(request: NextRequest) {
                 // must read the session via document.cookie. httpOnly would make
                 // supabase.auth.getUser() return null on client components (e.g. /app/setup).
                 path: "/",
-              }))
+              }, { hostOnly: laOpc || host === EKID_HOST }))
             );
           },
         },
+        // OPC và eKid dùng tên cookie riêng; host khác giữ tên mặc định.
+        cookieOptions: { name: authCookieName(host) },
       }
     );
 

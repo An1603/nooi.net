@@ -12,33 +12,32 @@ const EKID_COOKIES = authCookieNames(EKID_AUTH_COOKIE_NAME);
 const LEGACY_OPC_COOKIES = authCookieNames("sb-opc-auth-token");
 
 /**
- * Xoá cookie bằng header thô. Phải append thủ công vì `resp.cookies.set`
- * gộp theo name+path: lần set host-only sẽ ghi đè lần set domain `.nooi.net`,
- * khiến cookie domain không bao giờ được xoá.
+ * Xoá cookie theo đúng scope.
+ *
+ * Không set cả domain `.nooi.net` lẫn host-only cho CÙNG một tên trong một
+ * response: `ResponseCookies` gộp theo name+path nên bản sau ghi đè bản trước,
+ * và cookie domain không bao giờ được xoá. Phiên cũ của OPC dùng tên riêng
+ * `sb-opc-auth-token` nên vẫn dọn được ở scope host-only.
  */
-function xoaCookieRaw(
+function xoaCookie(
   resp: NextResponse,
   names: string[],
   domain?: string
 ) {
   for (const name of names) {
-    const parts = [
-      `${name}=`,
-      "Path=/",
-      "Max-Age=0",
-      "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
-      "Secure",
-      "SameSite=Lax",
-    ];
-    if (domain) parts.push(`Domain=${domain}`);
-    resp.headers.append("Set-Cookie", parts.join("; "));
+    resp.cookies.set(name, "", {
+      path: "/",
+      maxAge: 0,
+      secure: true,
+      sameSite: "lax",
+      ...(domain ? { domain } : {}),
+    });
   }
 }
 
-/** Xoá cả bản `.nooi.net` lẫn bản host-only (di sản lỗi cũ). */
+/** Xoá phiên chung `.nooi.net` — đăng xuất OPC cũng đăng xuất nooi.net. */
 function xoaPhienChung(resp: NextResponse) {
-  xoaCookieRaw(resp, SHARED_COOKIES, ".nooi.net");
-  xoaCookieRaw(resp, SHARED_COOKIES);
+  xoaCookie(resp, SHARED_COOKIES, ".nooi.net");
 }
 
 export async function POST(request: NextRequest) {
@@ -70,7 +69,7 @@ async function handleLogout(request: NextRequest) {
   if (host === "opc.nooi.net") {
     const resp = NextResponse.redirect(new URL("/login", "https://opc.nooi.net"));
     xoaPhienChung(resp);
-    xoaCookieRaw(resp, LEGACY_OPC_COOKIES);
+    xoaCookie(resp, LEGACY_OPC_COOKIES);
     return resp;
   }
 
@@ -79,7 +78,7 @@ async function handleLogout(request: NextRequest) {
   if (host === "ekid.nooi.net") {
     const resp = NextResponse.redirect(new URL("/login", "https://ekid.nooi.net"));
     // Chỉ xoá phiên eKid, không đụng phiên người lớn.
-    xoaCookieRaw(resp, EKID_COOKIES);
+    xoaCookie(resp, EKID_COOKIES);
     return resp;
   }
 

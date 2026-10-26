@@ -3,15 +3,21 @@ import Link from "next/link";
 import {
   ArrowRight,
   ArrowUpRight,
+  BadgeCheck,
   BriefcaseBusiness,
   Check,
   Compass,
+  HeartHandshake,
+  Landmark,
   Leaf,
   MapPin,
   MessageSquareText,
+  Network,
   Sparkles,
   Target,
+  TrendingUp,
   Users,
+  Wallet,
 } from "lucide-react";
 import { getGoiCongKhai, CAP_DO, goiTheoCap } from "@/lib/opc/public";
 import GoiCard from "@/components/opc-public/GoiCard";
@@ -19,7 +25,7 @@ import GoiCard from "@/components/opc-public/GoiCard";
 export const metadata: Metadata = {
   title: { absolute: "OPC Center — Từ ý tưởng đến doanh nghiệp vận hành" },
   description:
-    "OPC Center đồng hành cùng người làm kinh doanh một mình: chẩn đoán 10 câu miễn phí, 3 cấp độ sản phẩm, online toàn quốc và offline tại NOOI Forest.",
+    "OPC Center đồng hành cùng người làm kinh doanh một mình: chẩn đoán 10 câu miễn phí, 3 cấp độ sản phẩm, mạng lưới hội doanh nhân, chuyên gia, đối tác và offline tại NOOI Forest.",
 };
 
 const BUOC = [
@@ -46,6 +52,49 @@ const BUOC = [
     ten: "Đo và nâng cấp",
     moTa: "Kết thúc bằng kết quả 30/90 ngày. Chỉ nâng gói khi việc cũ đã chạy.",
     icon: BriefcaseBusiness,
+  },
+];
+
+const GIA_TRI = [
+  {
+    icon: Landmark,
+    ten: "Hội & chính sách",
+    moTa: "Gia nhập Hội doanh nhân OPC; kết nối chương trình hỗ trợ từ nhà nước và các tổ chức hỗ trợ.",
+  },
+  {
+    icon: Sparkles,
+    ten: "Người dẫn đường",
+    moTa: "Giao lưu với chuyên gia, khách mời, người có ảnh hưởng; mentor đồng hành theo cấp.",
+  },
+  {
+    icon: Network,
+    ten: "Kết nối kinh doanh",
+    moTa: "Đối tác, nhà cung cấp, nguồn hàng, nhân lực, đầu mối phân phối, thi công và thực thi.",
+  },
+  {
+    icon: HeartHandshake,
+    ten: "Cộng đồng tương hỗ",
+    moTa: "Nhóm cùng giai đoạn, mastermind, hỏi đáp và accountability — sinh hoạt trong một cộng đồng tương trợ.",
+  },
+  {
+    icon: TrendingUp,
+    ten: "Khách hàng & doanh thu",
+    moTa: "Cơ hội giới thiệu, bán chéo, mở kênh phân phối và học từ case study thật của thành viên.",
+  },
+  {
+    icon: BadgeCheck,
+    ten: "Năng lực & uy tín",
+    moTa: "Đào tạo có đầu ra, OPC Certified, hồ sơ năng lực và bằng chứng kết quả với khách/đối tác.",
+  },
+  {
+    icon: Wallet,
+    ten: "Nguồn lực & vốn",
+    moTa: "Ưu đãi pháp lý – kế toán, công cụ AI, không gian làm việc; kết nối ngân hàng, quỹ và cơ hội đầu tư.",
+  },
+  {
+    icon: Leaf,
+    ten: "Chuyển hóa & cân bằng",
+    moTa: "Retreat, Residency tại NOOI Forest, wellness và một nhịp sống bền hơn cho bạn và đội ngũ.",
   },
 ];
 
@@ -281,6 +330,44 @@ export default async function OpcPublicHome() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* ── GIÁ TRỊ KHI THAM GIA OPC ───────────────────────────────────── */}
+      <section id="gia-tri" className="border-y border-white/10 bg-[#0D0616]">
+        <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div className="max-w-2xl">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8943E]">Giá trị khi tham gia OPC</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#F5EFE6] md:text-3xl">
+                Không chỉ là một gói học.
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-[#9A88AD]">
+                Bạn mua một lối đi, không mua một danh sách bài học. OPC mở mạng lưới, người dẫn đường và cơ hội
+                để bạn đi nhanh hơn — nhưng không hứa thay bạn đi.
+              </p>
+            </div>
+            <Link href="/goi" className="inline-flex shrink-0 items-center gap-2 text-sm font-bold text-[#C8943E] hover:text-[#E8C07A]">
+              Xem quyền lợi theo cấp <ArrowRight size={15} />
+            </Link>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {GIA_TRI.map((item) => (
+              <div key={item.ten} className="rounded-3xl border border-white/10 bg-[#160D24] p-5">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#C8943E]/25 bg-[#C8943E]/10 text-[#E8C07A]">
+                  <item.icon size={18} />
+                </span>
+                <h3 className="mt-4 text-base font-bold leading-snug text-[#F5EFE6]">{item.ten}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#9A88AD]">{item.moTa}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-6 max-w-3xl text-xs leading-relaxed text-[#7C6A8E]">
+            Quyền lợi cụ thể theo từng cấp. OPC cam kết nói rõ bạn được gì trước khi đăng ký — không hứa thay bạn
+            thành công.
+          </p>
         </div>
       </section>
 

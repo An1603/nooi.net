@@ -7,7 +7,7 @@ import GoiCard from "@/components/opc-public/GoiCard";
 export const metadata: Metadata = {
   title: "Sản phẩm & giá",
   description:
-    "Mười sản phẩm OPC Center theo ba cấp độ: nền tảng, vận hành và mở rộng — từ Khởi tạo miễn phí đến OPC Partner cho tổ chức.",
+    "Mười sản phẩm OPC Center theo ba cấp độ: nền tảng, vận hành và mở rộng — kèm mạng lưới hội doanh nhân, chuyên gia, đối tác và mentor.",
 };
 
 const FAQ = [
@@ -108,6 +108,24 @@ export default async function GoiPage() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+        <div className="flex flex-col gap-4 rounded-3xl border border-[#C8943E]/20 bg-[#C8943E]/[0.06] p-5 md:flex-row md:items-center md:justify-between md:p-6">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#E8C07A]">Giá trị cộng đồng</p>
+            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[#D8CBE6]">
+              Mỗi cấp còn mở quyền truy cập Hội doanh nhân OPC, chuyên gia, đối tác, nguồn hàng, nhân lực
+              và cộng đồng mentor — không chỉ là bài học.
+            </p>
+          </div>
+          <Link
+            href="/#gia-tri"
+            className="inline-flex shrink-0 items-center gap-2 text-sm font-bold text-[#E8C07A] hover:text-[#F5EFE6]"
+          >
+            Xem 8 giá trị <ArrowRight size={15} />
+          </Link>
         </div>
       </section>
 

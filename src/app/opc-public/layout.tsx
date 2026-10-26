@@ -55,6 +55,9 @@ export default async function OpcPublicLayout({ children }: { children: ReactNod
             <Link href="/goi" className="transition-colors hover:text-[#F5EFE6]">
               Sản phẩm
             </Link>
+            <Link href="/#gia-tri" className="transition-colors hover:text-[#F5EFE6]">
+              Giá trị
+            </Link>
             <Link href="/#cach-hoat-dong" className="transition-colors hover:text-[#F5EFE6]">
               Cách hoạt động
             </Link>

@@ -4,8 +4,8 @@ import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
 import type { VoiceStatus } from "@/components/voice/useVoiceAssistant";
 import { ExerciseCard } from "./ExerciseCard";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
-import type { AgeBand, EkidExercise } from "@/lib/ekid/ekid-system";
-import { BAND_VOICE, buildSystemInstruction } from "@/lib/ekid/ekid-system";
+import type { AgeBand, EkidExercise, TeacherGender } from "@/lib/ekid/ekid-system";
+import { buildSystemInstruction, resolveKidVoice } from "@/lib/ekid/ekid-system";
 import { EKID_TOOLS, mediaShouldPauseVoice } from "@/lib/ekid/interactive";
 import { InteractiveStage } from "@/components/ekid/child/InteractiveStage";
 import { useEkidInteractive } from "@/components/ekid/child/useEkidInteractive";
@@ -17,6 +17,8 @@ export interface EkidKidLite {
   favorite_voice: string | null;
   placement_age_band: AgeBand | null;
   placement_level: number | null;
+  /** Giới tính giáo viên AI: "co" → giọng nữ, "thay" → giọng nam. */
+  teacher_gender?: TeacherGender | null;
   avatar_emoji?: string | null;
   daily_limit_min?: number | null;
   has_entry_test?: boolean;
@@ -27,24 +29,6 @@ export interface EkidLessonLite {
   core_topic: string;
   exercises: EkidExercise[];
   system_prompt: string;
-}
-
-// 10 giọng Gemini Live hợp lệ (khớp `VoiceOption` trong gemini-live.ts).
-const VALID_VOICES: readonly VoiceOption[] = [
-  "Puck",
-  "Charon",
-  "Kore",
-  "Fenrir",
-  "Aoede",
-  "Zephyr",
-  "Leda",
-  "Orus",
-  "Callirrhoe",
-  "Sulafat",
-];
-
-function isVoiceOption(value: string | null): value is VoiceOption {
-  return value !== null && (VALID_VOICES as readonly string[]).includes(value);
 }
 
 /**
@@ -130,22 +114,28 @@ export function EkidVoiceSession({
   // Đang có VIDEO trên màn hình → tạm dừng trò chuyện (bé nghe rõ + tiết kiệm voice live).
   const videoOnStage = mediaShouldPauseVoice(interactive.current);
 
-  const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
-    ? kid.favorite_voice
-    : BAND_VOICE[kid.placement_age_band ?? "mam-non"];
+  // Giáo viên là cô → giọng nữ; là thầy → giọng nam (không trộn giới tính).
+  const teacherGender: TeacherGender = kid.teacher_gender ?? "co";
+  const ageBand: AgeBand = kid.placement_age_band ?? "mam-non";
+  const voice: VoiceOption = resolveKidVoice({
+    gender: teacherGender,
+    ageBand,
+    favoriteVoice: kid.favorite_voice,
+  });
   const systemInstruction = useMemo(
     () =>
       buildSystemInstruction({
         kidName: kid.name,
         placement: {
-          ageBand: kid.placement_age_band ?? "mam-non",
+          ageBand,
           level: kid.placement_level ?? 1,
         },
         lessonTopic: lesson?.core_topic,
         exercises,
         questionBank: questionBank.map((q) => ({ id: q.id, prompt: q.prompt })),
+        teacherGender,
       }),
-    [kid, lesson, exercises, questionBank],
+    [kid.name, ageBand, kid.placement_level, lesson, exercises, questionBank, teacherGender],
   );
 
   function onAnswer(i: number, correct: boolean) {

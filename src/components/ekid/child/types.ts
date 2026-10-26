@@ -38,6 +38,8 @@ export interface LibraryKid {
   placement_age_band?: string | null;
   placement_level?: number | null;
   daily_limit_min?: number | null;
+  /** Giáo viên AI của con (từ settings) — "co" giọng nữ, "thay" giọng nam. */
+  teacher?: { gender?: string | null } | null;
   /** Bộ nhớ tổng hợp về bé (cột ekid_kids.memory) — nạp vào ngữ cảnh AI. */
   memory?: string | null;
 }

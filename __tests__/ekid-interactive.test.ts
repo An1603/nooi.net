@@ -166,6 +166,17 @@ describe("ekid interactive — khớp nội dung & đáp án bằng lời (v3.5)
     expect(parseSpokenAnswer("chọn cái thứ 1", 3)).toBe(0);
   });
 
+  it("parseSpokenAnswer: nhận đáp án nói bằng TIẾNG ANH", () => {
+    expect(parseSpokenAnswer("I choose B", 3)).toBe(1);
+    expect(parseSpokenAnswer("the answer is C", 3)).toBe(2);
+    expect(parseSpokenAnswer("option A", 4)).toBe(0);
+    expect(parseSpokenAnswer("My answer is letter b", 3)).toBe(1);
+    expect(parseSpokenAnswer("I pick number 3", 3)).toBe(2);
+    // Câu tiếng Anh bình thường KHÔNG bị chấm bừa.
+    expect(parseSpokenAnswer("so 2 plus 2 is 4", 3)).toBeNull();
+    expect(parseSpokenAnswer("I like apples", 3)).toBeNull();
+  });
+
   it("parseSpokenAnswer: KHÔNG chấm khi nói chuyện bình thường", () => {
     expect(parseSpokenAnswer("con thích chơi bóng đá", 3)).toBeNull();
     expect(parseSpokenAnswer("hôm nay trời đẹp quá", 3)).toBeNull();

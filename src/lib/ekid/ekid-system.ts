@@ -16,11 +16,68 @@ export interface EkidExercise {
   type: "chon-hinh" | "nghe-chon" | "dem" | "ke-chuyen";
 }
 
-export const BAND_VOICE: Record<AgeBand, VoiceOption> = {
-  "mam-non": "Leda",
-  "tieu-hoc": "Puck",
-  "thieu-nien": "Charon",
+/** Giới tính của giáo viên AI — quyết định giọng đọc và cách xưng hô. */
+export type TeacherGender = "co" | "thay";
+
+/** Hồ sơ hiển thị của giáo viên AI theo giới tính. */
+export const TEACHER_PROFILE: Record<
+  TeacherGender,
+  { name: string; pronoun: string; role: string }
+> = {
+  co: { name: "Cô Mây", pronoun: "cô", role: "cô giáo" },
+  thay: { name: "Thầy Nắng", pronoun: "thầy", role: "thầy giáo" },
 };
+
+/** Giọng NỮ của Gemini Live (dùng khi giáo viên là "cô"). */
+export const FEMALE_VOICES: readonly VoiceOption[] = [
+  "Leda",
+  "Aoede",
+  "Kore",
+  "Zephyr",
+  "Callirrhoe",
+  "Sulafat",
+];
+
+/** Giọng NAM của Gemini Live (dùng khi giáo viên là "thầy"). */
+export const MALE_VOICES: readonly VoiceOption[] = ["Puck", "Fenrir", "Charon", "Orus"];
+
+export function isVoiceOfGender(voice: string | null, gender: TeacherGender): boolean {
+  if (!voice) return false;
+  const list = gender === "thay" ? MALE_VOICES : FEMALE_VOICES;
+  return (list as readonly string[]).includes(voice);
+}
+
+/**
+ * Giọng theo GIỚI TÍNH giáo viên + lứa tuổi.
+ * - Cô → giọng nữ; Thầy → giọng nam (không bao giờ lẫn).
+ * - Trong cùng giới, chọn giọng hợp lứa: nhỏ tuổi trong sáng, lớn tuổi rõ ràng hơn.
+ */
+export const BAND_VOICE_BY_GENDER: Record<TeacherGender, Record<AgeBand, VoiceOption>> = {
+  co: { "mam-non": "Leda", "tieu-hoc": "Aoede", "thieu-nien": "Kore" },
+  thay: { "mam-non": "Puck", "tieu-hoc": "Fenrir", "thieu-nien": "Charon" },
+};
+
+/** Giọng mặc định (giáo viên nữ) — giữ tương thích cho nơi chưa biết giới tính. */
+export const BAND_VOICE: Record<AgeBand, VoiceOption> = BAND_VOICE_BY_GENDER.co;
+
+/** Giọng của giáo viên theo giới tính + lứa tuổi. */
+export function resolveTeacherVoice(gender: TeacherGender, ageBand: AgeBand): VoiceOption {
+  return BAND_VOICE_BY_GENDER[gender][ageBand];
+}
+
+/**
+ * Giọng dùng cho bé: ưu tiên `favorite_voice` NHƯNG chỉ khi đúng giới tính giáo viên;
+ * lệch giới tính thì lấy giọng chuẩn theo giới tính + lứa tuổi (yêu cầu Ngài An).
+ */
+export function resolveKidVoice(input: {
+  gender: TeacherGender;
+  ageBand: AgeBand;
+  favoriteVoice?: string | null;
+}): VoiceOption {
+  const fav = input.favoriteVoice ?? null;
+  if (isVoiceOfGender(fav, input.gender)) return fav as VoiceOption;
+  return resolveTeacherVoice(input.gender, input.ageBand);
+}
 
 export const BAND_LABEL: Record<AgeBand, string> = {
   "mam-non": "Mầm non",
@@ -193,6 +250,13 @@ export interface KidSettings {
   rules: KidRules;
   subjects: string[];
   rewards: KidRewards;
+  /** Giáo viên AI của con: cô (giọng nữ) hay thầy (giọng nam). */
+  teacher: KidTeacher;
+}
+
+/** Lựa chọn giáo viên AI cho một hồ sơ. */
+export interface KidTeacher {
+  gender: TeacherGender;
 }
 
 /** Giá trị mặc định khi hồ sơ chưa có cài đặt (cột `settings` = `{}`). */
@@ -209,7 +273,22 @@ export const DEFAULT_SETTINGS: KidSettings = {
     badgeMilestones: [3, 5, 10],
     custom: [],
   },
+  teacher: {
+    gender: "co",
+  },
 };
+
+/** Giới tính giáo viên hợp lệ? */
+export function isTeacherGender(v: unknown): v is TeacherGender {
+  return v === "co" || v === "thay";
+}
+
+/** Đọc giới tính giáo viên từ settings (mặc định "co" — Cô Mây). */
+export function teacherGenderFromSettings(raw: unknown): TeacherGender {
+  const r = isRecord(raw) ? raw : {};
+  const t = isRecord(r.teacher) ? r.teacher : {};
+  return isTeacherGender(t.gender) ? t.gender : DEFAULT_SETTINGS.teacher.gender;
+}
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -294,6 +373,10 @@ export function normalizeKidSettings(raw: unknown): KidSettings {
       ),
       badgeMilestones: milestonesOr(rawRewards.badgeMilestones),
       custom: customRewardsOr(rawRewards.custom),
+    },
+    // Sai/thiếu giới tính ⇒ về "co" (Cô Mây) — không bao giờ để hồ sơ mất giáo viên.
+    teacher: {
+      gender: teacherGenderFromSettings(r),
     },
   };
 }
@@ -397,8 +480,20 @@ export function buildSystemInstruction(params: {
    * Đáp án nằm ở server; AI hỏi theo thứ tự này và gọi `log_answer` sau mỗi câu.
    */
   questionBank?: Array<{ id: string; prompt: string }>;
+  /** Giới tính giáo viên AI — quyết định cách xưng hô (giọng do phía client chọn). */
+  teacherGender?: TeacherGender;
 }): string {
-  const { kidName, placement, lessonTopic, recentNotes, exercises, freeSession, questionBank } = params;
+  const {
+    kidName,
+    placement,
+    lessonTopic,
+    recentNotes,
+    exercises,
+    freeSession,
+    questionBank,
+    teacherGender,
+  } = params;
+  const teacher = TEACHER_PROFILE[teacherGender ?? "co"];
   const band = BAND_LABEL[placement.ageBand];
   const addr = BAND_ADDRESS[placement.ageBand];
   const styleNote = BAND_STYLE_NOTE[placement.ageBand];
@@ -407,12 +502,23 @@ export function buildSystemInstruction(params: {
     .join("\n");
 
   return [
-    `Bạn là "eKid" — người bạn AI thân thiết, ấm áp của ${addr.student} ${kidName}.`,
-    // ── Xưng hô (Ngài An yêu cầu) ───────────────────────────────────────────
-    `Tên riêng của bạn: "Cô Mây". Bé gọi bạn là Cô Mây; bạn tự xưng là "cô" (giữ nhất quán suốt buổi). TUYỆT ĐỐI KHÔNG xưng "tôi"/"mình" lạnh lùng.`,
+    `Bạn là "eKid" — ${teacher.role} AI thân thiết, ấm áp của ${addr.student} ${kidName}.`,
+    // ── Xưng hô theo GIỚI TÍNH giáo viên (Ngài An yêu cầu) ──────────────────
+    `Tên riêng của bạn: "${teacher.name}". Bé gọi bạn là ${teacher.name}; bạn tự xưng là "${teacher.pronoun}" (giữ nhất quán suốt buổi). TUYỆT ĐỐI KHÔNG xưng "tôi"/"mình" lạnh lùng.`,
+    `GIỚI TÍNH GIÁO VIÊN: ${teacher.pronoun === "cô" ? "nữ" : "nam"} — luôn xưng "${teacher.pronoun}", không bao giờ tự đổi sang giới tính khác.`,
     `Cách gọi học sinh: gọi ${addr.student} (thỉnh thoảng xen "${addr.alt}"); thi thoảng gọi tên "${kidName}" cho thân mật. KHÔNG dùng từ xưng hô suồng sã, thiếu tôn trọng.`,
     `Bé ${kidName} đang ở trình độ: ${band}, cấp ${placement.level}.`,
-    `Luôn nói tiếng Việt, giọng ấm áp. ${styleNote}`,
+    `Ngôn ngữ mặc định: TIẾNG VIỆT, giọng ấm áp. ${styleNote}`,
+    // ── Song ngữ & dạy ngoại ngữ (Ngài An yêu cầu) ──────────────────────────
+    "NGÔN NGỮ & DẠY NGOẠI NGỮ (bắt buộc):",
+    `• Khi ${addr.student} nói tiếng Anh (hoặc ngoại ngữ khác), trả lời NGAY bằng đúng ngôn ngữ đó, cùng nhịp — không bắt ${addr.student} quay lại tiếng Việt, không dịch từng chữ.`,
+    `• Khi ${addr.student} muốn học tiếng Anh/ngoại ngữ, bạn trở thành giáo viên ngoại ngữ của ${addr.student}: hỏi 1–2 câu để biết trình độ rồi chọn từ vựng và mẫu câu vừa sức.`,
+    "• Có thể dùng công cụ hiện bài tập để tạo bài luyện ngoại ngữ ngắn (chọn từ, nghe–chọn, điền câu) đúng trình độ, tối đa 3 lựa chọn mỗi câu.",
+    "• Dạy theo trình độ: mầm non/tiểu học — mỗi lượt 1 từ + 1 mẫu câu ngắn, nói chậm, lặp lại; thiếu niên — hội thoại ngắn theo chủ đề, thêm từ mới và cấu trúc vừa sức.",
+    "• Sửa lỗi bằng cách NHẮC LẠI CÂU ĐÚNG thật tự nhiên (recast), không giảng ngữ pháp dài, không nói \"sai rồi\".",
+    "• Khoảng 70–80% ngôn ngữ đích, 20–30% tiếng Việt khi cần giải thích; tăng dần độ khó theo tiến bộ.",
+    `• ${addr.student} nói tiếng Việt thì trả lời tiếng Việt; KHÔNG tự chuyển sang tiếng Anh khi ${addr.student} chưa muốn.`,
+    "• Khen nỗ lực nói ngoại ngữ cụ thể (\"con nói trọn câu rồi\"), không chê phát âm.",
     freeSession
       ? `Bạn CHỦ ĐỘNG trò chuyện: chào ${addr.student}, hỏi ${addr.student} hôm nay thế nào, gợi chuyện học tập và vui chơi, khuyến khích ${addr.student} kể và đặt câu hỏi.`
       : `Bạn CHỦ ĐỘNG MỞ PHIÊN: chào ${addr.student}, rồi hỏi lại 3 điều ${addr.student} đã học buổi trước (hỏi từng câu, chờ trả lời). TUYỆT ĐỐI KHÔNG hỏi "con muốn học gì" — việc chọn bài là của người lớn, không phải của ${addr.student}.`,

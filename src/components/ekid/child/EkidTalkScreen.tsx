@@ -15,8 +15,8 @@ import Link from "next/link";
 import { VoiceAssistant } from "@/components/voice/VoiceAssistant";
 import type { VoiceOption } from "@/lib/voice/gemini-live";
 import type { VoiceStatus } from "@/components/voice/useVoiceAssistant";
-import type { AgeBand } from "@/lib/ekid/ekid-system";
-import { BAND_VOICE, buildSystemInstruction } from "@/lib/ekid/ekid-system";
+import type { AgeBand, TeacherGender } from "@/lib/ekid/ekid-system";
+import { buildSystemInstruction, resolveKidVoice } from "@/lib/ekid/ekid-system";
 import { EKID_TOOLS, mediaShouldPauseVoice, stageHint } from "@/lib/ekid/interactive";
 import { KID } from "@/components/ekid/child/kid-theme";
 import { InteractiveStage } from "@/components/ekid/child/InteractiveStage";
@@ -30,26 +30,10 @@ export interface TalkKid {
   favorite_voice: string | null;
   placement_age_band: AgeBand | null;
   placement_level: number | null;
+  /** Giới tính giáo viên AI (settings.teacher.gender): "co" = giọng nữ, "thay" = giọng nam. */
+  teacher_gender?: TeacherGender | null;
   /** Bộ nhớ tổng hợp về bé từ các buổi trước (cột ekid_kids.memory). */
   memory: string | null;
-}
-
-// 10 giọng Gemini Live hợp lệ (khớp `VoiceOption` trong gemini-live.ts).
-const VALID_VOICES: readonly VoiceOption[] = [
-  "Puck",
-  "Charon",
-  "Kore",
-  "Fenrir",
-  "Aoede",
-  "Zephyr",
-  "Leda",
-  "Orus",
-  "Callirrhoe",
-  "Sulafat",
-];
-
-function isVoiceOption(value: string | null): value is VoiceOption {
-  return value !== null && (VALID_VOICES as readonly string[]).includes(value);
 }
 
 /**
@@ -57,9 +41,15 @@ function isVoiceOption(value: string | null): value is VoiceOption {
  * nút "📚 Bài học" mở trang thư viện riêng.
  */
 export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: number }) {
-  const voice: VoiceOption = isVoiceOption(kid.favorite_voice)
-    ? kid.favorite_voice
-    : BAND_VOICE[kid.placement_age_band ?? "mam-non"];
+  // Giáo viên là cô → giọng nữ; là thầy → giọng nam. `favorite_voice` chỉ được dùng
+  // khi đúng giới tính giáo viên, tránh cảnh "thầy" mà giọng nữ (và ngược lại).
+  const teacherGender: TeacherGender = kid.teacher_gender ?? "co";
+  const ageBand: AgeBand = kid.placement_age_band ?? "mam-non";
+  const voice: VoiceOption = resolveKidVoice({
+    gender: teacherGender,
+    ageBand,
+    favoriteVoice: kid.favorite_voice,
+  });
 
   // Phiên trò chuyện CHUNG: không gắn bài học, không có bài tập.
   // Bộ nhớ (`memory`) được nạp làm ghi chú để AI nhớ ngữ cảnh về bé.
@@ -68,15 +58,16 @@ export function EkidTalkScreen({ kid, remaining }: { kid: TalkKid; remaining: nu
       buildSystemInstruction({
         kidName: kid.name,
         placement: {
-          ageBand: kid.placement_age_band ?? "mam-non",
+          ageBand,
           level: kid.placement_level ?? 1,
         },
         lessonTopic: undefined,
         exercises: [],
         freeSession: true,
         recentNotes: kid.memory ?? null,
+        teacherGender,
       }),
-    [kid.name, kid.placement_age_band, kid.placement_level, kid.memory],
+    [kid.name, ageBand, kid.placement_level, kid.memory, teacherGender],
   );
 
   // ── Lớp tương tác (1 nội dung hiện tại) + ghi log hội thoại ───────────────

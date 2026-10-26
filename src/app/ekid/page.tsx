@@ -7,6 +7,7 @@ import { TodayPlanBanner } from "@/components/ekid/child/TodayPlanBanner";
 import { KID } from "@/components/ekid/child/kid-theme";
 import type { LibraryKid } from "@/components/ekid/child/types";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
+import { isTeacherGender } from "@/lib/ekid/ekid-system";
 
 async function readJson(r: Response): Promise<Record<string, unknown>> {
   try {
@@ -35,12 +36,14 @@ export default function EkidHomePage() {
       if (!r.ok) throw new Error((d.error as string) || "Không tải được hồ sơ bé");
       const k = (d.kid as LibraryKid) ?? null;
       if (!k) throw new Error("Không tìm thấy hồ sơ bé");
+      const teacherGender = k.teacher?.gender;
       setKid({
         id: k.id,
         name: k.name,
         favorite_voice: k.favorite_voice ?? null,
         placement_age_band: (k.placement_age_band as AgeBand | null) ?? null,
         placement_level: k.placement_level ?? null,
+        teacher_gender: isTeacherGender(teacherGender) ? teacherGender : null,
         memory: k.memory ?? null,
       });
     } catch (e) {

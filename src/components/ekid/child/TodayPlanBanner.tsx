@@ -69,7 +69,7 @@ export function TodayPlanBanner({ kidId }: { kidId: string }) {
       <ul className="mt-2 space-y-1">
         {plan.slots.length === 0 && (
           <li className="text-base font-semibold text-[#3b2a20]">
-            Hôm nay chưa có bài nào được xếp. Cô sẽ chuẩn bị bài mới nhé!
+            Hôm nay chưa có bài nào được xếp. Thầy/cô AI sẽ chuẩn bị bài mới nhé!
           </li>
         )}
         {plan.slots.map((s) => (

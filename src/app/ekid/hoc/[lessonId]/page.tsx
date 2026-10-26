@@ -8,6 +8,7 @@ import type { EkidKidLite, EkidLessonLite } from "@/components/ekid/EkidVoiceSes
 import type { LibraryKid, LibraryLesson } from "@/components/ekid/child/types";
 import { KID } from "@/components/ekid/child/kid-theme";
 import type { AgeBand } from "@/lib/ekid/ekid-system";
+import { isTeacherGender } from "@/lib/ekid/ekid-system";
 
 // Bài học đầy đủ trả từ /api/ekid/lessons (kèm video_url dùng để phát hướng dẫn).
 type FullLesson = EkidLessonLite & { video_url?: string | null };
@@ -63,6 +64,7 @@ export default function EkidLessonPage() {
       if (!lr.ok) throw new Error((ld.error as string) || "Không tải được hồ sơ bé");
       const libKid = (ld.kid as LibraryKid) ?? null;
       if (!libKid) throw new Error("Không tìm thấy hồ sơ bé");
+      const teacherGender = libKid.teacher?.gender;
 
       const kidLite: EkidKidLite = {
         id: libKid.id,
@@ -70,6 +72,7 @@ export default function EkidLessonPage() {
         favorite_voice: libKid.favorite_voice ?? null,
         placement_age_band: (libKid.placement_age_band as AgeBand | null) ?? null,
         placement_level: libKid.placement_level ?? null,
+        teacher_gender: isTeacherGender(teacherGender) ? teacherGender : null,
         avatar_emoji: libKid.avatar_emoji ?? null,
         daily_limit_min: libKid.daily_limit_min ?? null,
       };

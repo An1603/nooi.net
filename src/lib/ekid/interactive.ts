@@ -208,11 +208,31 @@ export function parseSpokenAnswer(text: string | null | undefined, optionCount: 
     if (idx !== null) return idx;
   }
 
+  // Tiếng Anh: "I choose B", "the answer is C", "option A", "letter b"
+  const byLetterEn = t.match(
+    /(?:i\s+(?:choose|pick|select)|my\s+answer\s+is|the\s+answer\s+is|answer\s+is|option|letter)\s*(?:letter\s+|option\s+)?([a-f])(?![a-z])/,
+  );
+  if (byLetterEn) {
+    const idx = letterToIndex(byLetterEn[1]);
+    if (idx !== null) return idx;
+  }
+
   // "con chọn 2", "đáp án số 3", "chọn cái thứ 2"
-  const byNumber = t.match(/(?:chọn|chon|đáp án|dap an|số|so|cái|cai|thứ|thu)\s*(?:là|la)?\s*(\d{1,2})(?!\d)/);
+  // (KHÔNG nhận "so" trần — trùng từ "so" tiếng Anh, dễ chấm bừa khi bé nói tiếng Anh.)
+  const byNumber = t.match(/(?:chọn|chon|đáp án|dap an|số|cái|cai|thứ|thu)\s*(?:là|la)?\s*(\d{1,2})(?!\d)/);
   if (byNumber) {
     const n = Number(byNumber[1]);
     // Chấp nhận cả cách đếm từ 1 và cách đọc "số 0/1" của trẻ lớn.
+    if (n >= 1 && n <= optionCount) return n - 1;
+    if (n >= 0 && n < optionCount) return n;
+  }
+
+  // Tiếng Anh: "I choose 2", "the answer is number 3", "option 1"
+  const byNumberEn = t.match(
+    /(?:i\s+(?:choose|pick|select)|my\s+answer\s+is|the\s+answer\s+is|answer\s+is|number|option)\s*(?:number\s+)?(\d{1,2})(?!\d)/,
+  );
+  if (byNumberEn) {
+    const n = Number(byNumberEn[1]);
     if (n >= 1 && n <= optionCount) return n - 1;
     if (n >= 0 && n < optionCount) return n;
   }

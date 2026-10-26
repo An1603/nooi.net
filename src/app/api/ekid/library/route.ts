@@ -144,5 +144,10 @@ export async function GET(req: Request) {
   void _cuid;
   void _settings;
 
-  return NextResponse.json({ kid: safeKid, lessons: withProgress });
+  // Ngoại lệ có chủ đích: CHỈ công bố lựa chọn giáo viên (cô/thầy) để giao diện bé
+  // chọn đúng giọng nữ/nam — không lộ toàn bộ cài đặt của phụ huynh.
+  return NextResponse.json({
+    kid: { ...safeKid, teacher: settings.teacher },
+    lessons: withProgress,
+  });
 }

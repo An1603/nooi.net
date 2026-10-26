@@ -3,8 +3,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { KidCustomReward, KidSettings } from "@/lib/ekid/ekid-system";
-import { DAILY_LIMIT_MIN, DAILY_LIMIT_MAX, normalizeKidSettings } from "@/lib/ekid/ekid-system";
+import type { KidCustomReward, KidSettings, TeacherGender } from "@/lib/ekid/ekid-system";
+import {
+  DAILY_LIMIT_MIN,
+  DAILY_LIMIT_MAX,
+  TEACHER_PROFILE,
+  normalizeKidSettings,
+} from "@/lib/ekid/ekid-system";
 import type { ConsoleKid } from "./types";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -86,6 +91,9 @@ export function SettingsTab({
   const [topics, setTopics] = useState<string[]>([]);
   const [topicsError, setTopicsError] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<string[]>(settings.subjects);
+
+  // Khối Giáo viên AI (giọng nữ/nam theo lựa chọn cô/thầy)
+  const [teacherGender, setTeacherGender] = useState<TeacherGender>(settings.teacher.gender);
 
   // Khối Phần thưởng
   const [pointsPer, setPointsPer] = useState(String(settings.rewards.pointsPerPassedLesson));
@@ -213,6 +221,7 @@ export function SettingsTab({
         badgeMilestones: parsedMilestones,
         custom: cleanCustom,
       },
+      teacher: { gender: teacherGender },
     };
 
     setSaving(true);
@@ -239,6 +248,7 @@ export function SettingsTab({
         setPointsPer(String(s.rewards.pointsPerPassedLesson));
         setMilestones(s.rewards.badgeMilestones.join(", "));
         setCustom(s.rewards.custom);
+        setTeacherGender(s.teacher.gender);
       }
       setMsg({ ok: true, text: "Đã lưu cài đặt cho con." });
       onChanged();
@@ -277,7 +287,21 @@ export function SettingsTab({
           </dl>
         </section>
 
-        {/* Khối 2: Môn học */}
+        {/* Khối 2: Giáo viên AI */}
+        <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
+          <h2 className="text-sm font-semibold text-foreground">Giáo viên AI</h2>
+          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <SettingRow label="Giáo viên">
+              {TEACHER_PROFILE[settings.teacher.gender].name} — giọng{" "}
+              {settings.teacher.gender === "co" ? "nữ" : "nam"}
+            </SettingRow>
+          </dl>
+          <p className="text-[11px] text-muted-foreground">
+            Giọng đọc bám đúng giới tính giáo viên: cô dùng giọng nữ, thầy dùng giọng nam.
+          </p>
+        </section>
+
+        {/* Khối 3: Môn học */}
         <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
           <h2 className="text-sm font-semibold text-foreground">Môn học</h2>
           <p className="text-sm font-medium text-foreground">{subjectsText}</p>
@@ -286,7 +310,7 @@ export function SettingsTab({
           </p>
         </section>
 
-        {/* Khối 3: Phần thưởng */}
+        {/* Khối 4: Phần thưởng */}
         <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
           <h2 className="text-sm font-semibold text-foreground">Phần thưởng</h2>
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -397,7 +421,42 @@ export function SettingsTab({
         </label>
       </section>
 
-      {/* Khối 2: Môn học */}
+      {/* Khối 2: Giáo viên AI */}
+      <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
+        <h2 className="text-sm font-semibold text-foreground">Giáo viên AI</h2>
+        <p className="text-[11px] text-muted-foreground">
+          Chọn giáo viên cho con. Cô dùng giọng nữ, thầy dùng giọng nam — giọng đọc bám đúng
+          giới tính và đổi theo lứa tuổi của con.
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {(["co", "thay"] as const).map((g) => {
+            const t = TEACHER_PROFILE[g];
+            return (
+              <label
+                key={g}
+                className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm ${
+                  teacherGender === g ? "border-primary bg-glass font-semibold" : "border-border"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="set-teacher"
+                  className="size-4"
+                  value={g}
+                  checked={teacherGender === g}
+                  onChange={() => setTeacherGender(g)}
+                  disabled={!canEdit}
+                />
+                <span>
+                  {t.name} — giọng {g === "co" ? "nữ" : "nam"}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Khối 3: Môn học */}
       <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
         <h2 className="text-sm font-semibold text-foreground">Môn học</h2>
 
@@ -435,7 +494,7 @@ export function SettingsTab({
         )}
       </section>
 
-      {/* Khối 3: Phần thưởng */}
+      {/* Khối 4: Phần thưởng */}
       <section className="space-y-3 rounded-2xl border border-border bg-card/70 p-3">
         <h2 className="text-sm font-semibold text-foreground">Phần thưởng</h2>
 

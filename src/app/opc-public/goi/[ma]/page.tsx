@@ -219,7 +219,7 @@ export default async function ChiTietGoiPage({ params }: PageProps) {
                   </p>
                   <div className="mt-2 flex items-end gap-1.5">
                     <span className="text-3xl font-black tracking-tight text-[#F5EFE6]">
-                      {formatGia(goi.gia)}
+                      {mienPhi ? "0 đ" : formatGia(goi.gia)}
                     </span>
                     {!mienPhi ? (
                       <span className="pb-1 text-xs text-[#8E7CA3]">{nhanKy(goi.ky)}</span>

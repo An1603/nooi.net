@@ -11,20 +11,34 @@ const SHARED_COOKIES = authCookieNames(AUTH_COOKIE_NAME);
 const EKID_COOKIES = authCookieNames(EKID_AUTH_COOKIE_NAME);
 const LEGACY_OPC_COOKIES = authCookieNames("sb-opc-auth-token");
 
-function xoaCookie(
+/**
+ * Xoá cookie bằng header thô. Phải append thủ công vì `resp.cookies.set`
+ * gộp theo name+path: lần set host-only sẽ ghi đè lần set domain `.nooi.net`,
+ * khiến cookie domain không bao giờ được xoá.
+ */
+function xoaCookieRaw(
   resp: NextResponse,
   names: string[],
-  options: Record<string, unknown> = {}
+  domain?: string
 ) {
   for (const name of names) {
-    resp.cookies.set(name, "", { path: "/", maxAge: 0, ...options });
+    const parts = [
+      `${name}=`,
+      "Path=/",
+      "Max-Age=0",
+      "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+      "Secure",
+      "SameSite=Lax",
+    ];
+    if (domain) parts.push(`Domain=${domain}`);
+    resp.headers.append("Set-Cookie", parts.join("; "));
   }
 }
 
 /** Xoá cả bản `.nooi.net` lẫn bản host-only (di sản lỗi cũ). */
 function xoaPhienChung(resp: NextResponse) {
-  xoaCookie(resp, SHARED_COOKIES, { domain: ".nooi.net" });
-  xoaCookie(resp, SHARED_COOKIES);
+  xoaCookieRaw(resp, SHARED_COOKIES, ".nooi.net");
+  xoaCookieRaw(resp, SHARED_COOKIES);
 }
 
 export async function POST(request: NextRequest) {
@@ -56,7 +70,7 @@ async function handleLogout(request: NextRequest) {
   if (host === "opc.nooi.net") {
     const resp = NextResponse.redirect(new URL("/login", "https://opc.nooi.net"));
     xoaPhienChung(resp);
-    xoaCookie(resp, LEGACY_OPC_COOKIES);
+    xoaCookieRaw(resp, LEGACY_OPC_COOKIES);
     return resp;
   }
 
@@ -65,7 +79,7 @@ async function handleLogout(request: NextRequest) {
   if (host === "ekid.nooi.net") {
     const resp = NextResponse.redirect(new URL("/login", "https://ekid.nooi.net"));
     // Chỉ xoá phiên eKid, không đụng phiên người lớn.
-    xoaCookie(resp, EKID_COOKIES);
+    xoaCookieRaw(resp, EKID_COOKIES);
     return resp;
   }
 

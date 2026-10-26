@@ -6,7 +6,10 @@ import { AuthForm } from "@/components/auth/AuthForm";
 export const dynamic = 'force-dynamic';
 
 export default async function LoginPage() {
-  // Nếu đã đăng nhập → redirect về dashboard
+  // Nếu đã đăng nhập → redirect về dashboard.
+  // Lưu ý: KHÔNG bọc redirect() trong try/catch — NEXT_REDIRECT là exception
+  // điều khiển luồng, bắt nhầm sẽ nuốt redirect và hiện lại form đăng nhập.
+  let daDangNhap = false;
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -15,8 +18,9 @@ export default async function LoginPage() {
       { cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} } }
     );
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) redirect("/app");
+    daDangNhap = !!user;
   } catch {}
+  if (daDangNhap) redirect("/app");
 
   return (
     <div className="relative min-h-[100dvh] flex items-center justify-center bg-background p-4 overflow-hidden">

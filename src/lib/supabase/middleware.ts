@@ -6,6 +6,7 @@ import {
   authCookieChunkNames,
   AUTH_COOKIE_NAME,
   EKID_HOST,
+  OPC_HOST,
 } from "@/lib/supabase/cookies";
 
 // Chunk cookie TÊN MẶC ĐỊNH (legacy) — dùng để dọn biến thể mồ côi trên host ekid.
@@ -19,7 +20,10 @@ export const updateSession = async (request: NextRequest) => {
   // ĐỌC (không đọc chunk tên mặc định do người lớn đặt ở .nooi.net).
   const host = request.headers.get("host") || "";
   const isEkid = host === EKID_HOST;
-  const hostOnly = isEkid;
+  const isOpc = host === OPC_HOST;
+  // OPC Center dùng cookie host-only + tên riêng: tránh xung đột chunk với
+  // cookie phiên `.nooi.net` của người lớn (đã gây mất phiên khi rewrite).
+  const hostOnly = isEkid || isOpc;
   const cookieName = authCookieName(host);
 
   const supabase = createServerClient(
@@ -72,7 +76,7 @@ export const updateSession = async (request: NextRequest) => {
     // ekid (di sản của giai đoạn chuyển tiếp: tên mặc định + host-only). Cookie
     // tên mặc định ở scope `.nooi.net` thuộc về người lớn (nooi.net/app/admin) —
     // KHÔNG đụng tới để tránh đăng xuất người lớn (giữ nguyên hành vi nooi.net).
-    if (isEkid) {
+    if (isEkid || isOpc) {
       for (const name of LEGACY_DEFAULT_CHUNKS) {
         if (request.cookies.get(name)) {
           supabaseResponse.cookies.set(name, "", {

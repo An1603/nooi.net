@@ -64,17 +64,17 @@ const GIA_TRI = [
   {
     icon: Sparkles,
     ten: "Người dẫn đường",
-    moTa: "Giao lưu với chuyên gia, khách mời, người có ảnh hưởng; mentor đồng hành theo cấp.",
+    moTa: "Giao lưu với chuyên gia, khách mời, người có ảnh hưởng; mở rộng tầm nhìn và mentor theo cấp.",
   },
   {
     icon: Network,
     ten: "Kết nối kinh doanh",
-    moTa: "Đối tác, nhà cung cấp, nguồn hàng, nhân lực, đầu mối phân phối, thi công và thực thi.",
+    moTa: "Đối tác, nhà cung cấp, nguồn hàng, sản phẩm/dịch vụ, nhân lực, đầu mối phân phối, thi công và thực thi.",
   },
   {
     icon: HeartHandshake,
     ten: "Cộng đồng tương hỗ",
-    moTa: "Nhóm cùng giai đoạn, mastermind, hỏi đáp và accountability — sinh hoạt trong một cộng đồng tương trợ.",
+    moTa: "Nhóm cùng giai đoạn, mastermind, hỏi đáp và mentor hỗ trợ kịp thời — sinh hoạt trong một cộng đồng tương trợ.",
   },
   {
     icon: TrendingUp,

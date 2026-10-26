@@ -104,8 +104,8 @@ python3 scripts/apply-sql-api.py supabase/migrations/20261026000003_opc_public_s
 
 | Đường dẫn | Đối tượng | Chức năng |
 |---|---|---|
-| `/` | Chưa đăng nhập | Landing 3 cấp độ: người mới, đang vận hành, đi xa hơn; sản phẩm nhóm theo cấp; block khách hàng hiện hữu |
-| `/goi` | Công khai | Danh mục 10 sản phẩm nhóm theo 3 cấp độ + FAQ |
+| `/` | Chưa đăng nhập | Landing 3 cấp độ: người mới, đang vận hành, đi xa hơn; 8 giá trị cộng đồng; block khách hàng hiện hữu |
+| `/goi` | Công khai | Danh mục 10 sản phẩm nhóm theo 3 cấp độ + callout giá trị cộng đồng + FAQ |
 | `/chan-doan` | Công khai | 10 câu hỏi, kết quả sơ bộ, thu lead |
 | `/dat-mua/[ma]` | Công khai | Đặt mua hoặc nhận tư vấn |
 | `/cam-on` | Công khai | Xác nhận dự phòng |
@@ -131,6 +131,25 @@ Trang chủ phục vụ bốn trạng thái khách, không dùng chung một th�
 Nguyên tắc: nhóm theo cấp thay vì danh sách phẳng 10 gói; giá chính xác ở `/goi`;
 chỉ một CTA chính mỗi màn hình; không bắt đăng nhập trước khi chẩn đoán/đặt mua.
 `/login` đổi tiêu đề và mô tả theo host để không lẫn với cửa hàng NOOI chung.
+
+### 4.2 Giá trị cộng đồng — `#gia-tri`
+
+Trang chủ có section **“Không chỉ là một gói học”** với 8 thẻ giá trị, đặt sau danh mục sản phẩm:
+
+| Thẻ | Nội dung cốt lõi |
+|---|---|
+| Hội & chính sách | Gia nhập Hội doanh nhân OPC; kết nối chương trình hỗ trợ nhà nước/tổ chức hỗ trợ |
+| Người dẫn đường | Chuyên gia, khách mời, người có ảnh hưởng; mentor theo cấp |
+| Kết nối kinh doanh | Đối tác, nhà cung cấp, nguồn hàng, nhân lực, phân phối, thi công |
+| Cộng đồng tương hỗ | Nhóm cùng giai đoạn, mastermind, hỏi đáp, accountability |
+| Khách hàng & doanh thu | Giới thiệu, bán chéo, mở kênh, case study |
+| Năng lực & uy tín | Đào tạo, OPC Certified, hồ sơ năng lực |
+| Nguồn lực & vốn | Ưu đãi pháp lý – kế toán, AI, không gian; kết nối ngân hàng/quỹ |
+| Chuyển hóa & cân bằng | Retreat, Residency, wellness tại NOOI Forest |
+
+`/goi` có callout ngắn “Giá trị cộng đồng” liên kết về `/#gia-tri`.
+Chi tiết 10 giá trị, ranh giới truyền thông và việc cần làm:
+`~/hermes-notes/projects/NOOI/opc-center/00-dieu-hanh/OPC-CENTER-GIA-TRI-CONG-DONG-MANG-LUOI-2026-10-26.md`.
 
 ---
 

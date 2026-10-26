@@ -84,7 +84,7 @@ const META: Record<string, GoiMeta> = {
   },
   membership: {
     nhom: "loi",
-    tagline: "Không đơn độc trên đường vận hành.",
+    tagline: "Cộng đồng, mạng lưới và người dẫn đường.",
     badge: "Cộng đồng",
     accent: "violet",
     cta: "Đặt mua",

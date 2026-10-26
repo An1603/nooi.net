@@ -147,13 +147,15 @@ export default async function AdminLayout({
               <Link href="/admin/roles" className="text-[11px] text-primary hover:underline">Quản trị</Link>
             )}
           </div>
-          <a
-            href="/auth/logout"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 mt-2 transition-colors"
-          >
-            <LogOut className="size-3" />
-            Đăng xuất
-          </a>
+          <form action="/auth/logout" method="POST" className="mt-2">
+            <button
+              type="submit"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 transition-colors"
+            >
+              <LogOut className="size-3" />
+              Đăng xuất
+            </button>
+          </form>
         </div>
       </aside>
 

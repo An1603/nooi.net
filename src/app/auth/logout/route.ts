@@ -45,8 +45,12 @@ export async function POST(request: NextRequest) {
   return handleLogout(request);
 }
 
-export async function GET(request: NextRequest) {
-  return handleLogout(request);
+export async function GET() {
+  // Đăng xuất phải là POST: tránh prefetch/GET link tự động đá phiên.
+  return new NextResponse("Method Not Allowed", {
+    status: 405,
+    headers: { Allow: "POST" },
+  });
 }
 
 async function handleLogout(request: NextRequest) {

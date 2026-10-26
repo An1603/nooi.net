@@ -95,13 +95,15 @@ export default function OpcShell({
             {VAI_TRO_LABEL[user.vaiTro] || user.vaiTro}
           </span>
         </span>
-        <Link
-          href="/auth/logout"
-          title="Đăng xuất"
-          className="rounded-lg p-1.5 text-[#8E7CA3] hover:bg-white/5 hover:text-[#E8C07A]"
-        >
-          <LogOut size={15} />
-        </Link>
+        <form action="/auth/logout" method="post">
+          <button
+            type="submit"
+            title="Đăng xuất"
+            className="rounded-lg p-1.5 text-[#8E7CA3] hover:bg-white/5 hover:text-[#E8C07A]"
+          >
+            <LogOut size={15} />
+          </button>
+        </form>
       </div>
     </div>
   );

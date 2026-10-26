@@ -132,4 +132,10 @@ describe("eKid — system instruction theo giáo viên & ngoại ngữ", () => {
     expect(s).toContain("KHÔNG nêu đáp án");
     expect(s).toContain("thang gợi ý 4 bậc");
   });
+
+  it("câu mẫu trong luật sư phạm xưng đúng giới tính (không lẫn 'cô' khi là thầy)", () => {
+    expect(prompt("thay")).toContain("Con kể lại cho thầy nghe");
+    expect(prompt("thay")).not.toContain("Con kể lại cho cô nghe");
+    expect(prompt("co")).toContain("Con kể lại cho cô nghe");
+  });
 });

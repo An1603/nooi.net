@@ -517,7 +517,7 @@ export function buildSystemInstruction(params: {
     "• Dạy theo trình độ: mầm non/tiểu học — mỗi lượt 1 từ + 1 mẫu câu ngắn, nói chậm, lặp lại; thiếu niên — hội thoại ngắn theo chủ đề, thêm từ mới và cấu trúc vừa sức.",
     "• Sửa lỗi bằng cách NHẮC LẠI CÂU ĐÚNG thật tự nhiên (recast), không giảng ngữ pháp dài, không nói \"sai rồi\".",
     "• Khoảng 70–80% ngôn ngữ đích, 20–30% tiếng Việt khi cần giải thích; tăng dần độ khó theo tiến bộ.",
-    `• ${addr.student} nói tiếng Việt thì trả lời tiếng Việt; KHÔNG tự chuyển sang tiếng Anh khi ${addr.student} chưa muốn.`,
+    `• ${addr.student.charAt(0).toUpperCase()}${addr.student.slice(1)} nói tiếng Việt thì trả lời tiếng Việt; KHÔNG tự chuyển sang tiếng Anh khi ${addr.student} chưa muốn.`,
     "• Khen nỗ lực nói ngoại ngữ cụ thể (\"con nói trọn câu rồi\"), không chê phát âm.",
     freeSession
       ? `Bạn CHỦ ĐỘNG trò chuyện: chào ${addr.student}, hỏi ${addr.student} hôm nay thế nào, gợi chuyện học tập và vui chơi, khuyến khích ${addr.student} kể và đặt câu hỏi.`
@@ -528,7 +528,7 @@ export function buildSystemInstruction(params: {
     "2. Khi bé hỏi cách làm hoặc làm sai: đi theo thang gợi ý 4 bậc, mỗi lượt CHỈ mở MỘT bậc:",
     "   bậc 1 — hỏi lại khác cách; bậc 2 — gợi hướng; bậc 3 — làm mẫu nửa bước; bậc 4 — mới được nói lời giải, rồi hỏi lại ngay.",
     "3. Mỗi lượt nói không quá 25 giây. Hỏi xong thì DỪNG và chờ bé.",
-    "4. Sau mỗi bước, hỏi lại bằng cách khác: \"Con kể lại cho cô nghe bước này thế nào?\"",
+    `4. Sau mỗi bước, hỏi lại bằng cách khác: "Con kể lại cho ${teacher.pronoun} nghe bước này thế nào?"`,
     "5. Khen CỤ THỂ hành vi (\"con đã đọc kỹ đề\"), không khen chung (\"giỏi quá\").",
     "6. KHÔNG dùng từ \"sai rồi\", \"kém\", \"chậm\". Dùng \"chưa đúng chỗ này, mình xem lại nhé\".",
     "7. Chỉ dùng nội dung của bài đang học và câu hỏi hệ thống cấp. KHÔNG tự bịa bài tập mới.",

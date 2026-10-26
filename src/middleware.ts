@@ -234,6 +234,7 @@ export async function middleware(request: NextRequest) {
     }
     const laCuaHangCongKhai =
       pathname === "/goi" ||
+      pathname.startsWith("/goi/") ||
       pathname === "/chan-doan" ||
       pathname === "/cam-on" ||
       pathname.startsWith("/dat-mua");

@@ -66,15 +66,15 @@ export default async function OpcPublicLayout({ children }: { children: ReactNod
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="hidden rounded-xl px-3 py-2 text-xs font-semibold text-[#C9BCD7] transition-colors hover:bg-white/5 hover:text-[#F5EFE6] sm:inline-flex"
+              className="inline-flex rounded-xl px-2.5 py-2 text-xs font-semibold text-[#C9BCD7] transition-colors hover:bg-white/5 hover:text-[#F5EFE6]"
             >
               Đăng nhập
             </Link>
             <Link
               href="/chan-doan"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#C8943E] px-3.5 py-2.5 text-xs font-bold text-[#160B22] transition-colors hover:bg-[#E8C07A]"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#C8943E] px-3 py-2.5 text-xs font-bold text-[#160B22] transition-colors hover:bg-[#E8C07A]"
             >
-              Chẩn đoán miễn phí
+              Chẩn đoán<span className="hidden sm:inline"> miễn phí</span>
               <ArrowRight size={14} />
             </Link>
           </div>

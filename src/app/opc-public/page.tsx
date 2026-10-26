@@ -31,8 +31,8 @@ const BUOC = [
   },
   {
     so: "02",
-    ten: "Chọn đúng gói",
-    moTa: "Không bán gói lớn nhất. Chọn gói vừa với giai đoạn và ngân sách của bạn.",
+    ten: "Chọn đúng cấp độ",
+    moTa: "Không bán gói lớn nhất. Chọn cấp độ vừa với trạng thái và ngân sách của bạn.",
     icon: Target,
   },
   {

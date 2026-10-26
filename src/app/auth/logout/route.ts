@@ -28,6 +28,7 @@ function xoaCookie(
     resp.cookies.set(name, "", {
       path: "/",
       maxAge: 0,
+      expires: new Date(0),
       secure: true,
       sameSite: "lax",
       ...(domain ? { domain } : {}),

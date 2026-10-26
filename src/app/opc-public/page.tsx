@@ -121,7 +121,7 @@ export default async function OpcPublicHome() {
               {[
                 ["3", "cấp độ"],
                 ["10", "sản phẩm"],
-                ["90", "ngày có kết quả"],
+                ["90", "ngày"],
               ].map(([so, nhan]) => (
                 <div key={nhan} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
                   <p className="text-2xl font-black text-[#E8C07A]">{so}</p>
@@ -135,13 +135,11 @@ export default async function OpcPublicHome() {
           <div className="relative">
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-[#C8943E]/20 via-transparent to-violet-500/10 blur-2xl" />
             <div className="relative rounded-[1.75rem] border border-white/10 bg-[#1A0F2A]/90 p-5 shadow-2xl backdrop-blur md:p-6">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9A88AD]">Bạn mới bắt đầu?</p>
-                <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-[#9A88AD]">
-                  20 phút
-                </span>
-              </div>
-              <div className="mt-5 space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9A88AD]">Bạn mới bắt đầu?</p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-[#8E7CA3]">
+                Từ chẩn đoán đến việc đầu tiên trong 20 phút.
+              </p>
+              <div className="mt-4 space-y-4">
                 {[
                   { buoc: "1", ten: "Chẩn đoán 10 câu", moTa: "Biết điểm nghẽn lớn nhất", mau: "bg-[#C8943E]" },
                   { buoc: "2", ten: "Nhận 1 việc ưu tiên", moTa: "Không phải mười việc", mau: "bg-emerald-400" },

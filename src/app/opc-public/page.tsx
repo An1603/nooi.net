@@ -72,14 +72,23 @@ export default async function OpcPublicHome() {
               OPC = One-Person Company — bạn không cần có công ty để bắt đầu.
             </p>
             <h1
-              className="mt-5 max-w-2xl text-[clamp(1.8rem,8vw,2.25rem)] font-bold leading-[1.08] tracking-tight text-[#F5EFE6] md:text-5xl lg:text-[3.5rem]"
+              className="mt-5 max-w-2xl text-[clamp(1.8rem,8vw,2.25rem)] font-bold leading-[1.08] tracking-tight text-[#F5EFE6] md:text-5xl xl:text-[3.5rem]"
               style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
             >
               Từ một ý tưởng,
               <br />
-              <span className="md:whitespace-nowrap">đến một doanh nghiệp</span>
-              <br />
-              <span className="text-[#C8943E]">vận hành.</span>
+              <span className="md:hidden">
+                đến một
+                <br />
+                doanh nghiệp
+                <br />
+                <span className="text-[#C8943E]">vận hành.</span>
+              </span>
+              <span className="hidden md:inline">
+                <span className="md:whitespace-nowrap">đến một doanh nghiệp</span>
+                <br />
+                <span className="text-[#C8943E]">vận hành.</span>
+              </span>
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-[#C9BCD7] md:text-lg">
               OPC Center giúp bạn nhìn rõ mình đang kẹt ở đâu, chọn đúng việc tiếp theo và có người đồng hành

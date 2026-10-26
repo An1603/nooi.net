@@ -78,7 +78,8 @@ export default async function OpcPublicHome() {
               Từ một ý tưởng,
               <br />
               đến một doanh nghiệp
-              <span className="text-[#C8943E]"> vận hành.</span>
+              <br />
+              <span className="text-[#C8943E]">vận hành.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-[#C9BCD7] md:text-lg">
               OPC Center giúp bạn nhìn rõ mình đang kẹt ở đâu, chọn đúng việc tiếp theo và có người đồng hành
@@ -127,8 +128,8 @@ export default async function OpcPublicHome() {
             <div className="relative rounded-[1.75rem] border border-white/10 bg-[#1A0F2A]/90 p-5 shadow-2xl backdrop-blur md:p-6">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9A88AD]">Bạn mới bắt đầu?</p>
-                <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-bold text-emerald-300">
-                  Bắt đầu trong 20 phút
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-[#9A88AD]">
+                  20 phút
                 </span>
               </div>
               <div className="mt-5 space-y-4">

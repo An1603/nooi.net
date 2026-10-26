@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/AuthForm";
+import { authCookieName, OPC_HOST } from "@/lib/supabase/cookies";
 
 export const dynamic = 'force-dynamic';
 
@@ -10,17 +11,21 @@ export default async function LoginPage() {
   // Lưu ý: KHÔNG bọc redirect() trong try/catch — NEXT_REDIRECT là exception
   // điều khiển luồng, bắt nhầm sẽ nuốt redirect và hiện lại form đăng nhập.
   let daDangNhap = false;
+  const host = (await headers()).get("host") || "";
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} } }
+      {
+        cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} },
+        cookieOptions: { name: authCookieName(host) },
+      }
     );
     const { data: { user } } = await supabase.auth.getUser();
     daDangNhap = !!user;
   } catch {}
-  if (daDangNhap) redirect("/app");
+  if (daDangNhap) redirect(host === OPC_HOST ? "/" : "/app");
 
   return (
     <div className="relative min-h-[100dvh] flex items-center justify-center bg-background p-4 overflow-hidden">

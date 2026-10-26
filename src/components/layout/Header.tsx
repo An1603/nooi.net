@@ -20,6 +20,12 @@ export function Header({ initialSession = false }: { initialSession?: boolean })
   const [mobileOpen, setMobileOpen] = useState(false);
   const [session, setSession] = useState<boolean | null>(initialSession ? true : null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  // Trên host OPC Center, "Dashboard" phải về trang chủ OPC (rewrite /opc),
+  // không phải /app của nooi.net.
+  const [dashboardHref, setDashboardHref] = useState("/app");
+  useEffect(() => {
+    if (window.location.hostname === "opc.nooi.net") setDashboardHref("/");
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -83,7 +89,7 @@ export function Header({ initialSession = false }: { initialSession?: boolean })
                 {displayName}
               </span>
               <Link
-                href="/app"
+                href={dashboardHref}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary px-4 py-1.5 text-sm font-medium hover:bg-primary/20 transition-all"
               >
                 <LayoutDashboard size={15} />
@@ -147,7 +153,7 @@ export function Header({ initialSession = false }: { initialSession?: boolean })
             ) : session ? (
               <>
                 <Link
-                  href="/app"
+                  href={dashboardHref}
                   onClick={() => setMobileOpen(false)}
                   className="inline-flex items-center gap-2 text-sm text-primary font-medium py-1"
                 >

@@ -27,7 +27,20 @@ interface Props {
 function sauDangNhap(): string {
   if (typeof window === "undefined") return "/app";
   const r = new URLSearchParams(window.location.search).get("redirect");
-  return r && r.startsWith("/") && !r.startsWith("//") ? r : "/app";
+  if (r && r.startsWith("/") && !r.startsWith("//")) return r;
+  // OPC Center có trang chủ riêng tại "/" (middleware rewrite sang /opc).
+  return window.location.hostname === "opc.nooi.net" ? "/" : "/app";
+}
+
+/** Điều hướng sau đăng nhập. Trên OPC Center dùng full reload để server chắc chắn
+ *  đọc được cookie phiên host-only vừa ghi (router.push đôi khi bị RSC cache cũ). */
+function diSauDangNhap(routerPush: (href: string) => void) {
+  const target = sauDangNhap();
+  if (typeof window !== "undefined" && window.location.hostname === "opc.nooi.net") {
+    window.location.assign(target);
+    return;
+  }
+  routerPush(target);
 }
 
 function translateAuthError(message: string): string {
@@ -206,7 +219,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
           return;
         }
         toast.success("Tài khoản đã được tạo thành công!");
-        router.push(sauDangNhap());
+        diSauDangNhap(router.push);
       } else {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: emailTrimmed, password,
@@ -223,7 +236,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
         }
 
         toast.success("Đăng nhập thành công!");
-        router.push(sauDangNhap());
+        diSauDangNhap(router.push);
       }
     } catch (err) { toast.error(extractErrorMessage(err)); }
     finally { setLoading(false); }

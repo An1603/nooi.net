@@ -23,13 +23,16 @@ Middleware: `src/middleware.ts`, nhánh `OPC_HOST`.
 
 ### Phiên đăng nhập
 
-OPC dùng **cookie host-only riêng**: `sb-opc-auth-token`.
+OPC dùng **chung cookie `.nooi.net`** với nooi.net/app/admin: SSO thật.
 
-- Không dùng chung cookie `.nooi.net` với nooi.net/admin để tránh xung đột chunk
-  (đã gây mất phiên khi rewrite path động).
-- Đăng nhập một lần trên `opc.nooi.net`; phiên OPC độc lập với phiên nooi.net.
-- Logout: `/auth/logout` trả về `/login` của OPC và xoá cookie OPC.
-- Cấu hình: `src/lib/supabase/cookies.ts` (`OPC_AUTH_COOKIE_NAME`, `OPC_HOST`).
+- Tên cookie mặc định `sb-gsnuqrutiauhnsacgzym-auth-token`, `Domain=.nooi.net`.
+- Đăng nhập một lần ở `nooi.net` **hoặc** `opc.nooi.net`; cả hai nhận phiên.
+- Client (`createBrowserClient`), server (`createServerClient`) và middleware dùng
+  **cùng** `authCookieOptions(host)` — không còn biến thể host-only gây mất phiên.
+- Logout: `POST /auth/logout`; xoá cookie domain `.nooi.net` → đăng xuất cả hai.
+  `GET /auth/logout` trả **405** để tránh prefetch/CSRF tự đá phiên.
+- Phiên cũ `sb-opc-auth-token` được dọn tự động khi gặp; người dùng cũ đăng nhập lại một lần.
+- Cấu hình: `src/lib/supabase/cookies.ts` (`authCookieOptions`, `OPC_HOST`).
 
 ---
 
@@ -167,7 +170,7 @@ Kiểm thử đã chạy 26/10/2026:
 - Chưa có LMS/khóa học, email/Zalo tự động, báo cáo xuất file.
 - Audit mới ghi thao tác CRM (`opc_nhat_ky`), chưa ghi mọi thao tác cộng đồng.
 - Chưa có trang quản trị gói/giá; sửa trực tiếp bảng `opc_goi` (chỉ quản trị).
-- Phiên OPC tách khỏi nooi.net (đăng nhập riêng trên opc.nooi.net).
+- Phiên dùng chung `.nooi.net`; chưa có đăng xuất theo từng thiết bị (logout là toàn bộ).
 
 ## 9. Việc tiếp theo (theo thứ tự)
 

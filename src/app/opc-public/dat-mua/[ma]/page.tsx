@@ -56,7 +56,7 @@ export default async function DatMuaPage({ params }: PageProps) {
             <div className="mt-6 rounded-3xl border border-white/10 bg-[#160D24] p-5 md:p-6">
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8943E]">Thông tin của bạn</p>
               <div className="mt-4">
-                <OrderForm ma={goi.ma} ten={goi.ten} />
+                <OrderForm ma={goi.ma} ten={goi.ten} tuVan={goi.meta.tuVan} />
               </div>
             </div>
 

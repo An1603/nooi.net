@@ -9,6 +9,8 @@ export type GoiMeta = {
   badge?: string;
   accent: "gold" | "green" | "violet" | "rose" | "cyan";
   cta: string;
+  /** Gói tư vấn: chỉ tạo lead, không tạo đơn hàng. */
+  tuVan?: boolean;
 };
 
 export type GoiCongKhai = {
@@ -70,6 +72,7 @@ const META: Record<string, GoiMeta> = {
     badge: "Mới",
     accent: "gold",
     cta: "Nhận tư vấn",
+    tuVan: true,
   },
   residency: {
     nhom: "mo-rong",
@@ -77,6 +80,7 @@ const META: Record<string, GoiMeta> = {
     badge: "Mới",
     accent: "green",
     cta: "Nhận tư vấn",
+    tuVan: true,
   },
   partner: {
     nhom: "mo-rong",
@@ -84,6 +88,7 @@ const META: Record<string, GoiMeta> = {
     badge: "B2B",
     accent: "violet",
     cta: "Nhận tư vấn",
+    tuVan: true,
   },
   certified: {
     nhom: "mo-rong",
@@ -91,6 +96,7 @@ const META: Record<string, GoiMeta> = {
     badge: "Tùy chọn",
     accent: "cyan",
     cta: "Nhận tư vấn",
+    tuVan: true,
   },
 };
 

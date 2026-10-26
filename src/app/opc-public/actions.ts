@@ -290,6 +290,15 @@ export async function datMua(
 
   if (lead.error || !lead.id) return { error: lead.error || "Chưa lưu được yêu cầu." };
 
+  // Gói tư vấn (Launch, Residency, Partner, Certified): chỉ ghi lead,
+  // không tạo đơn hàng — tránh biến một cuộc trao đổi thành "đơn chờ thanh toán".
+  if (goi.meta.tuVan) {
+    await ghiHoatDong(admin, lead.id, `Yêu cầu tư vấn gói ${goi.ten}`);
+    revalidatePath("/leads");
+    revalidatePath("/opc/leads");
+    return { ok: `Đã ghi nhận yêu cầu tư vấn ${goi.ten}. OPC sẽ liên hệ trong 4 giờ làm việc.` };
+  }
+
   const { error: orderError } = await admin.from("opc_don_hang").insert({
     lead_id: lead.id,
     nguoi_id: null,

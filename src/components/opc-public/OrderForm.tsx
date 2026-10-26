@@ -9,7 +9,7 @@ import type { PublicActionState } from "@/lib/opc/diagnostic";
 const inputCls =
   "w-full rounded-xl border border-white/10 bg-[#0F0718] px-3.5 py-3 text-sm text-[#F5EFE6] placeholder:text-[#6F5D80] focus:border-[#C8943E]/60 focus:outline-none focus:ring-2 focus:ring-[#C8943E]/10";
 
-export default function OrderForm({ ma, ten }: { ma: string; ten: string }) {
+export default function OrderForm({ ma, ten, tuVan = false }: { ma: string; ten: string; tuVan?: boolean }) {
   const [state, action, pending] = useActionState<PublicActionState, FormData>(datMua, {});
 
   if (state.ok) {
@@ -18,10 +18,13 @@ export default function OrderForm({ ma, ten }: { ma: string; ten: string }) {
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
           <Check size={24} />
         </span>
-        <h3 className="mt-3 text-lg font-bold text-[#F5EFE6]">Đã ghi nhận yêu cầu {ten}</h3>
+        <h3 className="mt-3 text-lg font-bold text-[#F5EFE6]">
+          {tuVan ? "Đã ghi nhận yêu cầu tư vấn" : `Đã ghi nhận yêu cầu ${ten}`}
+        </h3>
         <p className="mt-1.5 text-sm leading-relaxed text-[#C9BCD7]">
-          OPC sẽ liên hệ trong 4 giờ làm việc để xác nhận thông tin, thời gian bắt đầu và hướng dẫn thanh toán.
-          Bạn chưa bị trừ tiền.
+          {tuVan
+            ? "OPC sẽ liên hệ trong 4 giờ làm việc để trao đổi nhu cầu và xem gói có phù hợp không. Bạn chưa bị trừ tiền."
+            : "OPC sẽ liên hệ trong 4 giờ làm việc để xác nhận thông tin, thời gian bắt đầu và hướng dẫn thanh toán. Bạn chưa bị trừ tiền."}
         </p>
         <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
           <Link

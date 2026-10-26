@@ -72,12 +72,12 @@ export default async function OpcPublicHome() {
               OPC = One-Person Company — bạn không cần có công ty để bắt đầu.
             </p>
             <h1
-              className="mt-5 max-w-2xl text-4xl font-bold leading-[1.08] tracking-tight text-[#F5EFE6] md:text-5xl lg:text-6xl"
+              className="mt-5 max-w-2xl text-4xl font-bold leading-[1.08] tracking-tight text-[#F5EFE6] md:text-5xl lg:text-[3.5rem]"
               style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
             >
               Từ một ý tưởng,
               <br />
-              đến một doanh nghiệp
+              <span className="whitespace-nowrap">đến một doanh nghiệp</span>
               <br />
               <span className="text-[#C8943E]">vận hành.</span>
             </h1>

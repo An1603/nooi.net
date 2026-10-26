@@ -20,7 +20,7 @@ opc.nooi.net/dat-mua/... → rewrite → /opc-public/dat-mua/...
 opc.nooi.net/cam-on      → rewrite → /opc-public/cam-on
 opc.nooi.net/leads       → rewrite → /opc/leads
 opc.nooi.net/leads/<id>  → rewrite → /opc/leads/<id>
-opc.nooi.net/login       → trang /login dùng chung
+opc.nooi.net/login       → trang /login dùng chung; copy riêng khi vào từ host OPC
 opc.nooi.net/api/opc/*   → passthrough (route riêng của OPC)
 ```
 
@@ -104,17 +104,33 @@ python3 scripts/apply-sql-api.py supabase/migrations/20261026000003_opc_public_s
 
 | Đường dẫn | Đối tượng | Chức năng |
 |---|---|---|
-| `/` | Chưa đăng nhập | Landing cửa hàng: sản phẩm, cách hoạt động, Forest |
-| `/goi` | Công khai | Danh mục 10 sản phẩm + FAQ |
+| `/` | Chưa đăng nhập | Landing 3 cấp độ: người mới, đang vận hành, đi xa hơn; sản phẩm nhóm theo cấp; block khách hàng hiện hữu |
+| `/goi` | Công khai | Danh mục 10 sản phẩm nhóm theo 3 cấp độ + FAQ |
 | `/chan-doan` | Công khai | 10 câu hỏi, kết quả sơ bộ, thu lead |
 | `/dat-mua/[ma]` | Công khai | Đặt mua hoặc nhận tư vấn |
 | `/cam-on` | Công khai | Xác nhận dự phòng |
+| `/login` | Công khai | Đăng nhập; copy “Tiếp tục hành trình OPC” khi vào từ host OPC |
 | `/` | Đã đăng nhập | Dashboard theo vai trò |
 | `/leads` | Nhân sự | Danh sách, tìm, lọc, thêm lead |
 | `/leads/[id]` | Nhân sự | Chi tiết, đổi trạng thái, ghi chú, dòng thời gian |
 | `/cong-dong` | Tất cả | Feed, đăng bài, bình luận |
 | `/don-hang` | Nhân sự | Gói, đơn, doanh thu tháng |
 | `/ho-so` | Tất cả | Hồ sơ cá nhân, đóng góp |
+
+### 4.1 Trang chủ công khai — ba cấp độ khách hàng
+
+Trang chủ phục vụ bốn trạng thái khách, không dùng chung một thông điệp:
+
+| Nhóm | Nội dung chính | CTA |
+|---|---|---|
+| Người mới | H1 + giải thích OPC = One-Person Company, Cấp 1 (Khởi tạo, Chuẩn hóa, Launch) | Chẩn đoán 20 phút |
+| Đang vận hành | Cấp 2 (Membership, Pro, AI Agent) + đầu ra từng gói | Xem gói vận hành |
+| Đi xa hơn | Cấp 3 (Retreat, Residency, Partner, Certified) | Xem cấp mở rộng |
+| Khách hiện hữu | Block “Đã là khách hàng OPC?” | Đăng nhập không gian của tôi |
+
+Nguyên tắc: nhóm theo cấp thay vì danh sách phẳng 10 gói; giá chính xác ở `/goi`;
+chỉ một CTA chính mỗi màn hình; không bắt đăng nhập trước khi chẩn đoán/đặt mua.
+`/login` đổi tiêu đề và mô tả theo host để không lẫn với cửa hàng NOOI chung.
 
 ---
 

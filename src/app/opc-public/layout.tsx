@@ -51,7 +51,7 @@ export default async function OpcPublicLayout({ children }: { children: ReactNod
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-6 text-xs font-semibold text-[#C9BCD7] md:flex">
+          <nav className="hidden items-center gap-3 text-[11px] font-semibold text-[#C9BCD7] md:flex lg:gap-6 lg:text-xs">
             <Link href="/goi" className="transition-colors hover:text-[#F5EFE6]">
               Sản phẩm
             </Link>

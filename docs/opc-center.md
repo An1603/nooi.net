@@ -96,7 +96,12 @@ cd ~/nooi.net
 python3 scripts/apply-sql-api.py supabase/migrations/20261026000001_opc_center.sql
 python3 scripts/apply-sql-api.py supabase/migrations/20261026000002_opc_public_view.sql
 python3 scripts/apply-sql-api.py supabase/migrations/20261026000003_opc_public_storefront.sql
+python3 scripts/apply-sql-api.py supabase/migrations/20261026000004_opc_membership_values.sql
 ```
+
+`20261026000004` cập nhật 7 quyền lợi hiển thị của Membership (cộng đồng doanh nhân OPC,
+workshop/office hours, kết nối đối tác, sự kiện chuyên gia, ưu đãi pháp lý–kế toán–AI–không gian,
+cơ hội giới thiệu, thư viện mẫu). Không đổi giá/kỳ hạn.
 
 ---
 

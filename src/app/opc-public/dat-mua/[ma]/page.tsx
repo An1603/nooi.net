@@ -22,7 +22,7 @@ export default async function DatMuaPage({ params }: PageProps) {
   if (goi.gia === 0) redirect("/chan-doan");
 
   const mau = lopMau(goi.meta.accent);
-  const laTuVan = goi.meta.nhom === "mo-rong";
+  const laTuVan = goi.meta.tuVan === true;
 
   return (
     <main className="relative overflow-hidden">
@@ -64,7 +64,7 @@ export default async function DatMuaPage({ params }: PageProps) {
               {[
                 { icon: CalendarClock, ten: "Bước 1", moTa: "Gửi thông tin" },
                 { icon: ShieldCheck, ten: "Bước 2", moTa: "OPC xác nhận trong 4 giờ" },
-                { icon: CreditCard, ten: "Bước 3", moTa: "Thanh toán & bắt đầu" },
+                { icon: CreditCard, ten: "Bước 3", moTa: laTuVan ? "Tư vấn & chốt lịch" : "Thanh toán & bắt đầu" },
               ].map((item) => (
                 <div key={item.ten} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                   <item.icon size={16} className="text-[#C8943E]" />

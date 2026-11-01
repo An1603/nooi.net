@@ -27,8 +27,16 @@ export default function SandboxPage() {
         body: JSON.stringify({ message: msg }),
       });
       const data = await res.json();
-      if (data.reply) {
+      if (!res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "ai", text: data.error || "Xin lỗi, có lỗi xảy ra. Hãy thử lại." },
+        ]);
+      } else if (data.reply) {
         setMessages((prev) => [...prev, { role: "ai", text: data.reply }]);
+        if (data.quota?.canhBao) {
+          setMessages((prev) => [...prev, { role: "ai", text: `⚠️ ${data.quota.thongDiep}` }]);
+        }
       } else {
         setMessages((prev) => [...prev, { role: "ai", text: "Xin lỗi, có lỗi xảy ra. Hãy thử lại." }]);
       }

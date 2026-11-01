@@ -160,7 +160,13 @@ export default function AIMentorFloating() {
         body: JSON.stringify({ message: finalMsg }),
       });
       const data = await res.json();
-      setMessages((prev) => [...prev, { role: "ai", text: data.reply || "Xin lỗi, hãy thử lại." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: data.reply || data.error || "Xin lỗi, hãy thử lại." },
+      ]);
+      if (data.quota?.canhBao) {
+        setMessages((prev) => [...prev, { role: "ai", text: `⚠️ ${data.quota.thongDiep}` }]);
+      }
     } catch {
       setMessages((prev) => [...prev, { role: "ai", text: "Lỗi kết nối. Vui lòng thử lại." }]);
     }

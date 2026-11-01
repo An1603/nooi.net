@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -116,6 +117,8 @@ async function uploadToStorage(
 
 // GET /api/admin/brand
 export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   try {
     const config = await getConfig();
     return NextResponse.json(config);
@@ -126,6 +129,8 @@ export async function GET() {
 
 // PUT /api/admin/brand — upload file hoặc chọn từ kho
 export async function PUT(req: NextRequest) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   try {
     const contentType = req.headers.get("content-type") || "";
 

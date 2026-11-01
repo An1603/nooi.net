@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 // GET /api/admin/mentors — list all mentors
 export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
@@ -48,6 +51,8 @@ export async function GET() {
 
 // POST /api/admin/mentors — create/update/delete mentor
 export async function POST(request: NextRequest) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const supabase = createAdminClient();
   try {
     const body = await request.json();

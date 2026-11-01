@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const LEVEL_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2500];
@@ -15,6 +16,8 @@ function calcLevel(n: number) {
 
 // GET /api/admin/users — list all users with stats
 export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const supabase = createAdminClient();
 
   const { data: profiles, error } = await supabase
@@ -94,6 +97,8 @@ export async function GET() {
 
 // POST /api/admin/users — create new user
 export async function POST(request: NextRequest) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const supabase = createAdminClient();
 
   try {

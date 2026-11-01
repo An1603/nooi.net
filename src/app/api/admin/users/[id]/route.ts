@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 // GET /api/admin/users/[id] — user detail with reports
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const { id } = await params;
   const supabase = createAdminClient();
 
@@ -52,6 +55,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const { id } = await params;
   const supabase = createAdminClient();
 
@@ -90,6 +95,8 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const { id } = await params;
   const supabase = createAdminClient();
 

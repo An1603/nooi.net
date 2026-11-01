@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,6 +61,8 @@ async function listAll(adminClient: ReturnType<typeof createAdminClient>): Promi
 
 // GET /api/admin/brand/files
 export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   try {
     const adminClient = createAdminClient();
     const files = await listAll(adminClient);
@@ -71,6 +74,8 @@ export async function GET() {
 
 // DELETE /api/admin/brand/files?bucket=images&path=brand/uploads/file.png
 export async function DELETE(req: NextRequest) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   try {
     const url = new URL(req.url);
     const bucket = url.searchParams.get("bucket");

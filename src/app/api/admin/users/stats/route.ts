@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 // GET /api/admin/users/stats — user stats (journals, N, activity)
 export async function GET(request: NextRequest) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get("user_id");
 

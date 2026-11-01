@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/admin/learning — learning hub stats (user progress, lesson completion)
 export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
   const supabase = createAdminClient();
 
   // Get all lesson_progress entries

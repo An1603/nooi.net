@@ -2,7 +2,57 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const publicRoutes = ["/api/sso", "/api/track", "/", "/login", "/signup", "/gallery", "/auth/callback", "/auth/confirm", "/auth/reset", "/auth/update-password", "/api/migrate", "/u"];
+/**
+ * Đường dẫn công khai trên host chính — so khớp **CHÍNH XÁC**.
+ *
+ * Lịch sử: danh sách này từng chứa "/" và được so bằng `pathname.startsWith(route)`,
+ * nên mọi pathname đều khớp ⇒ cổng chặn ẩn danh ở cuối hàm là mã chết, mở toàn bộ
+ * /api/admin/* dùng service-role cho khách vãng lai (audit 01/11/2026, run-1).
+ * Tuyệt đối KHÔNG thêm mục dạng tiền tố vào đây — dùng `publicPrefixes`.
+ */
+const publicRoutes = [
+  "/",
+  "/login",
+  "/signup",
+  "/gallery",
+  "/u",
+  "/api/sso",
+  "/api/track",
+  "/api/og",
+  "/api/ref-code/check",
+  "/auth/callback",
+  "/auth/confirm",
+  "/auth/reset",
+  "/auth/update-password",
+  // Tệp tĩnh/phục vụ trình duyệt + máy tìm kiếm (phải mở, nếu không PWA/SEO hỏng):
+  "/manifest.json",
+  "/sw.js",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/ekid-manifest.json",
+  "/opc-manifest.json",
+];
+
+/** Cây con được phép công khai; mỗi mục PHẢI kết thúc bằng "/" để không khớp nhầm. */
+const publicPrefixes = [
+  "/u/",
+  "/gallery/",
+  "/api/sso/",
+  "/api/track/",
+  "/api/og/",
+  "/auth/callback/",
+  "/auth/confirm/",
+  "/auth/reset/",
+  "/auth/update-password/",
+];
+
+/** true khi đường dẫn thuộc diện công khai (khớp chính xác hoặc thuộc cây con cho phép). */
+function isPublicRoute(pathname: string): boolean {
+  return (
+    publicRoutes.includes(pathname) ||
+    publicPrefixes.some((prefix) => pathname.startsWith(prefix))
+  );
+}
 
 const ADMIN_HOST = "admin.nooi.net";
 const EKID_HOST = "ekid.nooi.net";
@@ -98,13 +148,23 @@ export async function middleware(request: NextRequest) {
     // (C) Passthrough CHỈ những /api mà phân hệ con thực sự cần, KHÔNG rewrite
     // sang /ekid+path (nếu không sẽ thành /ekid/api/... → 404):
     //   - /api/ekid/*  → API riêng của phân hệ con
-    //   - /api/voice/* → endpoint token giọng nói (EkidVoiceSession → VoiceAssistant
-    //                    → useVoiceAssistant gọi /api/voice/token)
+    //   - /api/voice/* → endpoint token giọng nói, CHỈ khi đã có phiên
     // Mọi /api KHÁC trên host ekid (ví dụ /api/ai-mentor/chat, /api/upload/avatar,
     // /api/ref-code/change, /api/telegram/send — route của app người lớn) KHÔNG
     // được passthrough: chúng rơi vào nhánh dưới (redirect login hoặc rewrite
     // /ekid/... → 404) nên bị chặn, không lộ trên ekid.nooi.net.
-    if (pathname.startsWith("/api/ekid") || pathname.startsWith("/api/voice")) {
+    if (pathname.startsWith("/api/ekid")) {
+      return supabaseResponse;
+    }
+    // Token giọng nói cấp hạn mức Gemini của chủ khoá ⇒ cấm khách vãng lai
+    // (audit 01/11/2026: bản cũ passthrough cả /api/voice trước bước kiểm phiên).
+    if (pathname.startsWith("/api/voice")) {
+      if (!user) {
+        return withCookies(
+          NextResponse.json({ error: "Cần đăng nhập" }, { status: 401 }),
+          supabaseResponse,
+        );
+      }
       return supabaseResponse;
     }
 
@@ -280,7 +340,7 @@ export async function middleware(request: NextRequest) {
     return withCookies(NextResponse.redirect(new URL("/", request.url)), supabaseResponse);
   }
 
-  if (publicRoutes.some((route) => pathname.startsWith(route))) {
+  if (isPublicRoute(pathname)) {
     // Nếu đã login mà vào login/signup → redirect về dashboard
     if ((pathname === "/login" || pathname === "/signup") && user) {
       return withCookies(NextResponse.redirect(new URL("/app", request.url)), supabaseResponse);

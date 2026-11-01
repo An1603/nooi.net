@@ -24,6 +24,9 @@ const publicRoutes = [
   "/auth/confirm",
   "/auth/reset",
   "/auth/update-password",
+  // Route tự sửa phạm vi cookie (.nooi.net) khi admin thấy mình "mất phiên".
+  // Mở công khai an toàn vì đích chuyển hướng đã qua safeInternalPath().
+  "/auth/refresh-domain",
   // Tệp tĩnh/phục vụ trình duyệt + máy tìm kiếm (phải mở, nếu không PWA/SEO hỏng):
   "/manifest.json",
   "/sw.js",

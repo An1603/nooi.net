@@ -95,6 +95,7 @@ describe("middleware host chính — đường dẫn công khai khớp CHÍNH X�
       "/auth/callback",
       "/auth/confirm",
       "/auth/reset",
+      "/auth/refresh-domain?redirect=/admin",
     ]) {
       const res = await middleware(makeReq(p));
       expect(res.status, p).toBe(200);

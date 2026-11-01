@@ -1,32 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSessionUser } from "@/lib/auth/current-user";
 
 /**
  * POST /api/ref-code/change
  *
- * Server-side: đổi mã giới thiệu. Dùng service role key để bypass RLS.
- * Kiểm tra uniqueness + số lần đổi.
+ * Đổi mã giới thiệu của CHÍNH người đang đăng nhập. Dùng service role để bypass RLS
+ * sau khi đã xác định danh tính từ phiên.
  *
- * Body: { userId: string, newCode: string }
+ * Body: { newCode: string }   (`userId` trong body bị BỎ QUA — audit 01/11/2026)
  *
- * Response:
- *   200: { success: true }
- *   400: { success: false, error: "..." }
- *   500: { success: false, error: "..." }
+ * Response: 200 { success } | 400/401 { success: false, error }
  */
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { userId, newCode } = body as { userId?: string; newCode?: string };
+  const user = await getSessionUser();
+  if (!user) {
+    return NextResponse.json(
+      { success: false, error: "Chưa đăng nhập." },
+      { status: 401 }
+    );
+  }
 
-  const trimmed = newCode?.trim().toUpperCase();
+  const body = await req.json().catch(() => null);
+  const newCode = body && typeof body.newCode === "string" ? body.newCode : "";
+  const userId = user.id;
+
+  const trimmed = newCode.trim().toUpperCase();
   if (!trimmed) {
     return NextResponse.json({ success: false, error: "Mã không được để trống." });
   }
   if (!/^[A-Z0-9]{2,10}$/.test(trimmed)) {
     return NextResponse.json({ success: false, error: "Mã chỉ gồm chữ hoa và số, từ 2-10 ký tự." });
-  }
-  if (!userId) {
-    return NextResponse.json({ success: false, error: "Thiếu userId." });
   }
 
   const supabase = createClient(
@@ -51,7 +55,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Bạn đã đổi mã 3 lần, không thể đổi thêm." });
   }
 
-  // Check same as current
   if (trimmed === profile.ref_code) {
     return NextResponse.json({ success: false, error: "Mã mới giống với mã hiện tại." });
   }
@@ -68,7 +71,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Mã này đã có người sử dụng." });
   }
 
-  // Update code + increment counter
   const { error } = await supabase
     .from("profiles")
     .update({

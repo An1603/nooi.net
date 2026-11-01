@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { cookieOptions } from "@/lib/supabase/cookies";
+import { safeInternalPath } from "@/lib/auth/safe-redirect";
 
 /**
  * GET /auth/refresh-domain
@@ -9,8 +10,16 @@ import { cookieOptions } from "@/lib/supabase/cookies";
  * Admin panel redirects here when user appears unauthenticated due to old cookie domain.
  */
 export async function GET(request: NextRequest) {
-  const redirect = request.nextUrl.searchParams.get("redirect") || "/admin";
-  const fallback = request.nextUrl.searchParams.get("fallback") || "/login";
+  // Đích chuyển hướng lấy từ query nhưng BẮT BUỘC là đường dẫn nội bộ cùng origin
+  // (audit 01/11/2026: trước đây //evil.com và \evil.com đổi được host).
+  const redirect = safeInternalPath(
+    request.nextUrl.searchParams.get("redirect"),
+    "/admin"
+  );
+  const fallback = safeInternalPath(
+    request.nextUrl.searchParams.get("fallback"),
+    "/login"
+  );
 
   const response = NextResponse.redirect(
     new URL(redirect, "https://admin.nooi.net")

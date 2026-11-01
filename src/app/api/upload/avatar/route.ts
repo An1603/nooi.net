@@ -1,23 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSessionUser } from "@/lib/auth/current-user";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const EXT_BY_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+// BẢO MẬT (audit 01/11/2026): danh tính lấy từ PHIÊN, không lấy `user_id` trong form.
+// Trước đây client gửi user_id tuỳ ý nên ghi được ảnh vào thư mục + hồ sơ người khác
+// bằng quyền service-role.
 export async function POST(req: NextRequest) {
   try {
-    // Verify auth — expect user_id in the request
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const userId = formData.get("user_id") as string | null;
 
-    if (!file || !userId) {
-      return NextResponse.json({ error: "Missing file or user_id" }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: "Missing file" }, { status: 400 });
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
+    const ext = EXT_BY_MIME[file.type];
+    if (!ext) {
       return NextResponse.json({ error: "Chỉ chấp nhận JPEG, PNG, WebP, GIF" }, { status: 400 });
     }
 
@@ -26,16 +40,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Ảnh tối đa 5MB" }, { status: 400 });
     }
 
-    // Create service-role client to bypass RLS
+    // Service-role client để ghi storage + cập nhật hồ sơ của CHÍNH người gọi
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Upload to Supabase Storage: avatars/{userId}/{timestamp}.{ext}
-    const ext = file.name.split(".").pop() || "jpg";
     const fileName = `${Date.now()}.${ext}`;
-    const filePath = `${userId}/${fileName}`;
+    const filePath = `${user.id}/${fileName}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
@@ -52,18 +64,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Không thể upload ảnh" }, { status: 500 });
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(filePath);
-
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
     const publicUrl = urlData?.publicUrl;
 
-    // Update profile with new avatar URL
     const { error: updateError } = await supabase
       .from("profiles")
       .update({ public_avatar_url: publicUrl })
-      .eq("user_id", userId);
+      .eq("user_id", user.id);
 
     if (updateError) {
       console.error("Profile update error:", updateError);

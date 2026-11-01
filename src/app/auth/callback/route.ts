@@ -2,13 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { authCookieOptions, OPC_HOST } from "@/lib/supabase/cookies";
+import { safeInternalPath } from "@/lib/auth/safe-redirect";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const host = request.headers.get("host") || "";
   const laOpc = host === OPC_HOST;
-  const next = searchParams.get("next") ?? (laOpc ? "/" : "/app");
+  const next = safeInternalPath(searchParams.get("next"), laOpc ? "/" : "/app");
   // OPC Center phải quay lại đúng host OPC, không nhảy về nooi.net.
   const origin = laOpc
     ? "https://opc.nooi.net"

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { authCookieOptions, OPC_HOST } from "@/lib/supabase/cookies";
+import { safeInternalPath } from "@/lib/auth/safe-redirect";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type");
   const host = request.headers.get("host") || "";
   const laOpc = host === OPC_HOST;
-  const next = searchParams.get("next") ?? (laOpc ? "/" : "/app");
+  const next = safeInternalPath(searchParams.get("next"), laOpc ? "/" : "/app");
   const origin = laOpc
     ? "https://opc.nooi.net"
     : process.env.NEXT_PUBLIC_SITE_URL || "https://nooi.net";

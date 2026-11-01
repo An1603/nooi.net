@@ -1,19 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSessionUser } from "@/lib/auth/current-user";
+import { requireAdmin } from "@/lib/admin/guard";
+import { escapeTelegramHtml, safeHttpUrl } from "@/lib/telegram/escape";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-// POST — Gửi nhắc nhở cho tất cả user đã đăng ký buổi live sắp diễn ra
+// POST — Gửi nhắc nhở cho tất cả người đã đăng ký một buổi live.
 // Body: { sessionId: string }
+//
+// BẢO MẬT (audit 01/11/2026):
+//  - Chỉ người tạo buổi học hoặc quản trị viên mới được phát fan-out (trước đây ai
+//    có phiên cũng bấm được, kể cả để phát liên kết của mình cho toàn bộ người đăng ký).
+//  - Mọi trường lấy từ DB được escape theo bộ thẻ HTML của Telegram; liên kết phải
+//    là http/https hợp lệ.
 export async function POST(req: NextRequest) {
   try {
     if (!TELEGRAM_BOT_TOKEN) {
       return NextResponse.json({ error: "Telegram chưa cấu hình" }, { status: 503 });
     }
 
-    const { sessionId } = await req.json();
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+    }
+
+    const body = await req.json().catch(() => null);
+    const sessionId = body && typeof body.sessionId === "string" ? body.sessionId : "";
     if (!sessionId) {
       return NextResponse.json({ error: "Thiếu sessionId" }, { status: 400 });
     }
@@ -32,9 +47,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Không tìm thấy buổi học" }, { status: 404 });
     }
 
-    const content = JSON.parse(session.content || "{}");
+    // 2. Phân quyền: người tạo buổi học hoặc quản trị viên
+    const laChuBuoiHoc = session.user_id === user.id;
+    const laQuanTri = laChuBuoiHoc ? false : !!(await requireAdmin());
+    if (!laChuBuoiHoc && !laQuanTri) {
+      return NextResponse.json({ error: "Không có quyền" }, { status: 403 });
+    }
 
-    // 2. Lấy danh sách user đã đăng ký
+    let content: Record<string, unknown> = {};
+    try {
+      const parsed = JSON.parse(session.content || "{}");
+      if (parsed && typeof parsed === "object") content = parsed as Record<string, unknown>;
+    } catch {
+      content = {};
+    }
+
+    // 3. Danh sách người đã đăng ký
     const { data: registrations } = await svc
       .from("documents")
       .select("user_id")
@@ -45,7 +73,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Không có ai đăng ký", sent: 0 });
     }
 
-    // 3. Lấy telegram_chat_id của tất cả user đã đăng ký
     const userIds = registrations.map((r) => r.user_id);
     const { data: profiles } = await svc
       .from("profiles")
@@ -57,23 +84,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Không ai kết nối Telegram", sent: 0 });
     }
 
-    // 4. Gửi tin nhắn nhắc nhở
-    const message = [
+    // 4. Dựng tin nhắn — MỌI giá trị từ DB đều qua escapeTelegramHtml
+    const link = safeHttpUrl(content.link);
+    const parts: Array<string | null> = [
       `🔔 <b>Nhắc nhở: Buổi học sắp bắt đầu!</b>`,
       ``,
-      `📚 <b>${session.title}</b>`,
-      content.description ? `📝 ${content.description}` : null,
-      `📅 ${content.date} · ⏰ ${content.time}`,
-      content.mentor_name ? `👤 Mentor: ${content.mentor_name}` : null,
-      content.meeting_id ? `🔑 ID: <code>${content.meeting_id}</code>` : null,
-      content.password ? `🔒 Mật khẩu: <code>${content.password}</code>` : null,
+      `📚 <b>${escapeTelegramHtml(session.title)}</b>`,
+      content.description ? `📝 ${escapeTelegramHtml(content.description)}` : null,
+      `📅 ${escapeTelegramHtml(content.date)} · ⏰ ${escapeTelegramHtml(content.time)}`,
+      content.mentor_name ? `👤 Mentor: ${escapeTelegramHtml(content.mentor_name)}` : null,
+      content.meeting_id ? `🔑 ID: <code>${escapeTelegramHtml(content.meeting_id)}</code>` : null,
+      content.password ? `🔒 Mật khẩu: <code>${escapeTelegramHtml(content.password)}</code>` : null,
       ``,
-      content.link ? `👉 <a href="${content.link}">Vào phòng học</a>` : null,
+      link ? `👉 <a href="${escapeTelegramHtml(link)}">Vào phòng học</a>` : null,
       ``,
       `💡 Hãy chuẩn bị và đến đúng giờ nhé!`,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    ];
+    const message = parts.filter(Boolean).join("\n");
 
     let sent = 0;
     const errors: string[] = [];

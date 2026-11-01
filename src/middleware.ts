@@ -70,6 +70,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
 
+  /* ── Beacon theo dõi lượt truy cập: luôn cho qua ở MỌI host ──
+     (route /api/track tự giới hạn dữ liệu, không đọc gì ngoài body + phiên hiện có) */
+  if (pathname === "/api/track") return supabaseResponse;
+
   /* ── eKid subdomain guard (đặt trước admin để host ekid không bị admin/main chặn) ── */
   if (isEkidHost(host)) {
     // Manifest RIÊNG của eKid: host ekid phục vụ /ekid-manifest.json khi trình duyệt

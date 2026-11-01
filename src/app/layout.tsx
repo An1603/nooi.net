@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { PWAUpdateToast } from "@/components/pwa/PWAUpdateToast";
 import { getBrandUrl } from "@/lib/brand";
 import { BrandProvider } from "@/components/brand/BrandProvider";
+import { TheoDoiTruyCap } from "@/components/tracking/TheoDoiTruyCap";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -99,6 +100,7 @@ export default async function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <div id="toast-debug" className="hidden">toast marker</div>
+        <TheoDoiTruyCap />
         <BrandProvider>{children}</BrandProvider>
         <ToastProvider />
         {!isOpcHost && <PWAUpdateToast />}

@@ -145,9 +145,7 @@ export default function AdminSlidesPage() {
           </a>
           {" · "}
           <a
-            href="https://slides.nooi.net/__thong-ke"
-            target="_blank"
-            rel="noopener"
+            href="/admin/luot-truy-cap"
             className="text-primary hover:underline inline-flex items-center gap-1"
           >
             Lượt truy cập <ExternalLink className="size-3.5" />

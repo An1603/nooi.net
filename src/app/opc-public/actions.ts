@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CAU_HOI, tinhKetQua, type PublicActionState } from "@/lib/opc/diagnostic";
 import { getGoiTheoMa } from "@/lib/opc/public";
+import { noiDungNhatKyTrung, quyetDinhLead } from "@/lib/opc/lead";
 
 /* ── Chống spam nhẹ (VPS một tiến trình, đủ cho MVP) ─────────────────────── */
 const RATE_WINDOW_MS = 10 * 60 * 1000;
@@ -104,10 +105,22 @@ type LuuLeadInput = {
   ghi_chu: string;
 };
 
-async function luuLead(admin: Admin, input: LuuLeadInput): Promise<{ id?: string; error?: string }> {
+async function luuLead(
+  admin: Admin,
+  input: LuuLeadInput,
+  nguoiGuiCoPhien = false
+): Promise<{ id?: string; error?: string; trung?: boolean }> {
   const cu = await timLead(admin, input.email, input.sdt);
+  const hanhDong = quyetDinhLead(Boolean(cu), nguoiGuiCoPhien);
 
-  if (cu) {
+  // Người gửi ẩn danh trùng liên hệ của hồ sơ khác: KHÔNG sửa hồ sơ, chỉ ghi
+  // nhật ký hoạt động để sales đối chiếu (audit 01/11/2026).
+  if (cu && hanhDong === "chi-ghi-nhat-ky") {
+    await ghiHoatDong(admin, String(cu.id), noiDungNhatKyTrung(input.ghi_chu, input.kenh));
+    return { id: String(cu.id), trung: true };
+  }
+
+  if (cu && hanhDong === "cap-nhat") {
     const ghiChu = [cu.ghi_chu, input.ghi_chu].filter(Boolean).join("\n---\n").slice(0, 2000);
     const { error } = await admin
       .from("opc_lead")

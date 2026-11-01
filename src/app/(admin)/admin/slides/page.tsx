@@ -143,6 +143,15 @@ export default function AdminSlidesPage() {
           >
             slides.nooi.net <ExternalLink className="size-3.5" />
           </a>
+          {" · "}
+          <a
+            href="https://slides.nooi.net/__thong-ke"
+            target="_blank"
+            rel="noopener"
+            className="text-primary hover:underline inline-flex items-center gap-1"
+          >
+            Lượt truy cập <ExternalLink className="size-3.5" />
+          </a>
           . Mật khẩu chung mở toàn bộ; mật mã riêng chỉ mở đúng một tài liệu.
         </p>
       </div>

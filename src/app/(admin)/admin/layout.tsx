@@ -57,7 +57,7 @@ const NAV_ITEMS: NavItem[] = [
 
   // Theo dõi & Cấu hình
   { href: "/admin/activity", label: "Hoạt động", icon: Activity },
-  { href: "/admin/luot-truy-cap", label: "Lượt truy cập", icon: Radio, roles: ["super_admin", "admin", "mod"] },
+  { href: "/admin/luot-truy-cap", label: "Lượt truy cập", icon: Radio, roles: ["super_admin", "admin", "moderator"] },
   { href: "/admin/evaluate", label: "Đánh giá", icon: UserCheck },
   { href: "/admin/brand", label: "Thương hiệu", icon: Palette, roles: ["super_admin", "admin"] },
   { href: "/admin/brand/files", label: "Kho file", icon: FolderOpen, roles: ["super_admin", "admin"] },

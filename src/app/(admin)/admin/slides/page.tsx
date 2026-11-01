@@ -32,7 +32,7 @@ const DECK_LABELS: Record<string, string> = {
   "doi-tac-dong-hanh": "Đối tượng & Đối tác đồng hành — 6 tầng (chiến lược hợp tác)",
   "tai-san-vo-hinh": "Tài sản vô hình (IP) & nền tảng công nghệ — bổ sung PHẦN 5",
   "gia-tri-vo-hinh": "Hệ thống Giá trị Vô hình — Khu rừng giá trị (4 cửa · 8 cây · 3 tầng · 5 nhịp)",
-  "nong-trai-kon-braih": "Nông trại trải nghiệm Kon Braih — du lịch nông nghiệp 25 ha",
+  "nong-trai-ben-rung": "Nông trại bên rừng — du lịch nông nghiệp trải nghiệm 25 ha",
 };
 
 export default function AdminSlidesPage() {

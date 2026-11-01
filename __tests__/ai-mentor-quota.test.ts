@@ -42,6 +42,13 @@ beforeEach(() => {
 });
 
 describe("/api/ai-mentor/chat", () => {
+  it("tin nhắn quá dài → 400, không tốn hạn mức", async () => {
+    getSessionUserMock.mockResolvedValue({ id: "u1", email: null });
+    const res = await chat.POST(req("x".repeat(4001)));
+    expect(res.status).toBe(400);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
   it("ẩn danh → 401, không tăng bộ đếm", async () => {
     getSessionUserMock.mockResolvedValue(null);
     const res = await chat.POST(req());

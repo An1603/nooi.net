@@ -69,6 +69,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Trần độ dài đầu vào: chặn chi phí token bất thường (audit 01/11/2026, mục 2)
+    if (userMessage.length > 4000) {
+      return NextResponse.json(
+        { error: "Tin nhắn tối đa 4000 ký tự. Vui lòng chia nhỏ nội dung." },
+        { status: 400 }
+      );
+    }
+
     // 2. Hạn mức 100 tin/ngày — tăng TRƯỚC khi gọi model để chặn vượt hạn mức
     //    khi nhiều request song song; gọi model lỗi thì hoàn lại 1 tin.
     const ngay = ngayVietNam();

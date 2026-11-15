@@ -88,11 +88,32 @@ export async function GET(request: NextRequest) {
   }
 
   const meta = (user.user_metadata || {}) as Record<string, unknown>;
+
+  // Ảnh đại diện: ưu tiên ảnh người dùng tự đặt trong hồ sơ NOOI,
+  // không có thì lấy ảnh từ Google (avatar_url / picture trong user_metadata).
+  let anh = "";
+  try {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("public_avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const tuHoSo = String(prof?.public_avatar_url || "").trim();
+    if (/^https?:\/\//.test(tuHoSo)) anh = tuHoSo;
+  } catch {
+    /* không có bảng/hồ sơ: bỏ qua, dùng ảnh Google */
+  }
+  if (!anh) {
+    const g = String(meta.avatar_url || meta.picture || "").trim();
+    if (/^https?:\/\//.test(g)) anh = g;
+  }
+
   const token = sign(
     {
       u: user.id,
       e: user.email || "",
       n: (meta.full_name as string) || (meta.name as string) || "",
+      ...(anh ? { a: anh } : {}),
       x: Math.floor(Date.now() / 1000) + 180,
     },
     secret,

@@ -83,7 +83,10 @@ export async function GET(request: NextRequest) {
   if (!user) {
     if (silent) return NextResponse.redirect(`${GIS}/?sso=none`);
     const login = new URL("/login", origin);
-    login.searchParams.set("redirect", pathname + search);
+    // KHÔNG kèm query vào `redirect`: bộ lọc safeInternalPath() chặn mọi giá trị chứa
+    // "%2f" (đúng thứ có trong `back=https%3A%2F%2F…`), nên đích sẽ bị thay bằng /app.
+    // Chỉ cần `/api/sso/gis` — khi quay lại, `back` trống thì mặc định về gis.nooi.net.
+    login.searchParams.set("redirect", pathname);
     return NextResponse.redirect(login);
   }
 

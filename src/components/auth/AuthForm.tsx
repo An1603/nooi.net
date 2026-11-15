@@ -32,10 +32,26 @@ function sauDangNhap(): string {
   return window.location.hostname === "opc.nooi.net" ? "/" : "/app";
 }
 
+/** Nhớ đích quay lại vào cookie trước khi rời trang (OAuth/link email quay về /auth/callback,
+ *  nơi `redirect=` trên URL không còn nữa). Hạn 15 phút, chỉ dùng cho đường dẫn nội bộ. */
+function luuDichQuayLai() {
+  if (typeof window === "undefined") return;
+  const dich = sauDangNhap();
+  if (!dich || dich === "/app" || dich === "/") return;
+  const bao = window.location.protocol === "https:" ? "; secure" : "";
+  document.cookie = `nooi_sau_dn=${encodeURIComponent(dich)}; path=/; max-age=900; samesite=lax${bao}`;
+}
+
 /** Điều hướng sau đăng nhập. Trên OPC Center dùng full reload để server chắc chắn
- *  đọc được cookie phiên host-only vừa ghi (router.push đôi khi bị RSC cache cũ). */
+ *  đọc được cookie phiên host-only vừa ghi (router.push đôi khi bị RSC cache cũ).
+ *  Đích là route API (vd. /api/sso/gis của GIS) thì cũng phải full reload. */
 function diSauDangNhap(routerPush: (href: string) => void) {
   const target = sauDangNhap();
+  if (target.startsWith("/api/")) {
+    // Client router không chạy route API — phải để trình duyệt đi thẳng.
+    if (typeof window !== "undefined") window.location.assign(target);
+    return;
+  }
   if (typeof window !== "undefined" && window.location.hostname === "opc.nooi.net") {
     window.location.assign(target);
     return;
@@ -156,6 +172,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
   const handleSocialLogin = useCallback(async (provider: "google" | "github") => {
     setLoading(true);
     try {
+      luuDichQuayLai();
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -251,6 +268,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
     }
     setLoading(true);
     try {
+      luuDichQuayLai();
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },

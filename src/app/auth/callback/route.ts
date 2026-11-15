@@ -9,7 +9,10 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const host = request.headers.get("host") || "";
   const laOpc = host === OPC_HOST;
-  const next = safeInternalPath(searchParams.get("next"), laOpc ? "/" : "/app");
+  // Đích quay lại: ưu tiên cookie do trang đăng nhập đặt trước (Google/GitHub/link email
+  // không mang được ?redirect=), rồi tới ?next=, cuối cùng là mặc định.
+  const tuCookie = (request.cookies.get("nooi_sau_dn")?.value || "").trim();
+  const next = safeInternalPath(tuCookie || searchParams.get("next"), laOpc ? "/" : "/app");
   // OPC Center phải quay lại đúng host OPC, không nhảy về nooi.net.
   const origin = laOpc
     ? "https://opc.nooi.net"
@@ -82,8 +85,9 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Clear the nooi_ref cookie
+      // Clear the nooi_ref + đích quay lại cookies
       response.cookies.set("nooi_ref", "", { path: "/", maxAge: 0 });
+      response.cookies.set("nooi_sau_dn", "", { path: "/", maxAge: 0 });
 
       return response;
     }

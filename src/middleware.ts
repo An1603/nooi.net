@@ -17,6 +17,7 @@ const publicRoutes = [
   "/gallery",
   "/u",
   "/api/sso",
+  "/api/ho-so/anh",
   "/api/track",
   "/api/og",
   "/api/ref-code/check",

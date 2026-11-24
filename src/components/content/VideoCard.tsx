@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Video, Calendar, Clock, Play } from "lucide-react";
+import { layYoutubeId } from "@/lib/video/kenh-phat";
 
 export interface VideoCardData {
   id: string;
   title: string;
   description: string | null;
   url: string | null;
+  thumbnail_url?: string | null;
+  kenh_phat?: string | null;
+  cong_khai?: boolean | null;
   status: "processing" | "ready" | "failed" | "published";
   duration: number;
   created_at: string;
@@ -38,7 +42,12 @@ function formatDuration(seconds: number): string {
 }
 
 export function VideoCard({ video }: VideoCardProps) {
-  const { id, title, description, status, duration, created_at } = video;
+  const { id, title, description, status, duration, created_at, thumbnail_url, kenh_phat, cong_khai } = video;
+
+  const maYoutube = kenh_phat === "bunny" ? null : layYoutubeId(video.url);
+  const anhThumb =
+    thumbnail_url || (maYoutube ? `https://i.ytimg.com/vi/${maYoutube}/mqdefault.jpg` : null);
+  const laBunny = kenh_phat === "bunny";
 
   return (
     <Link
@@ -47,15 +56,44 @@ export function VideoCard({ video }: VideoCardProps) {
         "block p-5 rounded-xl border border-border bg-card hover:border-accent/30 hover:bg-card/80 transition-all group"
       )}
     >
-      {/* Thumbnail placeholder */}
+      {/* Ảnh đại diện: dùng thumbnail_url, nếu trống thì lấy ảnh thu nhỏ của YouTube */}
       <div className="aspect-video rounded-lg bg-muted mb-3 flex items-center justify-center overflow-hidden relative">
-        <Video size={32} className="text-muted-foreground/40" />
+        {anhThumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={anhThumb} alt={title} className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <Video size={32} className="text-muted-foreground/40" />
+        )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
           <Play
             size={28}
             className="text-white opacity-0 group-hover:opacity-100 transition-opacity"
           />
         </div>
+      </div>
+
+      {/* Cửa phát + phạm vi: đọc trực tiếp từ bản ghi, không nhìn đường dẫn mà đoán */}
+      <div className="flex items-center gap-1.5 mb-2">
+        <span
+          className={cn(
+            "text-[10px] font-medium px-1.5 py-0.5 rounded border",
+            laBunny
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+              : "bg-red-500/10 text-red-400 border-red-500/20"
+          )}
+        >
+          {laBunny ? "Bunny Stream" : "YouTube"}
+        </span>
+        <span
+          className={cn(
+            "text-[10px] font-medium px-1.5 py-0.5 rounded border",
+            cong_khai
+              ? "bg-sky-500/10 text-sky-400 border-sky-500/20"
+              : "bg-muted text-muted-foreground border-border"
+          )}
+        >
+          {cong_khai ? "Công khai" : "Nội bộ"}
+        </span>
       </div>
 
       <h3 className="font-semibold text-sm truncate mb-1 group-hover:text-accent transition-colors">

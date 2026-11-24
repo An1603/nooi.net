@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { ArrowLeft, Edit3, Clock, Video, FolderOpen } from "lucide-react";
+import { ArrowLeft, Edit3, Clock, FolderOpen } from "lucide-react";
 import { notFound } from "next/navigation";
+import { VideoPlayer } from "@/components/content/VideoPlayer";
+import { KENH_PHAT_LABELS, laKenhPhat, type KenhPhat } from "@/lib/video/kenh-phat";
 
 const STATUS_LABELS: Record<string, string> = {
   processing: "Đang xử lý",
@@ -55,6 +57,8 @@ export default async function VideoDetailPage({
     if (project) projectTitle = project.title;
   }
 
+  const kenh: KenhPhat = laKenhPhat(video.kenh_phat) ? (video.kenh_phat as KenhPhat) : "youtube";
+
   return (
     <div className="page-shell page-shell-wide">
       <Link
@@ -65,50 +69,35 @@ export default async function VideoDetailPage({
         Thư viện video
       </Link>
 
-      {/* Video player area */}
-      <div className="aspect-video rounded-xl bg-muted mb-6 overflow-hidden border border-border">
-        {(() => {
-          const ytMatch = video.url?.match(
-            /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-          );
-          if (ytMatch) {
-            return (
-              <iframe
-                src={`https://www.youtube.com/embed/${ytMatch[1]}`}
-                title={video.title}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            );
-          }
-          return (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center">
-                <Video size={48} className="text-muted-foreground/40 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  {video.url ? "URL không phải YouTube hợp lệ" : "Chưa có URL video"}
-                </p>
-                {video.url && (
-                  <p className="text-xs text-muted-foreground mt-1 truncate max-w-md">
-                    {video.url}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })()}
-      </div>
+      {/* Trình phát dùng chung: chọn cửa phát theo trường kenh_phat.
+          Dấu chìm in mờ email người xem để truy vết khi bị rò rỉ (lớp bảo mật 4). */}
+      <VideoPlayer
+        video={{ title: video.title, url: video.url, kenh_phat: video.kenh_phat }}
+        dauChim={user?.email ?? null}
+        className="mb-6"
+      />
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight mb-2">{video.title}</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <span
               className={`text-xs font-medium px-2 py-0.5 rounded-full border ${STATUS_COLORS[video.status] || STATUS_COLORS.processing}`}
             >
               {STATUS_LABELS[video.status] || video.status}
+            </span>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+              {KENH_PHAT_LABELS[kenh]}
+            </span>
+            <span
+              className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
+                video.cong_khai
+                  ? "border-sky-500/20 bg-sky-500/10 text-sky-400"
+                  : "border-border bg-muted text-muted-foreground"
+              }`}
+            >
+              {video.cong_khai ? "Công khai" : "Nội bộ"}
             </span>
             {video.duration > 0 && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -155,16 +144,16 @@ export default async function VideoDetailPage({
             </p>
           </div>
           <div>
+            <span className="text-muted-foreground text-xs">Kênh phát</span>
+            <p>{KENH_PHAT_LABELS[kenh]}</p>
+          </div>
+          <div>
             <span className="text-muted-foreground text-xs">Ngày tạo</span>
             <p>{new Date(video.created_at).toLocaleDateString("vi-VN")}</p>
           </div>
           <div>
             <span className="text-muted-foreground text-xs">Cập nhật</span>
             <p>{new Date(video.updated_at).toLocaleDateString("vi-VN")}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground text-xs">Trạng thái</span>
-            <p>{STATUS_LABELS[video.status] || video.status}</p>
           </div>
         </div>
       </div>

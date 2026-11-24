@@ -11,6 +11,8 @@ const videoSchema = z.object({
   project_id: z.string().uuid("Dự án không hợp lệ").optional().nullable(),
   url: z.string().url("URL không hợp lệ").optional().or(z.literal("")),
   status: z.enum(["processing", "ready", "failed", "published"]),
+  kenh_phat: z.enum(["youtube", "bunny"]).default("youtube"),
+  cong_khai: z.boolean().default(false),
 });
 
 export type VideoFormData = z.infer<typeof videoSchema>;
@@ -29,6 +31,9 @@ export async function createVideo(formData: FormData) {
     project_id: formData.get("project_id") || null,
     url: formData.get("url") || null,
     status: formData.get("status"),
+    kenh_phat: formData.get("kenh_phat") || "youtube",
+    cong_khai:
+      formData.get("cong_khai") === "on" || formData.get("cong_khai") === "true",
   };
 
   const parsed = videoSchema.safeParse(raw);
@@ -38,7 +43,8 @@ export async function createVideo(formData: FormData) {
     return { error: Object.values(errors).flat().join(", ") };
   }
 
-  const { title, description, project_id, url, status } = parsed.data;
+  const { title, description, project_id, url, status, kenh_phat, cong_khai } =
+    parsed.data;
 
   const { error } = await supabase.from("videos").insert({
     user_id: user.id,
@@ -47,6 +53,8 @@ export async function createVideo(formData: FormData) {
     project_id: project_id || null,
     url: url || null,
     status,
+    kenh_phat,
+    cong_khai,
   });
 
   if (error) {
@@ -82,6 +90,9 @@ export async function updateVideo(id: string, formData: FormData) {
     project_id: formData.get("project_id") || null,
     url: formData.get("url") || null,
     status: formData.get("status"),
+    kenh_phat: formData.get("kenh_phat") || "youtube",
+    cong_khai:
+      formData.get("cong_khai") === "on" || formData.get("cong_khai") === "true",
   };
 
   const parsed = videoSchema.safeParse(raw);
@@ -91,7 +102,8 @@ export async function updateVideo(id: string, formData: FormData) {
     return { error: Object.values(errors).flat().join(", ") };
   }
 
-  const { title, description, project_id, url, status } = parsed.data;
+  const { title, description, project_id, url, status, kenh_phat, cong_khai } =
+    parsed.data;
 
   const { error } = await supabase
     .from("videos")
@@ -101,6 +113,8 @@ export async function updateVideo(id: string, formData: FormData) {
       project_id: project_id || null,
       url: url || null,
       status,
+      kenh_phat,
+      cong_khai,
     })
     .eq("id", id);
 

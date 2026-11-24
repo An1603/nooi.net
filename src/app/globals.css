@@ -374,4 +374,20 @@
 .touch-target { min-height: 44px; }
 .touch-target-sm { min-height: 36px; }
 
+/* ── Dấu chìm chống rò rỉ video (lớp bảo mật 4) ── */
+.dau-chim-troi {
+  animation: dau-chim-troi 26s linear infinite;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+@keyframes dau-chim-troi {
+  0%   { top: 8%;  left: 6%; }
+  25%  { top: 78%; left: 58%; }
+  50%  { top: 14%; left: 68%; }
+  75%  { top: 82%; left: 8%; }
+  100% { top: 8%;  left: 6%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dau-chim-troi { animation: none; top: 8%; left: 6%; }
+}
+
 /* ── Larger text for readability ── */

@@ -21,6 +21,8 @@ const formSchema = z.object({
   project_id: z.string().optional().nullable(),
   url: z.string().url("URL không hợp lệ").optional().or(z.literal("")),
   status: z.enum(["processing", "ready", "failed", "published"]),
+  kenh_phat: z.enum(["youtube", "bunny"]),
+  cong_khai: z.boolean(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -41,6 +43,8 @@ export default function NewVideoPage() {
       project_id: "",
       url: "",
       status: "processing",
+      kenh_phat: "youtube",
+      cong_khai: false,
     },
   });
 
@@ -67,6 +71,8 @@ export default function NewVideoPage() {
     formData.set("project_id", data.project_id || "");
     formData.set("url", data.url || "");
     formData.set("status", data.status);
+    formData.set("kenh_phat", data.kenh_phat);
+    formData.set("cong_khai", data.cong_khai ? "on" : "");
 
     const result = await createVideo(formData);
     if (result?.error) {
@@ -133,6 +139,34 @@ export default function NewVideoPage() {
               </option>
             ))}
           </Select>
+        </div>
+
+        {/* Kênh phát */}
+        <div className="space-y-2">
+          <Label htmlFor="kenh_phat">Kênh phát</Label>
+          <Select id="kenh_phat" {...register("kenh_phat")}>
+            <option value="youtube">YouTube — video cần người lạ tìm thấy</option>
+            <option value="bunny">Bunny Stream — video phục vụ người trong hệ sinh thái</option>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Quy ước: cần thu hút người mới → YouTube; cần khoá quyền, tặng theo cấp độ → Bunny.
+          </p>
+        </div>
+
+        {/* Công khai */}
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 p-3">
+          <input
+            id="cong_khai"
+            type="checkbox"
+            className="mt-0.5 size-4 accent-[var(--accent)]"
+            {...register("cong_khai")}
+          />
+          <div>
+            <Label htmlFor="cong_khai">Công khai</Label>
+            <p className="text-xs text-muted-foreground">
+              Bỏ trống = nội bộ (chỉ hiện trong thư viện của mình).
+            </p>
+          </div>
         </div>
 
         {/* URL */}

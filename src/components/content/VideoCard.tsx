@@ -11,6 +11,8 @@ export interface VideoCardData {
   thumbnail_url?: string | null;
   kenh_phat?: string | null;
   cong_khai?: boolean | null;
+  khung_hinh?: string | null;
+  thu_tu?: number | null;
   status: "processing" | "ready" | "failed" | "published";
   duration: number;
   created_at: string;
@@ -42,12 +44,15 @@ function formatDuration(seconds: number): string {
 }
 
 export function VideoCard({ video }: VideoCardProps) {
-  const { id, title, description, status, duration, created_at, thumbnail_url, kenh_phat, cong_khai } = video;
+  const { id, title, description, status, duration, created_at, thumbnail_url, kenh_phat, cong_khai, khung_hinh } = video;
 
-  const maYoutube = kenh_phat === "bunny" ? null : layYoutubeId(video.url);
+  const laBunny = kenh_phat === "bunny";
+  const laDoc = khung_hinh === "doc";
+  const nhanKenh = laBunny ? "Bunny Stream" : kenh_phat === "truc-tiep" ? "Tệp trực tiếp" : "YouTube";
+  // Ảnh thu nhỏ của YouTube chỉ dùng được khi video thật sự phát từ YouTube
+  const maYoutube = laBunny || kenh_phat === "truc-tiep" ? null : layYoutubeId(video.url);
   const anhThumb =
     thumbnail_url || (maYoutube ? `https://i.ytimg.com/vi/${maYoutube}/mqdefault.jpg` : null);
-  const laBunny = kenh_phat === "bunny";
 
   return (
     <Link
@@ -57,7 +62,12 @@ export function VideoCard({ video }: VideoCardProps) {
       )}
     >
       {/* Ảnh đại diện: dùng thumbnail_url, nếu trống thì lấy ảnh thu nhỏ của YouTube */}
-      <div className="aspect-video rounded-lg bg-muted mb-3 flex items-center justify-center overflow-hidden relative">
+      <div
+        className={cn(
+          "rounded-lg bg-muted mb-3 flex items-center justify-center overflow-hidden relative",
+          laDoc ? "aspect-[9/16] max-w-[120px] mx-auto" : "aspect-video"
+        )}
+      >
         {anhThumb ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={anhThumb} alt={title} className="w-full h-full object-cover" loading="lazy" />
@@ -79,10 +89,12 @@ export function VideoCard({ video }: VideoCardProps) {
             "text-[10px] font-medium px-1.5 py-0.5 rounded border",
             laBunny
               ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-              : "bg-red-500/10 text-red-400 border-red-500/20"
+              : kenh_phat === "truc-tiep"
+                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                : "bg-red-500/10 text-red-400 border-red-500/20"
           )}
         >
-          {laBunny ? "Bunny Stream" : "YouTube"}
+          {nhanKenh}
         </span>
         <span
           className={cn(
@@ -94,6 +106,11 @@ export function VideoCard({ video }: VideoCardProps) {
         >
           {cong_khai ? "Công khai" : "Nội bộ"}
         </span>
+        {laDoc && (
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border bg-primary/10 text-primary border-primary/20">
+            Dọc 9:16
+          </span>
+        )}
       </div>
 
       <h3 className="font-semibold text-sm truncate mb-1 group-hover:text-accent transition-colors">

@@ -21,8 +21,10 @@ const formSchema = z.object({
   project_id: z.string().optional().nullable(),
   url: z.string().url("URL không hợp lệ").optional().or(z.literal("")),
   status: z.enum(["processing", "ready", "failed", "published"]),
-  kenh_phat: z.enum(["youtube", "bunny"]),
+  kenh_phat: z.enum(["youtube", "bunny", "truc-tiep"]),
   cong_khai: z.boolean(),
+  khung_hinh: z.enum(["ngang", "doc"]),
+  thu_tu: z.number().int().min(0).max(9999),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -45,6 +47,8 @@ export default function NewVideoPage() {
       status: "processing",
       kenh_phat: "youtube",
       cong_khai: false,
+      khung_hinh: "ngang",
+      thu_tu: 0,
     },
   });
 
@@ -73,6 +77,8 @@ export default function NewVideoPage() {
     formData.set("status", data.status);
     formData.set("kenh_phat", data.kenh_phat);
     formData.set("cong_khai", data.cong_khai ? "on" : "");
+    formData.set("khung_hinh", data.khung_hinh);
+    formData.set("thu_tu", String(data.thu_tu ?? 0));
 
     const result = await createVideo(formData);
     if (result?.error) {
@@ -147,9 +153,37 @@ export default function NewVideoPage() {
           <Select id="kenh_phat" {...register("kenh_phat")}>
             <option value="youtube">YouTube — video cần người lạ tìm thấy</option>
             <option value="bunny">Bunny Stream — video phục vụ người trong hệ sinh thái</option>
+            <option value="truc-tiep">Tệp trực tiếp (.mp4) — dùng để thử nhanh</option>
           </Select>
           <p className="text-xs text-muted-foreground">
             Quy ước: cần thu hút người mới → YouTube; cần khoá quyền, tặng theo cấp độ → Bunny.
+          </p>
+        </div>
+
+        {/* Khung hình: dọc thì vào luồng vuốt */}
+        <div className="space-y-2">
+          <Label htmlFor="khung_hinh">Khung hình</Label>
+          <Select id="khung_hinh" {...register("khung_hinh")}>
+            <option value="ngang">Ngang 16:9 — video thường</option>
+            <option value="doc">Dọc 9:16 — vào luồng vuốt</option>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Video dọc xuất hiện trong luồng vuốt kiểu TikTok ở mục “Vuốt dọc”.
+          </p>
+        </div>
+
+        {/* Thứ tự trong luồng vuốt */}
+        <div className="space-y-2">
+          <Label htmlFor="thu_tu">Thứ tự trong luồng</Label>
+          <Input
+            id="thu_tu"
+            type="number"
+            min={0}
+            placeholder="0"
+            {...register("thu_tu", { valueAsNumber: true })}
+          />
+          <p className="text-xs text-muted-foreground">
+            Số lớn hơn đứng trước. Bài ghim để 1000; để 0 thì theo thời gian đăng.
           </p>
         </div>
 

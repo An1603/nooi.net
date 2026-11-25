@@ -12,7 +12,7 @@ import {
   nguonPhatDoc,
   type VideoDoc,
 } from "@/lib/video/kenh-phat";
-import { docTimeUpdate, napPlayerJs, taoPlayer, type PlayerGiaoDien } from "@/lib/video/playerjs";
+import { docTimeUpdate, taoPlayer, type PlayerGiaoDien } from "@/lib/video/playerjs";
 
 interface Props {
   videos: VideoDoc[];
@@ -62,8 +62,6 @@ export function VideoFeedDoc({
   const iRef = useRef(0);
   const tiengRef = useRef(true);
 
-  const [sanSang, setSanSang] = useState(false);
-  const [loiPlayerJs, setLoiPlayerJs] = useState<string | null>(null);
   const [iDangXem, setIDangXem] = useState(0);
   const [tatTieng, setTatTieng] = useState(true);
   const [dangPhat, setDangPhat] = useState(true);
@@ -143,24 +141,10 @@ export function VideoFeedDoc({
     playerRef.current[i]?.pause();
   }, []);
 
-  // 1. player.js của Bunny: nay chỉ để dành cho tương lai (luồng xem phát tệp CDN bằng thẻ
-  //    <video> của mình). Phải có HẠN CHỜ: miền bị mạng chặn thì lời hứa không bao giờ kết thúc,
-  //    và nếu ta còn khoá iframe theo nó thì mọi iframe sẽ trắng bảng.
-  useEffect(() => {
-    let huy = false;
-    const hen = new Promise<void>((xong) => setTimeout(xong, 4000));
-    Promise.race([
-      napPlayerJs().catch((e: unknown) => {
-        if (!huy) setLoiPlayerJs(e instanceof Error ? e.message : String(e));
-      }),
-      hen,
-    ]).finally(() => {
-      if (!huy) setSanSang(true);
-    });
-    return () => {
-      huy = true;
-    };
-  }, []);
+  // 1. KHÔNG nạp player.js của Bunny nữa: luồng xem phát tệp CDN bằng thẻ <video> của mình, còn
+  //    nạp từ `assets.mediadelivery.net` chỉ tốn một yêu cầu tới miền mà nhiều mạng chặn hẳn.
+  //    (Nếu về sau cần điều khiển iframe thì `taoPlayer` tự trả về null khi thiếu player.js —
+  //    xem `ganIframe` — nên không có gì vỡ.)
 
   // 2. Biết video nào đang chiếm phần lớn màn hình
   useEffect(() => {
@@ -396,12 +380,6 @@ export function VideoFeedDoc({
       >
         <X size={18} />
       </Link>
-
-      {loiPlayerJs && (
-        <p className="absolute left-3 top-16 z-30 max-w-[70%] rounded-lg bg-amber-500/20 px-3 py-1.5 text-[11px] text-amber-200">
-          {loiPlayerJs} — vẫn xem được, nhưng chạm để tạm dừng có thể không tác dụng.
-        </p>
-      )}
 
       <div
         ref={khung}

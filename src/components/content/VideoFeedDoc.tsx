@@ -70,8 +70,16 @@ export function VideoFeedDoc({
   const [tienTrinh, setTienTrinh] = useState(0);
   /** Thông tin đang mở hay thu gọn (mặc định thu gọn cho thoáng màn hình) */
   const [moThongTin, setMoThongTin] = useState(!thuGon);
+  /**
+   * Máy cảm ứng hay không. Trên MÁY TÍNH ta KHÔNG phủ lớp nhận chạm lên iframe, vì phủ là
+   * cú bấm không bao giờ tới được nút điều khiển gốc của nền tảng — người dùng thành ra
+   * không phát được video. Lớp phủ chỉ cần cho máy cảm ứng (để vuốt).
+   */
+  const [coCham, setCoCham] = useState(false);
 
   const batDau = useRef(Date.now());
+  /** Số lần đã thử phát lại video đang xem (trình duyệt chặn tự phát thì phải chờ người dùng chạm) */
+  const soLanThu = useRef(0);
 
   /** Ghi nhịp xem về máy chủ: đã xem video này bao nhiêu giây. */
   const ghiNhip = useCallback(
@@ -190,6 +198,57 @@ export function VideoFeedDoc({
     };
   }, [ghiNhip]);
 
+  // 5. Biết máy có cảm ứng hay không (quyết định có phủ lớp nhận chạm hay không)
+  useEffect(() => {
+    const doi = () => setCoCham(window.matchMedia("(pointer: coarse)").matches);
+    doi();
+    const mq = window.matchMedia("(pointer: coarse)");
+    mq.addEventListener?.("change", doi);
+    return () => mq.removeEventListener?.("change", doi);
+  }, []);
+
+  /**
+   * 6. Đồng bộ trạng thái nút với THỰC TẾ của trình phát.
+   * Không có bước này, nút có thể nói "đang phát" trong khi video chưa hề chạy (người dùng bấm
+   * lần đầu hoá ra là lệnh tạm dừng -> không thấy gì xảy ra). Đồng thời thử phát lại vài lần:
+   * trình duyệt chặn tự phát thì chỉ phát được sau khi người dùng đã chạm vào trang.
+   */
+  useEffect(() => {
+    soLanThu.current = 0;
+    const kiem = () => {
+      const p = playerRef.current[iDangXem];
+      if (!p) return;
+      try {
+        p.getPaused((dang) => {
+          setDangPhat(!dang);
+          if (dang && soLanThu.current < 5) {
+            soLanThu.current += 1;
+            p.play();
+          }
+        });
+      } catch {
+        /* trình phát cũ không hỗ trợ getPaused -> bỏ qua */
+      }
+    };
+    kiem();
+    const id = setInterval(kiem, 1200);
+    return () => clearInterval(id);
+  }, [iDangXem]);
+
+  // 7. Cú chạm ĐẦU TIÊN của người dùng là "vé" cho phép phát: thử phát lại ngay
+  useEffect(() => {
+    const bat = () => {
+      soLanThu.current = 0;
+      phat(iRef.current);
+    };
+    window.addEventListener("pointerdown", bat, { once: true });
+    window.addEventListener("keydown", bat, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", bat);
+      window.removeEventListener("keydown", bat);
+    };
+  }, [phat]);
+
   /** Gắn iframe Bunny: tạo đối tượng điều khiển ngay khi iframe vào DOM. */
   const ganIframe = useCallback(
     (i: number) => (el: HTMLIFrameElement | null) => {
@@ -303,7 +362,7 @@ export function VideoFeedDoc({
       : { aspectRatio: "16 / 9", width: "min(100%, calc(100dvh * 16 / 9))", height: "auto" };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black text-white" data-feed-doc>
+    <div className="fixed inset-0 z-[80] bg-black text-white" data-feed-doc>
       {/* Đầu luồng: tên luồng / danh mục + số lượng */}
       <div className="pointer-events-none absolute left-3 top-3 z-30 max-w-[70%]">
         {tieuDe && (
@@ -380,13 +439,16 @@ export function VideoFeedDoc({
                   </div>
                 )}
 
-                {/* Lớp phủ nhận thao tác chạm: để vuốt được và để mình tự vẽ điều khiển */}
-                <button
-                  type="button"
-                  onClick={() => bamVao(i)}
-                  aria-label={dangPhat ? "Tạm dừng" : "Tiếp tục"}
-                  className="absolute inset-0 z-10 cursor-default bg-transparent"
-                />
+                {/* Lớp phủ nhận thao tác chạm — CHỈ trên máy cảm ứng (cần để vuốt).
+                    Trên máy tính không phủ, để cú bấm tới được nút điều khiển gốc của nền tảng. */}
+                {coCham && (
+                  <button
+                    type="button"
+                    onClick={() => bamVao(i)}
+                    aria-label={dangPhat ? "Tạm dừng" : "Tiếp tục"}
+                    className="absolute inset-0 z-10 cursor-default bg-transparent"
+                  />
+                )}
 
                 {/* Dấu chìm chống rò rỉ */}
                 {nguoiXem && (
@@ -395,11 +457,22 @@ export function VideoFeedDoc({
                   </span>
                 )}
 
-                {/* Dấu tạm dừng giữa khung */}
+                {/* Chưa phát thì hiện nút ▶ TO ở giữa — LUÔN bấm được (kể cả khi nền tảng không
+                    cho điều khiển từ mã, hoặc trình phát chưa sẵn sàng). */}
                 {i === iDangXem && !dangPhat && (
-                  <span className="pointer-events-none absolute z-20 flex size-16 items-center justify-center rounded-full bg-black/45 backdrop-blur">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      soLanThu.current = 0;
+                      phat(i);
+                      setDangPhat(true);
+                    }}
+                    aria-label="Phát video"
+                    className="absolute left-1/2 top-1/2 z-30 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 backdrop-blur hover:bg-black/70"
+                  >
                     <Play size={26} className="translate-x-0.5" />
-                  </span>
+                  </button>
                 )}
 
                 {/* Cột nút bên phải: tiếng + lên/xuống */}
@@ -459,6 +532,13 @@ export function VideoFeedDoc({
                           <span>chạm để xem chi tiết</span>
                         </span>
                       </button>
+                      {/* Lối mở thẳng bài giảng — luôn có, để một cú bấm không bao giờ "vô ích" */}
+                      <Link
+                        href={`/app/videos/${v.id}`}
+                        className="shrink-0 rounded-lg border border-white/25 bg-black/50 px-3 py-2 text-[11px] font-medium backdrop-blur hover:bg-black/70"
+                      >
+                        Mở bài
+                      </Link>
                     </div>
                   ) : (
                     <div className="pr-12">
@@ -509,7 +589,9 @@ export function VideoFeedDoc({
                       <Play size={11} className="text-white/60" />
                     )}
                     <span className="text-[10px] text-white/50">
-                      Chạm để tạm dừng · vuốt lên để xem tiếp
+                      {i === iDangXem && !dangPhat
+                        ? "Bấm nút ▶ để phát · vuốt lên để xem tiếp"
+                        : "Chạm để tạm dừng · vuốt lên để xem tiếp"}
                     </span>
                   </div>
                 </div>

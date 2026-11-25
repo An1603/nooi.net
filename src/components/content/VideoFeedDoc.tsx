@@ -143,16 +143,20 @@ export function VideoFeedDoc({
     playerRef.current[i]?.pause();
   }, []);
 
-  // 1. Nạp player.js TRƯỚC khi gắn iframe (điều kiện bắt buộc của Bunny)
+  // 1. player.js của Bunny: nay chỉ để dành cho tương lai (luồng xem phát tệp CDN bằng thẻ
+  //    <video> của mình). Phải có HẠN CHỜ: miền bị mạng chặn thì lời hứa không bao giờ kết thúc,
+  //    và nếu ta còn khoá iframe theo nó thì mọi iframe sẽ trắng bảng.
   useEffect(() => {
     let huy = false;
-    napPlayerJs()
-      .catch((e: unknown) => {
+    const hen = new Promise<void>((xong) => setTimeout(xong, 4000));
+    Promise.race([
+      napPlayerJs().catch((e: unknown) => {
         if (!huy) setLoiPlayerJs(e instanceof Error ? e.message : String(e));
-      })
-      .finally(() => {
-        if (!huy) setSanSang(true);
-      });
+      }),
+      hen,
+    ]).finally(() => {
+      if (!huy) setSanSang(true);
+    });
     return () => {
       huy = true;
     };
@@ -427,7 +431,7 @@ export function VideoFeedDoc({
                 {gan && n.kieu === "iframe" && (
                   <iframe
                     ref={ganIframe(i)}
-                    src={n.dieuKhien && !sanSang ? undefined : n.src}
+                    src={n.src}
                     title={v.title}
                     className="absolute inset-0 h-full w-full border-0"
                     allow="autoplay; encrypted-media; picture-in-picture; fullscreen"

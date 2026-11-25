@@ -101,9 +101,9 @@ export const DUONG_DAN_NHUNG = {
     `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&rel=0&playsinline=1&cc_lang_pref=vi`,
 
   /**
-   * Tham số truy vấn theo tài liệu Bunny: autoplay, muted, loop, preload (mặc định autoplay=true,
-   * muted=false). Trình phát nằm ở player.mediadelivery.net — giao diện (màu, logo, thanh điều khiển)
-   * đặt trong Player settings của thư viện.
+   * Trình phát nhúng của Bunny. GIỮ LẠI chỉ để làm đường lui "Mở bằng trình phát Bunny" —
+   * đường phát chính là tệp CDN (xem `layBunnyMp4`), vì nhiều mạng chặn hẳn miền
+   * `player.mediadelivery.net` và trình duyệt báo "refused to connect".
    */
   bunny: (libraryId: string, videoId: string) =>
     `https://player.mediadelivery.net/embed/${libraryId}/${videoId}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`,
@@ -112,6 +112,32 @@ export const DUONG_DAN_NHUNG = {
   bunnyDoc: (libraryId: string, videoId: string) =>
     `https://player.mediadelivery.net/embed/${libraryId}/${videoId}?autoplay=true&loop=true&muted=true&preload=true&responsive=true`,
 };
+
+/**
+ * Miền CDN của thư viện Bunny Stream — phát TỆP TRỰC TIẾP, không qua trình phát nhúng.
+ *
+ * Vì sao: ngày 25/11/2026 máy của Ngài An báo `player.mediadelivery.net refused to connect`
+ * (mạng/DNS chặn hẳn miền trình phát) trong khi máy chủ Bunny KHÔNG hề chặn nhúng. Tệp CDN nằm ở
+ * miền khác (`*.b-cdn.net`) nên đi được; đồng thời thẻ `<video>` của mình cho điều khiển 100%.
+ *
+ * Cách tìm miền này cho một thư viện khác: mở `https://player.mediadelivery.net/embed/<thư-viện>/<guid>`
+ * rồi tìm chuỗi `playlist.m3u8` trong mã trang — miền đứng ngay trước là miền CDN (pull zone).
+ * LƯU Ý: CDN chặn yêu cầu KHÔNG có Referer (mặc định của thư viện) — chỉ phát từ trang của mình.
+ */
+export const BUNNY_CDN = "vz-42e2ef37-7c7.b-cdn.net";
+
+/** Các mức chất lượng Bunny xuất kèm dạng tệp rời (`play_<mức>.mp4`) — dùng làm nguồn dự phòng. */
+export const BUNNY_MP4_MUC = ["720p", "480p", "360p"] as const;
+
+/** Link tệp MP4 trực tiếp trên CDN của Bunny. */
+export function layBunnyMp4(videoId: string, muc: string = "720p"): string {
+  return `https://${BUNNY_CDN}/${videoId}/play_${muc}.mp4`;
+}
+
+/** Danh sách nguồn dự phòng (hạ dần chất lượng) khi mức cao không có. */
+export function layBunnyMp4DuPhong(videoId: string): string[] {
+  return BUNNY_MP4_MUC.map((m) => layBunnyMp4(videoId, m));
+}
 
 export type NguonPhat =
   | { kieu: "youtube"; src: string }
@@ -131,7 +157,8 @@ export function nguonPhat(video: VideoDePhat): NguonPhat {
     }
     if (kenh === "bunny") {
       const b = layBunnyId(url);
-      return b ? { kieu: "bunny", src: DUONG_DAN_NHUNG.bunny(b.libraryId, b.videoId) } : null;
+      // Phát TỆP CDN chứ không nhúng trình phát: mạng hay chặn player.mediadelivery.net
+      return b ? { kieu: "truc-tiep", src: layBunnyMp4(b.videoId), loai: "mp4" } : null;
     }
     const t = layVideoTrucTiep(url);
     return t ? { kieu: "truc-tiep", src: t.src, loai: t.loai } : null;
@@ -155,6 +182,8 @@ export interface NguonDoc {
   /** iframe = trình phát của nền tảng; video = thẻ <video> của mình (điều khiển được 100%) */
   kieu: "iframe" | "video" | "khong";
   src: string;
+  /** Nguồn dự phòng, thử lần lượt khi nguồn chính không tải được (mức chất lượng thấp hơn). */
+  srcDuPhong?: string[];
   /** Có điều khiển được phát/dừng bằng mã của mình không? YouTube qua iframe: KHÔNG. */
   dieuKhien: boolean;
   canhBao?: string;
@@ -175,9 +204,12 @@ export function nguonPhatDoc(video: VideoDoc): NguonDoc {
   if (kenh === "bunny") {
     const b = layBunnyId(video.url);
     if (b) {
+      // Thẻ <video> của mình phát tệp CDN: điều khiển 100% (phát/dừng/tắt tiếng) và KHÔNG phụ
+      // thuộc miền trình phát nhúng (mạng chặn miền đó -> "refused to connect").
       return {
-        kieu: "iframe",
-        src: DUONG_DAN_NHUNG.bunnyDoc(b.libraryId, b.videoId),
+        kieu: "video",
+        src: layBunnyMp4(b.videoId),
+        srcDuPhong: layBunnyMp4DuPhong(b.videoId),
         dieuKhien: true,
       };
     }
@@ -211,7 +243,10 @@ export function nguonPhatDoc(video: VideoDoc): NguonDoc {
   // Kênh khai báo sai chỗ (ví dụ chọn Bunny nhưng dán link YouTube) -> thử đoán lại
   const doan = nguonPhat({ ...video, kenh_phat: undefined });
   if (doan.kieu === "youtube") return { kieu: "iframe", src: doan.src, dieuKhien: false };
-  if (doan.kieu === "bunny") return { kieu: "iframe", src: doan.src, dieuKhien: true };
+  if (doan.kieu === "bunny") {
+    const b = layBunnyId(video.url);
+    if (b) return { kieu: "video", src: layBunnyMp4(b.videoId), srcDuPhong: layBunnyMp4DuPhong(b.videoId), dieuKhien: true };
+  }
 
   return { kieu: "khong", src: "", dieuKhien: false, lyDo: doan.kieu === "khong" ? doan.lyDo : "Chưa có nguồn phát" };
 }

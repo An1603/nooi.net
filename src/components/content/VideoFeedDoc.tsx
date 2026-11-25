@@ -76,6 +76,8 @@ export function VideoFeedDoc({
    * không phát được video. Lớp phủ chỉ cần cho máy cảm ứng (để vuốt).
    */
   const [coCham, setCoCham] = useState(false);
+  /** Video đang xem nhưng tải tệp thất bại (mạng chặn miền CDN) — để báo rõ và cho đường lui */
+  const [loiPhat, setLoiPhat] = useState<number | null>(null);
 
   const batDau = useRef(Date.now());
   /** Số lần đã thử phát lại video đang xem (trình duyệt chặn tự phát thì phải chờ người dùng chạm) */
@@ -216,6 +218,16 @@ export function VideoFeedDoc({
   useEffect(() => {
     soLanThu.current = 0;
     const kiem = () => {
+      // Thẻ <video> của mình: trạng thái đọc thẳng từ phần tử
+      const v = videoRef.current[iDangXem];
+      if (v) {
+        setDangPhat(!v.paused);
+        if (v.paused && soLanThu.current < 5) {
+          soLanThu.current += 1;
+          void v.play().catch(() => {});
+        }
+        return;
+      }
       const p = playerRef.current[iDangXem];
       if (!p) return;
       try {
@@ -425,17 +437,55 @@ export function VideoFeedDoc({
                 {gan && n.kieu === "video" && (
                   <video
                     ref={ganVideo(i)}
-                    src={n.src}
+                    {...(n.srcDuPhong && n.srcDuPhong.length > 1 ? {} : { src: n.src })}
                     className="absolute inset-0 h-full w-full object-contain"
                     playsInline
                     muted
                     loop
                     preload="metadata"
-                  />
+                    onPlay={() => {
+                      setLoiPhat(null);
+                      if (i === iRef.current) setDangPhat(true);
+                    }}
+                    onPause={() => {
+                      if (i === iRef.current) setDangPhat(false);
+                    }}
+                    onTimeUpdate={(e) => {
+                      if (i !== iRef.current) return;
+                      const el = e.currentTarget;
+                      if (el.duration > 0) setTienTrinh((el.currentTime / el.duration) * 100);
+                    }}
+                    onError={() => {
+                      if (i === iRef.current) setLoiPhat(i);
+                    }}
+                  >
+                    {/* Thử lần lượt các mức chất lượng: mức cao không có thì tự hạ xuống */}
+                    {n.srcDuPhong &&
+                      n.srcDuPhong.length > 1 &&
+                      n.srcDuPhong.map((u) => <source key={u} src={u} type="video/mp4" />)}
+                  </video>
                 )}
                 {n.kieu === "khong" && (
                   <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-xs text-white/70">
                     {n.lyDo}
+                  </div>
+                )}
+                {/* Tải tệp không được (mạng chặn miền CDN...) -> nói rõ và cho đường lui */}
+                {i === loiPhat && n.kieu === "video" && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/80 p-6 text-center">
+                    <p className="max-w-sm text-xs text-white/85">
+                      Không tải được tệp video trực tiếp — mạng đang chặn miền CDN.
+                    </p>
+                    {v.url && (
+                      <a
+                        href={v.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-xs font-medium hover:bg-white/20"
+                      >
+                        Mở bằng trình phát Bunny
+                      </a>
+                    )}
                   </div>
                 )}
 
@@ -459,7 +509,7 @@ export function VideoFeedDoc({
 
                 {/* Chưa phát thì hiện nút ▶ TO ở giữa — LUÔN bấm được (kể cả khi nền tảng không
                     cho điều khiển từ mã, hoặc trình phát chưa sẵn sàng). */}
-                {i === iDangXem && !dangPhat && (
+                {i === iDangXem && !dangPhat && loiPhat !== i && (
                   <button
                     type="button"
                     onClick={(e) => {

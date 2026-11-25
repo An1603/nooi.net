@@ -34,9 +34,10 @@ export function VideoPlayer({ video, className = "", dauChim }: VideoPlayerProps
   }
 
   return (
-    <div
-      className={`relative aspect-video rounded-xl overflow-hidden border border-border bg-black ${className}`}
-    >
+    <>
+      <div
+        className={`relative aspect-video rounded-xl overflow-hidden border border-border bg-black ${className}`}
+      >
       {nguon.kieu === "truc-tiep" ? (
         <video
           src={nguon.src}
@@ -65,6 +66,17 @@ export function VideoPlayer({ video, className = "", dauChim }: VideoPlayerProps
           </span>
         </div>
       )}
-    </div>
+      </div>
+
+      {/* Đường lui: nếu mạng chặn miền CDN thì vẫn còn trình phát nhúng của Bunny */}
+      {video.kenh_phat === "bunny" && video.url && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Không phát được?{" "}
+          <a href={video.url} target="_blank" rel="noopener noreferrer" className="underline">
+            Mở bằng trình phát Bunny
+          </a>
+        </p>
+      )}
+    </>
   );
 }

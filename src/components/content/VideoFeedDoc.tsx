@@ -2,29 +2,57 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { KENH_PHAT_LABELS, laKenhPhat, nguonPhatDoc, type VideoDoc } from "@/lib/video/kenh-phat";
+import {
+  KENH_PHAT_LABELS,
+  KHUNG_HINH_LABELS,
+  laKenhPhat,
+  laKhungHinh,
+  nguonPhatDoc,
+  type VideoDoc,
+} from "@/lib/video/kenh-phat";
 import { docTimeUpdate, napPlayerJs, taoPlayer, type PlayerGiaoDien } from "@/lib/video/playerjs";
 
 interface Props {
   videos: VideoDoc[];
   /** Email/mã người xem để in dấu chìm — rỗng thì không in */
   nguoiXem?: string | null;
+  /** Tên luồng / danh mục hiện ở góc trên (vd "Măng Đen") */
+  tieuDe?: string;
+  /** Nơi quay về khi bấm X */
+  duongDanDong?: string;
+  /** Đường dẫn ghi nhịp xem (đo lường) */
+  duongDanDo?: string;
+  /**
+   * Gom thông tin lại thành 1 dòng, chạm mới mở ra — mặc định BẬT để ưu tiên màn hình cho video.
+   * Đặt false khi cần mở sẵn (trang xem riêng).
+   */
+  thuGon?: boolean;
 }
 
 /**
- * Luồng xem dọc kiểu vuốt (TikTok) cho kho bài giảng NOOI.
+ * Luồng xem kiểu vuốt cho kho video NOOI — dùng cho cả luồng dọc lẫn danh mục trộn khổ hình.
  *
  * Nguyên tắc đã chốt:
  *   1. Mỗi video một khung cao đúng màn hình; cuộn dọc có "bám" (scroll-snap) nên vuốt là sang video.
- *   2. Chỉ gắn trình phát cho video đang xem và 2 video kề bên -> không tải cả luồng, tiết kiệm 4G.
- *   3. Phủ một lớp nhận thao tác chạm lên trên iframe: nếu để ngón tay chạm vào chính iframe thì
+ *   2. KHUNG HÌNH TỰ KHỚP TỈ LỆ: video dọc (9:16) dựng theo chiều cao màn hình, video ngang (16:9)
+ *      dựng theo chiều rộng nhưng không vượt quá chiều cao màn hình. Nhờ vậy một danh mục trộn
+ *      cả dọc lẫn ngang vẫn xem được trọn hình, không bị cắt, cũng không thừa dải đen vô ích.
+ *   3. Chỉ gắn trình phát cho video đang xem và 2 video kề bên -> không tải cả luồng, tiết kiệm 4G.
+ *   4. Phủ một lớp nhận thao tác chạm lên trên iframe: nếu để ngón tay chạm vào chính iframe thì
  *      trang cha KHÔNG nhận được thao tác vuốt. Lớp phủ lo việc vuốt, còn phát/dừng do mình điều khiển.
- *   4. Tự phát luôn ở chế độ TẮT TIẾNG (mọi trình duyệt đều chặn tự phát có tiếng).
- *   5. Thời gian xem từng video gửi về /api/track (đã có sẵn) để đo mức độ xem thật.
+ *   5. Tự phát luôn ở chế độ TẮT TIẾNG (mọi trình duyệt đều chặn tự phát có tiếng).
+ *   6. Thời gian xem từng video gửi về /api/track để đo mức độ xem thật.
  */
-export function VideoFeedDoc({ videos, nguoiXem }: Props) {
+export function VideoFeedDoc({
+  videos,
+  nguoiXem,
+  tieuDe,
+  duongDanDong = "/app/videos",
+  duongDanDo = "/app/short",
+  thuGon = true,
+}: Props) {
   const nguon = useMemo(() => videos.map((v) => nguonPhatDoc(v)), [videos]);
 
   const khung = useRef<HTMLDivElement | null>(null);
@@ -40,6 +68,8 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
   const [tatTieng, setTatTieng] = useState(true);
   const [dangPhat, setDangPhat] = useState(true);
   const [tienTrinh, setTienTrinh] = useState(0);
+  /** Thông tin đang mở hay thu gọn (mặc định thu gọn cho thoáng màn hình) */
+  const [moThongTin, setMoThongTin] = useState(!thuGon);
 
   const batDau = useRef(Date.now());
 
@@ -54,13 +84,13 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
           keepalive: true,
           headers: { "Content-Type": "application/json" },
           // `d` mang cả mã video để đo được từng bài (api/track chỉ nhận t/path/referrer/giây)
-          body: JSON.stringify({ t: "nhip", d: `/app/short?v=${video.id}`, g: Math.round(giay) }),
+          body: JSON.stringify({ t: "nhip", d: `${duongDanDo}?v=${video.id}`, g: Math.round(giay) }),
         }).catch(() => {});
       } catch {
         /* không chặn trải nghiệm vì lỗi đo lường */
       }
     },
-    [videos]
+    [videos, duongDanDo]
   );
 
   const doTieng = useCallback((i: number, tat: boolean) => {
@@ -261,15 +291,31 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
         bamVao(iRef.current);
       }
       if (e.key === "m" || e.key === "M") doiTieng();
+      if (e.key === "i" || e.key === "I") setMoThongTin((x) => !x);
     },
     [cuon, bamVao, doiTieng]
   );
 
+  /** Khung hình tự khớp tỉ lệ với màn hình — xem giải thích ở đầu tệp. */
+  const kieuKhung = (v: VideoDoc): React.CSSProperties =>
+    v.khung_hinh === "doc"
+      ? { aspectRatio: "9 / 16", height: "100%", width: "auto", maxWidth: "100%" }
+      : { aspectRatio: "16 / 9", width: "min(100%, calc(100dvh * 16 / 9))", height: "auto" };
+
   return (
     <div className="fixed inset-0 z-50 bg-black text-white" data-feed-doc>
+      {/* Đầu luồng: tên luồng / danh mục + số lượng */}
+      <div className="pointer-events-none absolute left-3 top-3 z-30 max-w-[70%]">
+        {tieuDe && (
+          <span className="pointer-events-auto rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold backdrop-blur">
+            {tieuDe} · {videos.length} video
+          </span>
+        )}
+      </div>
+
       {/* Đóng luồng, quay về kho video */}
       <Link
-        href="/app/videos"
+        href={duongDanDong}
         className="absolute right-3 top-3 z-30 flex size-9 items-center justify-center rounded-full bg-black/50 backdrop-blur hover:bg-black/70"
         aria-label="Đóng luồng"
       >
@@ -277,7 +323,7 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
       </Link>
 
       {loiPlayerJs && (
-        <p className="absolute left-3 top-3 z-30 max-w-[70%] rounded-lg bg-amber-500/20 px-3 py-1.5 text-[11px] text-amber-200">
+        <p className="absolute left-3 top-16 z-30 max-w-[70%] rounded-lg bg-amber-500/20 px-3 py-1.5 text-[11px] text-amber-200">
           {loiPlayerJs} — vẫn xem được, nhưng chạm để tạm dừng có thể không tác dụng.
         </p>
       )}
@@ -293,6 +339,9 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
           const n = nguon[i];
           const gan = Math.abs(i - iDangXem) <= 1;
           const kenh: string = laKenhPhat(v.kenh_phat) ? KENH_PHAT_LABELS[v.kenh_phat] : "Chưa rõ kênh";
+          const nhanKhung: string = laKhungHinh(v.khung_hinh)
+            ? KHUNG_HINH_LABELS[v.khung_hinh]
+            : "Khổ hình khác";
           return (
             <section
               key={v.id}
@@ -302,8 +351,8 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
               }}
               className="relative flex h-full w-full snap-start snap-always items-center justify-center"
             >
-              {/* Khung dọc 9:16: điện thoại thì tràn màn hình, máy tính thì cột giữa */}
-              <div className="relative h-full w-full overflow-hidden bg-black sm:aspect-[9/16] sm:h-[100dvh] sm:w-auto sm:max-w-full">
+              {/* Khung hình tự khớp: dọc theo chiều cao, ngang theo chiều rộng */}
+              <div className="relative overflow-hidden bg-black" style={kieuKhung(v)}>
                 {gan && n.kieu === "iframe" && (
                   <iframe
                     ref={ganIframe(i)}
@@ -318,7 +367,7 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
                   <video
                     ref={ganVideo(i)}
                     src={n.src}
-                    className="absolute inset-0 h-full w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-contain"
                     playsInline
                     muted
                     loop
@@ -353,16 +402,72 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
                   </span>
                 )}
 
-                {/* Thanh dưới: tiêu đề, nhãn, nút điều khiển */}
-                <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-6 pt-10">
-                  <div className="flex items-end justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="mb-1.5 flex flex-wrap gap-1.5">
+                {/* Cột nút bên phải: tiếng + lên/xuống */}
+                <div className="absolute right-2.5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={doiTieng}
+                    aria-label={tatTieng ? "Bật tiếng" : "Tắt tiếng"}
+                    className={cn(
+                      "flex size-9 items-center justify-center rounded-full border border-white/20 backdrop-blur",
+                      tatTieng ? "bg-black/40" : "bg-accent/40"
+                    )}
+                  >
+                    {tatTieng ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cuon(i - 1)}
+                    aria-label="Video trước"
+                    className="flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/40 backdrop-blur"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cuon(i + 1)}
+                    aria-label="Video tiếp"
+                    className="flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/40 backdrop-blur"
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
+
+                {/* Thanh dưới: THU GỌN 1 dòng, chạm để mở chi tiết */}
+                <div className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-5 pt-10">
+                  {!moThongTin ? (
+                    <div className="flex items-end gap-2 pr-12">
+                      <button
+                        type="button"
+                        onClick={() => setMoThongTin(true)}
+                        className="min-w-0 flex-1 text-left"
+                        aria-label="Mở thông tin video"
+                      >
+                        <span className="line-clamp-1 text-xs font-semibold text-white/95">
+                          {v.title}
+                        </span>
+                        <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[10px] text-white/60">
+                          <Info size={11} className="shrink-0" />
+                          <span>
+                            {i + 1}/{videos.length}
+                          </span>
+                          <span>·</span>
+                          <span>{v.khung_hinh === "doc" ? "Dọc" : "Ngang"}</span>
+                          <span>·</span>
+                          <span>{kenh}</span>
+                          <span>·</span>
+                          <span>chạm để xem chi tiết</span>
+                        </span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="pr-12">
+                      <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
                         <span className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium">
                           {kenh}
                         </span>
                         <span className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium">
-                          Dọc 9:16
+                          {nhanKhung}
                         </span>
                         {v.duration ? (
                           <span className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium">
@@ -370,54 +475,34 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
                             {String(v.duration % 60).padStart(2, "0")}
                           </span>
                         ) : null}
+                        <span className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium">
+                          {i + 1}/{videos.length}
+                        </span>
                       </div>
-                      <h2 className="line-clamp-2 text-sm font-semibold">{v.title}</h2>
+                      <h2 className="text-sm font-semibold">{v.title}</h2>
                       {v.description && (
-                        <p className="mt-0.5 line-clamp-2 text-xs text-white/70">{v.description}</p>
+                        <p className="mt-0.5 line-clamp-3 text-xs text-white/70">{v.description}</p>
                       )}
-                      {n.canhBao && (
-                        <p className="mt-1 text-[10px] text-amber-200/90">{n.canhBao}</p>
-                      )}
-                      <Link
-                        href={`/app/videos/${v.id}`}
-                        className="mt-1.5 inline-block text-[11px] text-white/80 underline"
-                      >
-                        Mở trang bài giảng
-                      </Link>
+                      {n.canhBao && <p className="mt-1 text-[10px] text-amber-200/90">{n.canhBao}</p>}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                        <Link
+                          href={`/app/videos/${v.id}`}
+                          className="text-[11px] text-white/80 underline"
+                        >
+                          Mở trang bài giảng
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setMoThongTin(false)}
+                          className="inline-flex items-center gap-1 text-[11px] text-white/70"
+                        >
+                          <ChevronDown size={12} /> Thu gọn
+                        </button>
+                      </div>
                     </div>
+                  )}
 
-                    <div className="flex shrink-0 flex-col items-center gap-2 pb-1">
-                      <button
-                        type="button"
-                        onClick={doiTieng}
-                        aria-label={tatTieng ? "Bật tiếng" : "Tắt tiếng"}
-                        className={cn(
-                          "flex size-9 items-center justify-center rounded-full border border-white/20",
-                          tatTieng ? "bg-white/10" : "bg-accent/30"
-                        )}
-                      >
-                        {tatTieng ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => cuon(i - 1)}
-                        aria-label="Video trước"
-                        className="flex size-9 items-center justify-center rounded-full border border-white/20 bg-white/10"
-                      >
-                        <ChevronUp size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => cuon(i + 1)}
-                        aria-label="Video tiếp"
-                        className="flex size-9 items-center justify-center rounded-full border border-white/20 bg-white/10"
-                      >
-                        <ChevronDown size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-1.5">
+                  <div className="mt-2 flex items-center gap-1.5">
                     {dangPhat && i === iDangXem ? (
                       <Pause size={11} className="text-white/60" />
                     ) : (
@@ -430,7 +515,7 @@ export function VideoFeedDoc({ videos, nguoiXem }: Props) {
                 </div>
 
                 {/* Thanh tiến trình ở sát đáy, che dải điều khiển gốc của trình phát */}
-                <div className="absolute inset-x-0 bottom-0 z-20 h-[3px] bg-white/20">
+                <div className="absolute inset-x-0 bottom-0 z-40 h-[3px] bg-white/20">
                   <div
                     className="h-full bg-accent transition-[width] duration-200"
                     style={{ width: `${i === iDangXem ? tienTrinh : 0}%` }}

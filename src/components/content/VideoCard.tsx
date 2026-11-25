@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Video, Calendar, Clock, Play } from "lucide-react";
+import { Video, Calendar, Clock, Play, FolderOpen } from "lucide-react";
 import { layYoutubeId } from "@/lib/video/kenh-phat";
+import { tenDanhMuc } from "@/lib/video/danh-muc";
 
 export interface VideoCardData {
   id: string;
@@ -12,6 +13,7 @@ export interface VideoCardData {
   kenh_phat?: string | null;
   cong_khai?: boolean | null;
   khung_hinh?: string | null;
+  danh_muc?: string | null;
   thu_tu?: number | null;
   status: "processing" | "ready" | "failed" | "published";
   duration: number;
@@ -44,7 +46,7 @@ function formatDuration(seconds: number): string {
 }
 
 export function VideoCard({ video }: VideoCardProps) {
-  const { id, title, description, status, duration, created_at, thumbnail_url, kenh_phat, cong_khai, khung_hinh } = video;
+  const { id, title, description, status, duration, created_at, thumbnail_url, kenh_phat, cong_khai, khung_hinh, danh_muc } = video;
 
   const laBunny = kenh_phat === "bunny";
   const laDoc = khung_hinh === "doc";
@@ -109,6 +111,12 @@ export function VideoCard({ video }: VideoCardProps) {
         {laDoc && (
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border bg-primary/10 text-primary border-primary/20">
             Dọc 9:16
+          </span>
+        )}
+        {danh_muc && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground">
+            <FolderOpen size={10} />
+            {tenDanhMuc(danh_muc)}
           </span>
         )}
       </div>

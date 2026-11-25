@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, LayoutGrid } from "lucide-react";
 import { VideoCard } from "@/components/content/VideoCard";
 
 export default async function VideosPage() {
@@ -22,13 +22,22 @@ export default async function VideosPage() {
             Thư viện video đã render và xuất bản.
           </p>
         </div>
-        <Link
-          href="/app/videos/new"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 transition-colors"
-        >
-          <Plus size={16} />
-          Video mới
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/app/danh-muc"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/50 transition-colors"
+          >
+            <LayoutGrid size={16} />
+            Danh mục
+          </Link>
+          <Link
+            href="/app/videos/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 transition-colors"
+          >
+            <Plus size={16} />
+            Video mới
+          </Link>
+        </div>
       </div>
 
       {error && (

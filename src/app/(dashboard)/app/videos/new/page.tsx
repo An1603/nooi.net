@@ -14,11 +14,13 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { createVideo } from "../actions";
 import { createClient } from "@/lib/supabase/client";
+import { DANH_MUC } from "@/lib/video/danh-muc";
 
 const formSchema = z.object({
   title: z.string().min(1, "Tiêu đề không được để trống").max(200, "Tiêu đề quá dài"),
   description: z.string().max(2000, "Mô tả quá dài").optional(),
   project_id: z.string().optional().nullable(),
+  danh_muc: z.string().max(60, "Mã danh mục quá dài").optional(),
   url: z.string().url("URL không hợp lệ").optional().or(z.literal("")),
   status: z.enum(["processing", "ready", "failed", "published"]),
   kenh_phat: z.enum(["youtube", "bunny", "truc-tiep"]),
@@ -43,6 +45,7 @@ export default function NewVideoPage() {
       title: "",
       description: "",
       project_id: "",
+      danh_muc: "",
       url: "",
       status: "processing",
       kenh_phat: "youtube",
@@ -73,6 +76,7 @@ export default function NewVideoPage() {
     formData.set("title", data.title);
     formData.set("description", data.description || "");
     formData.set("project_id", data.project_id || "");
+    formData.set("danh_muc", data.danh_muc || "");
     formData.set("url", data.url || "");
     formData.set("status", data.status);
     formData.set("kenh_phat", data.kenh_phat);
@@ -145,6 +149,23 @@ export default function NewVideoPage() {
               </option>
             ))}
           </Select>
+        </div>
+
+        {/* Danh mục kho video */}
+        <div className="space-y-2">
+          <Label htmlFor="danh_muc">Danh mục</Label>
+          <Select id="danh_muc" {...register("danh_muc")}>
+            <option value="">Không xếp danh mục</option>
+            {DANH_MUC.map((d) => (
+              <option key={d.slug} value={d.slug}>
+                {d.ten}
+              </option>
+            ))}
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Video cùng danh mục nằm chung một luồng vuốt (Ảnh→ mục “Danh mục video”), xem được cả
+            video dọc lẫn ngang.
+          </p>
         </div>
 
         {/* Kênh phát */}

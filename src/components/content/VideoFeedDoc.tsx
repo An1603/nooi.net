@@ -695,8 +695,9 @@ export function VideoFeedDoc({
                   />
                 )}
 
-                {/* Dấu chìm NOOI (trước đây in email người xem — đổi theo yêu cầu 26/11/2026) */}
-                <DauChimNooi />
+                {/* Dấu chìm NOOI (trước đây in email người xem — đổi theo yêu cầu 26/11/2026).
+                    Không vẽ lên màn khoá: ở đó đã có ảnh bìa mờ + ổ khoá, thêm chữ chỉ rối. */}
+                {!khoa && <DauChimNooi />}
 
                 {/* Nút “Mở bài” — CHỈ hiện khi video thuộc một bài học, và đặt ở góc phải-trên
                     (cạnh nút đóng). Video tư liệu không có nút này cho đỡ rối mắt. */}

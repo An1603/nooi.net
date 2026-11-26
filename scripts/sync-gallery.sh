@@ -65,6 +65,10 @@ else:
 PY
 
 echo
+echo "→ Sinh data/gallery.json cho trang Next…"
+( cd "$(dirname "$0")/.." && node scripts/build-gallery-json.mjs )
+
+echo
 echo "→ Đóng dấu phiên bản cho css/js (chống cache cũ của trình duyệt + service worker)…"
 python3 - "$DST/index.html" <<'PY'
 import sys, re, time

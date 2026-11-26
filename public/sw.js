@@ -1,7 +1,7 @@
 // NOOI — PWA Service Worker
 // Version: 3.0.0 — Auto-update notify + new brand icons
 
-const CACHE_NAME = "nooi-v5";
+const CACHE_NAME = "nooi-v6";
 const APP_ROUTES = [
   "/",
   "/manifest.json",
@@ -104,16 +104,42 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // ── Static assets: cache-first ──
+  // ── Tệp TĨNH BẤT BIẾN: cache-first (ảnh, font, tệp có hash của Next) ──
+  //
+  // ⚠️ LUẬT: chỉ những tệp KHÔNG BAO GIỜ đổi nội dung tại một URL mới được cache-first.
+  // CSS/JS/JSON của trang tĩnh (/gallery/styles.css, /gallery/app.js, /gallery/data/*.js)
+  // giữ nguyên URL qua các lần deploy — cache-first ở đây từng làm HTML mới đi với CSS/JS cũ,
+  // khách thấy trang vỡ/lộn xộn mà xoá cache trình duyệt cũng không hết (cache của SW nằm
+  // ngoài cache trình duyệt). Vì vậy chúng đi nhánh network-first bên dưới.
+  const TEP_BAT_BIEN =
+    /^\/_next\/static\/|\/pwa\/|\.(png|jpe?g|webp|avif|gif|svg|ico|woff2?|ttf|mp4|webm)$/i;
+
+  if (TEP_BAT_BIEN.test(url.pathname)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response.ok && response.type === "basic") {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // ── Mọi tệp còn lại (css, js, json, txt…): network-first, mạng hỏng mới dùng cache ──
   event.respondWith(
-    caches.match(request).then((cached) => {
-      return cached || fetch(request).then((response) => {
-        if (response.ok && response.type === "basic") {
+    fetch(request)
+      .then((response) => {
+        if (response.ok && response.status < 300 && response.type === "basic") {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return response;
-      });
-    })
+      })
+      .catch(() => caches.match(request))
   );
 });

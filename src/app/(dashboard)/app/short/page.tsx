@@ -20,7 +20,7 @@ export default async function ShortPage() {
 
   const { data, error } = await supabase
     .from("videos")
-    .select("id, title, description, url, kenh_phat, khung_hinh, duration")
+    .select("id, title, description, url, kenh_phat, khung_hinh, duration, thumbnail_url")
     .eq("khung_hinh", "doc")
     .order("thu_tu", { ascending: false })
     .order("created_at", { ascending: false })

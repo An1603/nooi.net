@@ -49,6 +49,8 @@ export interface VideoDoc extends VideoDePhat {
   description?: string | null;
   khung_hinh?: string | null;
   duration?: number | null;
+  /** Ảnh bìa — hiện ngay khi video còn đang tải (đỡ khung đen, "bấm là có hình"). */
+  thumbnail_url?: string | null;
 }
 
 /** Lấy mã video YouTube từ mọi dạng link (watch, embed, shorts, live, youtu.be). */

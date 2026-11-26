@@ -421,6 +421,7 @@ export function VideoFeedDoc({
                     ref={ganVideo(i)}
                     {...(n.srcDuPhong && n.srcDuPhong.length > 1 ? {} : { src: n.src })}
                     className="absolute inset-0 h-full w-full object-contain"
+                    poster={v.thumbnail_url || undefined}
                     playsInline
                     muted
                     loop

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +58,14 @@ interface Props {
 /** Nút chia sẻ kèm một dòng báo nhỏ tự tắt. */
 export function NutChiaSe({ tieuDe, duong, nhan = "Chia sẻ", coChu = false, className, co = 15 }: Props) {
   const [tin, setTin] = useState<string | null>(null);
+  const [daGan, setDaGan] = useState(false);
   const hen = useRef<number | null>(null);
+
+  // Dòng báo phải nằm Ở NGOÀI cùng trang, không phải trong nút. Lý do: nút này nằm trong khung
+  // video vốn có `backdrop-filter`, mà thuộc tính đó biến khung chứa thành gốc toạ độ của
+  // `position: fixed` — dòng báo sẽ bị nhốt trong cột nút rộng 40px và dồn thành cột chữ
+  // (đã gặp thật 26/11/2026). Đưa ra `document.body` bằng cổng (`createPortal`) là hết.
+  useEffect(() => setDaGan(true), []);
 
   const bam = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -89,14 +97,17 @@ export function NutChiaSe({ tieuDe, duong, nhan = "Chia sẻ", coChu = false, cl
         <Share2 size={co} />
         {coChu && <span className="text-xs font-medium">Chia sẻ</span>}
       </button>
-      {tin && (
-        <span
-          role="status"
-          className="pointer-events-none fixed bottom-6 left-1/2 z-[95] -translate-x-1/2 rounded-full bg-black/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur"
-        >
-          {tin}
-        </span>
-      )}
+      {tin &&
+        daGan &&
+        createPortal(
+          <span
+            role="status"
+            className="pointer-events-none fixed bottom-6 left-1/2 z-[95] -translate-x-1/2 whitespace-nowrap rounded-full bg-black/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur"
+          >
+            {tin}
+          </span>,
+          document.body
+        )}
     </>
   );
 }

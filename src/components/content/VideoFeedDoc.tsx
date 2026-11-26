@@ -170,7 +170,9 @@ export function VideoFeedDoc({
       if (biKhoa(i)) return; // video còn khoá thì không có gì để phát
       const v = videoRef.current[i];
       if (v) {
-        v.muted = tiengRef.current;
+        // KHÔNG đụng tới `muted` ở đây. Trước đây chỗ này gán `v.muted = tiengRef.current` và vì
+        // chạy chen giữa lúc mở tiếng nên tắt lại video vừa mở tiếng (nút loa nói dối trạng thái).
+        // Tiếng do `thuPhat` (lúc mở), `doiTieng` (người xem bấm) và `doTieng` quyết định.
         void v.play().catch(() => setDangPhat(false));
         return;
       }
@@ -367,13 +369,20 @@ export function VideoFeedDoc({
    * mở tiếng mà không có tương tác thì trình duyệt cũng chặn, thậm chí dừng luôn video.
    */
   const thuPhat = useCallback(async (el: HTMLVideoElement) => {
+    el.volume = 1;
     el.muted = false;
+    // Ghi trạng thái tiếng NGAY (trước khi chờ play) — nếu để sau `await`, mã khác chạy xen vào sẽ
+    // đọc phải giá trị CŨ (đang tắt tiếng) rồi tắt lại video vừa mở tiếng. Đây chính là lỗi làm
+    // “nút loa ghi có tiếng mà không nghe thấy gì”.
+    tiengRef.current = false;
     try {
       await el.play();
-      tiengRef.current = false;
-      choMoTieng.current = false;
-      setTatTieng(false);
-      return;
+      // Trình duyệt có thể nhận lệnh nhưng VẪN giữ tắt tiếng -> phải đọc lại mới biết
+      if (!el.muted) {
+        choMoTieng.current = false;
+        setTatTieng(false);
+        return;
+      }
     } catch {
       /* bị chặn -> phát tắt tiếng */
     }
@@ -399,6 +408,17 @@ export function VideoFeedDoc({
       });
       el.addEventListener("play", () => {
         if (i === iRef.current) setDangPhat(true);
+      });
+      /**
+       * Nút loa phải nói ĐÚNG thực tế của thẻ. Trình duyệt có thể tự đổi tiếng sau lưng mình
+       * (chặn tự phát có tiếng, hoặc nhận lệnh nhưng vẫn giữ tắt tiếng) — nghe sự kiện này thì
+       * nút không bao giờ lệch trạng thái nữa.
+       */
+      el.addEventListener("volumechange", () => {
+        if (i !== iRef.current) return;
+        const tat = el.muted || el.volume === 0;
+        tiengRef.current = tat;
+        setTatTieng(tat);
       });
       // Tự phát ĐÚNG MỘT LẦN cho mỗi khung. Không có chốt này thì mỗi lần React gỡ–gắn lại thẻ,
       // video tự phát lại và đè lên thao tác tạm dừng của người xem.
@@ -473,7 +493,10 @@ export function VideoFeedDoc({
   );
 
   const doiTieng = useCallback(() => {
-    const moi = !tatTieng;
+    // Lấy trạng thái từ CHÍNH thẻ video (sự thật), không suy từ biến trạng thái — tránh trường hợp
+    // nút và thẻ lệch nhau rồi bấm một lần hoá ra lệnh ngược.
+    const el = videoRef.current[iRef.current];
+    const moi = el ? !(el.muted || el.volume === 0) : !tatTieng;
     tiengRef.current = moi;
     choMoTieng.current = false; // người xem đã tự quyết định tiếng -> đừng mở tiếng hộ nữa
     setTatTieng(moi);
@@ -605,7 +628,6 @@ export function VideoFeedDoc({
                     className="absolute inset-0 h-full w-full object-contain"
                     poster={v.thumbnail_url || undefined}
                     playsInline
-                    muted
                     loop
                     preload="metadata"
                     onPlay={() => {

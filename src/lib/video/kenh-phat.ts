@@ -186,6 +186,11 @@ export interface NguonDoc {
   /** iframe = trình phát của nền tảng; video = thẻ <video> của mình (điều khiển được 100%) */
   kieu: "iframe" | "video" | "khong";
   src: string;
+  /**
+   * Mã video Bunny — cần để ĐỔI MỨC CHẤT LƯỢNG ngay trong luồng xem (`play_<mức>.mp4`).
+   * Không phải thông tin bí mật: mã này vốn nằm sẵn trong địa chỉ tệp CDN mà trình duyệt đang phát.
+   */
+  bunnyId?: string;
   /** Nguồn dự phòng, thử lần lượt khi nguồn chính không tải được (mức chất lượng thấp hơn). */
   srcDuPhong?: string[];
   /** Có điều khiển được phát/dừng bằng mã của mình không? YouTube qua iframe: KHÔNG. */
@@ -214,6 +219,7 @@ export function nguonPhatDoc(video: VideoDoc): NguonDoc {
         kieu: "video",
         src: layBunnyMp4(b.videoId),
         srcDuPhong: layBunnyMp4DuPhong(b.videoId),
+        bunnyId: b.videoId,
         dieuKhien: true,
       };
     }
@@ -249,7 +255,7 @@ export function nguonPhatDoc(video: VideoDoc): NguonDoc {
   if (doan.kieu === "youtube") return { kieu: "iframe", src: doan.src, dieuKhien: false };
   if (doan.kieu === "bunny") {
     const b = layBunnyId(video.url);
-    if (b) return { kieu: "video", src: layBunnyMp4(b.videoId), srcDuPhong: layBunnyMp4DuPhong(b.videoId), dieuKhien: true };
+    if (b) return { kieu: "video", src: layBunnyMp4(b.videoId), srcDuPhong: layBunnyMp4DuPhong(b.videoId), bunnyId: b.videoId, dieuKhien: true };
   }
 
   return { kieu: "khong", src: "", dieuKhien: false, lyDo: doan.kieu === "khong" ? doan.lyDo : "Chưa có nguồn phát" };

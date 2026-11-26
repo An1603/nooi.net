@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ListFilter, Lock, Play, RotateCcw, Search } from "lucide-react";
 import { tenDanhMuc } from "@/lib/video/danh-muc";
+import { anhBia, anhBiaSrcSet } from "@/lib/video/anh-bia";
 import { xetQuyenXem, type NguoiXem, type VideoCongKhai } from "@/lib/video/quyen-xem";
 import { HopDangNhap } from "@/components/video/HopDangNhap";
 
@@ -285,7 +286,7 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {ketQua.map((v) => {
+          {ketQua.map((v, i) => {
             const kq = xetQuyenXem(v, nguoi);
             const thoiLuong = phutGiay(v.duration);
             const laDoc = v.khung_hinh === "doc";
@@ -293,12 +294,19 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
             const lopTrong = (
               <>
                 <div className="relative aspect-[3/4] w-full overflow-hidden bg-black/40">
-                  {v.thumbnail_url ? (
+                  {anhBia(v.thumbnail_url, { rong: 400 }) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={v.thumbnail_url}
+                      /* Ảnh bìa gốc 100–450 KB — xin bản dịch 400 px của Supabase (≈47 KB, đo thật
+                         26/11/2026) để lưới mở nhanh. 6 thẻ đầu tải ngay, phần còn lại chờ cuộn tới. */
+                      src={anhBia(v.thumbnail_url, { rong: 400 })!}
+                      srcSet={anhBiaSrcSet(v.thumbnail_url) ?? undefined}
+                      sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 220px"
                       alt={v.title}
-                      loading="lazy"
+                      width={400}
+                      height={533}
+                      loading={i < 6 ? "eager" : "lazy"}
+                      decoding="async"
                       className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
                     />
                   ) : (

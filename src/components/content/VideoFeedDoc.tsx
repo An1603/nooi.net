@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, ChevronDown, ChevronUp, Info, Lock, Play, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronDown, ChevronUp, Gauge, Info, Lock, Play, Settings, Volume2, VolumeX, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { thuocBaiHoc } from "@/lib/video/danh-muc";
+import { anhBia } from "@/lib/video/anh-bia";
 import {
   KENH_PHAT_LABELS,
   KHUNG_HINH_LABELS,
   laKenhPhat,
   laKhungHinh,
+  layBunnyMp4,
   nguonPhatDoc,
   type VideoDoc,
 } from "@/lib/video/kenh-phat";
@@ -48,6 +50,14 @@ interface Props {
   quayLaiDangNhap?: string;
   /** Mở luồng ngay tại video này — dùng cho trang công khai `/video/<mã>`. */
   batDauId?: string;
+}
+
+/** 95 → "1:35" — hiện trên thanh tiến trình. */
+function phutGiay(giay?: number | null): string {
+  if (giay === null || giay === undefined || !Number.isFinite(giay) || giay < 0) return "0:00";
+  const m = Math.floor(giay / 60);
+  const s = Math.floor(giay % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 /**
@@ -128,9 +138,28 @@ export function VideoFeedDoc({
   /** Video đang xem nhưng tải tệp thất bại (mạng chặn miền CDN) — để báo rõ và cho đường lui */
   const [loiPhat, setLoiPhat] = useState<number | null>(null);
 
+  /** Mở bảng cài đặt (chất lượng · tốc độ) */
+  const [moCaiDat, setMoCaiDat] = useState(false);
+  /** Mức chất lượng người xem chọn cho TỪNG bài (chưa chọn = để trình duyệt tự lo) */
+  const [mucChatLuong, setMucChatLuong] = useState<Record<number, string>>({});
+  /** Danh sách mức chất lượng THẬT (hỏi máy chủ khi mở bảng cài đặt). null = đang hỏi */
+  const [dsChatLuong, setDsChatLuong] = useState<string[] | null>(null);
+  /** Danh sách trên thuộc về bài nào — đổi bài thì hỏi lại */
+  const [dsCuaBai, setDsCuaBai] = useState<string | null>(null);
+  /** Tốc độ phát — nhớ lại cho lần sau */
+  const [tocDo, setTocDo] = useState(1);
+  /** Giây đang phát / tổng giây, để hiện trên thanh tiến trình */
+  const [thoiGian, setThoiGian] = useState({ giay: 0, tong: 0 });
+
   const batDau = useRef(Date.now());
   /** Số lần đã thử phát lại video đang xem (trình duyệt chặn tự phát thì phải chờ người dùng chạm) */
   const soLanThu = useRef(0);
+  /** Vùng bắt cú bấm/kéo của thanh tiến trình */
+  const thanhRef = useRef<HTMLDivElement | null>(null);
+  /** Đang kéo thanh tiến trình? (lúc kéo thì không đổi vị trí theo sự kiện phát) */
+  const keoRef = useRef(false);
+  /** Tốc độ phát hiện hành — thẻ mới gắn vào đọc giá trị này */
+  const tocDoRef = useRef(1);
 
   /** Ghi nhịp xem về máy chủ: đã xem video này bao nhiêu giây. */
   const ghiNhip = useCallback(
@@ -261,6 +290,25 @@ export function VideoFeedDoc({
     mq.addEventListener?.("change", doi);
     return () => mq.removeEventListener?.("change", doi);
   }, []);
+
+  // 5b. Nhớ tốc độ phát người xem đã chọn lần trước (mặc định 1×)
+  useEffect(() => {
+    try {
+      const t = Number(localStorage.getItem("nooi-toc-do"));
+      if (Number.isFinite(t) && t >= 0.25 && t <= 4) {
+        tocDoRef.current = t;
+        setTocDo(t);
+      }
+    } catch {
+      /* trình duyệt chặn bộ nhớ tạm — dùng mặc định */
+    }
+  }, []);
+
+  // 5c. Áp tốc độ cho bài đang xem, và cho bài mới khi vuốt sang (đổi nguồn tệp cũng áp lại)
+  useEffect(() => {
+    const el = videoRef.current[iDangXem];
+    if (el) el.playbackRate = tocDo;
+  }, [tocDo, iDangXem, mucChatLuong]);
 
   /**
    * 6. Đồng bộ trạng thái nút với THỰC TẾ của trình phát.
@@ -399,9 +447,17 @@ export function VideoFeedDoc({
       videoRef.current[i] = el;
       if (!el) return;
       el.muted = tiengRef.current;
+      // Tốc độ phát người xem đã chọn (nhớ từ lần trước) áp luôn cho thẻ mới
+      el.playbackRate = tocDoRef.current;
+      el.addEventListener("loadedmetadata", () => {
+        if (i !== iRef.current) return;
+        setThoiGian({ giay: el.currentTime || 0, tong: el.duration || 0 });
+      });
       el.addEventListener("timeupdate", () => {
         if (i !== iRef.current || !el.duration) return;
+        if (keoRef.current) return; // đang kéo thanh tiến trình thì để người xem quyết định
         setTienTrinh(Math.min(100, (el.currentTime / el.duration) * 100));
+        setThoiGian({ giay: el.currentTime, tong: el.duration });
       });
       el.addEventListener("pause", () => {
         if (i === iRef.current) setDangPhat(false);
@@ -492,6 +548,128 @@ export function VideoFeedDoc({
     [nguon, dangPhat, dung, phat, cuon, biKhoa, kqQuyen, videos]
   );
 
+  /* ───────── Thanh tiến trình: bấm và kéo để tua ───────── */
+
+  /** Vị trí thật trên thanh tiến trình (0–1) theo toạ độ ngang của cú chạm/kéo */
+  const tiLeTheoX = useCallback((clientX: number) => {
+    const r = thanhRef.current?.getBoundingClientRect();
+    if (!r || r.width <= 0) return 0;
+    return Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+  }, []);
+
+  /** Đặt vị trí phát theo tỉ lệ 0–1 (bấm trên thanh tiến trình). */
+  const datViTri = useCallback((tiLe: number) => {
+    const el = videoRef.current[iRef.current];
+    if (!el || !el.duration || !Number.isFinite(el.duration)) return;
+    const giay = tiLe * el.duration;
+    try {
+      el.currentTime = giay;
+    } catch {
+      /* tệp chưa tải đủ phần đó — trình duyệt tự bỏ qua */
+    }
+    setTienTrinh(tiLe * 100);
+    setThoiGian((x) => ({ ...x, giay }));
+  }, []);
+
+  const batDauKeo = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      e.preventDefault();
+      keoRef.current = true;
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+      datViTri(tiLeTheoX(e.clientX));
+    },
+    [datViTri, tiLeTheoX]
+  );
+
+  const dangKeo = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!keoRef.current) return;
+      e.stopPropagation();
+      datViTri(tiLeTheoX(e.clientX));
+    },
+    [datViTri, tiLeTheoX]
+  );
+
+  const thoiKeo = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    keoRef.current = false;
+    e.stopPropagation();
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+    } catch {
+      /* con trỏ đã được nhả */
+    }
+  }, []);
+
+  /** Tua tới/lui một số giây (phím ← →). Không vượt quá đầu/cuối tệp. */
+  const tua = useCallback((giay: number) => {
+    const el = videoRef.current[iRef.current];
+    if (!el || !el.duration || !Number.isFinite(el.duration)) return;
+    const moi = Math.min(el.duration - 0.3, Math.max(0, el.currentTime + giay));
+    el.currentTime = moi;
+    setTienTrinh((moi / el.duration) * 100);
+    setThoiGian((x) => ({ ...x, giay: moi }));
+  }, []);
+
+  /* ───────── Cài đặt: chất lượng & tốc độ ───────── */
+
+  /** Hỏi máy chủ danh sách mức chất lượng có THẬT của bài đang xem (mỗi bài một thang khác nhau). */
+  const layDsChatLuong = useCallback(
+    async (i: number) => {
+      const v = videos[i];
+      if (!v) return;
+      if (dsCuaBai === v.id && dsChatLuong) return; // đã có sẵn cho đúng bài này
+      setDsChatLuong(null);
+      try {
+        const r = await fetch(`/api/video/chat-luong?v=${encodeURIComponent(v.id)}`);
+        const d = (await r.json()) as { muc?: string[] };
+        setDsChatLuong(Array.isArray(d.muc) ? d.muc : []);
+      } catch {
+        setDsChatLuong([]);
+      } finally {
+        setDsCuaBai(v.id);
+      }
+    },
+    [videos, dsCuaBai, dsChatLuong]
+  );
+
+  /**
+   * Đổi mức chất lượng: đổi nguồn tệp rồi TRẢ LẠI đúng vị trí đang xem — không để người xem
+   * bị đẩy về đầu video.
+   */
+  const chonChatLuong = useCallback((muc: string) => {
+    const i = iRef.current;
+    const el = videoRef.current[i];
+    setMoCaiDat(false);
+    if (!el) return;
+    const viTri = el.currentTime;
+    const dangChay = !el.paused;
+    const khoiPhuc = () => {
+      el.removeEventListener("loadedmetadata", khoiPhuc);
+      try {
+        el.currentTime = viTri;
+      } catch {
+        /* bỏ qua */
+      }
+      if (dangChay) void el.play().catch(() => {});
+    };
+    el.addEventListener("loadedmetadata", khoiPhuc);
+    setMucChatLuong((x) => ({ ...x, [i]: muc }));
+  }, []);
+
+  /** Đổi tốc độ phát — nhớ cho lần xem sau. */
+  const doiTocDo = useCallback((t: number) => {
+    setTocDo(t);
+    tocDoRef.current = t;
+    try {
+      localStorage.setItem("nooi-toc-do", String(t));
+    } catch {
+      /* trình duyệt chặn bộ nhớ tạm — không sao */
+    }
+    const el = videoRef.current[iRef.current];
+    if (el) el.playbackRate = t;
+  }, []);
+
   const doiTieng = useCallback(() => {
     // Lấy trạng thái từ CHÍNH thẻ video (sự thật), không suy từ biến trạng thái — tránh trường hợp
     // nút và thẻ lệch nhau rồi bấm một lần hoá ra lệnh ngược.
@@ -520,12 +698,26 @@ export function VideoFeedDoc({
         return;
       }
       if (videoXinQuyen) return; // hộp đăng nhập đang mở
+      // Bảng cài đặt đang mở: chỉ nhận Escape, đừng cướp phím tua/chuyển bài
+      if (moCaiDat) {
+        if (e.key === "Escape") setMoCaiDat(false);
+        return;
+      }
 
       switch (e.key) {
         case "ArrowDown":
         case "PageDown":
           e.preventDefault();
           cuon(iRef.current + 1);
+          break;
+        case "ArrowRight":
+          // Tua tới 5 giây — thanh tiến trình cũng bấm/kéo được, nhưng phím thì nhanh hơn
+          e.preventDefault();
+          tua(5);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          tua(-5);
           break;
         case "ArrowUp":
         case "PageUp":
@@ -549,7 +741,7 @@ export function VideoFeedDoc({
     };
     window.addEventListener("keydown", nghe);
     return () => window.removeEventListener("keydown", nghe);
-  }, [cuon, bamVao, doiTieng, videoXinQuyen]);
+  }, [cuon, bamVao, doiTieng, videoXinQuyen, tua, moCaiDat]);
 
   /** Khung hình tự khớp tỉ lệ với màn hình — xem giải thích ở đầu tệp. */
   const kieuKhung = (v: VideoDoc): React.CSSProperties =>
@@ -600,6 +792,10 @@ export function VideoFeedDoc({
           const nhanKhung: string = laKhungHinh(v.khung_hinh)
             ? KHUNG_HINH_LABELS[v.khung_hinh]
             : "Khổ hình khác";
+          // Mức chất lượng người xem đã chọn cho bài này (nếu có) — dựng thẳng địa chỉ tệp
+          const mucChon = mucChatLuong[i] ?? "";
+          const nguonChon =
+            mucChon && mucChon !== "tu-dong" && n.bunnyId ? layBunnyMp4(n.bunnyId, mucChon) : null;
           return (
             <section
               key={v.id}
@@ -624,9 +820,13 @@ export function VideoFeedDoc({
                 {!khoa && gan && n.kieu === "video" && (
                   <video
                     ref={refVideo(i)}
-                    {...(n.srcDuPhong && n.srcDuPhong.length > 1 ? {} : { src: n.src })}
+                    {...(nguonChon
+                      ? { src: nguonChon }
+                      : n.srcDuPhong && n.srcDuPhong.length > 1
+                        ? {}
+                        : { src: n.src })}
                     className="absolute inset-0 h-full w-full object-contain"
-                    poster={v.thumbnail_url || undefined}
+                    poster={anhBia(v.thumbnail_url, { rong: 720 }) || undefined}
                     playsInline
                     loop
                     preload="metadata"
@@ -646,8 +846,10 @@ export function VideoFeedDoc({
                       if (i === iRef.current) setLoiPhat(i);
                     }}
                   >
-                    {/* Thử lần lượt các mức chất lượng: mức cao không có thì tự hạ xuống */}
-                    {n.srcDuPhong &&
+                    {/* Thử lần lượt các mức chất lượng: mức cao không có thì tự hạ xuống.
+                        Đã chọn mức cụ thể thì thôi, chỉ phát đúng tệp đã chọn. */}
+                    {!nguonChon &&
+                      n.srcDuPhong &&
                       n.srcDuPhong.length > 1 &&
                       n.srcDuPhong.map((u) => <source key={u} src={u} type="video/mp4" />)}
                   </video>
@@ -663,7 +865,7 @@ export function VideoFeedDoc({
                     {v.thumbnail_url && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={v.thumbnail_url}
+                        src={anhBia(v.thumbnail_url, { rong: 480 }) ?? ""}
                         alt={v.title}
                         className="absolute inset-0 h-full w-full object-contain opacity-35"
                       />
@@ -751,8 +953,22 @@ export function VideoFeedDoc({
                   </button>
                 )}
 
-                {/* Cột nút bên phải: tiếng + lên/xuống */}
+                {/* Cột nút bên phải: cài đặt + tiếng + lên/xuống */}
                 <div className="absolute right-2.5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2">
+                  {!khoa && n.kieu === "video" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMoCaiDat(true);
+                        void layDsChatLuong(iRef.current);
+                      }}
+                      aria-label="Cài đặt chất lượng và tốc độ"
+                      title="Chất lượng · Tốc độ"
+                      className="flex size-9 items-center justify-center rounded-full border border-white/20 bg-black/40 backdrop-blur hover:bg-black/60"
+                    >
+                      <Settings size={16} />
+                    </button>
+                  )}
                   {!khoa && (
                     <button
                       type="button"
@@ -873,18 +1089,147 @@ export function VideoFeedDoc({
 
                 </div>
 
-                {/* Thanh tiến trình ở sát đáy, che dải điều khiển gốc của trình phát */}
-                <div className="absolute inset-x-0 bottom-0 z-40 h-[3px] bg-white/20">
+                {/* Thanh tiến trình: BẤM hoặc KÉO để tua đúng chỗ.
+                    Chỉ gắn cho tệp video của mình (điều khiển được). Với iframe của nền tảng thì
+                    không tua được từ mã nên giữ thanh mảnh — không làm ra nút bấm mà không có tác dụng. */}
+                {n.kieu === "video" && !khoa ? (
                   <div
-                    className="h-full bg-accent transition-[width] duration-200"
-                    style={{ width: `${i === iDangXem ? tienTrinh : 0}%` }}
-                  />
-                </div>
+                    ref={i === iDangXem ? thanhRef : undefined}
+                    onPointerDown={i === iDangXem ? batDauKeo : undefined}
+                    onPointerMove={i === iDangXem ? dangKeo : undefined}
+                    onPointerUp={i === iDangXem ? thoiKeo : undefined}
+                    onPointerCancel={i === iDangXem ? thoiKeo : undefined}
+                    role="slider"
+                    tabIndex={-1}
+                    aria-label="Thanh tiến trình video — bấm hoặc kéo để tua"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(i === iDangXem ? tienTrinh : 0)}
+                    className={cn(
+                      "group absolute inset-x-0 bottom-0 z-40 h-7 touch-none select-none",
+                      i === iDangXem ? "cursor-pointer" : "pointer-events-none"
+                    )}
+                  >
+                    <div className="absolute inset-x-0 bottom-0 h-[3px] bg-white/25 transition-[height] duration-150 group-hover:h-[6px]">
+                      <div
+                        className="h-full bg-accent"
+                        style={{ width: `${i === iDangXem ? tienTrinh : 0}%` }}
+                      />
+                    </div>
+                    <span
+                      className="absolute bottom-[3px] size-2.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent opacity-0 shadow transition-opacity group-hover:opacity-100"
+                      style={{ left: `${i === iDangXem ? tienTrinh : 0}%` }}
+                    />
+                    {i === iDangXem && thoiGian.tong > 0 && (
+                      <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-[10px] font-medium tabular-nums opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+                        {phutGiay(thoiGian.giay)} · {phutGiay(thoiGian.tong)}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="absolute inset-x-0 bottom-0 z-40 h-[3px] bg-white/20">
+                    <div
+                      className="h-full bg-accent transition-[width] duration-200"
+                      style={{ width: `${i === iDangXem ? tienTrinh : 0}%` }}
+                    />
+                  </div>
+                )}
               </div>
             </section>
           );
         })}
       </div>
+
+      {/* Bảng cài đặt: CHẤT LƯỢNG · TỐC ĐỘ PHÁT.
+          Chỉ mở với tệp video của mình (iframe nền tảng không điều khiển được nên không làm ra
+          nút bấm vô tác dụng). Danh sách chất lượng hỏi máy chủ để chỉ hiện mức CÓ THẬT. */}
+      {moCaiDat && nguon[iDangXem]?.kieu === "video" && (
+        <div
+          className="absolute inset-0 z-[90] flex items-end justify-end bg-black/40 p-3 sm:p-4"
+          onClick={() => setMoCaiDat(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Cài đặt chất lượng và tốc độ"
+        >
+          <div
+            className="w-[min(20rem,100%)] rounded-2xl border border-white/15 bg-black/90 p-3 text-white shadow-xl backdrop-blur"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                <Settings size={14} /> Cài đặt
+              </span>
+              <button
+                type="button"
+                onClick={() => setMoCaiDat(false)}
+                aria-label="Đóng cài đặt"
+                className="rounded-full p-1 hover:bg-white/10"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <p className="mb-1.5 text-xs text-white/60">Chất lượng</p>
+            <div className="flex flex-wrap gap-1.5">
+              {dsChatLuong === null ? (
+                <span className="text-xs text-white/50">Đang hỏi máy chủ…</span>
+              ) : (
+                [{ ma: "tu-dong", ten: "Tự động" }, ...dsChatLuong.map((m) => ({ ma: m, ten: m }))].map((o) => {
+                  const chon = (mucChatLuong[iDangXem] ?? "tu-dong") === o.ma;
+                  return (
+                    <button
+                      key={o.ma}
+                      type="button"
+                      onClick={() => chonChatLuong(o.ma)}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium",
+                        chon
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-white/25 bg-white/10 hover:bg-white/20"
+                      )}
+                    >
+                      {chon && <Check size={11} />}
+                      {o.ten}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            {dsChatLuong !== null && dsChatLuong.length === 0 && (
+              <p className="mt-1 text-[10px] text-white/45">
+                Bài này chưa lấy được danh sách mức chất lượng — đang phát mức mặc định.
+              </p>
+            )}
+
+            <p className="mb-1.5 mt-3 text-xs text-white/60">Tốc độ phát</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[0.5, 0.75, 1, 1.25, 1.5, 2].map((t) => {
+                const chon = Math.abs(tocDo - t) < 0.001;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => doiTocDo(t)}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium tabular-nums",
+                      chon
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-white/25 bg-white/10 hover:bg-white/20"
+                    )}
+                  >
+                    {chon && <Check size={11} />}
+                    {t === 1 ? "1×" : `${String(t).replace(".", ",")}×`}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mt-2.5 inline-flex items-center gap-1 text-[10px] text-white/45">
+              <Gauge size={11} /> Phím ← → tua 5 giây · phím cách tạm dừng · M đổi tiếng
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Hộp đăng nhập ngay trong luồng — chỉ hiện ở trang công khai (khi có truyền người xem) */}
       {nguoiCongKhai && (

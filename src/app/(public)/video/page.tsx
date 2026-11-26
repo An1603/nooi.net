@@ -1,10 +1,33 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LuoiVideoCongKhai } from "@/components/video/LuoiVideoCongKhai";
 import { COT_LUOI_CONG_KHAI, nguoiDangXem } from "@/lib/video/nguoi-xem";
 import type { VideoCongKhai } from "@/lib/video/quyen-xem";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Danh sách video cho lưới — ĐỆM 60 GIÂY.
+ *
+ * Vì sao: trang vẫn phải chạy động (mỗi người thấy ổ khoá khác nhau theo phiên đăng nhập), nhưng
+ * câu truy vấn Supabase thì giống nhau cho mọi người. Đệm lại để lần mở sau không phải chờ thêm
+ * một vòng máy chủ — phần chậm nhất của trang.
+ */
+const layKhoVideo = unstable_cache(
+  async () => {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("videos")
+      .select(COT_LUOI_CONG_KHAI)
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    return (data ?? []) as unknown as VideoCongKhai[];
+  },
+  ["kho-video-cong-khai"],
+  { revalidate: 60, tags: ["videos"] }
+);
 
 export const metadata: Metadata = {
   title: "Kho video NOOI",
@@ -28,18 +51,8 @@ export const metadata: Metadata = {
  * quyết định hiện ổ khoá — đường phát chỉ được lấy ở trang xem và chỉ khi đã qua cổng gác.
  */
 export default async function KhoVideoPage() {
-  const admin = createAdminClient();
-  const [{ data }, nguoi] = await Promise.all([
-    admin
-      .from("videos")
-      .select(COT_LUOI_CONG_KHAI)
-      .eq("status", "published")
-      .order("created_at", { ascending: false })
-      .limit(300),
-    nguoiDangXem(),
-  ]);
+  const [videos, nguoi] = await Promise.all([layKhoVideo(), nguoiDangXem()]);
 
-  const videos = (data ?? []) as unknown as VideoCongKhai[];
   const soMo = videos.filter((v) => v.cong_khai === true).length;
 
   return (

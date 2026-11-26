@@ -15,6 +15,9 @@ const publicRoutes = [
   "/login",
   "/signup",
   "/gallery",
+  // Kho video công khai: ai cũng xem được lưới video; video nào cần quyền thì hiện ổ khoá
+  // (xem `src/lib/video/quyen-xem.ts`) — bấm vào mới hỏi đăng nhập.
+  "/video",
   "/u",
   "/api/sso",
   "/api/ho-so/anh",
@@ -41,6 +44,7 @@ const publicRoutes = [
 const publicPrefixes = [
   "/u/",
   "/gallery/",
+  "/video/",
   "/api/sso/",
   "/api/track/",
   "/api/og/",

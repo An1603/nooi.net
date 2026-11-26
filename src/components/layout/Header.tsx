@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { label: 'Tính năng', href: '#features' },
   { label: 'Công nghệ', href: '#tech' },
   { label: 'Thư viện ảnh', href: '/gallery' },
+  { label: 'Kho video', href: '/video' },
   { label: 'Giới thiệu', href: '#about' },
   { label: 'Liên hệ', href: '#contact' },
 ];

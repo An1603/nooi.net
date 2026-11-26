@@ -19,12 +19,18 @@ type AuthMethod = "email" | "magiclink" | "google" | "github";
 interface Props {
   defaultTab: AuthTab;
   refCode?: string;
+  /**
+   * Đích quay lại sau khi đăng nhập. Để trống thì giữ nguyên cách cũ:
+   * đọc `?redirect=` trên địa chỉ, không có thì về `/app`.
+   */
+  redirectTo?: string;
 }
 
 /* ─── Helpers ─── */
 
-/** Đích sau khi đăng nhập: ưu tiên ?redirect= (đường dẫn nội bộ), mặc định /app */
-function sauDangNhap(): string {
+/** Đích sau khi đăng nhập: ưu tiên nơi gọi chỉ định, rồi ?redirect= (đường dẫn nội bộ), mặc định /app */
+function sauDangNhap(dichChiDinh?: string): string {
+  if (dichChiDinh && dichChiDinh.startsWith("/") && !dichChiDinh.startsWith("//")) return dichChiDinh;
   if (typeof window === "undefined") return "/app";
   const r = new URLSearchParams(window.location.search).get("redirect");
   if (r && r.startsWith("/") && !r.startsWith("//")) return r;
@@ -34,9 +40,9 @@ function sauDangNhap(): string {
 
 /** Nhớ đích quay lại vào cookie trước khi rời trang (OAuth/link email quay về /auth/callback,
  *  nơi `redirect=` trên URL không còn nữa). Hạn 15 phút, chỉ dùng cho đường dẫn nội bộ. */
-function luuDichQuayLai() {
+function luuDichQuayLai(dichChiDinh?: string) {
   if (typeof window === "undefined") return;
-  const dich = sauDangNhap();
+  const dich = sauDangNhap(dichChiDinh);
   if (!dich || dich === "/app" || dich === "/") return;
   const bao = window.location.protocol === "https:" ? "; secure" : "";
   document.cookie = `nooi_sau_dn=${encodeURIComponent(dich)}; path=/; max-age=900; samesite=lax${bao}`;
@@ -45,8 +51,8 @@ function luuDichQuayLai() {
 /** Điều hướng sau đăng nhập. Trên OPC Center dùng full reload để server chắc chắn
  *  đọc được cookie phiên host-only vừa ghi (router.push đôi khi bị RSC cache cũ).
  *  Đích là route API (vd. /api/sso/gis của GIS) thì cũng phải full reload. */
-function diSauDangNhap(routerPush: (href: string) => void) {
-  const target = sauDangNhap();
+function diSauDangNhap(routerPush: (href: string) => void, dichChiDinh?: string) {
+  const target = sauDangNhap(dichChiDinh);
   if (target.startsWith("/api/")) {
     // Client router không chạy route API — phải để trình duyệt đi thẳng.
     if (typeof window !== "undefined") window.location.assign(target);
@@ -100,7 +106,7 @@ const METHODS: { id: AuthMethod; icon: React.ReactNode; label: string; desc: str
 
 /* ─── Component ─── */
 
-export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
+export function AuthForm({ defaultTab, refCode: initialRefCode = "", redirectTo }: Props) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -172,7 +178,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
   const handleSocialLogin = useCallback(async (provider: "google" | "github") => {
     setLoading(true);
     try {
-      luuDichQuayLai();
+      luuDichQuayLai(redirectTo);
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -236,7 +242,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
           return;
         }
         toast.success("Tài khoản đã được tạo thành công!");
-        diSauDangNhap(router.push);
+        diSauDangNhap(router.push, redirectTo);
       } else {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: emailTrimmed, password,
@@ -253,7 +259,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
         }
 
         toast.success("Đăng nhập thành công!");
-        diSauDangNhap(router.push);
+        diSauDangNhap(router.push, redirectTo);
       }
     } catch (err) { toast.error(extractErrorMessage(err)); }
     finally { setLoading(false); }
@@ -268,7 +274,7 @@ export function AuthForm({ defaultTab, refCode: initialRefCode = "" }: Props) {
     }
     setLoading(true);
     try {
-      luuDichQuayLai();
+      luuDichQuayLai(redirectTo);
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },

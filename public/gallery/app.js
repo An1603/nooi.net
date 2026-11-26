@@ -80,7 +80,7 @@
   const ghiCaoDauTrang = () => {
     const hang = TOPBAR.querySelector('.topbar__inner') || TOPBAR;
     document.documentElement.style.setProperty(
-      '--cao-dau-trang', Math.round(hang.getBoundingClientRect().height) + 'px'
+      '--cao-dau-trang', Math.ceil(hang.getBoundingClientRect().height) + 'px'
     );
   };
   ghiCaoDauTrang();

@@ -5,11 +5,14 @@
  * sau này là app) đều hỏi cùng một câu — "người này có được xem video này không?". Nếu mỗi nơi
  * tự đoán thì chỉ cần lệch một chỗ là lộ video trả phí.
  *
- * Trạng thái hiện tại: bảng `videos` mới có cột `cong_khai` (true = ai cũng xem, false = phải
- * đăng nhập). Các kiểu khoá theo **cấp độ · điểm · số dư** đã có sẵn nhãn và chỗ chèn, khi nào
+ * Trạng thái hiện tại: bảng `videos` có cột `cong_khai` (true = ai cũng xem, false = phải đăng
+ * nhập) và **danh mục mở công khai** (`DANH_MUC_CONG_KHAI` bên `danh-muc.ts`: Măng Đen · Quy
+ * hoạch). Các kiểu khoá theo **cấp độ · điểm · số dư** đã có sẵn nhãn và chỗ chèn, khi nào
  * bảng có cột (`cap_do_toi_thieu`, `diem_can`, `gia`) thì chỉ thêm điều kiện Ở ĐÂY — giao diện
  * tự hiện ổ khoá kèm đúng lời nhắn, không phải sửa trang nào.
  */
+
+import { danhMucCongKhai } from "@/lib/video/danh-muc";
 
 /** Kiểu khoá hiển thị trên thẻ video. `khong` = mở được. */
 export type KieuKhoa = "khong" | "dang-nhap" | "cap-do" | "diem" | "so-du";
@@ -67,6 +70,10 @@ const MO: KetQuaXetQuyen = { mo: true, kieuKhoa: "khong", nhan: "", moTa: "" };
  */
 export function xetQuyenXem(video: VideoCongKhai, nguoi: NguoiXem): KetQuaXetQuyen {
   if (video.cong_khai === true) return MO;
+
+  // Cả DANH MỤC mở công khai (Măng Đen · Quy hoạch) — Ngài An chốt 26/11/2026. Danh sách nằm ở
+  // `danh-muc.ts` để mọi video nạp sau này vào hai danh mục đó tự công khai, không phải đặt cờ.
+  if (danhMucCongKhai(video.danh_muc)) return MO;
 
   if (!nguoi.daDangNhap) {
     return {

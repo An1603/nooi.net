@@ -62,3 +62,22 @@ export const DANH_MUC_BAI_HOC = "bai-giang";
 export function thuocBaiHoc(danhMuc?: string | null): boolean {
   return danhMuc === DANH_MUC_BAI_HOC;
 }
+
+/**
+ * Danh mục KHÔNG cần đăng nhập — video thuộc các danh mục này ai cũng xem được.
+ *
+ * Ngài An chốt 26/11/2026: *“Danh mục Măng Đen và Quy hoạch hãy không cần yêu cầu đăng nhập.”*
+ *
+ * Vì sao để ở đây chứ không đặt cờ `cong_khai` cho từng video: đây là tính chất của **DANH MỤC**.
+ * Video nạp sau này vào Măng Đen / Quy hoạch **tự động công khai**, không phải nhớ đặt cờ lại —
+ * còn đặt cờ từng bài thì chỉ cần quên một lần là video mới lại bị khoá.
+ *
+ * Cổng gác duy nhất `xetQuyenXem` đọc danh sách này, nên lưới công khai, trang xem và luồng xem
+ * đều theo cùng một luật.
+ */
+export const DANH_MUC_CONG_KHAI = ["mang-den", "quy-hoach"];
+
+/** Danh mục này có mở công khai (không cần đăng nhập) không? */
+export function danhMucCongKhai(slug?: string | null): boolean {
+  return !!slug && DANH_MUC_CONG_KHAI.includes(slug);
+}

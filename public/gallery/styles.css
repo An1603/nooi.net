@@ -34,6 +34,9 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
+  /* Đầu trang đứng yên (position: fixed) như nooi.net nên chừa sẵn chỗ bằng đúng
+     chiều cao thật của nó; app.js đo rồi ghi vào biến này (điện thoại thấp hơn). */
+  padding-top: var(--cao-dau-trang, 62px);
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
@@ -54,8 +57,13 @@ body.is-locked { overflow: hidden; }
    Dùng lại đúng các con số đó để hai trang đứng cạnh nhau không lệch. */
 
 .topbar {
-  position: sticky;
+  /* Đứng yên trên cùng như đầu trang của nooi.net (trang chủ và kho video đều
+     để `fixed`). Vì tách khỏi dòng chảy nên <body> phải chừa chỗ bằng
+     --cao-dau-trang, do app.js đo và ghi lại (đúng cho mọi cỡ màn hình). */
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
   /* Trong suốt khi ở đầu trang, chỉ hiện nền mờ khi đã cuộn — y như trang chủ. */
   background: transparent;
@@ -73,7 +81,7 @@ body.is-locked { overflow: hidden; }
 .topbar__inner {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 10.6px 21.25px;
+  padding: 10.625px 21.25px;   /* đúng bằng py-2.5 px-5 của thanh đầu trang nooi.net */
   display: flex;
   align-items: center;
   justify-content: space-between;

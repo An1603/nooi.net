@@ -69,7 +69,10 @@
     </div>
   </div>
 </header>
-  <nav class="filters" id="filters" aria-label="Tìm, lọc và sắp xếp ảnh">
+
+<!-- Thanh công cụ là NỘI DUNG trang, nằm ngoài <header> — đúng như kho video:
+     đầu trang đứng yên khi cuộn, còn thanh tìm/lọc trôi theo trang. -->
+<nav class="filters" id="filters" aria-label="Tìm, lọc và sắp xếp ảnh">
   <div class="filters__inner">
     <!-- Thanh công cụ một hàng, cùng dáng với kho video nooi.net/video:
          ô tìm · chọn sắp xếp · nút Lọc (kèm bộ đếm) · nút chia sẻ.
@@ -156,8 +159,7 @@
       <button type="button" class="bar__clear" id="clearFilters" hidden>Xoá lọc</button>
     </div>
   </div>
-  </nav>
-</header>
+</nav>
 
 <main class="stage">
   <div class="grid" id="grid" aria-live="polite"></div>

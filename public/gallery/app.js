@@ -71,6 +71,22 @@
   // Xoay ngang / phóng to lên màn hình lớn thì menu ngang đã hiện -> đóng menu xổ.
   MENU_LON.addEventListener('change', (e) => { if (e.matches) dongMenu(); });
 
+  /* ---------- Chừa chỗ cho đầu trang ---------- */
+
+  /* Đầu trang để `position: fixed` cho giống nooi.net, nên <body> phải chừa chỗ.
+     Đo chiều cao THẬT của hàng đầu trang rồi ghi vào biến CSS — không đoán, vì
+     điện thoại thấp hơn máy tính. Chỉ đo hàng trong (không tính menu xổ ra),
+     để lúc mở menu thì menu nằm đè lên nội dung như trang chủ. */
+  const ghiCaoDauTrang = () => {
+    const hang = TOPBAR.querySelector('.topbar__inner') || TOPBAR;
+    document.documentElement.style.setProperty(
+      '--cao-dau-trang', Math.round(hang.getBoundingClientRect().height) + 'px'
+    );
+  };
+  ghiCaoDauTrang();
+  window.addEventListener('resize', ghiCaoDauTrang);
+  window.addEventListener('orientationchange', ghiCaoDauTrang);
+
   /* ---------- Helpers ---------- */
 
   const colCountFor = (w) => {

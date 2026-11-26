@@ -73,18 +73,77 @@ export function HopDangNhapNhanh({ initialSession = false }: { initialSession?: 
     return huy;
   }, []);
 
-  // Theo dõi phiên: đăng nhập xong thì đóng hộp, đăng xuất thì cho phép nhắc lại
+  // Theo dõi phiên: đăng nhập xong thì ĐIỀU HƯỚNG vào đúng nơi, không đứng yên tại chỗ.
+  const yeuCauRef = useRef<YeuCauDangNhap | null>(null);
+  useEffect(() => {
+    yeuCauRef.current = yeuCau;
+  }, [yeuCau]);
+  const daChuyen = useRef(false);
+
+  /**
+   * Đăng nhập xong đi đâu: về đúng nội dung khách vừa xin (`quayLai`), không có thì vào khu
+   * vực thành viên `/app`. Dùng điều hướng CỨNG (nạp lại trang) vì cổng gác nội dung nằm ở
+   * máy chủ — chỉ khi máy chủ đọc lại cookie phiên thì bài/video khoá mới thật sự mở.
+   */
+  const chuyenSauDangNhap = useCallback((quayLai?: string) => {
+    if (daChuyen.current) return;
+    daChuyen.current = true;
+    const dich =
+      quayLai && quayLai.startsWith("/") && !quayLai.startsWith("//") ? quayLai : "/app";
+    window.location.assign(dich);
+  }, []);
+
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getSession().then(({ data }) => setDaDangNhap(!!data.session));
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, session) => {
+    } = supabase.auth.onAuthStateChange((suKien, session) => {
       setDaDangNhap(!!session);
-      if (session) setYeuCau(null);
+      if (!session || suKien !== "SIGNED_IN") return;
+      // Chỉ chuyển trang khi hộp đang mở vì khách vừa bấm một nội dung cần đăng nhập.
+      // (Đăng nhập bằng biểu mẫu ở /login đã tự điều hướng, không được giật khỏi tay khách.)
+      const dangCho = yeuCauRef.current;
+      setYeuCau(null);
+      if (dangCho) chuyenSauDangNhap(dangCho.quayLai);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [chuyenSauDangNhap]);
+
+  // Đã có phiên mà vẫn bị đưa về trang chủ kèm ?dang-nhap=1 (phiên vừa hết hạn rồi được làm
+  // mới) → đi thẳng tới nội dung đã xin thay vì để khách tự bấm lại.
+  useEffect(() => {
+    if (!daDangNhap) return;
+    const ts = new URLSearchParams(window.location.search);
+    if (ts.get("dang-nhap") === "1") {
+      chuyenSauDangNhap(ts.get("next") ?? undefined);
+    }
+  }, [daDangNhap, chuyenSauDangNhap]);
+
+  // Khách mở link đăng nhập trong TAB KHÁC (thư điện tử hay mở tab mới): tab này không nhận
+  // sự kiện đăng nhập. Khi khách quay lại tab, tự kiểm tra phiên và đi tiếp — nếu không, khách
+  // đứng lại ở trang cũ với trạng thái "đã đăng nhập" mà không được đưa vào đúng nơi.
+  useEffect(() => {
+    const kiemTraKhiQuayLai = async () => {
+      if (!yeuCauRef.current) return;
+      if (document.visibilityState !== "visible") return;
+      try {
+        const { data } = await createClient().auth.getSession();
+        if (!data.session) return;
+        const dich = yeuCauRef.current?.quayLai;
+        setYeuCau(null);
+        chuyenSauDangNhap(dich);
+      } catch {
+        /* bỏ qua — lần sau quay lại tab sẽ thử lại */
+      }
+    };
+    document.addEventListener("visibilitychange", kiemTraKhiQuayLai);
+    window.addEventListener("focus", kiemTraKhiQuayLai);
+    return () => {
+      document.removeEventListener("visibilitychange", kiemTraKhiQuayLai);
+      window.removeEventListener("focus", kiemTraKhiQuayLai);
+    };
+  }, [chuyenSauDangNhap]);
 
   // Hẹn giờ nhắc nhẹ + mở ngay khi middleware đưa về kèm ?dang-nhap=1
   const daNhac = useRef(false);

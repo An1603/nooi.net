@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Info, Lock, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Info, Lock, Play, Volume2, VolumeX, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   KENH_PHAT_LABELS,
@@ -384,6 +384,8 @@ export function VideoFeedDoc({
         return;
       }
       if (!nguon[i]?.dieuKhien) return;
+      // Người dùng đã chủ động bấm: khoá luôn vòng thử tự phát, đừng để nó bật lại video
+      soLanThu.current = 5;
       if (dangPhat) {
         dung(i);
         setDangPhat(false);
@@ -402,26 +404,53 @@ export function VideoFeedDoc({
     doTieng(iRef.current, moi);
   }, [tatTieng, doTieng]);
 
-  // Bàn phím: máy tính cũng vuốt được bằng mũi lên/xuống
-  const phim = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "ArrowDown" || e.key === "PageDown") {
-        e.preventDefault();
-        cuon(iRef.current + 1);
+  // Bàn phím dùng được ở MỌI NƠI trên trang, không phải bấm vào khung trước.
+  // Vì sao đổi từ `onKeyDown` của khung sang nghe ở cửa sổ: người xem mở trang rồi bấm phím cách
+  // luôn, chứ không ai nghĩ phải bấm vào khung trước — trước đây phím cách vì thế mà "không ăn".
+  useEffect(() => {
+    const nghe = (e: KeyboardEvent) => {
+      const dich = e.target as HTMLElement | null;
+      // Đang gõ trong ô nhập (hộp đăng nhập, ô tìm kiếm…) thì đừng cướp phím
+      if (
+        dich &&
+        (dich.tagName === "INPUT" ||
+          dich.tagName === "TEXTAREA" ||
+          dich.tagName === "SELECT" ||
+          dich.isContentEditable)
+      ) {
+        return;
       }
-      if (e.key === "ArrowUp" || e.key === "PageUp") {
-        e.preventDefault();
-        cuon(iRef.current - 1);
+      if (videoXinQuyen) return; // hộp đăng nhập đang mở
+
+      switch (e.key) {
+        case "ArrowDown":
+        case "PageDown":
+          e.preventDefault();
+          cuon(iRef.current + 1);
+          break;
+        case "ArrowUp":
+        case "PageUp":
+          e.preventDefault();
+          cuon(iRef.current - 1);
+          break;
+        case " ":
+        case "Spacebar":
+          e.preventDefault();
+          bamVao(iRef.current);
+          break;
+        case "m":
+        case "M":
+          doiTieng();
+          break;
+        case "i":
+        case "I":
+          setMoThongTin((x) => !x);
+          break;
       }
-      if (e.key === " ") {
-        e.preventDefault();
-        bamVao(iRef.current);
-      }
-      if (e.key === "m" || e.key === "M") doiTieng();
-      if (e.key === "i" || e.key === "I") setMoThongTin((x) => !x);
-    },
-    [cuon, bamVao, doiTieng]
-  );
+    };
+    window.addEventListener("keydown", nghe);
+    return () => window.removeEventListener("keydown", nghe);
+  }, [cuon, bamVao, doiTieng, videoXinQuyen]);
 
   /** Khung hình tự khớp tỉ lệ với màn hình — xem giải thích ở đầu tệp. */
   const kieuKhung = (v: VideoDoc): React.CSSProperties =>
@@ -431,10 +460,18 @@ export function VideoFeedDoc({
 
   return (
     <div className="fixed inset-0 z-[80] bg-black text-white" data-feed-doc>
-      {/* Đầu luồng: tên luồng / danh mục + số lượng */}
-      <div className="pointer-events-none absolute left-3 top-3 z-30 max-w-[70%]">
+      {/* Đầu luồng: nút QUAY VỀ (góc trái-trên) + tên luồng / số lượng */}
+      <div className="pointer-events-none absolute left-3 top-3 z-30 flex max-w-[70%] items-center gap-2">
+        <Link
+          href={duongDanDong}
+          className="pointer-events-auto flex size-9 shrink-0 items-center justify-center rounded-full bg-black/50 backdrop-blur hover:bg-black/70"
+          aria-label="Quay về kho video"
+          title="Quay về kho video"
+        >
+          <ArrowLeft size={18} />
+        </Link>
         {tieuDe && (
-          <span className="pointer-events-auto rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold backdrop-blur">
+          <span className="pointer-events-auto truncate rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold backdrop-blur">
             {tieuDe} · {videos.length} video
           </span>
         )}
@@ -452,7 +489,6 @@ export function VideoFeedDoc({
       <div
         ref={khung}
         tabIndex={0}
-        onKeyDown={phim}
         className="h-full w-full snap-y snap-mandatory overflow-y-scroll overscroll-contain focus:outline-none"
         style={{ scrollbarWidth: "none" }}
       >
@@ -569,14 +605,17 @@ export function VideoFeedDoc({
                   </div>
                 )}
 
-                {/* Lớp phủ nhận thao tác chạm — CHỈ trên máy cảm ứng (cần để vuốt).
-                    Trên máy tính không phủ, để cú bấm tới được nút điều khiển gốc của nền tảng. */}
-                {coCham && !khoa && (
+                {/* Lớp nhận cú bấm để tạm dừng / tiếp tục.
+                    - Trên máy CẢM ỨNG: luôn phủ, vì cần cho thao tác vuốt.
+                    - Trên MÁY TÍNH: phủ khi là TỆP VIDEO CỦA MÌNH (không có nút điều khiển gốc nên
+                      không phủ thì bấm chuột chẳng có gì xảy ra); KHÔNG phủ với iframe YouTube —
+                      phủ là nuốt mất cú bấm vào nút của nền tảng. */}
+                {(coCham || n.kieu === "video") && !khoa && (
                   <button
                     type="button"
                     onClick={() => bamVao(i)}
                     aria-label={dangPhat ? "Tạm dừng" : "Tiếp tục"}
-                    className="absolute inset-0 z-10 cursor-default bg-transparent"
+                    className={cn("absolute inset-0 z-10 bg-transparent", coCham ? "cursor-default" : "cursor-pointer")}
                   />
                 )}
 
@@ -732,22 +771,6 @@ export function VideoFeedDoc({
                     </div>
                   )}
 
-                  <div className="mt-2 flex items-center gap-1.5">
-                    {khoa ? (
-                      <Lock size={11} className="text-white/60" />
-                    ) : dangPhat && i === iDangXem ? (
-                      <Pause size={11} className="text-white/60" />
-                    ) : (
-                      <Play size={11} className="text-white/60" />
-                    )}
-                    <span className="text-[10px] text-white/50">
-                      {khoa
-                        ? "Video cần quyền xem · vuốt lên để xem tiếp"
-                        : i === iDangXem && !dangPhat
-                          ? "Bấm nút ▶ để phát · vuốt lên để xem tiếp"
-                          : "Chạm để tạm dừng · vuốt lên để xem tiếp"}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Thanh tiến trình ở sát đáy, che dải điều khiển gốc của trình phát */}

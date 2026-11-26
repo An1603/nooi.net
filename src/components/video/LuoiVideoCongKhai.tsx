@@ -468,23 +468,17 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
                   )}
                 </span>
 
-                {/* Phần chữ TÁCH HẲN khỏi phần ảnh: có vạch ngăn, nền đặc, chữ đậm hơn */}
+                {/* Phần chữ TÁCH HẲN khỏi phần ảnh: có vạch ngăn, nền đặc, chữ đậm hơn.
+                    Thời lượng chỉ để MỘT chỗ — trên ảnh (góc phải-dưới), không lặp lại ở đây. */}
                 <span className="block border-t border-white/10 bg-card px-3 py-2.5">
                   <span className="line-clamp-2 block text-[13.5px] font-semibold leading-snug tracking-tight text-foreground">
                     {v.title}
                   </span>
-                  <span className="mt-1.5 flex items-center justify-between gap-2">
-                    {v.danh_muc ? (
-                      <span className="truncate rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                        {tenDanhMuc(v.danh_muc)}
-                      </span>
-                    ) : (
-                      <span />
-                    )}
-                    {thoiLuong && (
-                      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">{thoiLuong}</span>
-                    )}
-                  </span>
+                  {v.danh_muc && (
+                    <span className="mt-1.5 inline-block max-w-full truncate rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                      {tenDanhMuc(v.danh_muc)}
+                    </span>
+                  )}
                 </span>
               </>
             );

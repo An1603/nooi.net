@@ -22,9 +22,10 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Dữ liệu thư viện ảnh đổi mỗi lần đồng bộ -> đừng để trình duyệt giữ bản cũ.
+        // Dữ liệu thư viện ảnh đổi mỗi lần đồng bộ -> cho giữ 60 giây, sau đó vẫn dùng bản cũ
+        // trong lúc nạp bản mới (khách không phải chờ 350 KB mỗi lần mở lại trang).
         source: "/gallery/data/gallery.json",
-        headers: [{ key: "Cache-Control", value: "public, max-age=0, must-revalidate" }],
+        headers: [{ key: "Cache-Control", value: "public, max-age=60, stale-while-revalidate=86400" }],
       },
     ];
   },

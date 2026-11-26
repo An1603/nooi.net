@@ -116,8 +116,15 @@ function tronTheoHat(ds: Anh[], hat: number): Anh[] {
   return a;
 }
 
-export function ThuVienAnh() {
-  const [duLieu, setDuLieu] = useState<DuLieu | null>(null);
+export type BanDau = { total: number; scrapedAt: string | null; boards: Board[]; items: Anh[] };
+
+/** Số ảnh vẽ thêm mỗi lần cuộn tới đáy. Giữ DOM nhỏ để trang cuộn mượt. */
+const MOI_LAN = 120;
+
+export function ThuVienAnh({ banDau }: { banDau: BanDau }) {
+  // Có sẵn lô ảnh đầu từ máy chủ -> vẽ ngay, không có màn “đang tải”.
+  const [duLieu, setDuLieu] = useState<DuLieu | null>(banDau.items.length ? banDau : null);
+  const [dayDu, setDayDu] = useState(false);
   const [loi, setLoi] = useState(false);
 
   const [q, setQ] = useState("");
@@ -128,29 +135,51 @@ export function ThuVienAnh() {
   const [seed, setSeed] = useState(1);
   const [moLoc, setMoLoc] = useState(false);
   const [soCat, setSoCat] = useState(6);
+  const [soHien, setSoHien] = useState(MOI_LAN);
   const [dangXem, setDangXem] = useState<number | null>(null);
   const [thongBao, setThongBao] = useState("");
 
   const luoiRef = useRef<HTMLDivElement>(null);
+  const chanRef = useRef<HTMLDivElement>(null);
   const daDocUrl = useRef(false);
 
-  /* ── Nạp dữ liệu ── */
+  /**
+   * Nạp PHẦN CÒN LẠI sau khi trang đã vẽ xong.
+   *
+   * Vì sao không tải ngay: lô đầu đã nằm trong HTML nên khách thấy ảnh trước đã. Việc tải
+   * 350 KB dữ liệu để lọc/sắp xếp toàn bộ ảnh là phụ — để nó chạy lúc trình duyệt rảnh, không
+   * tranh băng thông với chính những ảnh đang hiện.
+   */
   useEffect(() => {
     let huy = false;
-    fetch("/gallery/data/gallery.json", { cache: "no-cache" })
-      .then((r) => {
-        if (!r.ok) throw new Error(String(r.status));
-        return r.json();
-      })
-      .then((d: DuLieu) => {
-        if (!huy) setDuLieu(d);
-      })
-      .catch(() => {
-        if (!huy) setLoi(true);
-      });
+    const nap = () => {
+      fetch("/gallery/data/gallery.json")
+        .then((r) => {
+          if (!r.ok) throw new Error(String(r.status));
+          return r.json();
+        })
+        .then((d: DuLieu) => {
+          if (!huy) {
+            setDuLieu(d);
+            setDayDu(true);
+          }
+        })
+        .catch(() => {
+          if (!huy && !banDau.items.length) setLoi(true);
+        });
+    };
+
+    type Ric = ((cb: () => void, o?: { timeout: number }) => number) | undefined;
+    const ric = (window as unknown as { requestIdleCallback?: Ric }).requestIdleCallback;
+    const cic = (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+
+    const id: number = ric ? ric(nap, { timeout: 900 }) : window.setTimeout(nap, 150);
     return () => {
       huy = true;
+      if (ric) cic?.(id);
+      else clearTimeout(id);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── Đọc trạng thái từ địa chỉ (link chia sẻ) ── */
@@ -232,6 +261,35 @@ export function ThuVienAnh() {
     return ds;
   }, [duLieu, q, board, kho, tong, sapXep, seed, tenBoard]);
 
+  /** Đổi bộ lọc/sắp xếp thì quay về lô đầu — không giữ lại hàng nghìn thẻ của lần trước. */
+  useEffect(() => {
+    setSoHien(MOI_LAN);
+  }, [q, board, kho, tong, sapXep, seed]);
+
+  /** Chỉ vẽ phần đang cần; cuộn tới đáy thì nới thêm (xem chốt quan sát bên dưới). */
+  const dangCat = useMemo(() => dangHien.slice(0, soHien), [dangHien, soHien]);
+
+  /**
+   * Chốt quan sát ở đáy lưới: cuộn gần tới là nới thêm 120 ảnh.
+   *
+   * Vì sao không vẽ hết 1.738 thẻ một lượt: dựng từng đó DOM node mất 1–2 giây và cuộn rất
+   * nặng. Vẽ theo lô thì trang mở gần như tức thì mà trải nghiệm cuộn vẫn liền.
+   */
+  useEffect(() => {
+    const el = chanRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (muc) => {
+        if (muc.some((m) => m.isIntersecting)) {
+          setSoHien((n) => (n < dangHien.length ? n + MOI_LAN : n));
+        }
+      },
+      { rootMargin: "900px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [dangHien.length]);
+
   /**
    * Chia ảnh vào cột NGẮN NHẤT (masonry cân bằng).
    *
@@ -242,14 +300,14 @@ export function ThuVienAnh() {
   const cot = useMemo(() => {
     const buckets: { anh: Anh; viTri: number }[][] = Array.from({ length: soCat }, () => []);
     const cao = new Array(soCat).fill(0);
-    dangHien.forEach((it, viTri) => {
+    dangCat.forEach((it, viTri) => {
       let c = 0;
       for (let k = 1; k < soCat; k++) if (cao[k] < cao[c]) c = k;
       buckets[c].push({ anh: it, viTri });
       cao[c] += it.w > 0 ? it.h / it.w : 1;
     });
     return buckets;
-  }, [dangHien, soCat]);
+  }, [dangCat, soCat]);
 
   const soLoc = (q ? 1 : 0) + (board !== "all" ? 1 : 0) + (kho !== "all" ? 1 : 0) + (tong !== "all" ? 1 : 0);
   const daLoc = soLoc > 0 || sapXep !== "mac-dinh";
@@ -434,7 +492,17 @@ export function ThuVienAnh() {
         </div>
 
         <p className="mb-3 text-[11.5px] text-muted-foreground">
-          {duLieu ? `Đang hiện ${dinhDang(dangHien.length)}/${dinhDang(duLieu.items.length)} ảnh` : "Đang tải thư viện…"}
+          {!duLieu
+            ? "Đang tải thư viện…"
+            : `Đang hiện ${dinhDang(Math.min(soHien, dangHien.length))}/${dinhDang(
+                dayDu ? dangHien.length : duLieu.total
+              )} ảnh${
+                !dayDu
+                  ? " · đang nạp phần còn lại"
+                  : dangHien.length > soHien
+                    ? ` · còn ${dinhDang(dangHien.length - soHien)} nữa`
+                    : ""
+              }`}
         </p>
       </div>
 
@@ -476,7 +544,9 @@ export function ThuVienAnh() {
                     <img
                       src={`/gallery/${it.thumb}`}
                       alt={`${tenBoard.get(it.board) || "NOOI"} — ảnh ${viTri + 1}`}
-                      loading="lazy"
+                      loading={viTri < 8 ? "eager" : "lazy"}
+                      // 8 ảnh đầu nằm trong màn hình đầu tiên -> tải ngay, xếp hàng ưu tiên cao
+                      {...(viTri < 4 ? { fetchPriority: "high" as const } : {})}
                       decoding="async"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                     />
@@ -491,6 +561,20 @@ export function ThuVienAnh() {
             </div>
           ))}
         </div>
+
+        {/* Chốt quan sát: cuộn gần tới đây là nới thêm 120 ảnh. */}
+        <div ref={chanRef} aria-hidden className="h-px w-full" />
+
+        {dayDu && dangHien.length > soHien && (
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => setSoHien((n) => Math.min(n + MOI_LAN, dangHien.length))}
+              className="rounded-lg border border-border bg-card/40 px-5 py-2 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Xem thêm {dinhDang(dangHien.length - soHien)} ảnh
+            </button>
+          </div>
+        )}
 
         <p className="mt-10 text-center text-[11px] text-muted-foreground/70">
           {duLieu

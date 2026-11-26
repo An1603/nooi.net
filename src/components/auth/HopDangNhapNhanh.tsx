@@ -176,6 +176,12 @@ export function HopDangNhapNhanh({ initialSession = false }: { initialSession?: 
 
     const t = window.setTimeout(function kiemTra() {
       if (daNhac.current) return;
+      // Đang có hộp mở vì khách bấm một nội dung khoá → KHÔNG thay bằng lời nhắc tự động:
+      // thay là mất `quayLai`, đăng nhập xong khách bị đưa về /app thay vì đúng bài đang đọc.
+      if (yeuCauRef.current) {
+        daNhac.current = true;
+        return;
+      }
       // Khách đang ở tab khác thì chưa hiện — hẹn lại, để lúc quay lại tab mới thấy lời mời.
       if (document.visibilityState === "hidden") {
         window.setTimeout(kiemTra, 15_000);

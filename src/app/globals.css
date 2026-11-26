@@ -390,4 +390,22 @@
   .dau-chim-troi { animation: none; top: 8%; left: 6%; }
 }
 
+/* ── Lưới video kiểu thư viện ảnh (/video) ──
+   Chiều cao mỗi ô theo ĐÚNG tỉ lệ ảnh bìa (ảnh dọc cao, ảnh ngang thấp) nên phải xếp kiểu khối
+   xây (masonry), không dùng lưới ô vuông cứng. Số cột lấy đúng mốc của /gallery để hai trang
+   nhìn cùng một nhịp: dưới 460 → 2 · 460+ → 3 · 720+ → 4 · 1040+ → 5 · 1420+ → 6. */
+.luoi-masonry {
+  column-count: 2;
+  column-gap: 12px;
+}
+@media (min-width: 460px) { .luoi-masonry { column-count: 3; } }
+@media (min-width: 720px) { .luoi-masonry { column-count: 4; } }
+@media (min-width: 1040px) { .luoi-masonry { column-count: 5; } }
+@media (min-width: 1420px) { .luoi-masonry { column-count: 6; } }
+.o-masonry {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+}
+
 /* ── Larger text for readability ── */

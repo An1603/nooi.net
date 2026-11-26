@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ListFilter, Lock, Play, RotateCcw, Search } from "lucide-react";
 import { tenDanhMuc } from "@/lib/video/danh-muc";
 import { anhBia, anhBiaSrcSet } from "@/lib/video/anh-bia";
 import { xetQuyenXem, type NguoiXem, type VideoCongKhai } from "@/lib/video/quyen-xem";
 import { HopDangNhap } from "@/components/video/HopDangNhap";
+import { NutChiaSe } from "@/components/video/nut-chia-se";
 
 /* ─── Kiểu lọc / sắp xếp ─── */
 
@@ -16,23 +17,24 @@ type LocQuyen = "tat-ca" | "cong-khai" | "can-dang-nhap";
 
 const TAT_CA = "tat-ca";
 
+/** Nhãn NGẮN để thanh công cụ không phình — đây là chỗ hay bị rối nhất. */
 const SAP_XEP: { ma: SapXep; ten: string }[] = [
-  { ma: "moi-nhat", ten: "Mới nhất trước" },
-  { ma: "cu-nhat", ten: "Cũ nhất trước" },
+  { ma: "moi-nhat", ten: "Mới nhất" },
+  { ma: "cu-nhat", ten: "Cũ nhất" },
   { ma: "ten-a-z", ten: "Tên A → Z" },
-  { ma: "dai-truoc", ten: "Thời lượng dài trước" },
-  { ma: "ngan-truoc", ten: "Thời lượng ngắn trước" },
+  { ma: "dai-truoc", ten: "Dài trước" },
+  { ma: "ngan-truoc", ten: "Ngắn trước" },
 ];
 
 const LOC_KHUNG: { ma: LocKhung; ten: string }[] = [
-  { ma: "tat-ca", ten: "Mọi khổ hình" },
+  { ma: "tat-ca", ten: "Mọi khổ" },
   { ma: "doc", ten: "Dọc 9:16" },
   { ma: "ngang", ten: "Ngang 16:9" },
 ];
 
 const LOC_QUYEN: { ma: LocQuyen; ten: string }[] = [
-  { ma: "tat-ca", ten: "Mọi quyền xem" },
-  { ma: "cong-khai", ten: "Xem công khai" },
+  { ma: "tat-ca", ten: "Mọi quyền" },
+  { ma: "cong-khai", ten: "Công khai" },
   { ma: "can-dang-nhap", ten: "Cần đăng nhập" },
 ];
 
@@ -44,6 +46,20 @@ function phutGiay(giay?: number | null): string | null {
   const m = Math.floor(giay / 60);
   const s = Math.round(giay % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/**
+ * Tỉ lệ khung của ô — lấy ĐÚNG kích thước thật của ảnh bìa, không ép về một khung cứng.
+ *
+ * Nhờ vậy ảnh dọc (1280×2276) đứng cao, ảnh ngang (1280×720) nằm thấp, đúng như thư viện ảnh
+ * `/gallery`; và vì tỉ lệ có SẴN TRƯỚC khi ảnh tải xong nên cột không nhảy khi ảnh hiện ra.
+ * Chưa có số (bài cũ) thì lùi về khổ hình: dọc 9:16, ngang 16:9.
+ */
+function tiLeAnh(v: VideoCongKhai): string {
+  const w = v.thumbnail_width ?? 0;
+  const h = v.thumbnail_height ?? 0;
+  if (w > 0 && h > 0) return `${w} / ${h}`;
+  return v.khung_hinh === "doc" ? "9 / 16" : "16 / 9";
 }
 
 /**
@@ -69,7 +85,7 @@ function soSanhThoiLuong(a: VideoCongKhai, b: VideoCongKhai, tangDan: boolean): 
   return tangDan ? x - y : y - x;
 }
 
-const NUT = "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors";
+const NUT = "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors";
 const NUT_CHON = "border-primary bg-primary text-primary-foreground";
 const NUT_THUONG = "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground";
 const NUT_CHON_PHU = "border-foreground/40 bg-muted text-foreground";
@@ -80,12 +96,15 @@ interface Props {
 }
 
 /**
- * Lưới video công khai — kiểu xem như `/gallery` (lưới đều nhau) nhưng giữ đúng nhận diện NOOI:
- * token màu của hệ thống, bo góc 14px như thư viện ảnh.
+ * Lưới video công khai — kiểu thư viện ảnh `/gallery`: lề hẹp, cột theo bề rộng màn hình, và
+ * **chiều cao mỗi ô theo đúng tỉ lệ ảnh bìa** (xếp kiểu khối xây, không ép ô vuông cứng).
  *
  * Có đủ **danh mục · tìm · lọc · sắp xếp**, chạy ngay trên trình duyệt nên gõ là ra, không phải
- * chờ máy chủ. Video bị khoá vẫn HIỆN (biết có gì) nhưng phủ ổ khoá; bấm vào thì hiện hộp đăng
- * nhập ngay tại chỗ. Video mở được thì bấm vào là vào luồng xem đứng đúng bài đó.
+ * chờ máy chủ. Điều kiện đang lọc được ghi lên địa chỉ trang (`?q=&dm=&kh=&qx=&sx=`) nên **nút
+ * chia sẻ gửi đi đúng danh sách đang xem**, người nhận mở ra là thấy y hệt.
+ *
+ * Video bị khoá vẫn HIỆN (biết có gì) nhưng phủ ổ khoá; bấm vào thì hiện hộp đăng nhập ngay tại
+ * chỗ. Video mở được thì bấm vào là vào luồng xem đứng đúng bài đó.
  */
 export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
   const [tuKhoa, setTuKhoa] = useState("");
@@ -94,6 +113,42 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
   const [locQuyen, setLocQuyen] = useState<LocQuyen>(TAT_CA);
   const [sapXep, setSapXep] = useState<SapXep>("moi-nhat");
   const [videoKhoa, setVideoKhoa] = useState<VideoCongKhai | null>(null);
+  const [moLoc, setMoLoc] = useState(false);
+  /** Đã đọc xong điều kiện trên địa chỉ chưa — chưa đọc xong thì không được ghi đè địa chỉ. */
+  const daDoc = useRef(false);
+
+  /* Điều kiện nằm trên địa chỉ trang → mở link ai đó chia sẻ là ra đúng danh sách đó. */
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const q = p.get("q");
+    const dm = p.get("dm");
+    const kh = p.get("kh");
+    const qx = p.get("qx");
+    const sx = p.get("sx");
+    if (q) setTuKhoa(q);
+    if (dm) setLoc(dm);
+    if (kh === "doc" || kh === "ngang" || kh === "tat-ca") setLocKhung(kh);
+    if (qx === "cong-khai" || qx === "can-dang-nhap" || qx === "tat-ca") setLocQuyen(qx);
+    if (sx && SAP_XEP.some((s) => s.ma === sx)) setSapXep(sx as SapXep);
+    if (q || dm || kh || qx) setMoLoc(true);
+    daDoc.current = true;
+  }, []);
+
+  const thamSo = useMemo(() => {
+    const p = new URLSearchParams();
+    if (tuKhoa.trim()) p.set("q", tuKhoa.trim());
+    if (loc !== TAT_CA) p.set("dm", loc);
+    if (locKhung !== TAT_CA) p.set("kh", locKhung);
+    if (locQuyen !== TAT_CA) p.set("qx", locQuyen);
+    if (sapXep !== "moi-nhat") p.set("sx", sapXep);
+    return p.toString();
+  }, [tuKhoa, loc, locKhung, locQuyen, sapXep]);
+
+  useEffect(() => {
+    if (!daDoc.current) return;
+    const duong = thamSo ? `${window.location.pathname}?${thamSo}` : window.location.pathname;
+    window.history.replaceState(null, "", duong);
+  }, [thamSo]);
 
   /** Các danh mục đang thật sự có bài (kèm số lượng) */
   const nhom = useMemo(() => {
@@ -141,7 +196,9 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
     [videos, nguoi]
   );
 
-  const dangLoc = tuKhoa.trim() !== "" || loc !== TAT_CA || locKhung !== TAT_CA || locQuyen !== TAT_CA;
+  const soLoc =
+    (loc !== TAT_CA ? 1 : 0) + (locKhung !== TAT_CA ? 1 : 0) + (locQuyen !== TAT_CA ? 1 : 0);
+  const dangLoc = tuKhoa.trim() !== "" || soLoc > 0;
 
   const xoaLoc = () => {
     setTuKhoa("");
@@ -149,6 +206,20 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
     setLocKhung(TAT_CA);
     setLocQuyen(TAT_CA);
   };
+
+  /** Tiêu đề + đường dẫn để chia sẻ danh sách đang xem */
+  const chiaSeDanhSach = useMemo(() => {
+    const phan: string[] = [];
+    if (tuKhoa.trim()) phan.push(`từ khoá “${tuKhoa.trim()}”`);
+    if (loc !== TAT_CA) phan.push(tenDanhMuc(loc) || "danh mục khác");
+    if (locKhung !== TAT_CA) phan.push(locKhung === "doc" ? "khổ dọc" : "khổ ngang");
+    if (locQuyen === "cong-khai") phan.push("xem công khai");
+    if (locQuyen === "can-dang-nhap") phan.push("cần đăng nhập");
+    const tieuDe = phan.length
+      ? `Kho video NOOI — ${phan.join(" · ")} (${ketQua.length} bài)`
+      : `Kho video NOOI (${ketQua.length} bài)`;
+    return { tieuDe, duong: `/video${thamSo ? `?${thamSo}` : ""}` };
+  }, [tuKhoa, loc, locKhung, locQuyen, ketQua.length, thamSo]);
 
   if (videos.length === 0) {
     return (
@@ -160,106 +231,129 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
 
   return (
     <div>
-      {/* ── Thanh công cụ: tìm · sắp xếp · danh mục · lọc ── */}
-      <div className="mb-4 space-y-3 rounded-[14px] border border-border bg-card/60 p-3">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <label className="relative flex-1">
+      {/* ── Thanh công cụ gọn: tìm · sắp xếp · lọc · chia sẻ ── */}
+      <div className="mb-3 rounded-[14px] border border-border bg-card/60 p-2">
+        <div className="flex items-center gap-1.5">
+          <label className="relative min-w-0 flex-1">
             <Search
-              size={15}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              size={14}
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
             <input
               type="search"
               value={tuKhoa}
               onChange={(e) => setTuKhoa(e.target.value)}
-              placeholder="Tìm theo tên hoặc mô tả… (gõ không dấu cũng ra)"
+              placeholder="Tìm video… (không dấu cũng ra)"
               aria-label="Tìm video"
-              className="w-full rounded-full border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary/60"
+              className="w-full rounded-full border border-border bg-background py-1.5 pl-8 pr-3 text-[13px] outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary/60"
             />
           </label>
 
-          <label className="flex items-center gap-2 sm:w-60">
-            <ListFilter size={15} className="shrink-0 text-muted-foreground" />
-            <select
-              value={sapXep}
-              onChange={(e) => setSapXep(e.target.value as SapXep)}
-              aria-label="Sắp xếp"
-              className="w-full rounded-full border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/60"
-            >
-              {SAP_XEP.map((s) => (
-                <option key={s.ma} value={s.ma}>
-                  {s.ten}
-                </option>
-              ))}
-            </select>
-          </label>
+          <select
+            value={sapXep}
+            onChange={(e) => setSapXep(e.target.value as SapXep)}
+            aria-label="Sắp xếp"
+            title="Sắp xếp"
+            className="max-w-[112px] shrink-0 rounded-full border border-border bg-background px-2.5 py-1.5 text-[13px] outline-none transition-colors focus:border-primary/60"
+          >
+            {SAP_XEP.map((s) => (
+              <option key={s.ma} value={s.ma}>
+                {s.ten}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => setMoLoc((x) => !x)}
+            aria-expanded={moLoc}
+            className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+              soLoc > 0 ? NUT_CHON : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ListFilter size={14} />
+            Lọc
+            {soLoc > 0 && (
+              <span className="rounded-full bg-primary-foreground/25 px-1.5 text-[10px] leading-4">{soLoc}</span>
+            )}
+          </button>
+
+          <NutChiaSe
+            tieuDe={chiaSeDanhSach.tieuDe}
+            duong={chiaSeDanhSach.duong}
+            nhan={`Chia sẻ danh sách đang xem (${ketQua.length} bài)`}
+            co={14}
+            className="size-8 shrink-0 rounded-full border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+          />
         </div>
 
-        {/* Danh mục — chỉ hiện khi có từ 2 nhóm trở lên */}
-        {nhom.length > 1 && (
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => setLoc(TAT_CA)}
-              className={`${NUT} ${loc === TAT_CA ? NUT_CHON : NUT_THUONG}`}
-            >
-              Mọi danh mục · {videos.length}
-            </button>
-            {nhom.map((n) => (
-              <button
-                key={n.slug}
-                type="button"
-                onClick={() => setLoc(n.slug)}
-                className={`${NUT} ${loc === n.slug ? NUT_CHON : NUT_THUONG}`}
-              >
-                {n.ten} · {n.so}
-              </button>
-            ))}
+        {/* Bảng lọc — chỉ mở khi cần, để danh sách video được ưu tiên chỗ */}
+        {moLoc && (
+          <div className="mt-2 space-y-2 border-t border-border pt-2">
+            {nhom.length > 1 && (
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setLoc(TAT_CA)}
+                  className={`${NUT} ${loc === TAT_CA ? NUT_CHON : NUT_THUONG}`}
+                >
+                  Mọi danh mục · {videos.length}
+                </button>
+                {nhom.map((n) => (
+                  <button
+                    key={n.slug}
+                    type="button"
+                    onClick={() => setLoc(n.slug)}
+                    className={`${NUT} ${loc === n.slug ? NUT_CHON : NUT_THUONG}`}
+                  >
+                    {n.ten} · {n.so}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {LOC_KHUNG.map((k) => (
+                <button
+                  key={k.ma}
+                  type="button"
+                  onClick={() => setLocKhung(k.ma)}
+                  aria-pressed={locKhung === k.ma}
+                  className={`${NUT} ${locKhung === k.ma ? NUT_CHON_PHU : NUT_THUONG}`}
+                >
+                  {k.ten}
+                </button>
+              ))}
+              <span className="mx-0.5 h-3.5 w-px bg-border" />
+              {LOC_QUYEN.map((q) => (
+                <button
+                  key={q.ma}
+                  type="button"
+                  onClick={() => setLocQuyen(q.ma)}
+                  aria-pressed={locQuyen === q.ma}
+                  className={`${NUT} ${locQuyen === q.ma ? NUT_CHON_PHU : NUT_THUONG}`}
+                >
+                  {q.ma === "can-dang-nhap" ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Lock size={10} />
+                      {q.ten}
+                    </span>
+                  ) : (
+                    q.ten
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Lọc theo khổ hình và theo quyền xem */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {LOC_KHUNG.map((k) => (
-            <button
-              key={k.ma}
-              type="button"
-              onClick={() => setLocKhung(k.ma)}
-              aria-pressed={locKhung === k.ma}
-              className={`${NUT} ${locKhung === k.ma ? NUT_CHON_PHU : NUT_THUONG}`}
-            >
-              {k.ten}
-            </button>
-          ))}
-          <span className="mx-1 hidden h-4 w-px bg-border sm:block" />
-          {LOC_QUYEN.map((q) => (
-            <button
-              key={q.ma}
-              type="button"
-              onClick={() => setLocQuyen(q.ma)}
-              aria-pressed={locQuyen === q.ma}
-              className={`${NUT} ${locQuyen === q.ma ? NUT_CHON_PHU : NUT_THUONG}`}
-            >
-              {q.ma === "can-dang-nhap" ? (
-                <span className="inline-flex items-center gap-1">
-                  <Lock size={11} />
-                  {q.ten}
-                </span>
-              ) : (
-                q.ten
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Số lượng đang hiện + xoá lọc */}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <div className="mt-1.5 flex items-center justify-between gap-2 px-1 text-[11px] text-muted-foreground">
           <span>
             Đang hiện <b className="text-foreground">{ketQua.length}</b>/{videos.length} bài
             {soKhoa > 0 && (
               <>
                 {" · "}
-                <Lock size={11} className="inline text-primary" /> {soKhoa} bài cần quyền xem
+                <Lock size={10} className="inline text-primary" /> {soKhoa} bài cần quyền
               </>
             )}
           </span>
@@ -267,16 +361,16 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
             <button
               type="button"
               onClick={xoaLoc}
-              className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 hover:text-foreground"
+              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 hover:text-foreground"
             >
-              <RotateCcw size={11} />
+              <RotateCcw size={10} />
               Xoá lọc
             </button>
           )}
         </div>
       </div>
 
-      {/* ── Lưới ── */}
+      {/* ── Lưới kiểu khối xây: chiều cao mỗi ô theo đúng tỉ lệ ảnh bìa ── */}
       {ketQua.length === 0 ? (
         <div className="rounded-[14px] border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">Không có bài nào khớp điều kiện đang lọc.</p>
@@ -285,29 +379,31 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="luoi-masonry">
           {ketQua.map((v, i) => {
             const kq = xetQuyenXem(v, nguoi);
             const thoiLuong = phutGiay(v.duration);
             const laDoc = v.khung_hinh === "doc";
+            const bia = anhBia(v.thumbnail_url, { rong: 400 });
 
-            const lopTrong = (
+            const trong = (
               <>
-                <div className="relative aspect-[3/4] w-full overflow-hidden bg-black/40">
-                  {anhBia(v.thumbnail_url, { rong: 400 }) ? (
+                <span
+                  className="relative block w-full overflow-hidden bg-black/40"
+                  style={{ aspectRatio: tiLeAnh(v) }}
+                >
+                  {bia ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       /* Ảnh bìa gốc 100–450 KB — xin bản dịch 400 px của Supabase (≈47 KB, đo thật
-                         26/11/2026) để lưới mở nhanh. 6 thẻ đầu tải ngay, phần còn lại chờ cuộn tới. */
-                      src={anhBia(v.thumbnail_url, { rong: 400 })!}
+                         26/11/2026). 6 ô đầu tải ngay, phần còn lại chờ cuộn tới. */
+                      src={bia}
                       srcSet={anhBiaSrcSet(v.thumbnail_url) ?? undefined}
-                      sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 220px"
+                      sizes="(max-width: 460px) 46vw, (max-width: 720px) 31vw, (max-width: 1040px) 24vw, (max-width: 1420px) 19vw, 16vw"
                       alt={v.title}
-                      width={400}
-                      height={533}
                       loading={i < 6 ? "eager" : "lazy"}
                       decoding="async"
-                      className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     />
                   ) : (
                     <span className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -316,12 +412,12 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
                   )}
 
                   {/* Nhãn khổ hình — biết ngay video dọc hay ngang */}
-                  <span className="absolute left-2 top-2 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-medium text-white/90">
+                  <span className="absolute left-1.5 top-1.5 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-medium text-white/90">
                     {laDoc ? "Dọc" : "Ngang"}
                   </span>
 
                   {thoiLuong && (
-                    <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white/90">
+                    <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white/90">
                       {thoiLuong}
                     </span>
                   )}
@@ -344,29 +440,44 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
                       </span>
                     </span>
                   )}
-                </div>
+                </span>
 
-                <div className="p-2.5">
-                  <h3 className="line-clamp-2 text-[13px] font-medium leading-snug">{v.title}</h3>
+                <span className="block p-2.5">
+                  <span className="line-clamp-2 block text-[13px] font-medium leading-snug">{v.title}</span>
                   {v.danh_muc && (
-                    <p className="mt-1 text-[11px] text-muted-foreground">{tenDanhMuc(v.danh_muc)}</p>
+                    <span className="mt-1 block text-[11px] text-muted-foreground">
+                      {tenDanhMuc(v.danh_muc)}
+                    </span>
                   )}
-                </div>
+                </span>
               </>
             );
 
             const lopNgoai =
               "group block overflow-hidden rounded-[14px] border border-border bg-card text-left transition-colors hover:border-primary/50";
 
-            // Mở được → vào luồng xem đứng đúng bài đó; bị khoá → mở hộp đăng nhập tại chỗ
-            return kq.mo ? (
-              <Link key={v.id} href={`/video/${v.id}`} className={lopNgoai}>
-                {lopTrong}
-              </Link>
-            ) : (
-              <button key={v.id} type="button" onClick={() => setVideoKhoa(v)} className={lopNgoai}>
-                {lopTrong}
-              </button>
+            // Bọc ngoài là <div> để nút chia sẻ nằm CẠNH vùng bấm chính (nút lồng trong nút / thẻ
+            // <a> là HTML sai và bấm sẽ loạn).
+            return (
+              <div key={v.id} className="o-masonry relative mb-3">
+                {kq.mo ? (
+                  <Link href={`/video/${v.id}`} className={lopNgoai}>
+                    {trong}
+                  </Link>
+                ) : (
+                  <button type="button" onClick={() => setVideoKhoa(v)} className={`${lopNgoai} w-full`}>
+                    {trong}
+                  </button>
+                )}
+
+                <NutChiaSe
+                  tieuDe={v.title}
+                  duong={`/video/${v.id}`}
+                  nhan={`Chia sẻ: ${v.title}`}
+                  co={13}
+                  className="absolute right-1.5 top-1.5 z-10 size-7 rounded-full bg-black/55 text-white backdrop-blur transition-colors hover:bg-black/80"
+                />
+              </div>
             );
           })}
         </div>

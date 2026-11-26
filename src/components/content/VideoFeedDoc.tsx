@@ -18,6 +18,7 @@ import {
 import { docTimeUpdate, taoPlayer, type PlayerGiaoDien } from "@/lib/video/playerjs";
 import { DauChimNooi } from "@/components/content/DauChimNooi";
 import { HopDangNhap } from "@/components/video/HopDangNhap";
+import { NutChiaSe } from "@/components/video/nut-chia-se";
 import { xetQuyenXem, type NguoiXem, type VideoCongKhai } from "@/lib/video/quyen-xem";
 
 interface Props {
@@ -969,6 +970,15 @@ export function VideoFeedDoc({
                       <Settings size={16} />
                     </button>
                   )}
+                  {/* Chia sẻ — luôn có, kể cả bài đang khoá: chia sẻ liên kết là việc hợp lệ, và
+                      người nhận mở ra sẽ gặp đúng cổng gác như người gửi. */}
+                  <NutChiaSe
+                    tieuDe={v.title}
+                    duong={`/video/${v.id}`}
+                    nhan={`Chia sẻ: ${v.title}`}
+                    co={16}
+                    className="size-9 rounded-full border border-white/20 bg-black/40 backdrop-blur hover:bg-black/60"
+                  />
                   {!khoa && (
                     <button
                       type="button"

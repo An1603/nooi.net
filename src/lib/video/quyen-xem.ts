@@ -20,6 +20,12 @@ export interface VideoCongKhai {
   title: string;
   description?: string | null;
   thumbnail_url?: string | null;
+  /**
+   * Kích thước THẬT của ảnh bìa (px). Lưới `/video` dựng ô theo đúng tỉ lệ này — ảnh dọc cao, ảnh
+   * ngang thấp — và nhờ có số sẵn mà cột không nhảy khi ảnh tải xong. Thiếu thì lùi về `khung_hinh`.
+   */
+  thumbnail_width?: number | null;
+  thumbnail_height?: number | null;
   duration?: number | null;
   khung_hinh?: string | null;
   danh_muc?: string | null;

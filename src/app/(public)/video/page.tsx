@@ -53,18 +53,13 @@ export const metadata: Metadata = {
 export default async function KhoVideoPage() {
   const [videos, nguoi] = await Promise.all([layKhoVideo(), nguoiDangXem()]);
 
-  const soMo = videos.filter((v) => v.cong_khai === true).length;
-
   return (
     <main className="min-h-[100dvh] bg-background">
-      <div className="mx-auto w-full max-w-[1200px] px-4 pb-20 pt-24 sm:px-6 lg:px-8">
-        <header className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Kho video NOOI</h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Tư liệu quy hoạch, dự án và bài giảng của NOOI. {soMo > 0 && <>{soMo} video xem công khai. </>}
-            Video nào hiện ổ khoá là video dành cho thành viên — bấm vào để đăng nhập ngay tại chỗ.
-          </p>
-        </header>
+      {/* Lề hai bên lấy đúng nhịp của /gallery (16→34px theo bề rộng) và rộng tối đa 1680px để
+          danh sách video được ưu tiên chỗ. Không còn khối tiêu đề lớn — chỉ giữ một tiêu đề ẩn
+          cho máy tìm kiếm và trình đọc màn hình. */}
+      <div className="mx-auto w-full max-w-[1680px] px-[clamp(16px,3vw,34px)] pb-16 pt-20">
+        <h1 className="sr-only">Kho video NOOI</h1>
 
         <LuoiVideoCongKhai videos={videos} nguoi={nguoi} />
 

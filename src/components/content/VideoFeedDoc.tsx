@@ -297,19 +297,25 @@ export function VideoFeedDoc({
     return () => clearInterval(id);
   }, [iDangXem]);
 
-  // 7. Cú chạm ĐẦU TIÊN của người dùng là "vé" cho phép phát: thử phát lại ngay
+  // 7. Cú tương tác ĐẦU TIÊN của người xem vừa là "vé" cho phép phát, vừa là dịp MỞ TIẾNG nếu lúc
+  //    mở video trình duyệt đã chặn tự phát có tiếng. Nghe cả lăn chuột và cuộn (máy tính) vì người
+  //    xem thường vuốt/lăn chuột mà không bấm.
   useEffect(() => {
+    const su: (keyof WindowEventMap)[] = ["pointerdown", "keydown", "wheel", "touchstart", "scroll"];
     const bat = () => {
+      su.forEach((k) => window.removeEventListener(k, bat, true));
       soLanThu.current = 0;
+      if (choMoTieng.current) {
+        choMoTieng.current = false;
+        tiengRef.current = false;
+        doTieng(iRef.current, false);
+        setTatTieng(false);
+      }
       phat(iRef.current);
     };
-    window.addEventListener("pointerdown", bat, { once: true });
-    window.addEventListener("keydown", bat, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", bat);
-      window.removeEventListener("keydown", bat);
-    };
-  }, [phat]);
+    su.forEach((k) => window.addEventListener(k, bat, { passive: true, capture: true }));
+    return () => su.forEach((k) => window.removeEventListener(k, bat, true));
+  }, [phat, doTieng]);
 
   /** Gắn iframe Bunny: tạo đối tượng điều khiển ngay khi iframe vào DOM. */
   const ganIframe = useCallback(
@@ -347,6 +353,36 @@ export function VideoFeedDoc({
   /** Khung đã tự phát lần đầu — chốt chống tự phát đè lên thao tác của người xem. */
   const daTuPhat = useRef<Set<number>>(new Set());
 
+  /** Còn "nợ" tiếng: trình duyệt chặn tự phát có tiếng nên tạm phát tắt tiếng, chờ cú tương tác đầu. */
+  const choMoTieng = useRef(false);
+
+  /**
+   * Phát video, **ƯU TIÊN CÓ TIẾNG**.
+   *
+   * Vì sao phải thử rồi mới biết: trình duyệt chỉ cho tự phát CÓ TIẾNG khi người xem đã "thân" với
+   * trang này; chưa đủ thì nó chặn (NotAllowedError). Nên: thử có tiếng trước — được thì mở tiếng
+   * luôn; bị chặn thì phát tắt tiếng ngay để người xem thấy hình, đồng thời ghi nhớ "còn nợ tiếng"
+   * để cú tương tác đầu tiên (chạm, bấm phím, lăn chuột, cuộn) mở tiếng. Không hẹn giờ mở tiếng:
+   * mở tiếng mà không có tương tác thì trình duyệt cũng chặn, thậm chí dừng luôn video.
+   */
+  const thuPhat = useCallback(async (el: HTMLVideoElement) => {
+    el.muted = false;
+    try {
+      await el.play();
+      tiengRef.current = false;
+      choMoTieng.current = false;
+      setTatTieng(false);
+      return;
+    } catch {
+      /* bị chặn -> phát tắt tiếng */
+    }
+    el.muted = true;
+    tiengRef.current = true;
+    choMoTieng.current = true;
+    setTatTieng(true);
+    await el.play().catch(() => setDangPhat(false));
+  }, []);
+
   /** Gắn thẻ <video> của mình (tệp trực tiếp). */
   const ganVideo = useCallback(
     (i: number) => (el: HTMLVideoElement | null) => {
@@ -367,10 +403,13 @@ export function VideoFeedDoc({
       // video tự phát lại và đè lên thao tác tạm dừng của người xem.
       if (i === iRef.current && !daTuPhat.current.has(i)) {
         daTuPhat.current.add(i);
-        void el.play().catch(() => setDangPhat(false));
+        void thuPhat(el);
+        return;
       }
+      // Khung khác: theo cài đặt tiếng chung, KHÔNG tự phát (chỉ phát khi thành khung đang xem)
+      el.muted = tiengRef.current;
     },
-    []
+    [thuPhat]
   );
 
   /**
@@ -435,6 +474,7 @@ export function VideoFeedDoc({
   const doiTieng = useCallback(() => {
     const moi = !tatTieng;
     tiengRef.current = moi;
+    choMoTieng.current = false; // người xem đã tự quyết định tiếng -> đừng mở tiếng hộ nữa
     setTatTieng(moi);
     doTieng(iRef.current, moi);
   }, [tatTieng, doTieng]);

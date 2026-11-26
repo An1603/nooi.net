@@ -18,6 +18,15 @@
   const EMPTY_MSG  = document.getElementById('emptyMsg');
   const EMPTY_HINT = document.getElementById('emptyHint');
 
+  // Thanh công cụ (đồng bộ dáng với kho video nooi.net/video)
+  const Q          = document.getElementById('q');
+  const SORT       = document.getElementById('sort');
+  const F_TOGGLE   = document.getElementById('filterToggle');
+  const F_PANEL    = document.getElementById('filterPanel');
+  const F_N        = document.getElementById('filterN');
+  const CLEAR      = document.getElementById('clearFilters');
+  const SHARE      = document.getElementById('shareBtn');
+
   const LB        = document.getElementById('lb');
   const LB_IMG    = document.getElementById('lbImg');
   const LB_COUNT  = document.getElementById('lbCounter');
@@ -34,7 +43,9 @@
   let cols = 0;
   let boardNames = {}; // slug -> tên hiển thị của board
 
-  const filter = { board: 'all', orient: 'all', color: 'all' };
+  const filter = { q: '', board: 'all', orient: 'all', color: 'all' };
+  let sort = 'mac-dinh';  // thứ tự đang sắp
+  let seed = 0;           // hạt giống cho kiểu "Ngẫu nhiên" (nằm trong link chia sẻ)
 
   /* ---------- Theme ---------- */
 
@@ -158,35 +169,170 @@
     { rootMargin: '700px 0px', threshold: 0.01 }
   );
 
-  /* ---------- Lọc ---------- */
+  /* ---------- Tìm · lọc · sắp xếp ---------- */
+
+  /** Bỏ dấu tiếng Việt: gõ "be boi" cũng ra board "Be Boi". */
+  const boDau = (s) =>
+    String(s || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .toLowerCase()
+      .trim();
+
+  /**
+   * Sinh số ngẫu nhiên CÓ HẠT GIỐNG. Cùng hạt giống -> cùng thứ tự, nên link
+   * chia sẻ kiểu "Ngẫu nhiên" mở ra đúng danh sách người gửi đang thấy.
+   */
+  function rndTheoHat(hat) {
+    let t = hat >>> 0;
+    return () => {
+      t = (t + 0x6d2b79f5) >>> 0;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /**
+   * Sắp thứ tự danh sách đang hiện.
+   *
+   * Sắp trên mảng `active` chứ KHÔNG đổi thứ tự thẻ trong DOM: `layout()` xếp
+   * ảnh theo đúng thứ tự mảng này và lightbox cũng chạy theo nó — nên "ảnh tiếp
+   * theo" luôn đúng chiều đang sắp, mà không phải dựng lại lưới.
+   */
+  function sapXep(ds) {
+    if (sort === 'ngau-nhien') {
+      const rnd = rndTheoHat(seed);
+      for (let i = ds.length - 1; i > 0; i--) {
+        const j = Math.floor(rnd() * (i + 1));
+        [ds[i], ds[j]] = [ds[j], ds[i]];
+      }
+      return ds;
+    }
+    if (sort === 'ten-a-z') {
+      return ds.sort(
+        (a, b) =>
+          (boardNames[items[a].board] || '').localeCompare(boardNames[items[b].board] || '', 'vi') ||
+          a - b
+      );
+    }
+    if (sort === 'ngang-truoc' || sort === 'doc-truoc') {
+      const uu = sort === 'ngang-truoc'
+        ? { ngang: 0, vuong: 1, doc: 2 }
+        : { doc: 0, vuong: 1, ngang: 2 };
+      return ds.sort((a, b) => uu[orientOf(items[a])] - uu[orientOf(items[b])] || a - b);
+    }
+    return ds; // mặc định: thứ tự dữ liệu (theo board)
+  }
+
+  /** Đếm điều kiện đang bật -> hiện lên nút Lọc; quyết định có hiện "Xoá lọc". */
+  function capNhatNutLoc() {
+    const n =
+      (filter.q ? 1 : 0) +
+      (filter.board !== 'all' ? 1 : 0) +
+      (filter.orient !== 'all' ? 1 : 0) +
+      (filter.color !== 'all' ? 1 : 0);
+
+    F_N.textContent = n;
+    F_N.hidden = n === 0;
+    F_TOGGLE.classList.toggle('is-on', n > 0);
+    CLEAR.hidden = n === 0 && sort === 'mac-dinh';
+  }
+
+  /**
+   * Ghi trạng thái đang xem vào địa chỉ -> copy/chia sẻ là mở ra đúng danh sách.
+   * Mở bằng file:// thì replaceState bị chặn nên phải bọc try, đừng để chết trang.
+   */
+  function dongBoUrl() {
+    try {
+      const p = new URLSearchParams();
+      if (filter.q) p.set('q', filter.q);
+      if (filter.board !== 'all') p.set('board', filter.board);
+      if (filter.orient !== 'all') p.set('orient', filter.orient);
+      if (filter.color !== 'all') p.set('color', filter.color);
+      if (sort !== 'mac-dinh') p.set('sort', sort);
+      if (sort === 'ngau-nhien') p.set('seed', String(seed));
+
+      const qs = p.toString();
+      history.replaceState(null, '', qs ? `${location.pathname}?${qs}` : location.pathname);
+    } catch (e) { /* file:// hoặc trình duyệt chặn -> bỏ qua */ }
+  }
+
+  /** Đọc trạng thái từ địa chỉ lúc mở trang (link chia sẻ). */
+  function docUrl() {
+    let p;
+    try { p = new URLSearchParams(location.search); } catch (e) { return; }
+
+    filter.q = p.get('q') || '';
+
+    const b = p.get('board');  if (b && b !== 'all') filter.board = b;
+    const o = p.get('orient'); if (o && o !== 'all') filter.orient = o;
+    const c = p.get('color');  if (c && c !== 'all') filter.color = c;
+
+    const s = p.get('sort');
+    if (['ngau-nhien', 'ten-a-z', 'ngang-truoc', 'doc-truoc'].includes(s)) sort = s;
+
+    if (sort === 'ngau-nhien') {
+      const sd = parseInt(p.get('seed'), 10);
+      seed = Number.isFinite(sd) && sd > 0 ? sd : Math.floor(Math.random() * 2147483647);
+    }
+
+    Q.value = filter.q;
+    SORT.value = sort;
+  }
 
   function applyFilter() {
     active = [];
+    const tuKhoa = boDau(filter.q);
+
     items.forEach((it, i) => {
       const okBoard = filter.board === 'all' || it.board === filter.board;
       const okOrient = filter.orient === 'all' || orientOf(it) === filter.orient;
       const okColor = filter.color === 'all' || toneOf(it.color) === filter.color;
-      const show = okBoard && okOrient && okColor;
+      // Ảnh không có tiêu đề riêng nên ô tìm so với TÊN BOARD: gõ "camp" ra board
+      // "CAMP, Glamping". Muốn tìm theo nội dung ảnh thì phải nạp thêm tiêu đề
+      // từ Pinterest (xem ghi chú trong tài liệu).
+      const okQ = !tuKhoa || boDau(boardNames[it.board] || it.board).includes(tuKhoa);
+      const show = okBoard && okOrient && okColor && okQ;
 
       tiles[i].style.display = show ? '' : 'none';
       if (show) active.push(i);
     });
 
-    COUNT.textContent =
-      active.length === items.length
-        ? `${fmt(items.length)} ảnh`
-        : `${fmt(active.length)} / ${fmt(items.length)} ảnh`;
+    sapXep(active);
+
+    COUNT.textContent = `Đang hiện ${fmt(active.length)}/${fmt(items.length)} ảnh`;
 
     // Không ảnh nào khớp bộ lọc -> báo rõ, đừng để lưới trống trơn
     if (!active.length && items.length) {
-      EMPTY_MSG.textContent = 'Không có ảnh nào khớp bộ lọc.';
-      EMPTY_HINT.textContent = 'Thử chọn lại board, hướng ảnh hoặc tông màu.';
+      EMPTY_MSG.textContent = 'Không có ảnh nào khớp.';
+      EMPTY_HINT.textContent = 'Thử bỏ chữ đang tìm, hoặc chọn lại board, khổ ảnh, tông màu.';
       EMPTY.hidden = false;
     } else {
       EMPTY.hidden = true;
     }
 
+    capNhatNutLoc();
+    dongBoUrl();
     layout();
+  }
+
+  /** Tô đậm chip đang chọn. Tách riêng vì lúc mở trang cũng phải gọi — trạng thái
+   *  khi đó đến từ địa chỉ chia sẻ, không phải từ một cú bấm. */
+  function dongBoChip(chiMot) {
+    const groups = chiMot
+      ? [chiMot]
+      : [
+          { sel: '#boardGroup [data-board]', key: 'board' },
+          { sel: '#filters [data-orient]', key: 'orient' },
+          { sel: '#filters [data-color]', key: 'color' },
+        ];
+    for (const g of groups) {
+      FILTERS.querySelectorAll(g.sel).forEach((b) =>
+        b.classList.toggle('is-active', b.dataset[g.key] === filter[g.key])
+      );
+    }
   }
 
   function wireFilters() {
@@ -201,8 +347,7 @@
           const val = btn.dataset[g.key];
           if (filter[g.key] === val) return;
           filter[g.key] = val;
-
-          FILTERS.querySelectorAll(g.sel).forEach((b) => b.classList.toggle('is-active', b === btn));
+          dongBoChip(g);
 
           // đang mở lightbox mà ảnh đó bị lọc mất -> đóng lại
           if (!LB.hidden) close();
@@ -210,6 +355,96 @@
         });
       });
     }
+  }
+
+  /** Nối các nút trên thanh công cụ: tìm, sắp xếp, nút Lọc, xoá lọc, chia sẻ. */
+  function wireBar() {
+    dongBoChip();
+
+    // Gõ tới đâu lọc tới đó, nhưng chờ 160ms — nếu không, mỗi phím gõ vào là
+    // duyệt lại cả nghìn ảnh một lần.
+    let henQ = null;
+    Q.addEventListener('input', () => {
+      clearTimeout(henQ);
+      henQ = setTimeout(() => {
+        filter.q = Q.value;
+        if (!LB.hidden) close();
+        applyFilter();
+      }, 160);
+    });
+    // Esc để xoá nhanh chữ đang tìm (giữ luôn con trỏ trong ô).
+    Q.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') Q.value = '';
+    });
+
+    SORT.addEventListener('change', () => {
+      sort = SORT.value;
+      // Chọn "Ngẫu nhiên" thì bốc hạt giống mới; hạt giống đi kèm link chia sẻ nên
+      // người nhận mở ra vẫn đúng thứ tự này.
+      if (sort === 'ngau-nhien') seed = Math.floor(Math.random() * 2147483647);
+      if (!LB.hidden) close();
+      applyFilter();
+    });
+
+    F_TOGGLE.addEventListener('click', () => {
+      const mo = F_PANEL.hidden;
+      F_PANEL.hidden = !mo;
+      F_TOGGLE.setAttribute('aria-expanded', String(mo));
+      if (mo) updateBoardScrollHint();
+    });
+
+    CLEAR.addEventListener('click', () => {
+      filter.q = '';
+      filter.board = 'all';
+      filter.orient = 'all';
+      filter.color = 'all';
+      sort = 'mac-dinh';
+      Q.value = '';
+      SORT.value = sort;
+      dongBoChip();
+      if (!LB.hidden) close();
+      applyFilter();
+    });
+
+    SHARE.addEventListener('click', chiaSe);
+  }
+
+  /* ---------- Chia sẻ ---------- */
+
+  let toastEl = null;
+  let henToast = null;
+
+  function bao(chu) {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.className = 'toast';
+      toastEl.setAttribute('role', 'status');
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = chu;
+    toastEl.classList.add('is-hien');
+    clearTimeout(henToast);
+    henToast = setTimeout(() => toastEl.classList.remove('is-hien'), 2400);
+  }
+
+  /** Máy cảm ứng thì mở bảng chia sẻ của hệ điều hành, máy tính thì copy liên kết
+   *  (giống nút chia sẻ bên kho video). */
+  function chiaSe() {
+    const url = location.href;
+    const camUng = window.matchMedia('(pointer: coarse)').matches;
+
+    if (camUng && navigator.share) {
+      navigator.share({ title: 'Thư viện ảnh NOOI', url }).catch(() => {});
+      return;
+    }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(
+        () => bao('Đã copy liên kết danh sách đang xem'),
+        () => bao('Không copy tự động được — bạn copy địa chỉ trên thanh trình duyệt nhé')
+      );
+      return;
+    }
+    bao('Không copy tự động được — bạn copy địa chỉ trên thanh trình duyệt nhé');
   }
 
   /* ---------- Build ---------- */
@@ -245,10 +480,10 @@
       return btn;
     };
 
-    frag.appendChild(mk('all', 'Mọi board', items.length, true));
+    frag.appendChild(mk('all', 'Mọi board', items.length, filter.board === 'all'));
     for (const b of boards) {
       const n = items.reduce((acc, it) => acc + (it.board === b.slug ? 1 : 0), 0);
-      frag.appendChild(mk(b.slug, b.name || b.slug, n, false));
+      frag.appendChild(mk(b.slug, b.name || b.slug, n, filter.board === b.slug));
     }
 
     BOARD_GRP.replaceChildren(frag);
@@ -263,7 +498,8 @@
   }
 
   function updateBoardScrollHint() {
-    if (!BOARD_SCRL || BOARD_SCRL.hidden) return;
+    // Bảng lọc đang đóng thì dải chip chưa có bề rộng thật -> tính ra số sai, bỏ qua.
+    if (!BOARD_SCRL || BOARD_SCRL.hidden || F_PANEL.hidden) return;
     const max = BOARD_SCRL.scrollWidth - BOARD_SCRL.clientWidth;
     const x = BOARD_SCRL.scrollLeft;
     BOARD_SCRL.classList.toggle('is-more-left', x > 4);
@@ -335,6 +571,7 @@
 
     GRID.appendChild(frag);
     wireFilters();
+    wireBar();
     applyFilter();
     requestAnimationFrame(layout);
   }
@@ -466,6 +703,10 @@
   }, { passive: true });
 
   /* ---------- Boot ---------- */
+
+  // Đọc trạng thái tìm/lọc/sắp xếp từ địa chỉ TRƯỚC khi dựng lưới, để link chia
+  // sẻ mở ra đúng danh sách đã thấy (chip, ô tìm, thứ tự đều khớp).
+  docUrl();
 
   // data/gallery.js nhúng sẵn manifest -> mở bằng file:// vẫn chạy.
   // Nếu không có (VD chỉ có gallery.json), lùi về fetch() khi chạy qua server.

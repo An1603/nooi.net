@@ -72,7 +72,7 @@ body.is-locked { overflow: hidden; }
 .topbar__inner {
   max-width: 1680px;
   margin: 0 auto;
-  padding: 14px clamp(16px, 3vw, 34px);
+  padding: 10px clamp(16px, 3vw, 34px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -84,11 +84,13 @@ body.is-locked { overflow: hidden; }
 /* Logo NOOI ở góc trên trái. Dùng logo khoá ngang (ký hiệu + chữ + tagline) nên
    đặt theo bề rộng; `object-fit: contain` giữ đúng tỉ lệ nếu file lệch.
    Hai bản: màu cho nền sáng, trắng cho nền tối — bản gốc là bản trắng nên
-   không thể dùng chung một file cho cả hai chế độ. */
+   không thể dùng chung một file cho cả hai chế độ.
+   Cao 32px cho khớp logo trên thanh đầu trang của nooi.net (h-8) — trước đây
+   63px làm thanh đầu trang dày gấp rưỡi các trang khác. */
 .brand__logo {
   flex: none;
-  width: 150px;
-  height: 63px;
+  height: 32px;
+  width: auto;
   object-fit: contain;
   display: block;
 }
@@ -117,21 +119,179 @@ body.is-locked { overflow: hidden; }
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Filter bar ---------- */
+/* ---------- Filter bar (đồng bộ dáng thanh công cụ của /video) ---------- */
 
 .filters {
   border-top: 1px solid var(--line);
 }
 
+/* Lề hai bên và bề rộng tối đa giống hệt lưới bên dưới, để thanh công cụ
+   thẳng hàng với mép ảnh. */
 .filters__inner {
   max-width: 1680px;
   margin: 0 auto;
-  padding: 10px clamp(16px, 3vw, 34px);
+  padding: 10px clamp(16px, 3vw, 34px) 0;
+}
+
+/* Hộp thanh công cụ: một hàng, viền mảnh, bo 14px — cùng ngôn ngữ với
+   khối tìm/lọc/sắp xếp của kho video. Màn hình hẹp thì tự xuống hàng. */
+.bar {
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: nowrap;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--tile);
 }
+
+/* Ô tìm: chiếm chỗ trống còn lại, tối thiểu 220px nên trên điện thoại
+   nó chiếm trọn hàng đầu rồi các nút mới xuống dưới. */
+.bar__search {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  transition: border-color .18s var(--ease), box-shadow .18s var(--ease);
+}
+.bar__search:focus-within {
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 12%, transparent);
+}
+.bar__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+.bar__search input::placeholder { color: var(--muted); }
+/* Nút xoá của Safari/Chrome cắt mất phần chữ -> tự vẽ thì hơn, ở đây bỏ hẳn. */
+.bar__search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.bar__ico { flex: none; color: var(--muted); }
+
+.bar__select {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .18s var(--ease), border-color .18s var(--ease);
+}
+.bar__select:hover { background: var(--bg); border-color: var(--muted); }
+.bar__select select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.bar__btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background .18s var(--ease), border-color .18s var(--ease);
+}
+.bar__btn:hover { background: var(--bg); border-color: var(--muted); }
+.bar__btn.is-on { border-color: var(--text); }
+
+/* Bộ đếm số điều kiện lọc đang bật — cùng dáng với nút "Lọc (số)" bên /video. */
+.bar__n {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--solid-bg);
+  color: var(--solid-fg);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.bar__n[hidden] { display: none; }
+
+.bar__icon {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background .18s var(--ease), border-color .18s var(--ease);
+}
+.bar__icon:hover { background: var(--bg); border-color: var(--muted); }
+
+/* Bảng lọc mở ra dưới thanh công cụ. */
+.bar__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 2px 0;
+}
+/* `.bar__panel` đặt display:flex nên đè mất `display:none` của [hidden]. */
+.bar__panel[hidden] { display: none; }
+
+.bar__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filters__status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 4px 0;
+}
+
+.bar__clear {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.bar__clear:hover { color: var(--text); }
+.bar__clear[hidden] { display: none; }
 
 /* Dải chip board: co lại và cuộn ngang khi có nhiều board, thay vì xuống dòng
    làm thanh lọc cao lên. Fade ở mép để thấy là còn chip phía sau.
@@ -164,17 +324,13 @@ body.is-locked { overflow: hidden; }
   mask-image: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
 }
 
-/* Phần còn lại (hướng + tông màu + bộ đếm).
-   `flex: 0 0 auto` — TUYỆT ĐỐI không cho co: nội dung ở đây (chip hướng, swatch)
-   không có cơ chế cuộn riêng, nếu để nó co lại thì nội dung tràn ra và đẩy cả
-   trang rộng thêm. Chỉ dải board được phép co (vì nó tự cuộn).
-   `margin-left: auto` đẩy cả cụm sang phải khi dải board còn ngắn. */
-.filters__rest {
-  flex: 0 0 auto;
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 14px;
+/* Phần còn lại (khổ ảnh + tông màu) nằm trong bảng lọc nên không cần cơ chế
+   đẩy sang phải nữa; chỉ giữ chip hình cho khổ ảnh. */
+.chip--ico {
+  width: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
 }
 
 .filters__group { display: flex; align-items: center; gap: 6px; flex: none; }
@@ -192,12 +348,30 @@ body.is-locked { overflow: hidden; }
 }
 
 .filters__count {
-  margin-left: auto;
   font-size: 12.5px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* Thông báo ngắn (đã copy liên kết…) — gắn vào <body> nên không bị khối nào cắt. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  z-index: 300;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: var(--solid-bg);
+  color: var(--solid-fg);
+  font-size: 13.5px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 10px);
+  transition: opacity .22s var(--ease), transform .22s var(--ease);
+}
+.toast.is-hien { opacity: 1; transform: translate(-50%, 0); }
 
 .chip {
   height: 30px;

@@ -43,45 +43,91 @@
       </button>
     </div>
   </div>
-  <nav class="filters" id="filters" aria-label="Lọc ảnh">
+  <nav class="filters" id="filters" aria-label="Tìm, lọc và sắp xếp ảnh">
   <div class="filters__inner">
-    <!-- Số board có thể lên tới hàng chục. Nếu để chip xuống dòng thì thanh lọc
-         (dính trên đầu trang) sẽ cao dần theo số board -> cho cuộn ngang thay vì xuống dòng. -->
-    <div class="filters__scroll" id="boardScroll" hidden>
-      <div class="filters__group" id="boardGroup" role="group" aria-label="Board"></div>
+    <!-- Thanh công cụ một hàng, cùng dáng với kho video nooi.net/video:
+         ô tìm · chọn sắp xếp · nút Lọc (kèm bộ đếm) · nút chia sẻ.
+         Màn hình hẹp thì các nút tự xuống hàng, ô tìm chiếm trọn hàng đầu. -->
+    <div class="bar">
+      <label class="bar__search">
+        <svg class="bar__ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+        <input id="q" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Tìm theo tên board… (gõ không dấu cũng ra)" aria-label="Tìm ảnh" />
+      </label>
+
+      <label class="bar__select" title="Sắp xếp">
+        <svg class="bar__ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M6 12h12M9.5 17h5"/></svg>
+        <select id="sort" aria-label="Sắp xếp ảnh">
+          <option value="mac-dinh">Mặc định</option>
+          <option value="ngau-nhien">Ngẫu nhiên</option>
+          <option value="ten-a-z">Tên board A → Z</option>
+          <option value="ngang-truoc">Ảnh ngang trước</option>
+          <option value="doc-truoc">Ảnh dọc trước</option>
+        </select>
+      </label>
+
+      <button type="button" class="bar__btn" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+        Lọc
+        <span class="bar__n" id="filterN" hidden>0</span>
+      </button>
+
+      <button type="button" class="bar__icon" id="shareBtn"
+              title="Chia sẻ danh sách đang xem" aria-label="Chia sẻ danh sách đang xem">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+      </button>
     </div>
 
-    <div class="filters__rest">
-      <div class="filters__sep" id="boardSep" aria-hidden="true" hidden></div>
-
-      <div class="filters__group" role="group" aria-label="Hướng ảnh">
-        <button class="chip is-active" data-orient="all">Mọi hướng</button>
-        <button class="chip" data-orient="doc">Dọc</button>
-        <button class="chip" data-orient="ngang">Ngang</button>
-        <button class="chip" data-orient="vuong">Vuông</button>
+    <!-- Bảng lọc: chỉ mở khi bấm nút Lọc, để thanh trên đầu luôn gọn. -->
+    <div class="bar__panel" id="filterPanel" hidden>
+      <!-- Số board có thể lên tới hàng chục. Nếu để chip xuống dòng thì thanh lọc
+           (dính trên đầu trang) sẽ cao dần theo số board -> cho cuộn ngang thay vì xuống dòng. -->
+      <div class="filters__scroll" id="boardScroll" hidden>
+        <div class="filters__group" id="boardGroup" role="group" aria-label="Board"></div>
       </div>
 
-      <div class="filters__sep" aria-hidden="true"></div>
+      <div class="bar__row">
+        <!-- Khổ ảnh: dùng hình vẽ thay chữ "Dọc"/"Ngang" cho gọn mắt.
+             Tên đầy đủ vẫn còn ở title/aria-label nên đọc màn hình và rê chuột vẫn rõ. -->
+        <div class="filters__group" role="group" aria-label="Khổ ảnh">
+          <button class="chip is-active" data-orient="all" title="Mọi khổ ảnh" aria-label="Mọi khổ ảnh">Mọi khổ</button>
+          <button class="chip chip--ico" data-orient="ngang" title="Ảnh ngang" aria-label="Ảnh ngang">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
+          </button>
+          <button class="chip chip--ico" data-orient="doc" title="Ảnh dọc" aria-label="Ảnh dọc">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/></svg>
+          </button>
+          <button class="chip chip--ico" data-orient="vuong" title="Ảnh vuông" aria-label="Ảnh vuông">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+          </button>
+        </div>
 
-      <div class="filters__group" role="group" aria-label="Tông màu">
-        <button class="swatch is-active" data-color="all" title="Mọi tông màu" aria-label="Mọi tông màu">
-          <span class="swatch__dot swatch__dot--all"></span>
-        </button>
-        <button class="swatch" data-color="am" title="Tông ấm" aria-label="Tông ấm">
-          <span class="swatch__dot" style="background:#c98a4b"></span>
-        </button>
-        <button class="swatch" data-color="la" title="Tông xanh lá" aria-label="Tông xanh lá">
-          <span class="swatch__dot" style="background:#6b8f5e"></span>
-        </button>
-        <button class="swatch" data-color="duong" title="Tông xanh dương" aria-label="Tông xanh dương">
-          <span class="swatch__dot" style="background:#5b7fa6"></span>
-        </button>
-        <button class="swatch" data-color="trungtinh" title="Tông trung tính / tối" aria-label="Tông trung tính hoặc tối">
-          <span class="swatch__dot" style="background:#8c8880"></span>
-        </button>
+        <div class="filters__sep" id="boardSep" aria-hidden="true"></div>
+
+        <div class="filters__group" role="group" aria-label="Tông màu">
+          <button class="swatch is-active" data-color="all" title="Mọi tông màu" aria-label="Mọi tông màu">
+            <span class="swatch__dot swatch__dot--all"></span>
+          </button>
+          <button class="swatch" data-color="am" title="Tông ấm" aria-label="Tông ấm">
+            <span class="swatch__dot" style="background:#c98a4b"></span>
+          </button>
+          <button class="swatch" data-color="la" title="Tông xanh lá" aria-label="Tông xanh lá">
+            <span class="swatch__dot" style="background:#6b8f5e"></span>
+          </button>
+          <button class="swatch" data-color="duong" title="Tông xanh dương" aria-label="Tông xanh dương">
+            <span class="swatch__dot" style="background:#5b7fa6"></span>
+          </button>
+          <button class="swatch" data-color="trungtinh" title="Tông trung tính / tối" aria-label="Tông trung tính hoặc tối">
+            <span class="swatch__dot" style="background:#8c8880"></span>
+          </button>
+        </div>
       </div>
+    </div>
 
+    <!-- Dòng trạng thái luôn hiện, giống "Đang hiện X/Y bài" bên kho video. -->
+    <div class="filters__status">
       <span class="filters__count" id="filterCount"></span>
+      <button type="button" class="bar__clear" id="clearFilters" hidden>Xoá lọc</button>
     </div>
   </div>
   </nav>

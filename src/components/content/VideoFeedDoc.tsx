@@ -344,6 +344,9 @@ export function VideoFeedDoc({
     []
   );
 
+  /** Khung đã tự phát lần đầu — chốt chống tự phát đè lên thao tác của người xem. */
+  const daTuPhat = useRef<Set<number>>(new Set());
+
   /** Gắn thẻ <video> của mình (tệp trực tiếp). */
   const ganVideo = useCallback(
     (i: number) => (el: HTMLVideoElement | null) => {
@@ -360,10 +363,42 @@ export function VideoFeedDoc({
       el.addEventListener("play", () => {
         if (i === iRef.current) setDangPhat(true);
       });
-      if (i === iRef.current) void el.play().catch(() => setDangPhat(false));
+      // Tự phát ĐÚNG MỘT LẦN cho mỗi khung. Không có chốt này thì mỗi lần React gỡ–gắn lại thẻ,
+      // video tự phát lại và đè lên thao tác tạm dừng của người xem.
+      if (i === iRef.current && !daTuPhat.current.has(i)) {
+        daTuPhat.current.add(i);
+        void el.play().catch(() => setDangPhat(false));
+      }
     },
     []
   );
+
+  /**
+   * Hàm gắn thẻ ỔN ĐỊNH cho từng khung.
+   *
+   * Vì sao cần: `ref={ganVideo(i)}` tạo ra HÀM MỚI ở mỗi lần dựng lại, React thấy hàm đổi nên
+   * **gỡ rồi gắn lại** thẻ — kéo theo `el.play()` chạy lại và các trình nghe bị gắn trùng. Hậu quả
+   * nhìn thấy được: bấm chuột để tạm dừng thì video tự phát lại ngay, phím cách cũng "không ăn".
+   * Giữ một hàm cố định cho mỗi khung là hết.
+   */
+  const nhoIframe = useRef(new Map<number, (el: HTMLIFrameElement | null) => void>());
+  const nhoVideo = useRef(new Map<number, (el: HTMLVideoElement | null) => void>());
+  const refIframe = (i: number) => {
+    let f = nhoIframe.current.get(i);
+    if (!f) {
+      f = ganIframe(i);
+      nhoIframe.current.set(i, f);
+    }
+    return f;
+  };
+  const refVideo = (i: number) => {
+    let f = nhoVideo.current.get(i);
+    if (!f) {
+      f = ganVideo(i);
+      nhoVideo.current.set(i, f);
+    }
+    return f;
+  };
 
   const cuon = useCallback((i: number) => {
     const el = mucRef.current[i];
@@ -514,7 +549,7 @@ export function VideoFeedDoc({
               <div className="relative overflow-hidden bg-black" style={kieuKhung(v)}>
                 {!khoa && gan && n.kieu === "iframe" && (
                   <iframe
-                    ref={ganIframe(i)}
+                    ref={refIframe(i)}
                     src={n.src}
                     title={v.title}
                     className="absolute inset-0 h-full w-full border-0"
@@ -524,7 +559,7 @@ export function VideoFeedDoc({
                 )}
                 {!khoa && gan && n.kieu === "video" && (
                   <video
-                    ref={ganVideo(i)}
+                    ref={refVideo(i)}
                     {...(n.srcDuPhong && n.srcDuPhong.length > 1 ? {} : { src: n.src })}
                     className="absolute inset-0 h-full w-full object-contain"
                     poster={v.thumbnail_url || undefined}

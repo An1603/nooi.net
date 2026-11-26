@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, ExternalLink, MapPin, Sprout } from "lucide-react";
 import { DauTrangPhanHe } from "@/components/public/DauTrangPhanHe";
+import { NutMoDangNhap } from "@/components/auth/NutMoDangNhap";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -187,13 +188,14 @@ export default async function DuAnPage() {
                     )}
 
                     <div className="mt-6 flex flex-wrap gap-2">
-                      <Link
-                        href="/login?redirect=/app/projects"
+                      <NutMoDangNhap
+                        quayLai="/app/projects"
+                        lyDo="Đăng nhập để xem hồ sơ dự án đầy đủ, tài liệu và tiến độ cập nhật."
                         className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-[12.5px] font-medium text-primary-foreground"
                       >
                         Xem hồ sơ đầy đủ
                         <ArrowUpRight size={13} />
-                      </Link>
+                      </NutMoDangNhap>
                       <Link
                         href="/#contact"
                         className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-1.5 text-[12.5px]"

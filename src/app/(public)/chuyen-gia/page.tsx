@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Award, BadgeCheck, Star, Users } from "lucide-react";
 import { DauTrangPhanHe } from "@/components/public/DauTrangPhanHe";
+import { NutMoDangNhap } from "@/components/auth/NutMoDangNhap";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -174,12 +175,14 @@ export default async function ChuyenGiaPage() {
                       <Award size={12} /> {m.experience_years} năm
                     </span>
                   ) : null}
-                  <Link
-                    href="/login?redirect=/app/mentors"
+                  <NutMoDangNhap
+                    quayLai="/app/mentors"
+                    lyDo="Đăng nhập để kết nối và đặt lịch với chuyên gia — xong là vào đúng nơi, không phải tìm lại."
                     className="ml-auto text-[12px] font-medium text-foreground/85 hover:text-primary"
+                    ariaLabel={`Kết nối với ${m.hoTen}`}
                   >
                     Kết nối →
-                  </Link>
+                  </NutMoDangNhap>
                 </div>
               </article>
             ))}

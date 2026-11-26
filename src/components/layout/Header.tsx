@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/brand/Logo';
 import { createClient } from '@/lib/supabase/client';
+import { coHopDangNhap, moHopDangNhap } from '@/lib/dang-nhap-nhanh';
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react';
 import { PHAN_HE, MENU_GIOI_THIEU } from '@/lib/phan-he';
 
@@ -58,6 +59,21 @@ export function Header({ initialSession = false }: { initialSession?: boolean })
   }, []);
 
   const displayName = userEmail?.split('@')[0] ?? '';
+
+  /**
+   * Bấm "Đăng nhập": mở hộp đăng nhập nhanh NGAY TẠI TRANG thay vì chuyển sang /login.
+   * Trả về false khi phải điều hướng như cũ (đang ở /login hoặc /signup, hoặc chưa gắn hộp).
+   */
+  const moDangNhapNhanh = useCallback(() => {
+    setMobileOpen(false);
+    const duongDan = typeof window !== 'undefined' ? window.location.pathname : '';
+    if (duongDan.startsWith('/login') || duongDan.startsWith('/signup')) return false;
+    if (!coHopDangNhap()) return false;
+    moHopDangNhap({
+      lyDo: 'Đăng nhập để lưu bài, xem trọn bộ bài giảng và nhận lộ trình riêng.',
+    });
+    return true;
+  }, []);
 
   return (
     <header
@@ -115,6 +131,9 @@ export function Header({ initialSession = false }: { initialSession?: boolean })
             <>
               <Link
                 href="/login"
+                onClick={(e) => {
+                  if (moDangNhapNhanh()) e.preventDefault();
+                }}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Đăng nhập
@@ -196,7 +215,9 @@ export function Header({ initialSession = false }: { initialSession?: boolean })
               <>
                 <Link
                   href="/login"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={(e) => {
+                    if (moDangNhapNhanh()) e.preventDefault();
+                  }}
                   className="text-sm text-muted-foreground hover:text-foreground py-1"
                 >
                   Đăng nhập

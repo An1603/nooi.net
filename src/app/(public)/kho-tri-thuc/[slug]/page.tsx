@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight, Clock, Lock, Sparkles } from "lucide-react";
 import { DauTrangPhanHe } from "@/components/public/DauTrangPhanHe";
+import { NutMoDangNhap } from "@/components/auth/NutMoDangNhap";
 import { BAI_VIET, timBaiViet } from "@/lib/tri-thuc/bai-viet";
 import { nguoiDangXem } from "@/lib/video/nguoi-xem";
 
@@ -125,18 +126,23 @@ export default async function BaiVietPage({ params }: { params: Promise<{ slug: 
                 trình độ của bạn.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <Link
-                  href={`/login?redirect=/kho-tri-thuc/${bai.slug}`}
+                {/* Mở hộp đăng nhập NGAY TẠI ĐÂY — không đá khách sang /login rồi mất bài đang đọc. */}
+                <NutMoDangNhap
+                  quayLai={`/kho-tri-thuc/${bai.slug}`}
+                  tieuDe={bai.tieuDe}
+                  lyDo="Đăng nhập để đọc phần còn lại, lưu bài vào nhật ký và nhận gợi ý thực hành theo trình độ của bạn."
                   className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground"
                 >
                   Đăng nhập để đọc tiếp
-                </Link>
-                <Link
-                  href="/signup"
+                </NutMoDangNhap>
+                <NutMoDangNhap
+                  quayLai={`/kho-tri-thuc/${bai.slug}`}
+                  tieuDe={bai.tieuDe}
+                  lyDo="Tạo tài khoản miễn phí bằng Google hoặc email — xong là đọc tiếp được ngay bài này."
                   className="rounded-lg border border-border px-5 py-2 text-sm"
                 >
                   Tạo tài khoản miễn phí
-                </Link>
+                </NutMoDangNhap>
               </div>
             </div>
           </div>

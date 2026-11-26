@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import type { Metadata } from "next";
 import InstallPrompt from "@/components/InstallPrompt";
 import { RouteLoader } from "@/components/Loading";
+import { HopDangNhapNhanh } from "@/components/auth/HopDangNhapNhanh";
 
 export const dynamic = 'force-dynamic';
 
@@ -62,6 +63,9 @@ export default async function PublicLayout({
       <RouteLoader />
       <Header initialSession={initialSession} />
       {children}
+      {/* Hộp đăng nhập nhanh — MỘT bản duy nhất cho mọi trang công khai.
+          Tự hiện sau 20 giây với khách chưa đăng nhập; mọi nội dung bị khoá gọi cùng hộp này. */}
+      <HopDangNhapNhanh initialSession={initialSession} />
       <InstallPrompt />
     </>
   );

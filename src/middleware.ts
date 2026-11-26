@@ -368,10 +368,15 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!user) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    // Khách chưa đăng nhập chạm nội dung riêng tư → KHÔNG đẩy sang trang /login riêng nữa.
+    // Đưa về trang chủ kèm `?dang-nhap=1&next=…`: trang chủ mở đúng hộp đăng nhập nhanh
+    // (góc trên phải), đăng nhập xong đi thẳng tới địa chỉ vừa chọn. Nhờ vậy toàn site chỉ có
+    // MỘT kiểu cổng đăng nhập, và khách vẫn thấy thương hiệu thay vì một trang trắng.
+    const veNha = new URL("/", request.url);
+    veNha.searchParams.set("dang-nhap", "1");
+    veNha.searchParams.set("next", pathname + request.nextUrl.search);
     // Prevent caching of protected pages
-    const resp = withCookies(NextResponse.redirect(loginUrl), supabaseResponse);
+    const resp = withCookies(NextResponse.redirect(veNha), supabaseResponse);
     resp.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     resp.headers.set("Pragma", "no-cache");
     resp.headers.set("Expires", "0");

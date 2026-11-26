@@ -11,7 +11,7 @@ import { PHAN_HE } from "@/lib/phan-he";
  */
 export function SauCuaVao() {
   return (
-    <section id="phan-he" className="relative px-5 pb-20 pt-4">
+    <section id="phan-he" className="relative px-5 pb-2 pt-4">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>

@@ -107,18 +107,12 @@ export default async function BaiVietPage({ params }: { params: Promise<{ slug: 
           </div>
         ) : (
           <div className="relative mt-5">
-            {/* Mờ dần phần đầu của đoạn kế tiếp để người đọc biết “còn nữa”, nhưng KHÔNG
-                chèn nội dung thật — chữ mờ này là trang trí, không phải văn bản. */}
-            <div aria-hidden className="space-y-3 opacity-25 select-none">
-              {/* Vạch mờ, KHÔNG phải chữ thật: che bằng CSS mà chèn nguyên văn là gửi hết
-                  nội dung cho trình duyệt — ở đây chỉ vẽ vạch trang trí. */}
-              {[100, 96, 99, 88, 100, 72].map((w, i) => (
-                <div
-                  key={i}
-                  className="h-[11px] rounded bg-foreground/25"
-                  style={{ width: `${w}%` }}
-                />
-              ))}
+            {/* Ngăn cách mảnh thay cho vạch xám giả chữ: vạch xám trông như trang đang tải
+                và gây hiểu nhầm; ở đây chỉ báo “hết phần mở” trước khi tới cổng đăng nhập. */}
+            <div aria-hidden className="mb-2 flex items-center justify-center gap-2 text-muted-foreground/40">
+              <span className="h-px w-10 bg-border" />
+              <span className="text-[16px] leading-none">· · ·</span>
+              <span className="h-px w-10 bg-border" />
             </div>
 
             <div className="mt-2 rounded-xl border border-primary/30 bg-primary/[0.06] p-6 text-center">

@@ -813,3 +813,12 @@ body.is-locked { overflow: hidden; }
   * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   .tile { opacity: 1; transform: none; }
 }
+
+/* ── Thanh cuộn & bôi đen — chép nguyên của nooi.net (globals.css) ──
+   Website đặt thanh cuộn 6px; trình duyệt mặc định 15px nên bố cục bị đẩy lệch 9px
+   và thanh cuộn trông khác hẳn. Đặt giống thì mọi thứ khớp với website. */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .15); }
+::selection { background: rgba(200, 148, 62, .3); color: #ffffff; }

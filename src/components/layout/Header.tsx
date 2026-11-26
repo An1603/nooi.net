@@ -7,13 +7,16 @@ import { Logo } from '@/components/brand/Logo';
 import { createClient } from '@/lib/supabase/client';
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react';
 
+// Đường dẫn phải TUYỆT ĐỐI (có dấu / ở đầu): menu này hiện trên mọi trang, nếu để
+// '#features' thì từ /video hay /gallery trình duyệt hiểu thành /video#features —
+// không có phần tử nào tên đó nên bấm vào không nhảy tới đâu cả.
 const NAV_ITEMS = [
-  { label: 'Tính năng', href: '#features' },
-  { label: 'Công nghệ', href: '#tech' },
+  { label: 'Tính năng', href: '/#features' },
+  { label: 'Công nghệ', href: '/#tech' },
   { label: 'Thư viện ảnh', href: '/gallery' },
   { label: 'Kho video', href: '/video' },
-  { label: 'Giới thiệu', href: '#about' },
-  { label: 'Liên hệ', href: '#contact' },
+  { label: 'Giới thiệu', href: '/#about' },
+  { label: 'Liên hệ', href: '/#contact' },
 ];
 
 export function Header({ initialSession = false }: { initialSession?: boolean }) {

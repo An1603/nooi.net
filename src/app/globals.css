@@ -168,7 +168,12 @@
   html {
     font-size: 1.0625rem;  /* 17px — larger base for readability */
     scroll-behavior: smooth;
+    /* Đầu trang đứng yên (fixed, cao 62px) nên khi nhảy tới mã neo phải chừa chỗ,
+       không thì tiêu đề phần đó bị đầu trang che mất. Đặt cả scroll-padding trên
+       html lẫn scroll-margin trên từng phần vì mỗi trình duyệt dùng một cách. */
+    scroll-padding-top: 5rem;
   }
+  section[id], footer[id] { scroll-margin-top: 5rem; }
   body {
     @apply bg-background text-foreground;
     font-weight: 500;

@@ -643,8 +643,10 @@ const HOW_IT_WORKS = [
 function HowSection() {
   const { ref, visible } = useScrollReveal();
 
+  // Mã neo phải là "tech" — menu "Công nghệ" trỏ tới /#tech (trước đây đặt là "how"
+  // nên bấm vào menu không tìm thấy phần nào để nhảy tới).
   return (
-    <section id="how" className="relative py-24 px-5 overflow-hidden">
+    <section id="tech" className="relative py-24 px-5 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent" />
 
       <div className="max-w-6xl mx-auto relative z-10" ref={ref}>

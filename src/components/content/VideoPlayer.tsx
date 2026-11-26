@@ -1,13 +1,9 @@
 import { nguonPhat } from "@/lib/video/kenh-phat";
+import { DauChimNooi } from "@/components/content/DauChimNooi";
 
 interface VideoPlayerProps {
   video: { title: string; url?: string | null; kenh_phat?: string | null };
   className?: string;
-  /**
-   * Lớp bảo mật 4 (0 đồng): in mờ thông tin người xem lên khung hình để truy vết khi bị rò rỉ.
-   * Truyền email hoặc mã người xem — KHÔNG truyền mật khẩu hay mã bí mật.
-   */
-  dauChim?: string | null;
   /**
    * Dạng khung hình của video: `doc` (9:16) thì khung dựng đứng cho vừa hình, còn lại 16:9.
    * Không truyền thì giữ nguyên 16:9 như cũ.
@@ -20,7 +16,7 @@ interface VideoPlayerProps {
  * YouTube -> iframe youtube-nocookie; Bunny Stream -> iframe nhúng của thư viện;
  * tệp .mp4/.webm -> thẻ video gốc của trình duyệt.
  */
-export function VideoPlayer({ video, className = "", dauChim, khungHinh }: VideoPlayerProps) {
+export function VideoPlayer({ video, className = "", khungHinh }: VideoPlayerProps) {
   const nguon = nguonPhat(video);
   // Video dọc: khung dựng đứng để hình không bị lọt thỏm giữa hai vệt đen
   const khung = khungHinh === "doc" ? "aspect-[9/16] max-w-[420px] mx-auto" : "aspect-video";
@@ -66,13 +62,8 @@ export function VideoPlayer({ video, className = "", dauChim, khungHinh }: Video
         />
       )}
 
-      {dauChim && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <span className="dau-chim-troi absolute text-[11px] font-medium text-white/25 select-none whitespace-nowrap">
-            {dauChim}
-          </span>
-        </div>
-      )}
+      {/* Dấu chìm NOOI (trước đây in email người xem — đổi theo yêu cầu 26/11/2026) */}
+      <DauChimNooi />
       </div>
 
       {/* Đường lui: nếu mạng chặn miền CDN thì vẫn còn trình phát nhúng của Bunny */}

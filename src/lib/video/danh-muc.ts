@@ -47,3 +47,18 @@ export function tenDanhMuc(slug?: string | null): string {
 export function duongDanDanhMuc(slug: string): string {
   return `/app/danh-muc/${encodeURIComponent(slug)}`;
 }
+
+/**
+ * Video có nằm trong một BÀI HỌC không — quyết định có hiện nút “Mở bài” trong luồng xem.
+ *
+ * Ngài An chốt 26/11/2026: *“Nút ‘Mở bài’ chỉ xuất hiện khi video có trong 1 bài học”* — video tư
+ * liệu (quy hoạch, tin tức…) mà vẫn có nút đó chỉ tổ rối mắt.
+ *
+ * Hiện nhận diện theo danh mục **“Bài giảng”** (`bai-giang`) vì kho video CHƯA có cột nối tới bảng
+ * `lessons`. Khi nào có cột nối bài học thật thì chỉ cần sửa DUY NHẤT hàm này.
+ */
+export const DANH_MUC_BAI_HOC = "bai-giang";
+
+export function thuocBaiHoc(danhMuc?: string | null): boolean {
+  return danhMuc === DANH_MUC_BAI_HOC;
+}

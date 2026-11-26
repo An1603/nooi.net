@@ -27,7 +27,7 @@ export default async function DanhMucXemPage({
 
   const { data, error } = await supabase
     .from("videos")
-    .select("id, title, description, url, kenh_phat, khung_hinh, duration, thumbnail_url")
+    .select("id, title, description, url, kenh_phat, khung_hinh, duration, thumbnail_url, danh_muc")
     .eq("danh_muc", slug)
     .order("thu_tu", { ascending: false })
     .order("created_at", { ascending: false })
@@ -70,7 +70,6 @@ export default async function DanhMucXemPage({
   return (
     <VideoFeedDoc
       videos={videos}
-      nguoiXem={user?.email ?? null}
       tieuDe={ten}
       duongDanDong="/app/danh-muc"
       duongDanDo={duongDanDanhMuc(slug)}

@@ -48,6 +48,8 @@ export interface VideoDoc extends VideoDePhat {
   title: string;
   description?: string | null;
   khung_hinh?: string | null;
+  /** Danh mục (mã slug) — dùng để biết video có thuộc khối bài học hay không (nút “Mở bài”). */
+  danh_muc?: string | null;
   duration?: number | null;
   /** Ảnh bìa — hiện ngay khi video còn đang tải (đỡ khung đen, "bấm là có hình"). */
   thumbnail_url?: string | null;

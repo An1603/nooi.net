@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronDown, ChevronUp, Info, Lock, Play, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronDown, ChevronUp, Info, Lock, Play, Volume2, VolumeX, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { thuocBaiHoc } from "@/lib/video/danh-muc";
 import {
   KENH_PHAT_LABELS,
   KHUNG_HINH_LABELS,
@@ -13,13 +14,12 @@ import {
   type VideoDoc,
 } from "@/lib/video/kenh-phat";
 import { docTimeUpdate, taoPlayer, type PlayerGiaoDien } from "@/lib/video/playerjs";
+import { DauChimNooi } from "@/components/content/DauChimNooi";
 import { HopDangNhap } from "@/components/video/HopDangNhap";
 import { xetQuyenXem, type NguoiXem, type VideoCongKhai } from "@/lib/video/quyen-xem";
 
 interface Props {
   videos: VideoDoc[];
-  /** Email/mã người xem để in dấu chìm — rỗng thì không in */
-  nguoiXem?: string | null;
   /** Tên luồng / danh mục hiện ở góc trên (vd "Măng Đen") */
   tieuDe?: string;
   /** Nơi quay về khi bấm X */
@@ -61,12 +61,13 @@ interface Props {
  *   3. Chỉ gắn trình phát cho video đang xem và 2 video kề bên -> không tải cả luồng, tiết kiệm 4G.
  *   4. Phủ một lớp nhận thao tác chạm lên trên iframe: nếu để ngón tay chạm vào chính iframe thì
  *      trang cha KHÔNG nhận được thao tác vuốt. Lớp phủ lo việc vuốt, còn phát/dừng do mình điều khiển.
- *   5. Tự phát luôn ở chế độ TẮT TIẾNG (mọi trình duyệt đều chặn tự phát có tiếng).
- *   6. Thời gian xem từng video gửi về /api/track để đo mức độ xem thật.
+ *   5. Ưu tiên tự phát CÓ TIẾNG: thử trước, bị trình duyệt chặn thì tạm phát tắt tiếng rồi mở tiếng
+ *      ngay ở cú tương tác đầu tiên (chạm / bấm phím / lăn chuột / cuộn).
+ *   6. Dấu chìm NOOI (chữ trắng + ©) trôi chậm trên khung hình — xem `DauChimNooi`.
+ *   7. Thời gian xem từng video gửi về /api/track để đo mức độ xem thật.
  */
 export function VideoFeedDoc({
   videos,
-  nguoiXem,
   tieuDe,
   duongDanDong = "/app/videos",
   duongDanDo = "/app/short",
@@ -694,11 +695,19 @@ export function VideoFeedDoc({
                   />
                 )}
 
-                {/* Dấu chìm chống rò rỉ */}
-                {nguoiXem && !khoa && (
-                  <span className="dau-chim-troi pointer-events-none absolute z-20 rounded bg-black/25 px-2 py-1 text-[11px] font-medium tracking-wide text-white/70">
-                    {nguoiXem}
-                  </span>
+                {/* Dấu chìm NOOI (trước đây in email người xem — đổi theo yêu cầu 26/11/2026) */}
+                <DauChimNooi />
+
+                {/* Nút “Mở bài” — CHỈ hiện khi video thuộc một bài học, và đặt ở góc phải-trên
+                    (cạnh nút đóng). Video tư liệu không có nút này cho đỡ rối mắt. */}
+                {!khoa && thuocBaiHoc(v.danh_muc) && (
+                  <Link
+                    href={`${tienToBai}/${v.id}`}
+                    className="absolute right-14 top-3 z-30 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/50 px-3 py-2 text-[11px] font-medium backdrop-blur hover:bg-black/70"
+                  >
+                    <BookOpen size={13} />
+                    Mở bài
+                  </Link>
                 )}
 
                 {/* Chưa phát thì hiện nút ▶ TO ở giữa — LUÔN bấm được (kể cả khi nền tảng không
@@ -778,9 +787,9 @@ export function VideoFeedDoc({
                           <span>chạm để xem chi tiết</span>
                         </span>
                       </button>
-                      {/* Video khoá: lối mời đăng nhập. Video mở: lối mở thẳng bài — luôn có, để
-                          một cú bấm không bao giờ "vô ích" */}
-                      {khoa ? (
+                      {/* Video khoá: lối mời đăng nhập — luôn có. Nút “Mở bài” đã chuyển lên
+                          góc phải-trên và chỉ hiện khi video thuộc một bài học (xem dưới). */}
+                      {khoa && (
                         <button
                           type="button"
                           onClick={() => setVideoXinQuyen({ v, moTa: q?.moTa ?? "Video này dành cho thành viên NOOI." })}
@@ -788,13 +797,6 @@ export function VideoFeedDoc({
                         >
                           Đăng nhập
                         </button>
-                      ) : (
-                        <Link
-                          href={`${tienToBai}/${v.id}`}
-                          className="shrink-0 rounded-lg border border-white/25 bg-black/50 px-3 py-2 text-[11px] font-medium backdrop-blur hover:bg-black/70"
-                        >
-                          Mở bài
-                        </Link>
                       )}
                     </div>
                   ) : (

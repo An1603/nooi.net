@@ -20,7 +20,7 @@ export default async function ShortPage() {
 
   const { data, error } = await supabase
     .from("videos")
-    .select("id, title, description, url, kenh_phat, khung_hinh, duration, thumbnail_url")
+    .select("id, title, description, url, kenh_phat, khung_hinh, duration, thumbnail_url, danh_muc")
     .eq("khung_hinh", "doc")
     .order("thu_tu", { ascending: false })
     .order("created_at", { ascending: false })
@@ -75,5 +75,5 @@ export default async function ShortPage() {
     );
   }
 
-  return <VideoFeedDoc videos={videos} nguoiXem={user?.email ?? null} />;
+  return <VideoFeedDoc videos={videos} />;
 }

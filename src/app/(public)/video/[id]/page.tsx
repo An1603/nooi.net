@@ -75,7 +75,6 @@ export default async function XemVideoCongKhaiPage({ params }: { params: Promise
   return (
     <VideoFeedDoc
       videos={videos}
-      nguoiXem={nguoi.email || null}
       tieuDe="Kho video NOOI"
       duongDanDong="/video"
       duongDanDo="/video"

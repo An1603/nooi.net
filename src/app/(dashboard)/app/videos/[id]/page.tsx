@@ -70,10 +70,9 @@ export default async function VideoDetailPage({
       </Link>
 
       {/* Trình phát dùng chung: chọn cửa phát theo trường kenh_phat.
-          Dấu chìm in mờ email người xem để truy vết khi bị rò rỉ (lớp bảo mật 4). */}
+          Dấu chìm NOOI được trình phát tự vẽ (trước đây in email người xem). */}
       <VideoPlayer
         video={{ title: video.title, url: video.url, kenh_phat: video.kenh_phat }}
-        dauChim={user?.email ?? null}
         className="mb-6"
       />
 

@@ -2,36 +2,30 @@
    NOOI Work — Thư viện ảnh
    ============================================================ */
 
+/* Bảng màu lấy ĐÚNG từ nooi.net (src/app/globals.css) để thư viện ảnh trông như
+   một phần của cùng website, không phải trang lạ:
+     --background #1a0a2e · --foreground #f5f0f8 · --muted-foreground #c0b8cc
+     --card #22163a · --primary #C8943E · --border rgba(255,255,255,.08)
+   Vì website chỉ có một tông nền, thư viện cũng bỏ chế độ sáng/tối cho khớp. */
 :root {
-  --bg:        #fafaf9;
-  --bg-elev:   rgba(250, 250, 249, 0.82);
-  --text:      #1c1917;
-  --text-soft: #57534e;
-  --muted:     #a8a29e;
-  --line:      rgba(28, 25, 23, 0.10);
-  --tile:      #f0efed;
-  --solid-bg:  #1c1917;
-  --solid-fg:  #fafaf9;
-  --shadow-sm: 0 1px 2px rgba(28,25,23,.06), 0 2px 8px rgba(28,25,23,.05);
-  --shadow-lg: 0 24px 70px rgba(28,25,23,.28);
+  --bg:        #1a0a2e;
+  --bg-elev:   rgba(26, 10, 46, 0.80);
+  --text:      #f5f0f8;
+  --text-soft: #c0b8cc;
+  --muted:     #9a91ae;
+  --line:      rgba(255, 255, 255, 0.08);
+  --line-hover:rgba(255, 255, 255, 0.20);
+  --tile:      #22163a;
+  --mouse:     #2a1a3e;
+  --solid-bg:  #f5f0f8;
+  --solid-fg:  #1a0a2e;
+  --primary:   #C8943E;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.45), 0 2px 10px rgba(0,0,0,.30);
+  --shadow-lg: 0 24px 70px rgba(0,0,0,.65);
   --radius:    14px;
   --gap:       16px;
-  --brand:     #6c2c9c;
+  --brand:     #a78bfa;
   --ease:      cubic-bezier(.22,.61,.36,1);
-}
-
-[data-theme="dark"] {
-  --bg:        #0c0a09;
-  --bg-elev:   rgba(12, 10, 9, 0.80);
-  --text:      #f5f5f4;
-  --text-soft: #d6d3d1;
-  --muted:     #78716c;
-  --line:      rgba(245, 245, 244, 0.12);
-  --tile:      #1c1917;
-  --solid-bg:  #fafaf9;
-  --solid-fg:  #1c1917;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.5), 0 2px 10px rgba(0,0,0,.35);
-  --shadow-lg: 0 24px 70px rgba(0,0,0,.7);
 }
 
 * { box-sizing: border-box; }
@@ -52,27 +46,34 @@ body {
 
 body.is-locked { overflow: hidden; }
 
-/* ---------- Topbar ---------- */
+/* ---------- Đầu trang (chuẩn nooi.net) ----------
+
+   Số liệu lấy từ chính thanh đầu trang đang chạy ở nooi.net/video: cao 62px,
+   bề rộng tối đa 1360px, đệm 10,6/21,25px, logo cao 34px, menu 6 mục cách nhau
+   34px chữ 17px đậm 500, nút "Bắt đầu ngay" nền vàng #C8943E cao 40px bo 8,5px.
+   Dùng lại đúng các con số đó để hai trang đứng cạnh nhau không lệch. */
 
 .topbar {
   position: sticky;
   top: 0;
   z-index: 50;
+  /* Trong suốt khi ở đầu trang, chỉ hiện nền mờ khi đã cuộn — y như trang chủ. */
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background .25s var(--ease), border-color .25s var(--ease);
+}
+
+.topbar.is-stuck {
   background: var(--bg-elev);
   backdrop-filter: saturate(180%) blur(18px);
   -webkit-backdrop-filter: saturate(180%) blur(18px);
-  border-bottom: 1px solid transparent;
-  transition: border-color .25s var(--ease), box-shadow .25s var(--ease);
-}
-.topbar.is-stuck {
   border-bottom-color: var(--line);
-  box-shadow: 0 1px 20px rgba(28,25,23,.05);
 }
 
 .topbar__inner {
-  max-width: 1680px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 10px clamp(16px, 3vw, 34px);
+  padding: 10.6px 21.25px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -81,22 +82,13 @@ body.is-locked { overflow: hidden; }
 
 .brand { display: flex; align-items: center; min-width: 0; color: inherit; text-decoration: none; }
 
-/* Logo NOOI ở góc trên trái. Dùng logo khoá ngang (ký hiệu + chữ + tagline) nên
-   đặt theo bề rộng; `object-fit: contain` giữ đúng tỉ lệ nếu file lệch.
-   Hai bản: màu cho nền sáng, trắng cho nền tối — bản gốc là bản trắng nên
-   không thể dùng chung một file cho cả hai chế độ.
-   Cao 32px cho khớp logo trên thanh đầu trang của nooi.net (h-8) — trước đây
-   63px làm thanh đầu trang dày gấp rưỡi các trang khác. */
+/* Logo dùng chung tệp với website; cao 34px cho bằng thanh đầu trang nooi.net. */
 .brand__logo {
   flex: none;
-  height: 32px;
+  height: 34px;
   width: auto;
-  object-fit: contain;
   display: block;
 }
-.brand__logo--ondark { display: none; }
-[data-theme="dark"] .brand__logo--onlight { display: none; }
-[data-theme="dark"] .brand__logo--ondark { display: block; }
 
 /* Chữ "NOOI" chỉ để máy đọc (tiêu đề cấp 1 của trang); phần nhìn đã là logo. */
 .sr-only {
@@ -109,15 +101,90 @@ body.is-locked { overflow: hidden; }
   border: 0;
 }
 
-.topbar__actions { display: flex; align-items: center; gap: 12px; flex: none; }
-
-/* Thống kê thư viện — góc trên phải, cạnh nút đổi chế độ sáng/tối. */
-.topbar__stat {
-  font-size: 12.5px;
-  color: var(--muted);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  margin-left: auto;
 }
+.menu a {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-soft);
+  text-decoration: none;
+  transition: color .18s var(--ease);
+}
+.menu a:hover { color: var(--text); }
+/* Trang đang mở — sáng bằng chữ chính, để biết mình đang ở đâu. */
+.menu a.is-here { color: var(--text); }
+
+.topbar__actions { display: flex; align-items: center; gap: 17px; flex: none; }
+
+.vao {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-soft);
+  text-decoration: none;
+  transition: color .18s var(--ease);
+}
+.vao:hover { color: var(--text); }
+
+.bat-dau {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8.5px 21.25px;   /* py-2 px-5 ở cỡ chữ gốc 17px -> cao đúng 40px */
+  line-height: 23px;
+  border-radius: 8.5px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: 0 8px 22px rgba(200, 148, 62, 0.22);
+  transition: filter .18s var(--ease), box-shadow .18s var(--ease);
+}
+.bat-dau:hover { filter: brightness(1.08); box-shadow: 0 10px 26px rgba(200, 148, 62, 0.30); }
+
+/* Nút mở menu trên điện thoại — chỉ hiện dưới 769px (xem phần Responsive). */
+.nut-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px; height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+.nut-menu .ico-dong { display: none; }
+.nut-menu[aria-expanded="true"] .ico-mo { display: none; }
+.nut-menu[aria-expanded="true"] .ico-dong { display: block; }
+
+.menu-mobile[hidden] { display: none; }
+
+.menu-mobile {
+  border-top: 1px solid var(--line);
+  background: var(--bg-elev);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  padding: 2px 21.25px 16px;
+}
+.menu-mobile nav {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0;
+}
+.menu-mobile nav a {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-soft);
+  text-decoration: none;
+}
+.menu-mobile nav a.is-here { color: var(--text); }
+.menu-mobile__nut { display: flex; align-items: center; gap: 17px; }
 
 /* ---------- Filter bar (đồng bộ dáng thanh công cụ của /video) ---------- */
 
@@ -486,13 +553,15 @@ body.is-locked { overflow: hidden; }
   top: 0; left: 0;
   margin: 0;
   border-radius: var(--radius);
+  /* Viền mảnh cho thẻ rõ nét trên nền tối (cùng cách xử lý như lưới video). */
+  border: 1px solid var(--line);
   overflow: hidden;
   background: var(--tile);
   cursor: zoom-in;
   opacity: 0;
   transform: translateY(14px);
   transition: opacity .55s var(--ease), transform .55s var(--ease),
-              box-shadow .3s var(--ease);
+              box-shadow .3s var(--ease), border-color .3s var(--ease);
   will-change: transform, opacity;
 }
 
@@ -508,7 +577,7 @@ body.is-locked { overflow: hidden; }
 }
 .tile img.is-loaded { opacity: 1; }
 
-.tile:hover { box-shadow: var(--shadow-sm); }
+.tile:hover { border-color: var(--line-hover); box-shadow: var(--shadow-sm); }
 .tile:hover img { transform: scale(1.045); }
 
 /* Vòng focus rõ ràng khi điều hướng bằng bàn phím.
@@ -608,11 +677,10 @@ body.is-locked { overflow: hidden; }
 .lb__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(12, 10, 9, .86);
+  background: rgba(0, 0, 0, .92);
   backdrop-filter: blur(22px) saturate(140%);
   -webkit-backdrop-filter: blur(22px) saturate(140%);
 }
-[data-theme="dark"] .lb__backdrop { background: rgba(0,0,0,.92); }
 
 .lb__stage {
   position: relative;
@@ -696,42 +764,20 @@ body.is-locked { overflow: hidden; }
 
 /* ---------- Responsive ---------- */
 
-@media (max-width: 720px) {
-  .brand__logo { width: 120px; height: 50px; }
-  .topbar__stat { font-size: 11.5px; }
+@media (max-width: 768px) {
+  /* Đầu trang: menu ngang nhường chỗ cho nút mở menu (giống nooi.net trên điện thoại). */
+  .topbar__inner { padding: 8px 16px; }
+  .brand__logo { height: 28px; }
+  .menu { display: none; }
+  .nut-menu { display: inline-flex; }
+  .menu-mobile { padding: 0 16px 14px; }
 
-  /* Trên mobile: thanh lọc thành 2 hàng — hàng 1 là board, hàng 2 là hướng +
-     tông màu + bộ đếm. Chỉ hàng nào tràn thì hàng đó cuộn, không lồng hai vùng
-     cuộn ngang vào nhau. */
-  .filters__inner {
-    flex-wrap: wrap;
-    padding: 8px 16px;
-    gap: 8px 10px;
-  }
+  /* Thanh công cụ: ô tìm chiếm trọn hàng đầu, các nút xuống hàng dưới. */
+  .filters__inner { padding: 8px 16px 0; }
   .filters__scroll { flex: 1 0 100%; }
-  .filters__rest {
-    flex: 1 0 100%;
-    gap: 10px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .filters__rest::-webkit-scrollbar { display: none; }
   .filters__sep { flex: none; }
-
-  /* Hàng 2 có thể tràn nhẹ -> ghim bộ đếm vào mép phải để lúc nào cũng thấy
-     số ảnh đang hiện. */
-  .filters__count {
-    position: sticky;
-    right: 0;
-    margin-left: auto;
-    padding-left: 12px;
-    flex: none;
-    background: var(--bg-elev);
-    backdrop-filter: saturate(180%) blur(18px);
-    -webkit-backdrop-filter: saturate(180%) blur(18px);
-  }
   .chip { height: 28px; padding: 0 11px; font-size: 12.5px; }
+  .chip--ico { width: 28px; padding: 0; }
   .swatch { width: 28px; height: 28px; }
   .swatch__dot { width: 14px; height: 14px; }
 

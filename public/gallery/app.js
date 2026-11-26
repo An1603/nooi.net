@@ -6,7 +6,6 @@
 
   const GRID       = document.getElementById('grid');
   const EMPTY      = document.getElementById('empty');
-  const BRAND_META = document.getElementById('brandMeta');
   const BRAND_TTL  = document.getElementById('brandTitle');
   const FOOTER     = document.getElementById('footerMeta');
   const TOPBAR     = document.getElementById('topbar');
@@ -47,18 +46,30 @@
   let sort = 'mac-dinh';  // thứ tự đang sắp
   let seed = 0;           // hạt giống cho kiểu "Ngẫu nhiên" (nằm trong link chia sẻ)
 
-  /* ---------- Theme ---------- */
+  /* ---------- Menu đầu trang (chỉ dùng trên điện thoại) ---------- */
 
-  const THEME_KEY = 'nooi-theme';
-  const saved = localStorage.getItem(THEME_KEY);
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  document.documentElement.dataset.theme = saved || (prefersDark ? 'dark' : 'light');
+  const MENU_TOGGLE = document.getElementById('menuToggle');
+  const MENU_MOBILE = document.getElementById('menuMobile');
+  const MENU_LON = window.matchMedia('(min-width: 769px)');
 
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    localStorage.setItem(THEME_KEY, next);
+  function dongMenu() {
+    MENU_MOBILE.hidden = true;
+    MENU_TOGGLE.setAttribute('aria-expanded', 'false');
+    MENU_TOGGLE.setAttribute('aria-label', 'Mở menu');
+  }
+
+  MENU_TOGGLE.addEventListener('click', () => {
+    const mo = MENU_MOBILE.hidden;
+    MENU_MOBILE.hidden = !mo;
+    MENU_TOGGLE.setAttribute('aria-expanded', String(mo));
+    MENU_TOGGLE.setAttribute('aria-label', mo ? 'Đóng menu' : 'Mở menu');
   });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !MENU_MOBILE.hidden) dongMenu();
+  });
+  // Xoay ngang / phóng to lên màn hình lớn thì menu ngang đã hiện -> đóng menu xổ.
+  MENU_LON.addEventListener('change', (e) => { if (e.matches) dongMenu(); });
 
   /* ---------- Helpers ---------- */
 
@@ -513,11 +524,8 @@
     const boards = (data.boards || []).filter((b) => b && !b.error);
 
     BRAND_TTL.textContent = boards.length === 1 ? boards[0].name || 'NOOI' : 'NOOI';
-    BRAND_META.textContent =
-      boards.length > 1
-        ? `${fmt(items.length)} ảnh  ·  ${fmt(boards.length)} board`
-        : `${fmt(items.length)} ảnh  ·  NOOI`;
-    // Chân trang đã có logo ghi "NOOI" nên ở đây chỉ cần số ảnh + lần cập nhật
+    // Không còn khối "1.738 ảnh · 16 board" trên đầu trang: số ảnh đang hiện nằm ở
+    // dòng dưới thanh công cụ, còn tổng số + lần cập nhật nằm ở chân trang.
     FOOTER.textContent = `${fmt(items.length)} ảnh${
       data.scrapedAt ? '  ·  cập nhật ' + fmtDate(data.scrapedAt) : ''
     }`;
@@ -722,7 +730,7 @@
     .then(build)
     .catch((err) => {
       console.error(err);
-      BRAND_META.textContent = 'Không đọc được dữ liệu thư viện';
+      EMPTY_MSG.textContent = 'Không đọc được dữ liệu thư viện.';
       EMPTY.hidden = false;
     });
 })();

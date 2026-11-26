@@ -99,7 +99,7 @@ export default async function XemVideoCongKhaiPage({ params }: { params: Promise
 
         <VideoPlayer
           video={{ title: video.title, url: video.url, kenh_phat: video.kenh_phat }}
-          className={video.khung_hinh === "doc" ? "mx-auto max-w-[420px]" : ""}
+          khungHinh={video.khung_hinh}
           // Lớp bảo mật in mờ: chỉ in khi biết người xem là ai (đã đăng nhập)
           dauChim={nguoi.email || undefined}
         />

@@ -8,6 +8,11 @@ interface VideoPlayerProps {
    * Truyền email hoặc mã người xem — KHÔNG truyền mật khẩu hay mã bí mật.
    */
   dauChim?: string | null;
+  /**
+   * Dạng khung hình của video: `doc` (9:16) thì khung dựng đứng cho vừa hình, còn lại 16:9.
+   * Không truyền thì giữ nguyên 16:9 như cũ.
+   */
+  khungHinh?: string | null;
 }
 
 /**
@@ -15,8 +20,10 @@ interface VideoPlayerProps {
  * YouTube -> iframe youtube-nocookie; Bunny Stream -> iframe nhúng của thư viện;
  * tệp .mp4/.webm -> thẻ video gốc của trình duyệt.
  */
-export function VideoPlayer({ video, className = "", dauChim }: VideoPlayerProps) {
+export function VideoPlayer({ video, className = "", dauChim, khungHinh }: VideoPlayerProps) {
   const nguon = nguonPhat(video);
+  // Video dọc: khung dựng đứng để hình không bị lọt thỏm giữa hai vệt đen
+  const khung = khungHinh === "doc" ? "aspect-[9/16] max-w-[420px] mx-auto" : "aspect-video";
 
   if (nguon.kieu === "khong") {
     return (
@@ -36,7 +43,7 @@ export function VideoPlayer({ video, className = "", dauChim }: VideoPlayerProps
   return (
     <>
       <div
-        className={`relative aspect-video rounded-xl overflow-hidden border border-border bg-black ${className}`}
+        className={`relative ${khung} rounded-xl overflow-hidden border border-border bg-black ${className}`}
       >
       {nguon.kieu === "truc-tiep" ? (
         <video

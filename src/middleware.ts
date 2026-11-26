@@ -22,6 +22,10 @@ const publicRoutes = [
   "/api/sso",
   "/api/ho-so/anh",
   "/api/track",
+  // Danh sách MỨC CHẤT LƯỢNG của một video Bunny (cho nút cài đặt trong luồng xem công khai).
+  // Mở công khai an toàn vì route chỉ trả TÊN mức (1080p, 720p…) của bài đã xuất bản — không trả
+  // địa chỉ tệp, không trả khoá. Khách xem video công khai cũng cần nút này.
+  "/api/video/chat-luong",
   "/api/og",
   "/api/ref-code/check",
   "/auth/callback",

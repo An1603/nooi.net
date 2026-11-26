@@ -68,10 +68,9 @@ export default async function XemVideoCongKhaiPage({ params }: { params: Promise
   const tatCa = (data ?? []) as unknown as VideoLuong[];
   if (!tatCa.some((v) => v.id === id)) notFound();
 
-  // Bỏ đường phát của mọi video chưa mở quyền cho người này
-  const videos: VideoLuong[] = tatCa.map((v) =>
-    xetQuyenXem(v, nguoi).mo ? v : { ...v, url: null, kenh_phat: null }
-  );
+  // Bỏ ĐƯỜNG PHÁT của mọi video chưa mở quyền cho người này (giữ `kenh_phat` để hiện đúng nhãn
+  // kênh — nhãn không phải đường phát, bỏ đi thì thông tin trong luồng thành "Chưa rõ kênh")
+  const videos: VideoLuong[] = tatCa.map((v) => (xetQuyenXem(v, nguoi).mo ? v : { ...v, url: null }));
 
   return (
     <VideoFeedDoc

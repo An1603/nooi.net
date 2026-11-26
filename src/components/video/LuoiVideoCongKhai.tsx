@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ListFilter, Lock, Play, RotateCcw, Search } from "lucide-react";
+import { ListFilter, Lock, Play, RotateCcw, Search, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { tenDanhMuc } from "@/lib/video/danh-muc";
 import { anhBia, anhBiaSrcSet } from "@/lib/video/anh-bia";
 import { xetQuyenXem, type NguoiXem, type VideoCongKhai } from "@/lib/video/quyen-xem";
@@ -27,9 +28,10 @@ const SAP_XEP: { ma: SapXep; ten: string }[] = [
 ];
 
 const LOC_KHUNG: { ma: LocKhung; ten: string }[] = [
+  // Chỉ nêu tỉ lệ, không nêu chữ “dọc”/“ngang”
   { ma: "tat-ca", ten: "Mọi khổ" },
-  { ma: "doc", ten: "Dọc 9:16" },
-  { ma: "ngang", ten: "Ngang 16:9" },
+  { ma: "doc", ten: "9:16" },
+  { ma: "ngang", ten: "16:9" },
 ];
 
 const LOC_QUYEN: { ma: LocQuyen; ten: string }[] = [
@@ -114,6 +116,8 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
   const [sapXep, setSapXep] = useState<SapXep>("moi-nhat");
   const [videoKhoa, setVideoKhoa] = useState<VideoCongKhai | null>(null);
   const [moLoc, setMoLoc] = useState(false);
+  /** Ô tìm kiếm đang mở rộng cả hàng (màn hình nhỏ) — gõ cho thoáng, không bị chen vào nút. */
+  const [moTim, setMoTim] = useState(false);
   /** Đã đọc xong điều kiện trên địa chỉ chưa — chưa đọc xong thì không được ghi đè địa chỉ. */
   const daDoc = useRef(false);
 
@@ -234,57 +238,79 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
       {/* ── Thanh công cụ gọn: tìm · sắp xếp · lọc · chia sẻ ── */}
       <div className="mb-3 rounded-[14px] border border-border bg-card/60 p-2">
         <div className="flex items-center gap-1.5">
+          {/* Màn hình nhỏ: bấm vào ô tìm là nó chiếm CẢ HÀNG, các nút khác tạm ẩn — gõ chữ cho
+              thoáng. Màn hình lớn thì không cần, chỗ vốn đã đủ. */}
+          {moTim && (
+            <button
+              type="button"
+              onClick={() => {
+                setMoTim(false);
+                setTuKhoa("");
+              }}
+              aria-label="Đóng tìm kiếm"
+              className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/15 text-muted-foreground transition-colors hover:text-foreground sm:hidden"
+            >
+              <X size={15} />
+            </button>
+          )}
+
           <label className="relative min-w-0 flex-1">
             <Search
-              size={14}
-              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              size={15}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
             <input
               type="search"
               value={tuKhoa}
               onChange={(e) => setTuKhoa(e.target.value)}
-              placeholder="Tìm video… (không dấu cũng ra)"
+              onFocus={() => setMoTim(true)}
+              placeholder={moTim ? "Gõ tên hoặc mô tả video…" : "Tìm video… (không dấu cũng ra)"}
               aria-label="Tìm video"
-              className="w-full rounded-full border border-border bg-background py-1.5 pl-8 pr-3 text-[13px] outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary/60"
+              className={cn(
+                "w-full rounded-full border bg-background outline-none transition-all placeholder:text-muted-foreground/70 focus:border-primary/70 focus:ring-2 focus:ring-primary/25",
+                moTim ? "border-primary/50 py-2.5 pl-10 pr-3 text-sm" : "border-border py-1.5 pl-8 pr-3 text-[13px]"
+              )}
             />
           </label>
 
-          <select
-            value={sapXep}
-            onChange={(e) => setSapXep(e.target.value as SapXep)}
-            aria-label="Sắp xếp"
-            title="Sắp xếp"
-            className="max-w-[112px] shrink-0 rounded-full border border-border bg-background px-2.5 py-1.5 text-[13px] outline-none transition-colors focus:border-primary/60"
-          >
-            {SAP_XEP.map((s) => (
-              <option key={s.ma} value={s.ma}>
-                {s.ten}
-              </option>
-            ))}
-          </select>
+          <div className={cn("flex items-center gap-1.5", moTim && "hidden sm:flex")}>
+            <select
+              value={sapXep}
+              onChange={(e) => setSapXep(e.target.value as SapXep)}
+              aria-label="Sắp xếp"
+              title="Sắp xếp"
+              className="max-w-[112px] shrink-0 rounded-full border border-white/15 bg-background px-2.5 py-1.5 text-[13px] outline-none transition-colors focus:border-primary/60"
+            >
+              {SAP_XEP.map((s) => (
+                <option key={s.ma} value={s.ma}>
+                  {s.ten}
+                </option>
+              ))}
+            </select>
 
-          <button
-            type="button"
-            onClick={() => setMoLoc((x) => !x)}
-            aria-expanded={moLoc}
-            className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
-              soLoc > 0 ? NUT_CHON : "border-border text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <ListFilter size={14} />
-            Lọc
-            {soLoc > 0 && (
-              <span className="rounded-full bg-primary-foreground/25 px-1.5 text-[10px] leading-4">{soLoc}</span>
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={() => setMoLoc((x) => !x)}
+              aria-expanded={moLoc}
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+                soLoc > 0 ? NUT_CHON : "border-white/15 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <ListFilter size={14} />
+              Lọc
+              {soLoc > 0 && (
+                <span className="rounded-full bg-primary-foreground/25 px-1.5 text-[10px] leading-4">{soLoc}</span>
+              )}
+            </button>
 
-          <NutChiaSe
-            tieuDe={chiaSeDanhSach.tieuDe}
-            duong={chiaSeDanhSach.duong}
-            nhan={`Chia sẻ danh sách đang xem (${ketQua.length} bài)`}
-            co={14}
-            className="size-8 shrink-0 rounded-full border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
-          />
+            <NutChiaSe
+              tieuDe={chiaSeDanhSach.tieuDe}
+              duong={chiaSeDanhSach.duong}
+              nhan={`Chia sẻ danh sách đang xem (${ketQua.length} bài)`}
+              co={14}
+              className="size-8 shrink-0 rounded-full border border-white/15 text-muted-foreground hover:border-primary/50 hover:text-foreground"
+            />
+          </div>
         </div>
 
         {/* Bảng lọc — chỉ mở khi cần, để danh sách video được ưu tiên chỗ */}
@@ -383,27 +409,26 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
           {ketQua.map((v, i) => {
             const kq = xetQuyenXem(v, nguoi);
             const thoiLuong = phutGiay(v.duration);
-            const laDoc = v.khung_hinh === "doc";
             const bia = anhBia(v.thumbnail_url, { rong: 400 });
 
             const trong = (
               <>
                 <span
-                  className="relative block w-full overflow-hidden bg-black/40"
+                  className="relative block w-full overflow-hidden bg-black/50"
                   style={{ aspectRatio: tiLeAnh(v) }}
                 >
                   {bia ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      /* Ảnh bìa gốc 100–450 KB — xin bản dịch 400 px của Supabase (≈47 KB, đo thật
-                         26/11/2026). 6 ô đầu tải ngay, phần còn lại chờ cuộn tới. */
+                      /* Ảnh bìa gốc 100–450 KB — xin bản dịch của Supabase (≈47 KB ở 400 px, đo thật
+                         26/11/2026). Hai cỡ 320w/640w để máy nét lấy bản nét hơn. */
                       src={bia}
                       srcSet={anhBiaSrcSet(v.thumbnail_url) ?? undefined}
                       sizes="(max-width: 460px) 46vw, (max-width: 720px) 31vw, (max-width: 1040px) 24vw, (max-width: 1420px) 19vw, 16vw"
                       alt={v.title}
                       loading={i < 6 ? "eager" : "lazy"}
                       decoding="async"
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     />
                   ) : (
                     <span className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -411,13 +436,14 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
                     </span>
                   )}
 
-                  {/* Nhãn khổ hình — biết ngay video dọc hay ngang */}
-                  <span className="absolute left-1.5 top-1.5 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-medium text-white/90">
-                    {laDoc ? "Dọc" : "Ngang"}
-                  </span>
+                  {/* Viền trong mờ: tách ảnh khỏi nền, ảnh trông “có khung” chứ không dán phẳng */}
+                  <span className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09),inset_0_-40px_50px_-30px_rgba(0,0,0,0.65)]" />
+
+                  {/* Nhãn “Dọc/Ngang” đã bỏ (yêu cầu 26/11/2026) — chiều cao ô đã tự nói lên
+                      khổ của video, thêm chữ chỉ rối. */}
 
                   {thoiLuong && (
-                    <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white/90">
+                    <span className="absolute bottom-2 right-2 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-white/95 ring-1 ring-white/15">
                       {thoiLuong}
                     </span>
                   )}
@@ -425,58 +451,70 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
                   {/* Mở được: nút phát hiện khi rê chuột */}
                   {kq.mo ? (
                     <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                      <span className="flex size-11 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-lg">
+                      <span className="flex size-12 items-center justify-center rounded-full bg-primary/95 text-primary-foreground shadow-xl ring-1 ring-white/25">
                         <Play size={18} className="ml-0.5" />
                       </span>
                     </span>
                   ) : (
                     // Bị khoá: phủ ổ khoá + nhãn lý do
                     <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55">
-                      <span className="flex size-11 items-center justify-center rounded-full bg-black/70 text-white">
+                      <span className="flex size-12 items-center justify-center rounded-full bg-black/75 text-white ring-1 ring-white/25">
                         <Lock size={18} />
                       </span>
-                      <span className="rounded-full bg-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground">
+                      <span className="rounded-full bg-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground shadow">
                         {kq.nhan || "Cần quyền"}
                       </span>
                     </span>
                   )}
                 </span>
 
-                <span className="block p-2.5">
-                  <span className="line-clamp-2 block text-[13px] font-medium leading-snug">{v.title}</span>
-                  {v.danh_muc && (
-                    <span className="mt-1 block text-[11px] text-muted-foreground">
-                      {tenDanhMuc(v.danh_muc)}
-                    </span>
-                  )}
+                {/* Phần chữ TÁCH HẲN khỏi phần ảnh: có vạch ngăn, nền đặc, chữ đậm hơn */}
+                <span className="block border-t border-white/10 bg-card px-3 py-2.5">
+                  <span className="line-clamp-2 block text-[13.5px] font-semibold leading-snug tracking-tight text-foreground">
+                    {v.title}
+                  </span>
+                  <span className="mt-1.5 flex items-center justify-between gap-2">
+                    {v.danh_muc ? (
+                      <span className="truncate rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                        {tenDanhMuc(v.danh_muc)}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    {thoiLuong && (
+                      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">{thoiLuong}</span>
+                    )}
+                  </span>
                 </span>
               </>
             );
 
             const lopNgoai =
-              "group block overflow-hidden rounded-[14px] border border-border bg-card text-left transition-colors hover:border-primary/50";
+              "group block overflow-hidden text-left transition-colors";
 
             // Bọc ngoài là <div> để nút chia sẻ nằm CẠNH vùng bấm chính (nút lồng trong nút / thẻ
-            // <a> là HTML sai và bấm sẽ loạn).
+            // <a> là HTML sai và bấm sẽ loạn). Viền đặt ở vỏ ngoài cho cả ảnh lẫn chữ cùng một khung.
             return (
-              <div key={v.id} className="o-masonry relative mb-3">
-                {kq.mo ? (
-                  <Link href={`/video/${v.id}`} className={lopNgoai}>
-                    {trong}
-                  </Link>
-                ) : (
-                  <button type="button" onClick={() => setVideoKhoa(v)} className={`${lopNgoai} w-full`}>
-                    {trong}
-                  </button>
-                )}
+              <div key={v.id} className="o-masonry relative mb-3.5">
+                <div className="overflow-hidden rounded-2xl border border-white/15 bg-card shadow-[0_10px_30px_-18px_rgba(0,0,0,0.9)] transition-colors hover:border-primary/60">
+                  {kq.mo ? (
+                    <Link href={`/video/${v.id}`} className={lopNgoai}>
+                      {trong}
+                    </Link>
+                  ) : (
+                    <button type="button" onClick={() => setVideoKhoa(v)} className={`${lopNgoai} w-full`}>
+                      {trong}
+                    </button>
+                  )}
 
-                <NutChiaSe
-                  tieuDe={v.title}
-                  duong={`/video/${v.id}`}
-                  nhan={`Chia sẻ: ${v.title}`}
-                  co={13}
-                  className="absolute right-1.5 top-1.5 z-10 size-7 rounded-full bg-black/55 text-white backdrop-blur transition-colors hover:bg-black/80"
-                />
+                  <NutChiaSe
+                    tieuDe={v.title}
+                    duong={`/video/${v.id}`}
+                    nhan={`Chia sẻ: ${v.title}`}
+                    co={13}
+                    className="absolute right-2 top-2 z-10 size-8 rounded-full bg-black/65 text-white ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-black/85"
+                  />
+                </div>
               </div>
             );
           })}

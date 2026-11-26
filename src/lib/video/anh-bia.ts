@@ -31,10 +31,12 @@ export function anhBia(
 }
 
 /** Bộ địa chỉ ảnh bìa 2 mức cho `srcset` — máy thường và máy màn hình nét (retina).
- *  KHÔNG cắt ảnh (không truyền chiều cao) để giữ nguyên khung hình gốc như trước. */
+ *  KHÔNG cắt ảnh (không truyền chiều cao) để giữ nguyên khung hình gốc như trước.
+ *  Hai mức 320/640: lưới 6 cột mỗi ô chỉ rộng ~220 px nên 320w là đủ nét ở màn hình thường, máy
+ *  nét lấy 640w. Tăng từ 300/600 lên 320/640 để ảnh bìa trông rõ hơn (yêu cầu 26/11/2026). */
 export function anhBiaSrcSet(url?: string | null): string | null {
-  const nho = anhBia(url, { rong: 300 });
-  const lon = anhBia(url, { rong: 600 });
+  const nho = anhBia(url, { rong: 320, chat: 72 });
+  const lon = anhBia(url, { rong: 640, chat: 72 });
   if (!nho || !lon || nho === lon) return null;
-  return `${nho} 300w, ${lon} 600w`;
+  return `${nho} 320w, ${lon} 640w`;
 }

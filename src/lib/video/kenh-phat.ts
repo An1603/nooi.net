@@ -27,8 +27,9 @@ export function laKenhPhat(v: unknown): v is KenhPhat {
 export type KhungHinh = "ngang" | "doc";
 
 export const KHUNG_HINH_LABELS: Record<KhungHinh, string> = {
-  ngang: "Ngang 16:9",
-  doc: "Dọc 9:16",
+  // Chỉ nêu TỈ LỆ, không nêu chữ “dọc”/“ngang” (yêu cầu 26/11/2026: bỏ chữ đó khỏi giao diện)
+  ngang: "16:9",
+  doc: "9:16",
 };
 
 export function laKhungHinh(v: unknown): v is KhungHinh {

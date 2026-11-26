@@ -110,7 +110,7 @@ export function VideoCard({ video }: VideoCardProps) {
         </span>
         {laDoc && (
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border bg-primary/10 text-primary border-primary/20">
-            Dọc 9:16
+            9:16
           </span>
         )}
         {danh_muc && (

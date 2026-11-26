@@ -253,8 +253,8 @@ export default function EditVideoPage({
         <div className="space-y-2">
           <Label htmlFor="khung_hinh">Khung hình</Label>
           <Select id="khung_hinh" {...register("khung_hinh")}>
-            <option value="ngang">Ngang 16:9 — video thường</option>
-            <option value="doc">Dọc 9:16 — vào luồng vuốt</option>
+            <option value="ngang">16:9 — video thường</option>
+            <option value="doc">9:16 — vào luồng vuốt</option>
           </Select>
           <p className="text-xs text-muted-foreground">
             Video dọc xuất hiện trong luồng vuốt kiểu TikTok ở mục “Vuốt dọc”.

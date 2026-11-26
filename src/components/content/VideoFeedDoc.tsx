@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Check, ChevronDown, ChevronUp, Gauge, Info, Lock, Play, Settings, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronDown, ChevronUp, Gauge, Info, Lock, Maximize2, Minimize2, Play, Settings, Volume2, VolumeX, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { thuocBaiHoc } from "@/lib/video/danh-muc";
 import { anhBia } from "@/lib/video/anh-bia";
@@ -161,6 +161,16 @@ export function VideoFeedDoc({
   const keoRef = useRef(false);
   /** Tốc độ phát hiện hành — thẻ mới gắn vào đọc giá trị này */
   const tocDoRef = useRef(1);
+
+  /* ── Giữ màn hình cho VIDEO ──
+     Thanh trên, cột nút, thanh dưới tự mờ đi sau 3,2 giây khi video đang phát, hiện lại khi người
+     xem động vào (rê chuột / chạm / bấm phím). Tạm dừng hay đang mở bảng thì GIỮ nguyên — lúc đó
+     người xem đang cần nút. Thanh tiến trình thì luôn hiện vì nó chỉ cao 3 px. */
+  const [hienChrome, setHienChrome] = useState(true);
+  const henChrome = useRef<number | null>(null);
+  /** Trình duyệt có cho mở toàn màn hình thật không (iPhone Safari không cho với thẻ <div>) */
+  const [coToanManHinh, setCoToanManHinh] = useState(false);
+  const [dangToanManHinh, setDangToanManHinh] = useState(false);
 
   /** Ghi nhịp xem về máy chủ: đã xem video này bao nhiêu giây. */
   const ghiNhip = useCallback(
@@ -747,16 +757,67 @@ export function VideoFeedDoc({
   /** Khung hình tự khớp tỉ lệ với màn hình — xem giải thích ở đầu tệp. */
   const kieuKhung = (v: VideoDoc): React.CSSProperties =>
     v.khung_hinh === "doc"
-      ? { aspectRatio: "9 / 16", height: "100%", width: "auto", maxWidth: "100%" }
-      : { aspectRatio: "16 / 9", width: "min(100%, calc(100dvh * 16 / 9))", height: "auto" };
+      ? // Video dọc: cao hết màn hình, bề ngang suy ra từ tỉ lệ
+        { aspectRatio: "9 / 16", height: "100dvh", width: "auto", maxWidth: "100vw" }
+      : // Video ngang: rộng hết màn hình, chiều cao suy ra — màn hình thấp thì tự thu lại
+        { aspectRatio: "16 / 9", width: "100vw", height: "auto", maxHeight: "100dvh" };
+
+  /** Hẹn giờ tự ẩn thanh điều khiển; gọi lại mỗi khi người xem động vào màn hình. */
+  const henAnChrome = useCallback(() => {
+    if (henChrome.current) window.clearTimeout(henChrome.current);
+    setHienChrome(true);
+    // Đang tạm dừng, đang mở thông tin / bảng cài đặt / hộp đăng nhập → GIỮ thanh điều khiển
+    if (moThongTin || moCaiDat || videoXinQuyen || !dangPhat) return;
+    henChrome.current = window.setTimeout(() => setHienChrome(false), 3200);
+  }, [moThongTin, moCaiDat, videoXinQuyen, dangPhat]);
+
+  useEffect(() => {
+    henAnChrome();
+    const thuc = () => henAnChrome();
+    window.addEventListener("mousemove", thuc);
+    window.addEventListener("touchstart", thuc, { passive: true });
+    window.addEventListener("keydown", thuc);
+    return () => {
+      window.removeEventListener("mousemove", thuc);
+      window.removeEventListener("touchstart", thuc);
+      window.removeEventListener("keydown", thuc);
+      if (henChrome.current) window.clearTimeout(henChrome.current);
+    };
+  }, [henAnChrome]);
+
+  /** Nút toàn màn hình chỉ hiện khi trình duyệt THẬT SỰ làm được — không dựng nút vô tác dụng. */
+  useEffect(() => {
+    setCoToanManHinh(typeof document.documentElement.requestFullscreen === "function");
+    const doi = () => setDangToanManHinh(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", doi);
+    return () => document.removeEventListener("fullscreenchange", doi);
+  }, []);
+
+  const batTatToanManHinh = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await (khung.current ?? document.documentElement).requestFullscreen({ navigationUI: "hide" });
+    } catch {
+      // Trình duyệt từ chối (thường là chính sách của máy) — im lặng, đừng làm phiền người xem
+    }
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[80] bg-black text-white" data-feed-doc>
-      {/* Đầu luồng: nút QUAY VỀ (góc trái-trên) + tên luồng / số lượng */}
-      <div className="pointer-events-none absolute left-3 top-3 z-30 flex max-w-[70%] items-center gap-2">
+      {/* Đầu luồng: nút QUAY VỀ (góc trái-trên) + tên luồng / số lượng.
+          Tự mờ đi khi video đang phát để màn hình dành trọn cho video. */}
+      <div
+        className={cn(
+          "pointer-events-none absolute left-3 top-3 z-30 flex max-w-[70%] items-center gap-2 transition-opacity duration-300",
+          hienChrome ? "opacity-100" : "opacity-0"
+        )}
+      >
         <Link
           href={duongDanDong}
-          className="pointer-events-auto flex size-9 shrink-0 items-center justify-center rounded-full bg-black/50 backdrop-blur hover:bg-black/70"
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-full bg-black/50 backdrop-blur hover:bg-black/70",
+            hienChrome ? "pointer-events-auto" : "pointer-events-none"
+          )}
           aria-label="Quay về kho video"
           title="Quay về kho video"
         >
@@ -772,7 +833,10 @@ export function VideoFeedDoc({
       {/* Đóng luồng, quay về kho video */}
       <Link
         href={duongDanDong}
-        className="absolute right-3 top-3 z-30 flex size-9 items-center justify-center rounded-full bg-black/50 backdrop-blur hover:bg-black/70"
+        className={cn(
+          "absolute right-3 top-3 z-30 flex size-9 items-center justify-center rounded-full bg-black/50 backdrop-blur transition-opacity duration-300 hover:bg-black/70",
+          hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
         aria-label="Đóng luồng"
       >
         <X size={18} />
@@ -781,7 +845,7 @@ export function VideoFeedDoc({
       <div
         ref={khung}
         tabIndex={0}
-        className="h-full w-full snap-y snap-mandatory overflow-y-scroll overscroll-contain focus:outline-none"
+        className="h-[100dvh] w-full snap-y snap-mandatory overflow-y-scroll overscroll-contain focus:outline-none"
         style={{ scrollbarWidth: "none" }}
       >
         {videos.map((v, i) => {
@@ -804,7 +868,7 @@ export function VideoFeedDoc({
               ref={(el) => {
                 mucRef.current[i] = el;
               }}
-              className="relative flex h-full w-full snap-start snap-always items-center justify-center"
+              className="relative flex h-[100dvh] w-full snap-start snap-always items-center justify-center"
             >
               {/* Khung hình tự khớp: dọc theo chiều cao, ngang theo chiều rộng */}
               <div className="relative overflow-hidden bg-black" style={kieuKhung(v)}>
@@ -955,7 +1019,12 @@ export function VideoFeedDoc({
                 )}
 
                 {/* Cột nút bên phải: cài đặt + tiếng + lên/xuống */}
-                <div className="absolute right-2.5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2">
+                <div
+                  className={cn(
+                    "absolute right-2.5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2 transition-opacity duration-300",
+                    hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
+                  )}
+                >
                   {!khoa && n.kieu === "video" && (
                     <button
                       type="button"
@@ -1008,10 +1077,32 @@ export function VideoFeedDoc({
                   >
                     <ChevronDown size={16} />
                   </button>
+
+                  {/* Toàn màn hình THẬT — chỉ hiện khi trình duyệt làm được (iPhone Safari không
+                      cho mở toàn màn hình với thẻ <div>, nên ở đó không dựng nút vô tác dụng). */}
+                  {coToanManHinh && (
+                    <button
+                      type="button"
+                      onClick={() => void batTatToanManHinh()}
+                      aria-label={dangToanManHinh ? "Thoát toàn màn hình" : "Toàn màn hình"}
+                      title={dangToanManHinh ? "Thoát toàn màn hình" : "Toàn màn hình"}
+                      className={cn(
+                        "flex size-9 items-center justify-center rounded-full border border-white/20 backdrop-blur",
+                        dangToanManHinh ? "bg-accent/40" : "bg-black/40 hover:bg-black/60"
+                      )}
+                    >
+                      {dangToanManHinh ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                    </button>
+                  )}
                 </div>
 
                 {/* Thanh dưới: THU GỌN 1 dòng, chạm để mở chi tiết */}
-                <div className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-5 pt-10">
+                <div
+                  className={cn(
+                    "absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-5 pt-10 transition-opacity duration-300",
+                    hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
+                  )}
+                >
                   {!moThongTin ? (
                     <div className="flex items-end gap-2 pr-12">
                       <button
@@ -1028,8 +1119,6 @@ export function VideoFeedDoc({
                           <span>
                             {i + 1}/{videos.length}
                           </span>
-                          <span>·</span>
-                          <span>{v.khung_hinh === "doc" ? "Dọc" : "Ngang"}</span>
                           <span>·</span>
                           <span>{kenh}</span>
                           <span>·</span>

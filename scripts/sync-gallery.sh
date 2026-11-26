@@ -65,6 +65,20 @@ else:
 PY
 
 echo
+echo "→ Đóng dấu phiên bản cho css/js (chống cache cũ của trình duyệt + service worker)…"
+python3 - "$DST/index.html" <<'PY'
+import sys, re, time
+p = sys.argv[1]
+html = open(p, encoding='utf-8').read()
+v = str(int(time.time()))
+html = re.sub(r'(styles\.css)(\?v=[^"\']*)?', r'\1?v=' + v, html, count=1)
+html = re.sub(r'(data/gallery\.js)(\?v=[^"\']*)?', r'\1?v=' + v, html, count=1)
+html = re.sub(r'(\bapp\.js)(\?v=[^"\']*)?', r'\1?v=' + v, html, count=1)
+open(p, 'w', encoding='utf-8').write(html)
+print(f"  ✓ v={v}")
+PY
+
+echo
 echo "✓ Xong. Kiểm tra:"
 echo "  ảnh full : $(ls "$DST/images/full" | wc -l) file"
 echo "  ảnh thumb: $(ls "$DST/images/thumbs" | wc -l) file"

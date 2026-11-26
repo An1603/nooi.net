@@ -135,7 +135,9 @@ body.is-locked { overflow: hidden; }
 /* Trang đang mở — sáng bằng chữ chính, để biết mình đang ở đâu. */
 .menu a.is-here { color: var(--text); }
 
-.topbar__actions { display: flex; align-items: center; gap: 17px; flex: none; }
+/* gap 12.75px = gap-3 của nooi.net (1rem×17px không phải; nooi.net dùng gap-3)
+   — để 17px thì khối nút rộng hơn 4px và menu bị đẩy lệch 2px. */
+.topbar__actions { display: flex; align-items: center; gap: 12.75px; flex: none; }
 
 .vao {
   font-size: 17px;

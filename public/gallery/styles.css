@@ -770,6 +770,10 @@ body.is-locked { overflow: hidden; }
   .brand__logo { height: 28px; }
   .menu { display: none; }
   .nut-menu { display: inline-flex; }
+  /* Trên điện thoại chỉ để logo + nút mở menu (giống nooi.net): hai nút
+     "Đăng nhập" / "Bắt đầu ngay" dời vào trong menu xổ, không chen ở hàng đầu. */
+  .topbar__actions .vao,
+  .topbar__actions .bat-dau { display: none; }
   .menu-mobile { padding: 0 16px 14px; }
 
   /* Thanh công cụ: ô tìm chiếm trọn hàng đầu, các nút xuống hàng dưới. */

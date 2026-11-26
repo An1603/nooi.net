@@ -6,6 +6,10 @@ import Link from 'next/link';
 import { useBrandUrl } from '@/components/brand/BrandProvider';
 import { createClient } from '@/lib/supabase/client';
 import { TechBackground } from '@/components/effects/TechBackground';
+import { SauCuaVao } from '@/components/public/SauCuaVao';
+import { DaiTrietLy } from '@/components/public/DaiTrietLy';
+import { DoiNgu } from '@/components/public/DoiNgu';
+import { PHAN_HE } from '@/lib/phan-he';
 import {
   Sparkles,
   Brain,
@@ -802,7 +806,7 @@ function FooterSection() {
   return (
     <footer id="contact" className="border-t border-border py-12 px-5">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <p className="text-sm font-semibold mb-3">NOOI</p>
@@ -813,34 +817,34 @@ function FooterSection() {
             </p>
           </div>
 
-          {/* Khám phá */}
+          {/* Phân hệ — cùng một danh sách với menu đầu trang (nguồn: @/lib/phan-he) */}
           <div>
-            <p className="text-sm font-semibold mb-3">Khám phá</p>
+            <p className="text-sm font-semibold mb-3">Phân hệ</p>
             <ul className="space-y-2">
-              {[
-                { label: 'Thư viện ảnh', href: '/gallery' },
-                { label: 'Kho tri thức', href: '#' },
-                { label: 'Chuyên gia', href: '#' },
-                { label: 'Chương trình', href: '#' },
-                { label: 'Cộng đồng', href: '#' },
-              ].map((l) => (
-                <li key={l.label}>
-                  <Link href={l.href} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                    {l.label}
+              {PHAN_HE.map((p) => (
+                <li key={p.ma}>
+                  <Link href={p.href} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    {p.ten}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Hỗ trợ */}
+          {/* Về NOOI */}
           <div>
-            <p className="text-sm font-semibold mb-3">Hỗ trợ</p>
+            <p className="text-sm font-semibold mb-3">Về NOOI</p>
             <ul className="space-y-2">
-              {['Trợ giúp', 'Liên hệ', 'Câu hỏi thường gặp', 'Hướng dẫn'].map((l) => (
-                <li key={l}>
-                  <Link href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                    {l}
+              {[
+                { label: 'Tính năng', href: '/#features' },
+                { label: 'Công nghệ', href: '/#tech' },
+                { label: 'Giới thiệu', href: '/#about' },
+                { label: 'Trợ giúp', href: '/#contact' },
+                { label: 'Liên hệ', href: '/#contact' },
+              ].map((l) => (
+                <li key={l.label}>
+                  <Link href={l.href} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    {l.label}
                   </Link>
                 </li>
               ))}
@@ -890,10 +894,13 @@ function LandingPageInner({ loggedIn }: { loggedIn: boolean }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <HeroSection loggedIn={loggedIn} />
+      {/* Sáu phân hệ phải hiện NGAY dưới hero — khách mới thấy năng lực của NOOI trong
+          đúng một màn hình, không phải cuộn hết trang giới thiệu. */}
+      <SauCuaVao />
       <FeaturesSection />
-      <PillarsSection loggedIn={loggedIn} />
-      <SevenTiersSection />
+      <DaiTrietLy />
       <HowSection />
+      <DoiNgu />
       <CTASection loggedIn={loggedIn} />
       <FooterSection />
     </div>

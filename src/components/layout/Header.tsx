@@ -6,18 +6,20 @@ import { cn } from '@/lib/utils';
 import { Logo } from '@/components/brand/Logo';
 import { createClient } from '@/lib/supabase/client';
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react';
+import { PHAN_HE, MENU_GIOI_THIEU } from '@/lib/phan-he';
 
-// Đường dẫn phải TUYỆT ĐỐI (có dấu / ở đầu): menu này hiện trên mọi trang, nếu để
-// '#features' thì từ /video hay /gallery trình duyệt hiểu thành /video#features —
-// không có phần tử nào tên đó nên bấm vào không nhảy tới đâu cả.
-const NAV_ITEMS = [
-  { label: 'Tính năng', href: '/#features' },
-  { label: 'Công nghệ', href: '/#tech' },
-  { label: 'Thư viện ảnh', href: '/gallery' },
-  { label: 'Kho video', href: '/video' },
-  { label: 'Giới thiệu', href: '/#about' },
-  { label: 'Liên hệ', href: '/#contact' },
-];
+/**
+ * MENU CHÍNH = SÁU PHÂN HỆ (phương án A, chốt 26/11/2026).
+ *
+ * Vì sao không trộn mục giới thiệu vào đây nữa: menu là để ĐI ĐÂU, không phải để đọc giới
+ * thiệu. “Tính năng / Công nghệ / Đội ngũ / Liên hệ” là các khối ngay trên trang chủ (và
+ * nằm trong menu xổ của điện thoại + chân trang), nên khách luôn thấy mà không chiếm chỗ.
+ *
+ * Đường dẫn phải TUYỆT ĐỐI (có dấu / ở đầu): menu này hiện trên mọi trang, nếu để
+ * '#features' thì từ /video hay /gallery trình duyệt hiểu thành /video#features —
+ * không có phần tử nào tên đó nên bấm vào không nhảy tới đâu cả.
+ */
+const NAV_ITEMS = PHAN_HE.map((p) => ({ label: p.ten, href: p.href }));
 
 export function Header({ initialSession = false }: { initialSession?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
@@ -151,6 +153,22 @@ export function Header({ initialSession = false }: { initialSession?: boolean })
                 {item.label}
               </Link>
             ))}
+
+            {/* Nhóm giới thiệu — chỉ có trên điện thoại, nơi menu ngang không hiện. */}
+            <p className="pt-1 text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground/70">
+              Về NOOI
+            </p>
+            {MENU_GIOI_THIEU.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+              >
+                {item.label}
+              </Link>
+            ))}
+
             <hr className="border-border" />
             {session === null ? (
               <div className="w-20 h-6 animate-pulse rounded bg-muted" />

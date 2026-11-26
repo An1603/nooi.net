@@ -18,6 +18,12 @@ const publicRoutes = [
   // Kho video công khai: ai cũng xem được lưới video; video nào cần quyền thì hiện ổ khoá
   // (xem `src/lib/video/quyen-xem.ts`) — bấm vào mới hỏi đăng nhập.
   "/video",
+  // Bốn phân hệ công khai còn lại (chốt 26/11/2026): khách xem được danh sách + hồ sơ,
+  // phần nội dung sâu (bài đầy đủ, đặt lịch, hồ sơ dự án chi tiết) mới hỏi đăng nhập.
+  "/kho-tri-thuc",
+  "/chuyen-gia",
+  "/du-an",
+  "/tien-ich",
   "/u",
   "/api/sso",
   "/api/ho-so/anh",
@@ -49,6 +55,7 @@ const publicPrefixes = [
   "/u/",
   "/gallery/",
   "/video/",
+  "/kho-tri-thuc/",
   "/api/sso/",
   "/api/track/",
   "/api/og/",

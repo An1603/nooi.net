@@ -413,4 +413,15 @@
   page-break-inside: avoid;
 }
 
+/* ── Dải chip cuộn ngang (/gallery): ẩn thanh cuộn ──
+   Trên Windows/Linux thanh cuộn ngang hiện thành một vệt sáng cắt ngang dải chip, trông như
+   lỗi bố cục. Vẫn cuộn được bằng chuột/touch, chỉ ẩn phần thanh. */
+.khong-cuon {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.khong-cuon::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── Larger text for readability ── */

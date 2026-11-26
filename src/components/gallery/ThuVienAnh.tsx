@@ -409,7 +409,7 @@ export function ThuVienAnh() {
 
       {/* ── Chip bộ sưu tập + số ảnh ── */}
       <div className="mx-auto w-full max-w-[1680px] px-[clamp(16px,3vw,34px)] pt-4">
-        <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:thin]">
+        <div className="khong-cuon mb-2 flex gap-1.5 overflow-x-auto pb-1">
           <button
             onClick={() => setBoard("all")}
             className={cn(

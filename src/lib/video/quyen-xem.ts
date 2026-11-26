@@ -23,6 +23,10 @@ export interface VideoCongKhai {
   duration?: number | null;
   khung_hinh?: string | null;
   danh_muc?: string | null;
+  /**
+   * Thời điểm tạo — dùng để sắp xếp trên lưới công khai (mới nhất / cũ nhất).
+   */
+  created_at?: string | null;
   cong_khai?: boolean | null;
 }
 

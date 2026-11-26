@@ -48,4 +48,4 @@ export async function nguoiDangXem(): Promise<NguoiXem> {
  * còn đường phát thì chỉ trang xem `/video/<mã>` lấy ra và chỉ khi đã qua cổng gác.
  */
 export const COT_LUOI_CONG_KHAI =
-  "id, title, description, thumbnail_url, duration, khung_hinh, danh_muc, cong_khai";
+  "id, title, description, thumbnail_url, duration, khung_hinh, danh_muc, cong_khai, created_at";

@@ -1,43 +1,30 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { VideoPlayer } from "@/components/content/VideoPlayer";
-import { ManKhoaVideo } from "@/components/video/ManKhoaVideo";
-import { xetQuyenXem, type VideoCongKhai } from "@/lib/video/quyen-xem";
-import { tenDanhMuc } from "@/lib/video/danh-muc";
+import { VideoFeedDoc } from "@/components/content/VideoFeedDoc";
+import { xetQuyenXem } from "@/lib/video/quyen-xem";
 import { nguoiDangXem } from "@/lib/video/nguoi-xem";
+import type { VideoDoc } from "@/lib/video/kenh-phat";
 
 export const dynamic = "force-dynamic";
 
-/** Video kèm đường phát — chỉ dùng ở trang này, sau khi đã qua cổng gác. */
-interface VideoDayDu extends VideoCongKhai {
-  url?: string | null;
-  kenh_phat?: string | null;
-}
+/** Video trong luồng — có đường phát, kèm `cong_khai` để cổng gác xét quyền. */
+type VideoLuong = VideoDoc & { cong_khai?: boolean | null };
 
-function phutGiay(giay?: number | null): string | null {
-  if (!giay || giay <= 0) return null;
-  const m = Math.floor(giay / 60);
-  const s = Math.round(giay % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-async function layVideo(id: string): Promise<VideoDayDu | null> {
+async function layMotVideo(id: string): Promise<VideoLuong | null> {
   const admin = createAdminClient();
   const { data } = await admin
     .from("videos")
-    .select("id, title, description, url, kenh_phat, thumbnail_url, duration, khung_hinh, danh_muc, cong_khai")
+    .select("id, title, description, thumbnail_url, duration, khung_hinh, danh_muc, cong_khai")
     .eq("id", id)
     .eq("status", "published")
     .maybeSingle();
-  return (data as unknown as VideoDayDu) || null;
+  return (data as unknown as VideoLuong) || null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const video = await layVideo(id);
+  const video = await layMotVideo(id);
   if (!video) return { title: "Không tìm thấy video · NOOI" };
   return {
     title: `${video.title} · Kho video NOOI`,
@@ -54,71 +41,49 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 /**
- * Trang xem công khai `/video/<mã>`.
+ * Xem video công khai `/video/<mã>` — mở thẳng vào LUỒNG VUỐT, đứng đúng bài vừa bấm.
  *
- * Cổng gác ở đây là chốt chặn thật: video không công khai mà người xem chưa đăng nhập thì KHÔNG
- * bao giờ lấy `url` ra để phát — chỉ hiện màn khoá kèm nút đăng nhập. Đăng nhập xong quay lại
- * đúng địa chỉ này (`quayLai`), lúc đó mới có phiên và mở được.
+ * Vì sao là luồng chứ không một trang lẻ: Ngài An chốt 26/11/2026 — bấm xem một video thì
+ * “thông tin thu gọn để ưu tiên màn hình video, bấm xem chi tiết mới hiện đầy đủ, và có thể vuốt
+ * để xem các video tiếp”. Dùng lại `VideoFeedDoc` (thành phần luồng xem của khu nội bộ, đã xử lý
+ * sẵn các bẫy chạm – vuốt – khung hình tự khớp) thay vì viết bản sao.
+ *
+ * CHỐT CHẶN NẰM Ở MÁY CHỦ: video chưa mở quyền thì `url`/`kenh_phat` bị BỎ NGAY TRƯỚC KHI gửi
+ * xuống trình duyệt — không có cách nào moi được đường phát khi chưa qua cổng gác.
  */
 export default async function XemVideoCongKhaiPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const video = await layVideo(id);
-  if (!video) notFound();
-
   const nguoi = await nguoiDangXem();
-  const kq = xetQuyenXem(video, nguoi);
+  const admin = createAdminClient();
 
-  if (!kq.mo) {
-    return (
-      <main className="min-h-[100dvh] bg-background">
-        <div className="mx-auto w-full max-w-[1200px] px-4 pb-20 pt-24 sm:px-6 lg:px-8">
-          <ManKhoaVideo
-            tieuDe={video.title}
-            moTa={kq.moTa}
-            anhBia={video.thumbnail_url}
-            nhan={kq.nhan}
-            quayLai={`/video/${video.id}`}
-          />
-        </div>
-      </main>
-    );
-  }
+  const { data } = await admin
+    .from("videos")
+    .select(
+      "id, title, description, url, kenh_phat, thumbnail_url, duration, khung_hinh, danh_muc, cong_khai, created_at"
+    )
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(200);
 
-  const thoiLuong = phutGiay(video.duration);
+  const tatCa = (data ?? []) as unknown as VideoLuong[];
+  if (!tatCa.some((v) => v.id === id)) notFound();
+
+  // Bỏ đường phát của mọi video chưa mở quyền cho người này
+  const videos: VideoLuong[] = tatCa.map((v) =>
+    xetQuyenXem(v, nguoi).mo ? v : { ...v, url: null, kenh_phat: null }
+  );
 
   return (
-    <main className="min-h-[100dvh] bg-background">
-      <div className="mx-auto w-full max-w-[1000px] px-4 pb-20 pt-24 sm:px-6 lg:px-8">
-        <Link
-          href="/video"
-          className="mb-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft size={14} />
-          Về kho video
-        </Link>
-
-        <VideoPlayer
-          video={{ title: video.title, url: video.url, kenh_phat: video.kenh_phat }}
-          khungHinh={video.khung_hinh}
-          // Lớp bảo mật in mờ: chỉ in khi biết người xem là ai (đã đăng nhập)
-          dauChim={nguoi.email || undefined}
-        />
-
-        <div className="mt-5">
-          <h1 className="text-lg font-semibold leading-snug sm:text-xl">{video.title}</h1>
-          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            {video.danh_muc && <span>{tenDanhMuc(video.danh_muc)}</span>}
-            <span>{video.khung_hinh === "doc" ? "Dọc 9:16" : "Ngang 16:9"}</span>
-            {thoiLuong && <span>{thoiLuong}</span>}
-            {nguoi.daDangNhap && <span>Xem với tư cách {nguoi.email}</span>}
-          </p>
-          {video.description && (
-            <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-              {video.description}
-            </p>
-          )}
-        </div>
-      </div>
-    </main>
+    <VideoFeedDoc
+      videos={videos}
+      nguoiXem={nguoi.email || null}
+      tieuDe="Kho video NOOI"
+      duongDanDong="/video"
+      duongDanDo="/video"
+      tienToBai="/video"
+      batDauId={id}
+      nguoiCongKhai={nguoi}
+      quayLaiDangNhap={`/video/${id}`}
+    />
   );
 }

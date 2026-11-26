@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Info, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, Lock, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   KENH_PHAT_LABELS,
@@ -13,6 +13,8 @@ import {
   type VideoDoc,
 } from "@/lib/video/kenh-phat";
 import { docTimeUpdate, taoPlayer, type PlayerGiaoDien } from "@/lib/video/playerjs";
+import { HopDangNhap } from "@/components/video/HopDangNhap";
+import { xetQuyenXem, type NguoiXem, type VideoCongKhai } from "@/lib/video/quyen-xem";
 
 interface Props {
   videos: VideoDoc[];
@@ -29,6 +31,23 @@ interface Props {
    * Đặt false khi cần mở sẵn (trang xem riêng).
    */
   thuGon?: boolean;
+  /**
+   * Tiền tố đường dẫn mở một bài (mặc định khu nội bộ `/app/videos`). Trang công khai truyền
+   * `/video` để các lối "Mở bài" trỏ đúng chỗ.
+   */
+  tienToBai?: string;
+  /**
+   * Người đang xem — CHỈ truyền ở trang công khai. Có giá trị ⇒ luồng tự áp cổng gác quyền
+   * (`xetQuyenXem`) cho từng video; không truyền (khu nội bộ) ⇒ không gác, giữ nguyên hành vi cũ.
+   *
+   * Truyền ĐỐI TƯỢNG DỮ LIỆU thường, không truyền hàm: hàm không qua được ranh giới
+   * máy chủ/trình duyệt của Next.
+   */
+  nguoiCongKhai?: NguoiXem | null;
+  /** Địa chỉ quay lại sau khi đăng nhập (hộp thoại đăng nhập ngay trong luồng). */
+  quayLaiDangNhap?: string;
+  /** Mở luồng ngay tại video này — dùng cho trang công khai `/video/<mã>`. */
+  batDauId?: string;
 }
 
 /**
@@ -52,17 +71,48 @@ export function VideoFeedDoc({
   duongDanDong = "/app/videos",
   duongDanDo = "/app/short",
   thuGon = true,
+  tienToBai = "/app/videos",
+  nguoiCongKhai = null,
+  quayLaiDangNhap = "/app",
+  batDauId,
 }: Props) {
   const nguon = useMemo(() => videos.map((v) => nguonPhatDoc(v)), [videos]);
+
+  /** Cổng gác quyền từng video — chỉ tính khi trang công khai có truyền người đang xem */
+  const kqQuyen = useMemo(
+    () =>
+      videos.map((v) =>
+        nguoiCongKhai ? xetQuyenXem(v as unknown as VideoCongKhai, nguoiCongKhai) : null
+      ),
+    [videos, nguoiCongKhai]
+  );
+
+  /** Vị trí mở luồng — trang công khai mở đúng video người xem vừa bấm */
+  const iBatDau = useMemo(() => {
+    if (!batDauId) return 0;
+    const i = videos.findIndex((v) => v.id === batDauId);
+    return i > 0 ? i : 0;
+  }, [batDauId, videos]);
 
   const khung = useRef<HTMLDivElement | null>(null);
   const mucRef = useRef<(HTMLElement | null)[]>([]);
   const videoRef = useRef<(HTMLVideoElement | null)[]>([]);
   const playerRef = useRef<(PlayerGiaoDien | null)[]>([]);
-  const iRef = useRef(0);
+  const iRef = useRef(iBatDau);
   const tiengRef = useRef(true);
 
-  const [iDangXem, setIDangXem] = useState(0);
+  const [iDangXem, setIDangXem] = useState(iBatDau);
+  /** Video đang mời đăng nhập (chỉ ở trang công khai) */
+  const [videoXinQuyen, setVideoXinQuyen] = useState<{ v: VideoDoc; moTa: string } | null>(null);
+
+  /** Video thứ i có bị khoá theo cổng gác không */
+  const biKhoa = useCallback(
+    (i: number) => {
+      const q = kqQuyen[i];
+      return !!q && !q.mo;
+    },
+    [kqQuyen]
+  );
   const [tatTieng, setTatTieng] = useState(true);
   const [dangPhat, setDangPhat] = useState(true);
   const [tienTrinh, setTienTrinh] = useState(0);
@@ -116,6 +166,7 @@ export function VideoFeedDoc({
     (i: number) => {
       const n = nguon[i];
       if (!n || n.kieu === "khong") return;
+      if (biKhoa(i)) return; // video còn khoá thì không có gì để phát
       const v = videoRef.current[i];
       if (v) {
         v.muted = tiengRef.current;
@@ -129,7 +180,7 @@ export function VideoFeedDoc({
         p.play();
       }
     },
-    [nguon]
+    [nguon, biKhoa]
   );
 
   const dung = useCallback((i: number) => {
@@ -163,6 +214,17 @@ export function VideoFeedDoc({
     mucRef.current.forEach((el) => el && io.observe(el));
     return () => io.disconnect();
   }, [videos.length]);
+
+  // 2b. Mở luồng đúng video người xem vừa bấm (trang công khai `/video/<mã>`)
+  useEffect(() => {
+    if (iBatDau === 0) return;
+    const goc = khung.current;
+    const el = mucRef.current[iBatDau];
+    if (!goc || !el) return;
+    goc.scrollTop = el.offsetTop;
+    iRef.current = iBatDau;
+    setIDangXem(iBatDau);
+  }, [iBatDau]);
 
   // 3. Đổi video: dừng video cũ, phát video mới, ghi lại thời gian đã xem của video cũ
   useEffect(() => {
@@ -315,6 +377,12 @@ export function VideoFeedDoc({
         cuon(i);
         return;
       }
+      if (biKhoa(i)) {
+        const q = kqQuyen[i];
+        const v = videos[i];
+        if (v) setVideoXinQuyen({ v, moTa: q?.moTa ?? "Video này dành cho thành viên NOOI." });
+        return;
+      }
       if (!nguon[i]?.dieuKhien) return;
       if (dangPhat) {
         dung(i);
@@ -324,7 +392,7 @@ export function VideoFeedDoc({
         setDangPhat(true);
       }
     },
-    [nguon, dangPhat, dung, phat, cuon]
+    [nguon, dangPhat, dung, phat, cuon, biKhoa, kqQuyen, videos]
   );
 
   const doiTieng = useCallback(() => {
@@ -391,6 +459,8 @@ export function VideoFeedDoc({
         {videos.map((v, i) => {
           const n = nguon[i];
           const gan = Math.abs(i - iDangXem) <= 1;
+          const q = kqQuyen[i];
+          const khoa = !!q && !q.mo;
           const kenh: string = laKenhPhat(v.kenh_phat) ? KENH_PHAT_LABELS[v.kenh_phat] : "Chưa rõ kênh";
           const nhanKhung: string = laKhungHinh(v.khung_hinh)
             ? KHUNG_HINH_LABELS[v.khung_hinh]
@@ -406,7 +476,7 @@ export function VideoFeedDoc({
             >
               {/* Khung hình tự khớp: dọc theo chiều cao, ngang theo chiều rộng */}
               <div className="relative overflow-hidden bg-black" style={kieuKhung(v)}>
-                {gan && n.kieu === "iframe" && (
+                {!khoa && gan && n.kieu === "iframe" && (
                   <iframe
                     ref={ganIframe(i)}
                     src={n.src}
@@ -416,7 +486,7 @@ export function VideoFeedDoc({
                     allowFullScreen
                   />
                 )}
-                {gan && n.kieu === "video" && (
+                {!khoa && gan && n.kieu === "video" && (
                   <video
                     ref={ganVideo(i)}
                     {...(n.srcDuPhong && n.srcDuPhong.length > 1 ? {} : { src: n.src })}
@@ -448,11 +518,38 @@ export function VideoFeedDoc({
                       n.srcDuPhong.map((u) => <source key={u} src={u} type="video/mp4" />)}
                   </video>
                 )}
-                {n.kieu === "khong" && (
+                {!khoa && n.kieu === "khong" && (
                   <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-xs text-white/70">
                     {n.lyDo}
                   </div>
                 )}
+                {/* Video cần quyền: vẫn cho thấy ảnh bìa + ổ khoá, kèm lối đăng nhập ngay tại chỗ */}
+                {khoa && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70 px-6 text-center">
+                    {v.thumbnail_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={v.thumbnail_url}
+                        alt={v.title}
+                        className="absolute inset-0 h-full w-full object-contain opacity-35"
+                      />
+                    )}
+                    <span className="relative flex size-14 items-center justify-center rounded-full bg-black/70">
+                      <Lock size={22} />
+                    </span>
+                    <span className="relative rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+                      {q?.nhan || "Cần quyền xem"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setVideoXinQuyen({ v, moTa: q?.moTa ?? "Video này dành cho thành viên NOOI." })}
+                      className="relative rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-xs font-medium hover:bg-white/20"
+                    >
+                      Đăng nhập để xem
+                    </button>
+                  </div>
+                )}
+
                 {/* Tải tệp không được (mạng chặn miền CDN...) -> nói rõ và cho đường lui */}
                 {i === loiPhat && n.kieu === "video" && (
                   <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/80 p-6 text-center">
@@ -474,7 +571,7 @@ export function VideoFeedDoc({
 
                 {/* Lớp phủ nhận thao tác chạm — CHỈ trên máy cảm ứng (cần để vuốt).
                     Trên máy tính không phủ, để cú bấm tới được nút điều khiển gốc của nền tảng. */}
-                {coCham && (
+                {coCham && !khoa && (
                   <button
                     type="button"
                     onClick={() => bamVao(i)}
@@ -484,7 +581,7 @@ export function VideoFeedDoc({
                 )}
 
                 {/* Dấu chìm chống rò rỉ */}
-                {nguoiXem && (
+                {nguoiXem && !khoa && (
                   <span className="dau-chim-troi pointer-events-none absolute z-20 rounded bg-black/25 px-2 py-1 text-[11px] font-medium tracking-wide text-white/70">
                     {nguoiXem}
                   </span>
@@ -492,7 +589,7 @@ export function VideoFeedDoc({
 
                 {/* Chưa phát thì hiện nút ▶ TO ở giữa — LUÔN bấm được (kể cả khi nền tảng không
                     cho điều khiển từ mã, hoặc trình phát chưa sẵn sàng). */}
-                {i === iDangXem && !dangPhat && loiPhat !== i && (
+                {i === iDangXem && !dangPhat && loiPhat !== i && !khoa && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -510,17 +607,19 @@ export function VideoFeedDoc({
 
                 {/* Cột nút bên phải: tiếng + lên/xuống */}
                 <div className="absolute right-2.5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={doiTieng}
-                    aria-label={tatTieng ? "Bật tiếng" : "Tắt tiếng"}
-                    className={cn(
-                      "flex size-9 items-center justify-center rounded-full border border-white/20 backdrop-blur",
-                      tatTieng ? "bg-black/40" : "bg-accent/40"
-                    )}
-                  >
-                    {tatTieng ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                  </button>
+                  {!khoa && (
+                    <button
+                      type="button"
+                      onClick={doiTieng}
+                      aria-label={tatTieng ? "Bật tiếng" : "Tắt tiếng"}
+                      className={cn(
+                        "flex size-9 items-center justify-center rounded-full border border-white/20 backdrop-blur",
+                        tatTieng ? "bg-black/40" : "bg-accent/40"
+                      )}
+                    >
+                      {tatTieng ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => cuon(i - 1)}
@@ -565,13 +664,24 @@ export function VideoFeedDoc({
                           <span>chạm để xem chi tiết</span>
                         </span>
                       </button>
-                      {/* Lối mở thẳng bài giảng — luôn có, để một cú bấm không bao giờ "vô ích" */}
-                      <Link
-                        href={`/app/videos/${v.id}`}
-                        className="shrink-0 rounded-lg border border-white/25 bg-black/50 px-3 py-2 text-[11px] font-medium backdrop-blur hover:bg-black/70"
-                      >
-                        Mở bài
-                      </Link>
+                      {/* Video khoá: lối mời đăng nhập. Video mở: lối mở thẳng bài — luôn có, để
+                          một cú bấm không bao giờ "vô ích" */}
+                      {khoa ? (
+                        <button
+                          type="button"
+                          onClick={() => setVideoXinQuyen({ v, moTa: q?.moTa ?? "Video này dành cho thành viên NOOI." })}
+                          className="shrink-0 rounded-lg border border-white/25 bg-primary px-3 py-2 text-[11px] font-medium text-primary-foreground backdrop-blur hover:opacity-90"
+                        >
+                          Đăng nhập
+                        </button>
+                      ) : (
+                        <Link
+                          href={`${tienToBai}/${v.id}`}
+                          className="shrink-0 rounded-lg border border-white/25 bg-black/50 px-3 py-2 text-[11px] font-medium backdrop-blur hover:bg-black/70"
+                        >
+                          Mở bài
+                        </Link>
+                      )}
                     </div>
                   ) : (
                     <div className="pr-12">
@@ -598,12 +708,19 @@ export function VideoFeedDoc({
                       )}
                       {n.canhBao && <p className="mt-1 text-[10px] text-amber-200/90">{n.canhBao}</p>}
                       <div className="mt-1.5 flex flex-wrap items-center gap-3">
-                        <Link
-                          href={`/app/videos/${v.id}`}
-                          className="text-[11px] text-white/80 underline"
-                        >
-                          Mở trang bài giảng
-                        </Link>
+                        {khoa ? (
+                          <button
+                            type="button"
+                            onClick={() => setVideoXinQuyen({ v, moTa: q?.moTa ?? "Video này dành cho thành viên NOOI." })}
+                            className="text-[11px] text-white/80 underline"
+                          >
+                            Đăng nhập để xem
+                          </button>
+                        ) : (
+                          <Link href={`${tienToBai}/${v.id}`} className="text-[11px] text-white/80 underline">
+                            Mở trang video
+                          </Link>
+                        )}
                         <button
                           type="button"
                           onClick={() => setMoThongTin(false)}
@@ -616,15 +733,19 @@ export function VideoFeedDoc({
                   )}
 
                   <div className="mt-2 flex items-center gap-1.5">
-                    {dangPhat && i === iDangXem ? (
+                    {khoa ? (
+                      <Lock size={11} className="text-white/60" />
+                    ) : dangPhat && i === iDangXem ? (
                       <Pause size={11} className="text-white/60" />
                     ) : (
                       <Play size={11} className="text-white/60" />
                     )}
                     <span className="text-[10px] text-white/50">
-                      {i === iDangXem && !dangPhat
-                        ? "Bấm nút ▶ để phát · vuốt lên để xem tiếp"
-                        : "Chạm để tạm dừng · vuốt lên để xem tiếp"}
+                      {khoa
+                        ? "Video cần quyền xem · vuốt lên để xem tiếp"
+                        : i === iDangXem && !dangPhat
+                          ? "Bấm nút ▶ để phát · vuốt lên để xem tiếp"
+                          : "Chạm để tạm dừng · vuốt lên để xem tiếp"}
                     </span>
                   </div>
                 </div>
@@ -641,6 +762,17 @@ export function VideoFeedDoc({
           );
         })}
       </div>
+
+      {/* Hộp đăng nhập ngay trong luồng — chỉ hiện ở trang công khai (khi có truyền người xem) */}
+      {nguoiCongKhai && (
+        <HopDangNhap
+          mo={!!videoXinQuyen}
+          tieuDeVideo={videoXinQuyen?.v.title}
+          moTa={videoXinQuyen?.moTa ?? ""}
+          quayLai={quayLaiDangNhap}
+          onDong={() => setVideoXinQuyen(null)}
+        />
+      )}
     </div>
   );
 }

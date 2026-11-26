@@ -39,10 +39,11 @@ body {
   padding-top: var(--cao-dau-trang, 62px);
   background: var(--bg);
   color: var(--text);
-  /* Cùng phông với nooi.net (next/font Geist) — nếu chỉ để phông hệ thống thì
-     chữ hẹp hơn, menu và nút bị lệch chỗ so với website. */
-  font-family: Geist, "Geist Fallback", -apple-system, BlinkMacSystemFont,
-               "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Dùng ĐÚNG chuỗi phông của nooi.net (mặc định Tailwind) — đây mới là phông
+     website thật sự vẽ chữ. Để phông hệ thống kiểu -apple-system… thì chữ hẹp hơn
+     nên menu và nút bị lệch chỗ so với trang chủ. */
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+               "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;

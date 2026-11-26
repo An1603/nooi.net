@@ -64,6 +64,10 @@ export default async function GalleryPage() {
 
   return (
     <main className="min-h-[100dvh] bg-background">
+      {/* Báo trước cho trình duyệt 4 ảnh đầu: tải song song với CSS/JS thay vì đợi dựng xong lưới. */}
+      {banDau.items.slice(0, 4).map((it) => (
+        <link key={it.id} rel="preload" as="image" href={`/gallery/${it.thumb}`} fetchPriority="high" />
+      ))}
       <h1 className="sr-only">Thư viện ảnh NOOI</h1>
       <div className="pt-[70px]">
         <ThuVienAnh banDau={banDau} />

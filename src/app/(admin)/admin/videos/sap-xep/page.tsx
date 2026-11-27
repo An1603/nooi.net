@@ -22,7 +22,10 @@ export default async function SapXepVideoPage({
   const supabase = createAdminClient();
 
   // Đếm theo danh mục để chọn sẵn danh mục có nhiều bài nhất khi người quản trị chưa chọn
-  const { data: demRaw } = await supabase.from("videos").select("danh_muc").neq("status", "deleted");
+  const { data: demRaw } = await supabase
+    .from("videos")
+    .select("danh_muc")
+    .not("danh_muc", "like", "__thung-rac|%");
   const dem = new Map<string, number>();
   for (const v of (demRaw ?? []) as { danh_muc: string | null }[]) {
     const k = v.danh_muc ?? "";
@@ -32,7 +35,7 @@ export default async function SapXepVideoPage({
   const danhSach = [
     ...DANH_MUC.map((d) => ({ slug: d.slug, ten: d.ten, so: dem.get(d.slug) ?? 0 })),
     ...[...dem.keys()]
-      .filter((k) => k && !DANH_MUC.some((d) => d.slug === k))
+      .filter((k) => k && !k.startsWith("__thung-rac") && !DANH_MUC.some((d) => d.slug === k))
       .map((k) => ({ slug: k, ten: tenDanhMuc(k), so: dem.get(k) ?? 0 })),
     { slug: "__chua-xep", ten: "Chưa xếp danh mục", so: dem.get("") ?? 0 },
   ];
@@ -47,7 +50,7 @@ export default async function SapXepVideoPage({
     .order("thu_tu", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(300)
-    .neq("status", "deleted"); // bài trong thùng rác không nằm trong thứ tự hiển thị
+    .not("danh_muc", "like", "__thung-rac|%"); // bài trong thùng rác không nằm trong thứ tự hiển thị
 
   truyVan = dangChon === "__chua-xep" ? truyVan.is("danh_muc", null) : truyVan.eq("danh_muc", dangChon);
 

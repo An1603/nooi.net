@@ -25,10 +25,10 @@ export default async function AdminVideosPage({
 
   const laThungRac = dm === "__thung-rac";
   let truyVan = supabase.from("videos").select("*").limit(300);
-  if (laThungRac) truyVan = truyVan.eq("status", "deleted");
+  if (laThungRac) truyVan = truyVan.like("danh_muc", "__thung-rac|%");
   else {
-    // Bài trong thùng rác không hiện ở danh sách thường
-    truyVan = truyVan.neq("status", "deleted");
+    // Bài trong thùng rác không hiện ở danh sách thường (xem DAU_THUNG_RAC trong actions.ts)
+    truyVan = truyVan.not("danh_muc", "like", "__thung-rac|%");
     if (dm === "__chua-xep") truyVan = truyVan.is("danh_muc", null);
     else if (dm) truyVan = truyVan.eq("danh_muc", dm);
   }
@@ -43,7 +43,7 @@ export default async function AdminVideosPage({
   const dem = new Map<string, number>();
   let soThungRac = 0;
   for (const v of (demRaw ?? []) as { danh_muc: string | null; status: string | null }[]) {
-    if (v.status === "deleted") {
+    if ((v.danh_muc ?? "").startsWith("__thung-rac|")) {
       soThungRac += 1;
       continue;
     }
@@ -55,7 +55,13 @@ export default async function AdminVideosPage({
   const danhSach: MucChon[] = [
     ...DANH_MUC.map((d) => ({ slug: d.slug, ten: d.ten, so: dem.get(d.slug) ?? 0 })),
     ...[...dem.keys()]
-      .filter((k) => k && k !== "__chua-xep" && !DANH_MUC.some((d) => d.slug === k))
+      .filter(
+        (k) =>
+          k &&
+          k !== "__chua-xep" &&
+          !k.startsWith("__thung-rac") &&
+          !DANH_MUC.some((d) => d.slug === k)
+      )
       .map((k) => ({ slug: k, ten: tenDanhMuc(k), so: dem.get(k) ?? 0 })),
     { slug: "__chua-xep", ten: "Chưa xếp danh mục", so: dem.get("__chua-xep") ?? 0 },
     { slug: "__thung-rac", ten: "Thùng rác", so: soThungRac },

@@ -237,17 +237,32 @@ export async function boThuTu(danhMuc: string): Promise<KetQua> {
 }
 
 /**
- * TRẠNG THÁI "ĐÃ XOÁ" = nằm trong THÙNG RÁC.
+ * THÙNG RÁC — không xoá thẳng, chỉ ĐÁNH DẤU.
  *
- * Ngài An 27/11/2026: “cần cho chọn nhiều video để xoá một lúc”. Xoá hàng loạt bằng một cú bấm là
- * thao tác không thể lấy lại — mà đã có lần dữ liệu biến mất trong lúc thử (3 bài, không tìm ra
- * nguyên nhân vì cơ sở dữ liệu không có sổ ghi). Nên từ đây: XOÁ = chuyển vào thùng rác (giữ nguyên
- * hàng dữ liệu, chỉ đổi `status`), còn xoá thật chỉ làm từ trong thùng rác.
+ * Ngài An 27/11/2026 yêu cầu chọn nhiều video để xoá một lúc. Xoá hàng loạt là thao tác không lấy
+ * lại được, mà hôm nay đã có 3 bài biến mất trong lúc thử (không truy được nguyên nhân vì cơ sở dữ
+ * liệu không có sổ ghi). Nên: XOÁ = chuyển vào thùng rác; xoá thật chỉ làm từ trong thùng rác.
  *
- * `status = "deleted"` là an toàn vì mọi danh sách công khai và khu thành viên đều lọc
- * `status = "published"`, nên bài trong thùng rác không lọt ra ngoài.
+ * Cách đánh dấu: bảng `videos` có ràng buộc CHECK trên `status` (chỉ cho processing / ready /
+ * published / failed) nên KHÔNG thể thêm trạng thái "deleted". Vì vậy dùng cột chữ tự do `danh_muc`:
+ *
+ *     __thung-rac|<trạng thái cũ>|<danh mục cũ>
+ *
+ * và đồng thời đổi `status` sang "ready" + `cong_khai = false`. Nhờ vậy bài trong thùng rác biến
+ * khỏi mọi danh sách công khai (chúng lọc `status = published`) mà vẫn khôi phục được nguyên trạng.
+ * Có điều kiện thêm cột `deleted_at` thì nên chuyển sang cách sạch hơn.
  */
-const TRANG_THAI_XOA = "deleted";
+const DAU_THUNG_RAC = "__thung-rac";
+
+function ghiDauThungRac(status: string | null, danhMuc: string | null) {
+  return `${DAU_THUNG_RAC}|${status ?? "ready"}|${danhMuc ?? ""}`;
+}
+
+function docDauThungRac(giaTri: string | null) {
+  if (!giaTri || !giaTri.startsWith(`${DAU_THUNG_RAC}|`)) return null;
+  const [, status, danhMuc] = giaTri.split("|");
+  return { status: status || "ready", danhMuc: danhMuc || null };
+}
 
 /**
  * CHUYỂN NHIỀU VIDEO VÀO THÙNG RÁC (không xoá khỏi cơ sở dữ liệu, không đụng tới Bunny).
@@ -264,17 +279,40 @@ export async function xoaNhieu(
   if (!ids.length) return { error: "Chưa chọn video nào." };
 
   const admin = createAdminClient();
-  const { error, count } = await admin
+  const { data, error: loiDoc } = await admin
     .from("videos")
-    .update({ status: TRANG_THAI_XOA, cong_khai: false }, { count: "exact" })
+    .select("id, title, status, danh_muc")
     .in("id", ids);
-  if (error) return { error: error.message };
+  if (loiDoc) return { error: loiDoc.message };
+
+  let daXoa = 0;
+  for (const v of (data ?? []) as {
+    id: string;
+    title: string;
+    status: string | null;
+    danh_muc: string | null;
+  }[]) {
+    if (docDauThungRac(v.danh_muc)) {
+      daXoa += 1; // đã ở trong thùng rác rồi
+      continue;
+    }
+    const { error } = await admin
+      .from("videos")
+      .update({
+        danh_muc: ghiDauThungRac(v.status, v.danh_muc),
+        status: "ready",
+        cong_khai: false,
+      })
+      .eq("id", v.id);
+    if (!error) daXoa += 1;
+  }
 
   lamMoi();
-  return { ok: true, daXoa: count ?? ids.length };
+  revalidatePath("/admin/videos/sap-xep");
+  return { ok: true, daXoa };
 }
 
-/** LẤY LẠI video từ thùng rác về trạng thái "Sẵn sàng" (đăng lại thì sửa tiếp trong biểu mẫu). */
+/** LẤY LẠI video từ thùng rác về đúng trạng thái và danh mục trước đó. */
 export async function khoiPhucNhieu(ids: string[]): Promise<KetQua & { daKhoiPhuc?: number }> {
   const qt = await phaiQuanTri();
   if ("error" in qt) return qt;
@@ -284,19 +322,31 @@ export async function khoiPhucNhieu(ids: string[]): Promise<KetQua & { daKhoiPhu
   if (!ids.length) return { error: "Chưa chọn video nào." };
 
   const admin = createAdminClient();
-  const { error, count } = await admin
+  const { data, error: loiDoc } = await admin
     .from("videos")
-    .update({ status: "ready" }, { count: "exact" })
+    .select("id, danh_muc")
     .in("id", ids);
-  if (error) return { error: error.message };
+  if (loiDoc) return { error: loiDoc.message };
+
+  let daKhoiPhuc = 0;
+  for (const v of (data ?? []) as { id: string; danh_muc: string | null }[]) {
+    const cu = docDauThungRac(v.danh_muc);
+    if (!cu) continue;
+    const { error } = await admin
+      .from("videos")
+      .update({ danh_muc: cu.danhMuc, status: cu.status })
+      .eq("id", v.id);
+    if (!error) daKhoiPhuc += 1;
+  }
 
   lamMoi();
-  return { ok: true, daKhoiPhuc: count ?? ids.length };
+  revalidatePath("/admin/videos/sap-xep");
+  return { ok: true, daKhoiPhuc };
 }
 
 /**
- * XOÁ VĨNH VIỄN — chỉ gọi từ trong thùng rác, sau khi người quản trị đã xem lại danh sách.
- * Xoá tệp Bunny TRƯỚC rồi mới xoá hàng: ngược lại là mất đường dẫn để biết tệp nào cần xoá.
+ * XOÁ VĨNH VIỄN — chỉ gọi từ trong thùng rác. Xoá tệp Bunny TRƯỚC rồi mới xoá hàng: ngược lại là
+ * mất đường dẫn để biết tệp nào cần xoá.
  */
 export async function xoaVinhVienNhieu(
   ids: string[],
@@ -312,7 +362,7 @@ export async function xoaVinhVienNhieu(
   const admin = createAdminClient();
   const { data, error: loiDoc } = await admin
     .from("videos")
-    .select("id, title, url, kenh_phat, status")
+    .select("id, title, url, kenh_phat, danh_muc")
     .in("id", ids);
   if (loiDoc) return { error: loiDoc.message };
 
@@ -325,10 +375,10 @@ export async function xoaVinhVienNhieu(
     title: string;
     url: string | null;
     kenh_phat: string;
-    status: string | null;
+    danh_muc: string | null;
   }[]) {
     // Chỉ xoá thật những bài ĐANG ở trong thùng rác — chặn mọi đường gọi nhầm
-    if (v.status !== TRANG_THAI_XOA) {
+    if (!docDauThungRac(v.danh_muc)) {
       loi.push(`${v.title}: chưa nằm trong thùng rác`);
       continue;
     }

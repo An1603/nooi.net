@@ -240,7 +240,8 @@ export interface NguonDoc {
 }
 
 /**
- * Nguồn phát cho LUỒNG VUỐT DỌC (/app/short).
+ * Nguồn phát cho LUỒNG VUỐT DỌC (bộ lọc `?kh=doc` trên kho video — trước đây là trang `/app/short`,
+ * đã gộp về `/app/videos` ngày 27/11/2026).
  *
  * Vì sao phải tách khỏi `nguonPhat`: trong luồng vuốt, người dùng đặt ngón tay lên đúng vùng video
  * để vuốt. Thao tác chạm trong iframe KHÔNG truyền ra trang cha, nên mọi item dùng iframe đều bị

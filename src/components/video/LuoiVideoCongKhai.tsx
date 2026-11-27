@@ -95,6 +95,14 @@ const NUT_CHON_PHU = "border-foreground/40 bg-muted text-foreground";
 interface Props {
   videos: VideoCongKhai[];
   nguoi: NguoiXem;
+  /**
+   * Tiền tố đường dẫn mở một bài khi bấm vào thẻ.
+   *
+   * Mặc định `/video` (kho công khai). Khu thành viên `/app` truyền `/app/videos` để ở lại trong
+   * app — cùng một lưới, cùng bộ lọc, chỉ khác đích đến. Nút CHIA SẺ vẫn luôn trỏ `/video/<mã>`
+   * vì người nhận link phải mở được mà không cần đăng nhập.
+   */
+  tienToBai?: string;
 }
 
 /**
@@ -108,7 +116,7 @@ interface Props {
  * Video bị khoá vẫn HIỆN (biết có gì) nhưng phủ ổ khoá; bấm vào thì hiện hộp đăng nhập ngay tại
  * chỗ. Video mở được thì bấm vào là vào luồng xem đứng đúng bài đó.
  */
-export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
+export function LuoiVideoCongKhai({ videos, nguoi, tienToBai = "/video" }: Props) {
   const [tuKhoa, setTuKhoa] = useState("");
   const [loc, setLoc] = useState<string>(TAT_CA);
   const [locKhung, setLocKhung] = useState<LocKhung>(TAT_CA);
@@ -535,7 +543,7 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
               <div key={v.id} className="o-masonry relative mb-3.5">
                 <div className="overflow-hidden rounded-2xl border border-white/15 bg-card shadow-[0_10px_30px_-18px_rgba(0,0,0,0.9)] transition-colors hover:border-primary/60">
                   {kq.mo ? (
-                    <Link href={`/video/${v.id}`} className={lopNgoai}>
+                    <Link href={`${tienToBai}/${v.id}`} className={lopNgoai}>
                       {trong}
                     </Link>
                   ) : (

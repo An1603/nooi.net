@@ -86,7 +86,7 @@ export function VideoFeedDoc({
   videos,
   tieuDe,
   duongDanDong = "/app/videos",
-  duongDanDo = "/app/short",
+  duongDanDo = "/app/videos", // /app chỉ còn một cửa video (27/11/2026)
   thuGon = true,
   tienToBai = "/app/videos",
   nguoiCongKhai = null,

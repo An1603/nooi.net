@@ -48,9 +48,14 @@ export function tenDanhMuc(slug?: string | null): string {
   return laDanhMuc(slug)?.ten ?? slug;
 }
 
-/** Đường dẫn tới luồng xem của một danh mục. */
+/**
+ * Đường dẫn tới danh sách video của một danh mục TRONG KHU THÀNH VIÊN.
+ *
+ * Ngài An chốt 27/11/2026: `/app` chỉ còn một cửa video — danh mục là **bộ lọc** trên kho video
+ * (`?dm=`), không phải trang riêng. Hàm này để mọi chỗ gọi vẫn ra đúng chỗ, không phải sửa rải rác.
+ */
 export function duongDanDanhMuc(slug: string): string {
-  return `/app/danh-muc/${encodeURIComponent(slug)}`;
+  return `/app/videos?dm=${encodeURIComponent(slug)}`;
 }
 
 /**

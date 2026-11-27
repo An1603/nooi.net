@@ -8,7 +8,7 @@ import { Logo } from '@/components/brand/Logo';
 import {
   LayoutDashboard, FolderOpen, Video, BookOpen, Settings,
   Sparkles, Headphones, User, BookHeart, Users, Layers, Package,
-  TrendingUp, Images, GraduationCap, Smartphone, LayoutGrid,
+  TrendingUp, Images, GraduationCap,
 } from 'lucide-react';
 
 const NAV = [
@@ -24,8 +24,6 @@ const NAV = [
   { label: 'Mentor Hub', href: '/app/mentors', icon: Users },
   { label: 'Cộng đồng', href: '/app/cong-dong', icon: Users },
   { label: 'Video', href: '/app/videos', icon: Video },
-  { label: 'Danh mục video', href: '/app/danh-muc', icon: LayoutGrid },
-  { label: 'Vuốt dọc', href: '/app/short', icon: Smartphone },
   { label: 'Thư viện', href: '/app/library', icon: BookOpen },
   { label: 'Thư viện ảnh', href: '/gallery', icon: Images },
   { label: 'Dự án', href: '/app/projects', icon: FolderOpen },

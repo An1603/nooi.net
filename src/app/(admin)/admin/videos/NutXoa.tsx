@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Trash2, Loader2, X } from "lucide-react";
 import { xoaVideo } from "./actions";
 
@@ -21,7 +20,6 @@ export function NutXoa({
   tieuDe: string;
   laBunny: boolean;
 }) {
-  const router = useRouter();
   const [mo, setMo] = useState(false);
   const [xoaBunny, setXoaBunny] = useState(true);
   const [loi, setLoi] = useState("");
@@ -36,7 +34,9 @@ export function NutXoa({
         return;
       }
       setMo(false);
-      router.refresh();
+      // Tải lại cả trang: `router.refresh()` có lúc vẫn dùng lại gói dữ liệu đã đệm nên dòng vừa
+      // xoá vẫn nằm trên bảng (đã gặp 27/11/2026). Khu quản trị ưu tiên đúng hơn là mượt.
+      window.location.reload();
     });
   }
 

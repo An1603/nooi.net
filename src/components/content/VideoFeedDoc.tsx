@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, BookOpen, Check, ChevronDown, ChevronUp, Gauge, Info, Lock, Maximize2, Minimize2, Play, Settings, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronDown, ChevronUp, Gauge, Info, Lock, Maximize2, Minimize2, Play, Repeat, Settings, SkipForward, Volume2, VolumeX, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { thuocBaiHoc } from "@/lib/video/danh-muc";
 import { anhBia } from "@/lib/video/anh-bia";
@@ -145,6 +145,19 @@ export function VideoFeedDoc({
   );
   const [tatTieng, setTatTieng] = useState(false);
   const [dangPhat, setDangPhat] = useState(true);
+  /**
+   * HẾT BÀI THÌ LÀM GÌ (Ngài An 27/11/2026): “lúc hết sẽ tự động chuyển video tiếp (hiện tại đang
+   * phát lặp lại), có thể thêm nút chuyển từ phát lặp sang phát tiếp”.
+   *
+   *   "tiep" — hết bài thì sang bài kế trong luồng (mặc định; bài cuối thì lặp lại chính nó)
+   *   "lap"  — phát lặp lại bài đang xem
+   *
+   * Nhớ lựa chọn qua localStorage để lần sau mở lại vẫn đúng ý người xem.
+   */
+  const [cheDoHet, setCheDoHet] = useState<"tiep" | "lap">("tiep");
+  const cheDoHetRef = useRef<"tiep" | "lap">("tiep");
+  /** Khung nào đã xử lý “hết bài” rồi — chặn bắn liên tục vì YouTube báo trạng thái 4 lần/giây */
+  const daHetRef = useRef<boolean[]>([]);
   /**
    * Điều khiển bằng postMessage đã hoạt động chưa — trước đây dùng để quyết định có dựng thanh tua
    * hay không. Nay khung ngang bật `controls=0` nên thanh tua của NOOI luôn là thanh duy nhất;
@@ -479,6 +492,16 @@ export function VideoFeedDoc({
           setDangPhat(t.dangPhat);
           setTatTieng(t.tatTieng);
           tiengRef.current = t.tatTieng;
+          // YouTube báo hết bài (playerState = 0). Nó gửi trạng thái ~4 lần/giây nên phải chặn
+          // bắn lặp bằng cờ riêng; phát lại thì cờ tự hạ.
+          if (t.ketThuc) {
+            if (!daHetRef.current[i]) {
+              daHetRef.current[i] = true;
+              hetBai(i);
+            }
+          } else {
+            daHetRef.current[i] = false;
+          }
           // ĐANG KÉO THANH: YouTube vẫn gửi vị trí cũ ~4 lần/giây — nếu để nó ghi đè thì thanh
           // đứng im ở chỗ vừa nhấn và người xem thấy "kéo không ăn" (Ngài An báo 27/11/2026).
           if (keoRef.current) return;
@@ -647,6 +670,72 @@ export function VideoFeedDoc({
     const el = mucRef.current[i];
     el?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  /* ───────── Hết bài: chuyển tiếp hay lặp lại ───────── */
+
+  // Nhớ lựa chọn của người xem (mặc định: chuyển tiếp)
+  useEffect(() => {
+    try {
+      const da = localStorage.getItem("nooi-che-do-het");
+      if (da === "lap" || da === "tiep") {
+        setCheDoHet(da);
+        cheDoHetRef.current = da;
+      }
+    } catch {
+      /* trình duyệt chặn localStorage — dùng mặc định */
+    }
+  }, []);
+
+  const doiCheDoHet = useCallback(() => {
+    setCheDoHet((cu) => {
+      const moi = cu === "tiep" ? "lap" : "tiep";
+      cheDoHetRef.current = moi;
+      try {
+        localStorage.setItem("nooi-che-do-het", moi);
+      } catch {
+        /* bỏ qua */
+      }
+      return moi;
+    });
+  }, []);
+
+  /** Phát lại bài đang xem từ đầu (dùng cho chế độ “phát lặp” và cho bài cuối luồng). */
+  const phatLai = useCallback((i: number) => {
+    const el = videoRef.current[i];
+    if (el) {
+      try {
+        el.currentTime = 0;
+        void el.play().catch(() => {});
+      } catch {
+        /* bỏ qua */
+      }
+      return;
+    }
+    const yt = ytRef.current[i];
+    if (yt) {
+      yt.toi(0);
+      yt.phat();
+    }
+  }, []);
+
+  /**
+   * Hết bài → làm gì. “Chuyển tiếp” thì sang bài kế trong luồng (đúng thứ tự đã sắp); hết luồng
+   * thì lặp lại bài cuối để màn hình không đứng im.
+   */
+  const hetBai = useCallback(
+    (i: number) => {
+      if (cheDoHetRef.current === "lap") {
+        phatLai(i);
+        return;
+      }
+      if (i < videos.length - 1) {
+        cuon(i + 1);
+        return;
+      }
+      phatLai(i);
+    },
+    [videos.length, cuon, phatLai]
+  );
 
   /** Chạm vào khung: tạm dừng / tiếp tục (chỉ với nguồn điều khiển được). */
   const bamVao = useCallback(
@@ -1113,8 +1202,11 @@ const AN_CHROME_SAU = 1000;
                     className="absolute inset-0 h-full w-full object-contain"
                     poster={anhBia(v.thumbnail_url, { rong: 720 }) || undefined}
                     playsInline
-                    loop
+                    loop={cheDoHet === "lap"}
                     preload="metadata"
+                    onEnded={() => {
+                      if (i === iRef.current) hetBai(i);
+                    }}
                     onPlay={() => {
                       setLoiPhat(null);
                       if (i === iRef.current) setDangPhat(true);
@@ -1254,6 +1346,24 @@ const AN_CHROME_SAU = 1000;
                     hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
                   )}
                 >
+                  {!khoa && (n.kieu === "video" || !!n.youtubeId) && (
+                    <button
+                      type="button"
+                      onClick={doiCheDoHet}
+                      aria-label={
+                        cheDoHet === "lap" ? "Đang phát lặp — bấm để chuyển sang phát tiếp" : "Đang phát tiếp — bấm để phát lặp"
+                      }
+                      title={cheDoHet === "lap" ? "Hết bài: PHÁT LẶP (bấm để chuyển tiếp)" : "Hết bài: CHUYỂN TIẾP (bấm để phát lặp)"}
+                      className={cn(
+                        "flex size-9 items-center justify-center rounded-full border backdrop-blur",
+                        cheDoHet === "lap"
+                          ? "border-white/20 bg-black/40 hover:bg-black/60"
+                          : "border-accent/40 bg-accent/40 hover:bg-accent/60"
+                      )}
+                    >
+                      {cheDoHet === "lap" ? <Repeat size={16} /> : <SkipForward size={16} />}
+                    </button>
+                  )}
                   {!khoa && (n.kieu === "video" || !!n.youtubeId) && (
                     <button
                       type="button"

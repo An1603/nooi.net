@@ -25,6 +25,8 @@ export interface TrangThaiYouTube {
   tong: number;
   dangPhat: boolean;
   tatTieng: boolean;
+  /** Vừa phát HẾT bài (playerState = 0) — luồng xem dùng để chuyển bài kế hoặc lặp lại. */
+  ketThuc?: boolean;
 }
 
 export interface DieuKhienYouTube {
@@ -82,6 +84,8 @@ export function taoDieuKhienYouTube(
   let tong = tongDuPhong > 0 ? tongDuPhong : 0;
   let dangPhat = false;
   let tatTieng = false;
+  /** Đã phát hết bài chưa — chỉ bật khi playerState = 0 */
+  let ketThuc = false;
   /** Lúc gửi `seekTo` gần nhất — dùng để bỏ qua các `infoDelivery` còn báo vị trí CŨ. */
   let lucGuiSeek = 0;
   let daNhan = false;
@@ -147,7 +151,10 @@ export function taoDieuKhienYouTube(
     }
     if (typeof i.duration === "number" && i.duration > 0) tong = i.duration;
     // 1 = đang phát, 3 = đang đệm (vẫn coi là đang phát)
-    if (typeof i.playerState === "number") dangPhat = i.playerState === 1 || i.playerState === 3;
+    if (typeof i.playerState === "number") {
+      dangPhat = i.playerState === 1 || i.playerState === 3;
+      ketThuc = i.playerState === 0;
+    }
     if (typeof i.muted === "boolean") tatTieng = i.muted;
     const lanDau = !daNhan;
     daNhan = true;
@@ -157,7 +164,7 @@ export function taoDieuKhienYouTube(
     if (lanDau && choDung) gui("pauseVideo");
     else if (lanDau && choPhat) gui("playVideo");
     if (lanDau && Math.abs(tocDoMong - 1) > 0.001) gui("setPlaybackRate", [tocDoMong]);
-    khiDoi({ giay, tong, dangPhat, tatTieng });
+    khiDoi({ giay, tong, dangPhat, tatTieng, ketThuc });
   };
 
   window.addEventListener("message", nghe);
@@ -179,13 +186,14 @@ export function taoDieuKhienYouTube(
     chao();
   }, 1000);
 
-  const baoTrangThai = () => khiDoi({ giay, tong, dangPhat, tatTieng });
+  const baoTrangThai = () => khiDoi({ giay, tong, dangPhat, tatTieng, ketThuc });
 
   return {
     sanSang: () => daNhan,
     phat: () => {
       choPhat = true;
       choDung = false;
+      ketThuc = false;
       gui("playVideo");
     },
     dung: () => {
@@ -199,6 +207,7 @@ export function taoDieuKhienYouTube(
         lucGuiSeek = Date.now();
         return;
       }
+      ketThuc = false;
       const moi = Math.max(0, Math.min(tong - 0.5, giay + d));
       gui("seekTo", [moi, true]);
       lucGuiSeek = Date.now();
@@ -207,6 +216,7 @@ export function taoDieuKhienYouTube(
     },
     toi: (tiLe) => {
       if (tong <= 0) return;
+      ketThuc = false;
       const moi = Math.max(0, Math.min(tong - 0.5, tiLe * tong));
       gui("seekTo", [moi, true]);
       lucGuiSeek = Date.now();

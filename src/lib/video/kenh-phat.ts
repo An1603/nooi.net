@@ -137,7 +137,10 @@ export const DUONG_DAN_NHUNG = {
 
   /** Dạng dọc cho luồng vuốt: tự phát, tắt tiếng, lặp lại, giấu bớt chrome của YouTube. */
   youtubeDoc: (id: string) =>
-    `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1`,
+    // KHÔNG dùng `loop=1`: khung tự lặp thì YouTube không bao giờ báo “hết bài”, nên luồng xem
+    // không thể chuyển sang bài kế. Việc lặp/chuyển do `VideoFeedDoc` quyết định theo lựa chọn
+    // của người xem (nút “Phát lặp / Phát tiếp”).
+    `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&controls=0&rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1`,
 
   /**
    * Trình phát nhúng của Bunny. GIỮ LẠI chỉ để làm đường lui "Mở bằng trình phát Bunny" —

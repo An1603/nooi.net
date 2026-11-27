@@ -333,7 +333,14 @@ export function VideoFeedDoc({
     setDangPhat(true);
 
     videos.forEach((_, i) => {
-      if (i !== iDangXem) dung(i);
+      if (i === iDangXem) return;
+      dung(i);
+      // Khung RỜI khỏi màn hình: tắt tiếng luôn. Dù nó có bị phát lại vì bất kỳ lý do gì (tự phát,
+      // mạng chậm rồi mới chạy, React gắn lại thẻ) thì cũng KHÔNG thể chồng tiếng lên bài đang xem
+      // — đây chính là lỗi “nghe thấy tiếng của video bên cạnh” (Ngài An báo 27/11/2026).
+      const elKhac = videoRef.current[i];
+      if (elKhac) elKhac.muted = true;
+      ytRef.current[i]?.tieng(true);
     });
     // Khung VỪA thành khung đang xem: áp đúng cài đặt tiếng của người xem (khung bên cạnh luôn bị
     // tắt tiếng, không áp lại thì video mới sẽ câm dù người xem đang muốn có tiếng).

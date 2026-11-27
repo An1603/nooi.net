@@ -431,11 +431,14 @@ export function VideoFeedDoc({
           if (i !== iRef.current) return;
           // Chỉ bật nút loa của mình khi YouTube đã trả lời — chưa trả lời thì để nút của YouTube
           setYtSong((x) => (x[i] ? x : { ...x, [i]: true }));
-          setThoiGian({ giay: t.giay, tong: t.tong });
-          setTienTrinh(t.tong > 0 ? Math.min(100, (t.giay / t.tong) * 100) : 0);
           setDangPhat(t.dangPhat);
           setTatTieng(t.tatTieng);
           tiengRef.current = t.tatTieng;
+          // ĐANG KÉO THANH: YouTube vẫn gửi vị trí cũ ~4 lần/giây — nếu để nó ghi đè thì thanh
+          // đứng im ở chỗ vừa nhấn và người xem thấy "kéo không ăn" (Ngài An báo 27/11/2026).
+          if (keoRef.current) return;
+          setThoiGian({ giay: t.giay, tong: t.tong });
+          setTienTrinh(t.tong > 0 ? Math.min(100, (t.giay / t.tong) * 100) : 0);
         // Thời lượng dự phòng: bấm/kéo thanh trước khi YouTube kịp trả lời vẫn quy đổi được ra giây
         }, videosRef.current[i]?.duration ?? 0);
         return;
@@ -668,10 +671,24 @@ export function VideoFeedDoc({
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (!keoRef.current) return;
       e.stopPropagation();
-      // Kéo: chỉ chạy thanh theo tay. Lệnh seek được gửi đúng một lần khi thả (xem `thoiKeo`).
-      datViTri(tiLeTheoX(e.clientX), false);
+      const tiLe = tiLeTheoX(e.clientX);
+      tiLeKeoRef.current = tiLe;
+      // Thanh chạy theo tay NGAY, không chờ trình phát trả lời
+      setTienTrinh(tiLe * 100);
+      setThoiGian((x) => ({ ...x, giay: tiLe * x.tong }));
+      const el = videoRef.current[iRef.current];
+      if (el && el.duration && Number.isFinite(el.duration)) {
+        try {
+          el.currentTime = tiLe * el.duration;
+        } catch {
+          /* tệp chưa tải đủ phần đó */
+        }
+        return;
+      }
+      // YouTube: chỉ cập nhật giao diện trong lúc kéo; lệnh seekTo đi đúng một lần khi thả tay
+      ytRef.current[iRef.current]?.xemTruoc(tiLe);
     },
-    [datViTri, tiLeTheoX]
+    [tiLeTheoX]
   );
 
   const thoiKeo = useCallback((e: React.PointerEvent<HTMLDivElement>) => {

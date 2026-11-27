@@ -71,6 +71,8 @@ export function taoDieuKhienYouTube(
   let tong = tongDuPhong > 0 ? tongDuPhong : 0;
   let dangPhat = false;
   let tatTieng = false;
+  /** Lúc gửi `seekTo` gần nhất — dùng để bỏ qua các `infoDelivery` còn báo vị trí CŨ. */
+  let lucGuiSeek = 0;
   let daNhan = false;
   let daHuy = false;
 
@@ -108,7 +110,11 @@ export function taoDieuKhienYouTube(
     if (!d || d.event !== "infoDelivery" || !d.info) return;
 
     const i = d.info;
-    if (typeof i.currentTime === "number") giay = i.currentTime;
+    if (typeof i.currentTime === "number") {
+      // Vừa gửi seekTo mà YouTube còn báo vị trí CŨ (lệch nhiều) → bỏ qua, không để thanh nhảy lùi
+      const dangChoSeek = Date.now() - lucGuiSeek < 1200;
+      if (!dangChoSeek || Math.abs(i.currentTime - giay) < 1.5) giay = i.currentTime;
+    }
     if (typeof i.duration === "number" && i.duration > 0) tong = i.duration;
     // 1 = đang phát, 3 = đang đệm (vẫn coi là đang phát)
     if (typeof i.playerState === "number") dangPhat = i.playerState === 1 || i.playerState === 3;
@@ -145,10 +151,12 @@ export function taoDieuKhienYouTube(
     tua: (d) => {
       if (tong <= 0) {
         gui("seekTo", [Math.max(0, giay + d), true]);
+        lucGuiSeek = Date.now();
         return;
       }
       const moi = Math.max(0, Math.min(tong - 0.5, giay + d));
       gui("seekTo", [moi, true]);
+      lucGuiSeek = Date.now();
       giay = moi; // cập nhật ngay: bấm phím liên tiếp không bị tính từ vị trí cũ
       baoTrangThai();
     },
@@ -156,6 +164,7 @@ export function taoDieuKhienYouTube(
       if (tong <= 0) return;
       const moi = Math.max(0, Math.min(tong - 0.5, tiLe * tong));
       gui("seekTo", [moi, true]);
+      lucGuiSeek = Date.now();
       giay = moi;
       baoTrangThai();
     },

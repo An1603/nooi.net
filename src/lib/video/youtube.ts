@@ -102,6 +102,16 @@ export function taoDieuKhienYouTube(
    * `controls=0` — không còn nút phát nào của YouTube để bấm lại.
    */
   let choPhat = false;
+  /**
+   * Lệnh TẠM DỪNG gửi lúc trình phát chưa sẵn sàng (khung bên cạnh vừa dựng, người xem đã vuốt
+   * sang bài khác) — gửi lại ngay khi nhận tín hiệu đầu tiên, nếu không khung đó sẽ phát tiếp.
+   */
+  let choDung = false;
+  /**
+   * Trạng thái tiếng người cha MUỐN (true = tắt tiếng). Nhớ lại để áp đúng lúc trình phát sẵn
+   * sàng — lệnh mute/unMute gửi quá sớm bị bỏ im lặng, và khung bên cạnh sẽ phát ra tiếng.
+   */
+  let tiengMong: boolean | null = null;
   /** Tốc độ người xem đã chọn; gửi lại sau khi trình phát sẵn sàng (lệnh sớm bị bỏ). */
   let tocDoMong = tocDoBanDau;
 
@@ -141,8 +151,11 @@ export function taoDieuKhienYouTube(
     if (typeof i.muted === "boolean") tatTieng = i.muted;
     const lanDau = !daNhan;
     daNhan = true;
-    // Người xem đã bấm phát trong lúc YouTube chưa sẵn sàng → gửi lại đúng lúc này
-    if (lanDau && choPhat) gui("playVideo");
+    // Người xem đã bấm phát trong lúc YouTube chưa sẵn sàng → gửi lại đúng lúc này.
+    // Đang muốn TẠM DỪNG (khung bên cạnh) thì dừng — ưu tiên dừng, không để khung lạ phát ra tiếng.
+    if (lanDau && tiengMong !== null) gui(tiengMong ? "mute" : "unMute");
+    if (lanDau && choDung) gui("pauseVideo");
+    else if (lanDau && choPhat) gui("playVideo");
     if (lanDau && Math.abs(tocDoMong - 1) > 0.001) gui("setPlaybackRate", [tocDoMong]);
     khiDoi({ giay, tong, dangPhat, tatTieng });
   };
@@ -172,10 +185,12 @@ export function taoDieuKhienYouTube(
     sanSang: () => daNhan,
     phat: () => {
       choPhat = true;
+      choDung = false;
       gui("playVideo");
     },
     dung: () => {
       choPhat = false;
+      choDung = true;
       gui("pauseVideo");
     },
     tua: (d) => {
@@ -214,6 +229,7 @@ export function taoDieuKhienYouTube(
       gui("setPlaybackRate", [heSo]);
     },
     tieng: (tat) => {
+      tiengMong = tat;
       gui(tat ? "mute" : "unMute");
       tatTieng = tat;
       baoTrangThai();

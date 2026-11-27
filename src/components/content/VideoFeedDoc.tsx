@@ -126,7 +126,8 @@ export function VideoFeedDoc({
   const videosRef = useRef(videos);
   videosRef.current = videos;
   const iRef = useRef(iBatDau);
-  const tiengRef = useRef(true);
+  /** Tiếng: `true` = đang TẮT TIẾNG. Mặc định mở tiếng (ưu tiên có tiếng khi mở video). */
+  const tiengRef = useRef(false);
 
   const [iDangXem, setIDangXem] = useState(iBatDau);
   /** Video đang mời đăng nhập (chỉ ở trang công khai) */
@@ -140,7 +141,7 @@ export function VideoFeedDoc({
     },
     [kqQuyen]
   );
-  const [tatTieng, setTatTieng] = useState(true);
+  const [tatTieng, setTatTieng] = useState(false);
   const [dangPhat, setDangPhat] = useState(true);
   /**
    * Điều khiển bằng postMessage đã hoạt động chưa — trước đây dùng để quyết định có dựng thanh tua
@@ -334,6 +335,12 @@ export function VideoFeedDoc({
     videos.forEach((_, i) => {
       if (i !== iDangXem) dung(i);
     });
+    // Khung VỪA thành khung đang xem: áp đúng cài đặt tiếng của người xem (khung bên cạnh luôn bị
+    // tắt tiếng, không áp lại thì video mới sẽ câm dù người xem đang muốn có tiếng).
+    const ytMoi = ytRef.current[iDangXem];
+    if (ytMoi) ytMoi.tieng(tiengRef.current);
+    const elMoi = videoRef.current[iDangXem];
+    if (elMoi) elMoi.muted = tiengRef.current;
     phat(iDangXem);
   }, [iDangXem, videos, dung, phat, ghiNhip]);
 
@@ -444,8 +451,22 @@ export function VideoFeedDoc({
       // ── YouTube: điều khiển bằng postMessage (phát/dừng, tua, tiếng) ──
       const ytId = nguonRef.current[i]?.youtubeId;
       if (ytId) {
-        ytRef.current[i] = taoDieuKhienYouTube(el, (t: TrangThaiYouTube) => {
-          if (i !== iRef.current) return;
+        let dieuKhien: DieuKhienYouTube | null = null;
+        /**
+         * KHUNG KHÔNG PHẢI KHUNG ĐANG XEM THÌ KHÔNG ĐƯỢC PHÁT RA TIẾNG.
+         *
+         * Ngài An báo 27/11/2026: *“đang xem video này lại nghe thấy tiếng của video bên cạnh”*.
+         * Nguyên nhân: luồng xem dựng sẵn khung liền trước/liền sau, mà URL nhúng cũ mang
+         * `autoplay=1` nên mỗi khung tự phát; lệnh tạm dừng gửi lúc khung chưa sẵn sàng bị bỏ
+         * im lặng ⇒ khung bên cạnh cứ phát. Nay: bỏ `autoplay` trong URL, VÀ khung nào báo
+         * “đang phát” khi không phải khung đang xem thì tắt tiếng + tạm dừng ngay (tự chữa).
+         */
+        const gacTieng = (t: TrangThaiYouTube) => {
+          if (i !== iRef.current) {
+            if (t.dangPhat) dieuKhien?.dung();
+            if (!t.tatTieng) dieuKhien?.tieng(true);
+            return;
+          }
           setDangPhat(t.dangPhat);
           setTatTieng(t.tatTieng);
           tiengRef.current = t.tatTieng;
@@ -454,9 +475,19 @@ export function VideoFeedDoc({
           if (keoRef.current) return;
           setThoiGian({ giay: t.giay, tong: t.tong });
           setTienTrinh(t.tong > 0 ? Math.min(100, (t.giay / t.tong) * 100) : 0);
-        // Thời lượng dự phòng: bấm/kéo thanh trước khi YouTube kịp trả lời vẫn quy đổi được ra giây;
-        // tốc độ người xem đã chọn (0,5–2×) được áp lại cho khung mới
-        }, videosRef.current[i]?.duration ?? 0, tocDoRef.current);
+        };
+        dieuKhien = taoDieuKhienYouTube(
+          el,
+          gacTieng,
+          // Thời lượng dự phòng: bấm/kéo thanh trước khi YouTube kịp trả lời vẫn quy đổi được ra giây;
+          // tốc độ người xem đã chọn (0,5–2×) được áp lại cho khung mới
+          videosRef.current[i]?.duration ?? 0,
+          tocDoRef.current
+        );
+        ytRef.current[i] = dieuKhien;
+        // Khung vừa dựng mà KHÔNG phải khung đang xem: tắt tiếng ngay từ đầu. Khung đang xem thì
+        // theo cài đặt tiếng hiện tại (mở đầu luôn CÓ tiếng nếu máy cho phép).
+        dieuKhien.tieng(i === iRef.current ? tiengRef.current : true);
         return;
       }
 
@@ -568,8 +599,10 @@ export function VideoFeedDoc({
         void thuPhat(el);
         return;
       }
-      // Khung khác: theo cài đặt tiếng chung, KHÔNG tự phát (chỉ phát khi thành khung đang xem)
-      el.muted = tiengRef.current;
+      // Khung KHÁC: giữ TẮT TIẾNG tuyệt đối — chỉ khung đang xem mới được phát ra tiếng.
+      // (Ngài An báo 27/11/2026 nghe tiếng video bên cạnh: khung bên cạnh trước đây mang đúng
+      // cài đặt tiếng của khung đang xem, nên chỉ cần nó lỡ phát là nghe lẫn.)
+      el.muted = i === iRef.current ? tiengRef.current : true;
     },
     [thuPhat]
   );

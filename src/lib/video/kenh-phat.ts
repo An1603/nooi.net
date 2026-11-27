@@ -102,18 +102,22 @@ export const DUONG_DAN_NHUNG = {
     `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1`,
 
   /**
-   * Video NGANG nhúng trong luồng xem: KHÔNG tắt tiếng, KHÔNG lặp, **KHÔNG thanh điều khiển của YouTube**.
+   * Video NGANG nhúng trong luồng xem: KHÔNG tắt tiếng, KHÔNG lặp, **KHÔNG thanh điều khiển của YouTube**,
+   * và **KHÔNG `autoplay`**.
    *
    * Vì sao `controls=0`: Ngài An báo 27/11/2026 thấy **hai thanh tiến trình** chồng nhau (thanh của
    * YouTube nằm trong iframe + thanh tua của NOOI). Luồng xem tự dựng thanh tua (bấm/kéo được, phím
    * ← →) và nút loa/phát riêng nên thanh của YouTube là thừa — tắt đi để mọi nguồn (Bunny, YouTube,
    * tệp trực tiếp) có **đúng một** thanh và một bộ điều khiển giống nhau.
    *
-   * Vẫn giữ `autoplay=1` không kèm `mute`: máy cho phép thì phát luôn CÓ TIẾNG; máy chặn thì nút ▶
-   * của luồng xem (gọi `playVideo` qua postMessage) là đường phát.
+   * Vì sao BỎ `autoplay=1` (Ngài An báo 27/11/2026: *“đang xem video này lại nghe thấy tiếng của
+   * video bên cạnh”*): luồng xem dựng sẵn khung liền trước + liền sau cho mượt, nên mỗi iframe mang
+   * `autoplay=1` đều TỰ PHÁT — kể cả khung bên cạnh, và phát **có tiếng**. Khi iframe chưa sẵn sàng
+   * thì lệnh tạm dừng gửi qua postMessage bị bỏ im lặng, nên khung bên cạnh cứ thế phát. Nay khung
+   * **chỉ phát khi được lệnh** (`playVideo` từ khung đang xem, qua `src/lib/video/youtube.ts`).
    */
   youtubeNgang: (id: string) =>
-    `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1&autoplay=1&controls=0&modestbranding=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0`,
+    `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1&controls=0&modestbranding=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0`,
 
   /**
    * Cùng video nhưng dùng **trình phát ĐẦY ĐỦ của YouTube** (`controls=1`) — chế độ người xem tự

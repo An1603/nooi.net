@@ -966,13 +966,17 @@ export function VideoFeedDoc({
       : // Video ngang: rộng hết màn hình, chiều cao suy ra — màn hình thấp thì tự thu lại
         { aspectRatio: "16 / 9", width: "100vw", height: "auto", maxHeight: "100dvh" };
 
+/** Bao lâu không chạm/di chuột thì ẩn hết thành phần, chỉ còn khung video (ms). */
+const AN_CHROME_SAU = 1000;
+
   /** Hẹn giờ tự ẩn thanh điều khiển; gọi lại mỗi khi người xem động vào màn hình. */
   const henAnChrome = useCallback(() => {
     if (henChrome.current) window.clearTimeout(henChrome.current);
     setHienChrome(true);
     // Đang tạm dừng, đang mở thông tin / bảng cài đặt / hộp đăng nhập → GIỮ thanh điều khiển
     if (moThongTin || moCaiDat || videoXinQuyen || !dangPhat) return;
-    henChrome.current = window.setTimeout(() => setHienChrome(false), 3200);
+    // Ngài An chốt 27/11/2026: không chạm vào màn hình, không di chuột → 1 GIÂY là ẩn hết, chỉ còn video.
+    henChrome.current = window.setTimeout(() => setHienChrome(false), AN_CHROME_SAU);
   }, [moThongTin, moCaiDat, videoXinQuyen, dangPhat]);
 
   useEffect(() => {
@@ -1204,7 +1208,14 @@ export function VideoFeedDoc({
 
                 {/* Dấu chìm NOOI (trước đây in email người xem — đổi theo yêu cầu 26/11/2026).
                     Không vẽ lên màn khoá: ở đó đã có ảnh bìa mờ + ổ khoá, thêm chữ chỉ rối. */}
-                {!khoa && <DauChimNooi />}
+                <div
+                  className={cn(
+                    "pointer-events-none transition-opacity duration-200",
+                    hienChrome ? "opacity-100" : "opacity-0"
+                  )}
+                >
+                  {!khoa && <DauChimNooi />}
+                </div>
 
                 {/* Nút “Mở bài” — CHỈ hiện khi video thuộc một bài học, và đặt ở góc phải-trên
                     (cạnh nút đóng). Video tư liệu không có nút này cho đỡ rối mắt. */}
@@ -1318,7 +1329,12 @@ export function VideoFeedDoc({
                     Vì sao đổi thứ tự (Ngài An báo 27/11/2026): thanh tua có vùng nhận thao tác cao
                     40 px sát đáy nên nuốt mất cú chạm vào tiêu đề / “chạm để xem chi tiết”. Tách ra
                     hai lớp xếp dọc: thanh tua luôn hiện ở trên, khối chữ mờ đi khi đang phát. */}
-                <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col">
+                <div
+                  className={cn(
+                    "absolute inset-x-0 bottom-0 z-30 flex flex-col transition-opacity duration-200",
+                    hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
+                  )}
+                >
                   {/* Thanh tiến trình: BẤM hoặc KÉO để tua đúng chỗ.
                       Có với tệp video của mình VÀ với mọi video YouTube (điều khiển qua postMessage).
                       Với YouTube, thời lượng dự phòng lấy từ bản ghi nên bấm được ngay cả trước khi
@@ -1367,12 +1383,7 @@ export function VideoFeedDoc({
                       />
                     </div>
                   )}
-                  <div
-                    className={cn(
-                      "bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-5 pt-8 transition-opacity duration-300",
-                      hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
-                    )}
-                  >
+                  <div className="bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-5 pt-8">
                   {!moThongTin ? (
                     <div className="flex items-end gap-2 pr-12">
                       <button

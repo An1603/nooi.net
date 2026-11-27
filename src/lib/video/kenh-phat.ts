@@ -115,6 +115,18 @@ export const DUONG_DAN_NHUNG = {
   youtubeNgang: (id: string) =>
     `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1&autoplay=1&controls=0&modestbranding=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0`,
 
+  /**
+   * Cùng video nhưng dùng **trình phát ĐẦY ĐỦ của YouTube** (`controls=1`) — chế độ người xem tự
+   * chọn khi cần menu chất lượng / phụ đề / tốc độ của chính YouTube.
+   *
+   * Vì sao phải có chế độ riêng: Google bỏ khả năng chọn chất lượng qua API từ 24/10/2019
+   * (`setPlaybackQuality` là no-op). Muốn CÓ menu chất lượng thì bắt buộc dùng thanh điều khiển của
+   * YouTube — và khi đó thanh tua của NOOI phải ẩn đi, nếu không lại thành hai thanh.
+   * `start` giữ đúng chỗ đang xem khi chuyển qua lại.
+   */
+  youtubeDayDu: (id: string, giay = 0) =>
+    `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1&autoplay=1&controls=1&modestbranding=1&iv_load_policy=3&start=${Math.max(0, Math.floor(giay))}`,
+
   /** Dạng dọc cho luồng vuốt: tự phát, tắt tiếng, lặp lại, giấu bớt chrome của YouTube. */
   youtubeDoc: (id: string) =>
     `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1`,

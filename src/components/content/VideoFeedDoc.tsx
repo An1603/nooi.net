@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { thuocBaiHoc } from "@/lib/video/danh-muc";
 import { anhBia } from "@/lib/video/anh-bia";
 import {
+  DUONG_DAN_NHUNG,
   KENH_PHAT_LABELS,
   KHUNG_HINH_LABELS,
   laKenhPhat,
@@ -157,6 +158,17 @@ export function VideoFeedDoc({
   const [loiPhat, setLoiPhat] = useState<number | null>(null);
 
   /** Mở bảng cài đặt (chất lượng · tốc độ) */
+  /**
+   * Khung nào đang dùng TRÌNH PHÁT ĐẦY ĐỦ của YouTube (`controls=1`) để có menu chất lượng / phụ đề.
+   * Ở chế độ đó, thanh tua và nút điều khiển của NOOI phải ẩn — nếu không là hai thanh chồng nhau.
+   * `giayChuyen` giữ đúng chỗ đang xem khi bật/tắt (iframe nạp lại với `start=<giây>`).
+   */
+  const [ytDayDu, setYtDayDu] = useState<Record<number, boolean>>({});
+  const [giayChuyen, setGiayChuyen] = useState<Record<number, number>>({});
+  const ytDayDuRef = useRef<Record<number, boolean>>({});
+  ytDayDuRef.current = ytDayDu;
+
+  /** Mở bảng cài đặt (chất lượng · tốc độ · trình phát) */
   const [moCaiDat, setMoCaiDat] = useState(false);
   /** Mức chất lượng người xem chọn cho TỪNG bài (chưa chọn = để trình duyệt tự lo) */
   const [mucChatLuong, setMucChatLuong] = useState<Record<number, string>>({});
@@ -168,6 +180,16 @@ export function VideoFeedDoc({
   const [tocDo, setTocDo] = useState(1);
   /** Giây đang phát / tổng giây, để hiện trên thanh tiến trình */
   const [thoiGian, setThoiGian] = useState({ giay: 0, tong: 0 });
+
+  /** Bật/tắt trình phát đầy đủ của YouTube, giữ nguyên vị trí đang xem. */
+  const doiTrinhPhatYt = useCallback(
+    (i: number, bat: boolean) => {
+      setGiayChuyen((x) => ({ ...x, [i]: Math.max(0, Math.floor(thoiGian.giay)) }));
+      setYtDayDu((x) => ({ ...x, [i]: bat }));
+      setMoCaiDat(false);
+    },
+    [thoiGian.giay]
+  );
 
   const batDau = useRef(Date.now());
   /** Số lần đã thử phát lại video đang xem (trình duyệt chặn tự phát thì phải chờ người dùng chạm) */
@@ -806,6 +828,14 @@ export function VideoFeedDoc({
         return;
       }
       if (videoXinQuyen) return; // hộp đăng nhập đang mở
+      // Đang dùng trình phát ĐẦY ĐỦ của YouTube: phím tua/phát/tiếng thuộc về player đó, ta không
+      // cướp (nếu không một phím sẽ ăn hai lần). Phím chuyển bài vẫn giữ.
+      if (
+        ytDayDuRef.current[iRef.current] &&
+        (e.key === " " || e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "m" || e.key === "M")
+      ) {
+        return;
+      }
       // Bảng cài đặt đang mở: chỉ nhận Escape, đừng cướp phím tua/chuyển bài
       if (moCaiDat) {
         if (e.key === "Escape") setMoCaiDat(false);
@@ -962,8 +992,18 @@ export function VideoFeedDoc({
               <div className="relative overflow-hidden bg-black" style={kieuKhung(v)}>
                 {!khoa && gan && n.kieu === "iframe" && (
                   <iframe
+                    // `key` đổi khi chuyển chế độ trình phát → React tạo iframe MỚI, bộ điều khiển
+                    // postMessage được gắn lại và chào lại player (dùng lại element thì player mới
+                    // không trả lời vì chưa nhận `listening`).
+                    key={n.youtubeId ? `${ytDayDu[i] ? "goc" : "nooi"}-${giayChuyen[i] ?? 0}` : "iframe"}
                     ref={refIframe(i)}
-                    src={n.src}
+                    src={
+                      n.youtubeId && ytDayDu[i]
+                        ? DUONG_DAN_NHUNG.youtubeDayDu(n.youtubeId, giayChuyen[i] ?? 0)
+                        : n.youtubeId && (giayChuyen[i] ?? 0) > 0
+                          ? `${DUONG_DAN_NHUNG.youtubeNgang(n.youtubeId)}&start=${giayChuyen[i]}`
+                          : n.src
+                    }
                     title={v.title}
                     className="absolute inset-0 h-full w-full border-0"
                     allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
@@ -1065,7 +1105,7 @@ export function VideoFeedDoc({
                       phủ là nuốt mất cú bấm vào nút của nền tảng.
                     - iframe YouTube CHƯA kết nối được (chưa có `infoDelivery`): cũng không phủ, để
                       người xem bấm được nút phát của YouTube thay vì một lớp phủ không làm gì. */}
-                {(n.kieu === "video" || !!n.youtubeId) && !khoa && (
+                {(n.kieu === "video" || !!n.youtubeId) && !khoa && !(n.youtubeId && ytDayDu[i]) && (
                   <button
                     type="button"
                     onClick={() => bamVao(i)}
@@ -1092,7 +1132,7 @@ export function VideoFeedDoc({
 
                 {/* Chưa phát thì hiện nút ▶ TO ở giữa — LUÔN bấm được (kể cả khi nền tảng không
                     cho điều khiển từ mã, hoặc trình phát chưa sẵn sàng). */}
-                {i === iDangXem && !dangPhat && loiPhat !== i && !khoa && (n.kieu === "video" || !!n.youtubeId) && (
+                {i === iDangXem && !dangPhat && loiPhat !== i && !khoa && (n.kieu === "video" || !!n.youtubeId) && !(n.youtubeId && ytDayDu[i]) && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -1138,7 +1178,7 @@ export function VideoFeedDoc({
                     co={16}
                     className="size-9 rounded-full border border-white/20 bg-black/40 backdrop-blur hover:bg-black/60"
                   />
-                  {!khoa && (n.kieu === "video" || !!n.youtubeId) && (
+                  {!khoa && (n.kieu === "video" || !!n.youtubeId) && !(n.youtubeId && ytDayDu[i]) && (
                     <button
                       type="button"
                       onClick={doiTieng}
@@ -1282,7 +1322,7 @@ export function VideoFeedDoc({
                     Có với tệp video của mình VÀ với mọi video YouTube (điều khiển qua postMessage).
                     Với YouTube, thời lượng dự phòng lấy từ bản ghi nên bấm được ngay cả trước khi
                     khung YouTube kịp trả lời; thanh chỉ đọc (không bấm) khi bài bị khoá. */}
-                {(n.kieu === "video" || !!n.youtubeId) && !khoa ? (
+                {(n.kieu === "video" || !!n.youtubeId) && !khoa && !(n.youtubeId && ytDayDu[i]) ? (
                   <div
                     ref={i === iDangXem ? thanhRef : undefined}
                     onPointerDown={i === iDangXem ? batDauKeo : undefined}
@@ -1365,21 +1405,46 @@ export function VideoFeedDoc({
             <p className="mb-1.5 text-xs text-white/60">Chất lượng</p>
             {nguon[iDangXem]?.youtubeId ? (
               <div className="space-y-1.5">
-                <p className="text-[11px] leading-relaxed text-white/60">
-                  YouTube tự chọn chất lượng theo băng thông và kích thước khung hình. Google đã bỏ
-                  khả năng chọn chất lượng từ bên ngoài từ 2019, nên muốn chọn tay phải mở chính
-                  YouTube — mở đúng chỗ đang xem.
-                </p>
-                <a
-                  href={`https://www.youtube.com/watch?v=${nguon[iDangXem]?.youtubeId}${
-                    thoiGian.giay > 3 ? `&t=${Math.floor(thoiGian.giay)}` : ""
-                  }`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-2.5 py-1 text-xs font-medium hover:bg-white/20"
-                >
-                  Mở trên YouTube để chọn chất lượng ↗
-                </a>
+                {ytDayDu[iDangXem] ? (
+                  <>
+                    <p className="text-[11px] leading-relaxed text-white/70">
+                      Đang dùng trình phát của YouTube: bấm nút ⚙ (bánh răng) ở góc khung để chọn chất
+                      lượng, phụ đề, tốc độ. Thanh tua hiện tại là của YouTube.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => doiTrinhPhatYt(iDangXem, false)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-2.5 py-1 text-xs font-medium hover:bg-white/20"
+                    >
+                      ← Về trình phát NOOI (thanh tua lớn)
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[11px] leading-relaxed text-white/60">
+                      Trình phát NOOI tự chọn chất lượng theo băng thông. Muốn chọn tay thì bật trình
+                      phát của YouTube ngay tại chỗ đang xem — đổi lại, thanh tua sẽ là thanh nhỏ của
+                      YouTube.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => doiTrinhPhatYt(iDangXem, true)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                    >
+                      Bật trình phát YouTube để chọn chất lượng
+                    </button>
+                    <a
+                      href={`https://www.youtube.com/watch?v=${nguon[iDangXem]?.youtubeId}${
+                        thoiGian.giay > 3 ? `&t=${Math.floor(thoiGian.giay)}` : ""
+                      }`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-[10px] text-white/50 underline underline-offset-2 hover:text-white/80"
+                    >
+                      hoặc mở tab YouTube mới (giữ đúng giây đang xem) ↗
+                    </a>
+                  </>
+                )}
               </div>
             ) : (
               <>

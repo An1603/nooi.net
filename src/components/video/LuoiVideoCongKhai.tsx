@@ -231,7 +231,12 @@ export function LuoiVideoCongKhai({ videos, nguoi, tienToBai = "/video" }: Props
           return soSanhThoiLuong(a, b, true);
         case "moi-nhat":
         default:
-          return (b.created_at || "").localeCompare(a.created_at || "");
+          // THỨ TỰ ĐẶT TAY TRƯỚC (admin.nooi.net/admin/videos/sap-xep), rồi mới tới ngày tạo.
+          // Chưa ai đặt thứ tự thì mọi bài = 0 nên kết quả y hệt “mới nhất” như trước.
+          return (
+            (b.thu_tu ?? 0) - (a.thu_tu ?? 0) ||
+            (b.created_at || "").localeCompare(a.created_at || "")
+          );
       }
     });
   }, [videos, tuKhoa, loc, locKhung, locQuyen, sapXep, nguoi]);

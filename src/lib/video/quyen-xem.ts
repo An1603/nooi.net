@@ -37,6 +37,12 @@ export interface VideoCongKhai {
    */
   created_at?: string | null;
   cong_khai?: boolean | null;
+  /**
+   * Thứ tự đặt tay trong danh mục — số LỚN hơn đứng TRƯỚC (bài ghim = 1000), mặc định 0.
+   * Quản trị đặt ở admin.nooi.net/admin/videos/sap-xep; lưới xem tôn trọng giá trị này TRƯỚC
+   * ngày tạo, nên đổi thứ tự ở admin là đổi ngay thứ tự mặc định ngoài trang xem.
+   */
+  thu_tu?: number | null;
 }
 
 /** Người đang xem. Chưa đăng nhập thì các chỉ số đều rỗng. */

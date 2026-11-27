@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DANH_MUC, tenDanhMuc } from "@/lib/video/danh-muc";
 import { BangVideoQuanTri, type MucChon, type MucVideo } from "./BangVideoQuanTri";
@@ -121,11 +120,8 @@ export default async function AdminVideosPage({
 
       <p className="text-[11px] text-muted-foreground">
         Bảng xếp đúng như lưới xem: số <strong>thu_tu</strong> lớn đứng trước, chưa đặt thì bài mới
-        nhất đứng trước. Đổi bằng kéo–thả hoặc ↑ ↓ ở trang{" "}
-        <Link href="/admin/videos/sap-xep" className="underline">
-          Sắp xếp thứ tự
-        </Link>
-        .
+        nhất đứng trước. Chọn một danh mục rồi <strong>kéo dòng</strong> (hoặc bấm ↑ ↓ ngay trên
+        dòng) để đổi thứ tự — lưu ngay, áp dụng cho cả kho công khai và khu thành viên.
       </p>
     </div>
   );

@@ -1,10 +1,13 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
+  ArrowDown,
+  ArrowUp,
   Eye,
+  GripVertical,
   Loader2,
   Play,
   Plus,
@@ -13,12 +16,11 @@ import {
   Trash2,
   Users,
   X,
-  ArrowUpDown,
 } from "lucide-react";
 import { VideoPlayer } from "@/components/content/VideoPlayer";
 import { tenDanhMuc } from "@/lib/video/danh-muc";
 import { NutXoa } from "./NutXoa";
-import { khoiPhucNhieu, xoaNhieu, xoaVinhVienNhieu } from "./actions";
+import { khoiPhucNhieu, luuThuTu, xoaNhieu, xoaVinhVienNhieu } from "./actions";
 
 export interface MucVideo {
   id: string;
@@ -87,6 +89,18 @@ export function BangVideoQuanTri({
   thungRac?: boolean;
 }) {
   const [daChon, setDaChon] = useState<string[]>([]);
+  /**
+   * Thứ tự hiển thị (bản sao cục bộ): kéo–thả phải thấy đổi NGAY, không chờ máy chủ.
+   * Máy chủ trả về danh sách mới thì đồng bộ lại theo đúng dữ liệu thật.
+   */
+  const [dong, setDong] = useState<MucVideo[]>(videos);
+  useEffect(() => setDong(videos), [videos]);
+
+  /** Kéo–thả chỉ có nghĩa khi đang xem MỘT danh mục (thứ tự tính riêng trong từng danh mục) */
+  const coTheSapXep = Boolean(dm) && !thungRac && dm !== "__chua-xep";
+  const keoRef = useRef<number | null>(null);
+  const [dangKeo, setDangKeo] = useState<number | null>(null);
+  const [trenDiem, setTrenDiem] = useState<number | null>(null);
   const [xemThu, setXemThu] = useState<MucVideo | null>(null);
   const [moXoa, setMoXoa] = useState(false);
   // Mặc định KHÔNG xoá tệp gốc: giữ tệp trên Bunny là đường lùi cuối cùng nếu lỡ tay
@@ -100,6 +114,43 @@ export function BangVideoQuanTri({
     () => videos.some((v) => daChon.includes(v.id) && v.kenh_phat === "bunny"),
     [videos, daChon]
   );
+
+  /** Lưu thứ tự mới của cả danh mục (số lớn đứng trước, cách nhau 10). */
+  function luuThuTuMoi(moi: MucVideo[], truoc: MucVideo[]) {
+    setDong(moi);
+    setLoi("");
+    batDau(async () => {
+      const kq = await luuThuTu(dm, moi.map((x) => x.id));
+      if (kq && "error" in kq) {
+        setLoi(kq.error);
+        setDong(truoc); // máy chủ từ chối thì trả lại thứ tự cũ
+      }
+    });
+  }
+
+  /** Thả dòng đang kéo xuống vị trí `viTriTha`. */
+  function tha(viTriTha: number) {
+    const tu = keoRef.current;
+    keoRef.current = null;
+    setDangKeo(null);
+    setTrenDiem(null);
+    if (tu === null || tu === viTriTha) return;
+
+    const truoc = dong;
+    const moi = [...dong];
+    const [muc] = moi.splice(tu, 1);
+    moi.splice(viTriTha, 0, muc);
+    luuThuTuMoi(moi, truoc);
+  }
+
+  /** Nút ↑ ↓ trên dòng — cho điện thoại, nơi kéo–thả khó dùng. */
+  function doiMotBac(i: number, huong: -1 | 1) {
+    const j = i + huong;
+    if (j < 0 || j >= dong.length) return;
+    const moi = [...dong];
+    [moi[i], moi[j]] = [moi[j], moi[i]];
+    luuThuTuMoi(moi, dong);
+  }
 
   function doiChon(id: string) {
     setDaChon((cu) => (cu.includes(id) ? cu.filter((x) => x !== id) : [...cu, id]));
@@ -213,12 +264,6 @@ export function BangVideoQuanTri({
 
         <div className="flex items-center gap-2">
           <Link
-            href="/admin/videos/sap-xep"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowUpDown size={15} /> Sắp xếp
-          </Link>
-          <Link
             href="/admin/videos/new"
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
           >
@@ -271,6 +316,14 @@ export function BangVideoQuanTri({
         </div>
       )}
 
+      {coTheSapXep && (
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <GripVertical size={12} /> KÉO dòng (hoặc bấm ↑ ↓) để đổi thứ tự hiển thị trong danh mục này
+          — mỗi lần đổi là lưu ngay. Chọn “Mọi danh mục” thì không sắp được vì mỗi danh mục có thứ tự
+          riêng.
+        </p>
+      )}
+
       {ketQua && (
         <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
           {ketQua}
@@ -278,13 +331,14 @@ export function BangVideoQuanTri({
       )}
 
       <div className="overflow-hidden rounded-xl border border-border/50 bg-[#0d0d0d]">
-        {videos.length === 0 ? (
+        {dong.length === 0 ? (
           <p className="p-10 text-center text-sm text-muted-foreground">Không có video nào khớp bộ lọc.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border/30">
+                  {coTheSapXep && <th className="w-14 px-2 py-3" aria-label="Đổi thứ tự" />}
                   <th className="w-10 px-3 py-3">
                     <input
                       type="checkbox"
@@ -314,11 +368,70 @@ export function BangVideoQuanTri({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/10">
-                {videos.map((v) => {
+                {dong.map((v, i) => {
                   const st = STATUS[v.status ?? ""] ?? STATUS.processing;
                   const chon = daChon.includes(v.id);
                   return (
-                    <tr key={v.id} className={chon ? "bg-primary/[0.06]" : "hover:bg-white/[0.02]"}>
+                    <tr
+                      key={v.id}
+                      draggable={coTheSapXep}
+                      onDragStart={() => {
+                        keoRef.current = i;
+                        setDangKeo(i);
+                      }}
+                      onDragOver={(e) => {
+                        if (!coTheSapXep) return;
+                        e.preventDefault();
+                        setTrenDiem(i);
+                      }}
+                      onDragLeave={() => setTrenDiem((x) => (x === i ? null : x))}
+                      onDrop={(e) => {
+                        if (!coTheSapXep) return;
+                        e.preventDefault();
+                        tha(i);
+                      }}
+                      onDragEnd={() => {
+                        keoRef.current = null;
+                        setDangKeo(null);
+                        setTrenDiem(null);
+                      }}
+                      className={`transition-colors ${
+                        dangKeo === i ? "opacity-40" : chon ? "bg-primary/[0.06]" : "hover:bg-white/[0.02]"
+                      } ${trenDiem === i && dangKeo !== null && dangKeo !== i ? "border-t-2 border-primary" : ""}`}
+                    >
+                      {coTheSapXep && (
+                        <td className="px-2 py-3">
+                          <div className="flex items-center gap-0.5">
+                            <span
+                              className="cursor-grab text-muted-foreground active:cursor-grabbing"
+                              title="Kéo để đổi thứ tự"
+                              aria-hidden
+                            >
+                              <GripVertical size={14} />
+                            </span>
+                            <span className="flex flex-col">
+                              <button
+                                type="button"
+                                onClick={() => doiMotBac(i, -1)}
+                                disabled={i === 0 || dangXoa}
+                                title="Lên một bậc"
+                                className="text-muted-foreground hover:text-primary disabled:opacity-30"
+                              >
+                                <ArrowUp size={11} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => doiMotBac(i, 1)}
+                                disabled={i === dong.length - 1 || dangXoa}
+                                title="Xuống một bậc"
+                                className="text-muted-foreground hover:text-primary disabled:opacity-30"
+                              >
+                                <ArrowDown size={11} />
+                              </button>
+                            </span>
+                          </div>
+                        </td>
+                      )}
                       <td className="px-3 py-3">
                         <input
                           type="checkbox"

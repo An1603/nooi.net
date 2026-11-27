@@ -629,42 +629,30 @@ export function VideoFeedDoc({
   /** Vị trí cuối cùng người xem kéo tới (chưa gửi lệnh) — gửi khi thả tay. */
   const tiLeKeoRef = useRef(0);
 
-  /**
-   * Đặt vị trí phát theo tỉ lệ 0–1.
-   *
-   * `guiNgay = false` dùng khi ĐANG KÉO: chỉ cập nhật giao diện, để lệnh seekTo đi đúng một lần
-   * lúc thả tay. Với iframe YouTube, gửi lệnh theo từng điểm di chuột thì lệnh sau đè lệnh trước
-   * và thanh nhảy loạn (Ngài An báo 27/11/2026: “kéo thanh chưa tua được”).
-   */
-  const datViTri = useCallback((tiLe: number, guiNgay = true) => {
-    tiLeKeoRef.current = tiLe;
-    const el = videoRef.current[iRef.current];
-    if (el && el.duration && Number.isFinite(el.duration)) {
-      const giay = tiLe * el.duration;
-      try {
-        el.currentTime = giay;
-      } catch {
-        /* tệp chưa tải đủ phần đó — trình duyệt tự bỏ qua */
-      }
-      setTienTrinh(tiLe * 100);
-      setThoiGian((x) => ({ ...x, giay }));
-      return;
-    }
-    const yt = ytRef.current[iRef.current];
-    if (!yt) return;
-    if (guiNgay) yt.toi(tiLe);
-    else yt.xemTruoc(tiLe);
-  }, []);
-
   const batDauKeo = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       e.stopPropagation();
       e.preventDefault();
       keoRef.current = true;
       (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-      datViTri(tiLeTheoX(e.clientX));
+      const tiLe = tiLeTheoX(e.clientX);
+      tiLeKeoRef.current = tiLe;
+      // Bấm là thanh nhảy NGAY tới chỗ vừa bấm (không chờ trình phát trả lời)
+      setTienTrinh(tiLe * 100);
+      setThoiGian((x) => ({ ...x, giay: tiLe * x.tong }));
+      const el = videoRef.current[iRef.current];
+      if (el && el.duration && Number.isFinite(el.duration)) {
+        try {
+          el.currentTime = tiLe * el.duration;
+        } catch {
+          /* tệp chưa tải đủ phần đó */
+        }
+        return;
+      }
+      // YouTube: gửi lệnh seek ngay — bấm vào đâu nhảy tới đó
+      ytRef.current[iRef.current]?.toi(tiLe);
     },
-    [datViTri, tiLeTheoX]
+    [tiLeTheoX]
   );
 
   const dangKeo = useCallback(

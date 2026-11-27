@@ -140,11 +140,10 @@ export function VideoFeedDoc({
   const [tatTieng, setTatTieng] = useState(true);
   const [dangPhat, setDangPhat] = useState(true);
   /**
-   * Khung nào đã "nói chuyện" được với iframe YouTube (đã nhận `infoDelivery`).
-   * Chỉ khi đó mới dựng thanh tua / nút loa của mình — chưa nói chuyện được thì để nguyên
-   * nút của YouTube, KHÔNG dựng nút vô tác dụng (pitfall 53 của skill nooi-kho-video).
+   * Điều khiển bằng postMessage đã hoạt động chưa — trước đây dùng để quyết định có dựng thanh tua
+   * hay không. Nay khung ngang bật `controls=0` nên thanh tua của NOOI luôn là thanh duy nhất;
+   * trạng thái này chỉ còn để gỡ bộ điều khiển cũ.
    */
-  const [ytSong, setYtSong] = useState<Record<number, boolean>>({});
   const [tienTrinh, setTienTrinh] = useState(0);
   /** Thông tin đang mở hay thu gọn (mặc định thu gọn cho thoáng màn hình) */
   const [moThongTin, setMoThongTin] = useState(!thuGon);
@@ -415,12 +414,6 @@ export function VideoFeedDoc({
       ytRef.current[i] = null;
       if (!el) {
         playerRef.current[i] = null;
-        setYtSong((x) => {
-          if (!x[i]) return x;
-          const y = { ...x };
-          delete y[i];
-          return y;
-        });
         return;
       }
 
@@ -429,8 +422,6 @@ export function VideoFeedDoc({
       if (ytId) {
         ytRef.current[i] = taoDieuKhienYouTube(el, (t: TrangThaiYouTube) => {
           if (i !== iRef.current) return;
-          // Chỉ bật nút loa của mình khi YouTube đã trả lời — chưa trả lời thì để nút của YouTube
-          setYtSong((x) => (x[i] ? x : { ...x, [i]: true }));
           setDangPhat(t.dangPhat);
           setTatTieng(t.tatTieng);
           tiengRef.current = t.tatTieng;
@@ -926,17 +917,8 @@ export function VideoFeedDoc({
         )}
       </div>
 
-      {/* Đóng luồng, quay về kho video */}
-      <Link
-        href={duongDanDong}
-        className={cn(
-          "absolute right-3 top-3 z-30 flex size-9 items-center justify-center rounded-full bg-black/50 backdrop-blur transition-opacity duration-300 hover:bg-black/70",
-          hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
-        )}
-        aria-label="Đóng luồng"
-      >
-        <X size={18} />
-      </Link>
+      {/* Nút X (đóng luồng) đã bỏ theo yêu cầu 27/11/2026: nút ← ở góc trái-trên là đủ để quay về,
+          và trên video YouTube nút X nằm sát nút "Mở trên YouTube" của iframe nên dễ bấm nhầm. */}
 
       <div
         ref={khung}
@@ -1073,7 +1055,7 @@ export function VideoFeedDoc({
                       phủ là nuốt mất cú bấm vào nút của nền tảng.
                     - iframe YouTube CHƯA kết nối được (chưa có `infoDelivery`): cũng không phủ, để
                       người xem bấm được nút phát của YouTube thay vì một lớp phủ không làm gì. */}
-                {(n.kieu === "video" || (coCham && (n.kieu !== "iframe" || !!ytSong[i]))) && !khoa && (
+                {(n.kieu === "video" || !!n.youtubeId) && !khoa && (
                   <button
                     type="button"
                     onClick={() => bamVao(i)}
@@ -1091,7 +1073,7 @@ export function VideoFeedDoc({
                 {!khoa && thuocBaiHoc(v.danh_muc) && (
                   <Link
                     href={`${tienToBai}/${v.id}`}
-                    className="absolute right-14 top-3 z-30 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/50 px-3 py-2 text-[11px] font-medium backdrop-blur hover:bg-black/70"
+                    className="absolute right-3 top-3 z-30 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/50 px-3 py-2 text-[11px] font-medium backdrop-blur hover:bg-black/70"
                   >
                     <BookOpen size={13} />
                     Mở bài
@@ -1100,7 +1082,7 @@ export function VideoFeedDoc({
 
                 {/* Chưa phát thì hiện nút ▶ TO ở giữa — LUÔN bấm được (kể cả khi nền tảng không
                     cho điều khiển từ mã, hoặc trình phát chưa sẵn sàng). */}
-                {i === iDangXem && !dangPhat && loiPhat !== i && !khoa && (n.kieu === "video" || !!ytSong[i]) && (
+                {i === iDangXem && !dangPhat && loiPhat !== i && !khoa && (n.kieu === "video" || !!n.youtubeId) && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -1146,7 +1128,7 @@ export function VideoFeedDoc({
                     co={16}
                     className="size-9 rounded-full border border-white/20 bg-black/40 backdrop-blur hover:bg-black/60"
                   />
-                  {!khoa && (n.kieu === "video" || !!ytSong[i]) && (
+                  {!khoa && (n.kieu === "video" || !!n.youtubeId) && (
                     <button
                       type="button"
                       onClick={doiTieng}

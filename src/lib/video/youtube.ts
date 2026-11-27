@@ -85,6 +85,13 @@ export function taoDieuKhienYouTube(
     }
   };
 
+  /**
+   * Người xem đã bấm phát trước khi YouTube sẵn sàng? Lệnh gửi lúc đó bị bỏ im lặng, nên nhớ lại
+   * và gửi đúng một lần ngay khi nhận được tín hiệu đầu tiên. Bắt buộc phải có vì khung ngang dùng
+   * `controls=0` — không còn nút phát nào của YouTube để bấm lại.
+   */
+  let choPhat = false;
+
   const chao = () => {
     try {
       iframe.contentWindow?.postMessage(
@@ -119,7 +126,10 @@ export function taoDieuKhienYouTube(
     // 1 = đang phát, 3 = đang đệm (vẫn coi là đang phát)
     if (typeof i.playerState === "number") dangPhat = i.playerState === 1 || i.playerState === 3;
     if (typeof i.muted === "boolean") tatTieng = i.muted;
+    const lanDau = !daNhan;
     daNhan = true;
+    // Người xem đã bấm phát trong lúc YouTube chưa sẵn sàng → gửi lại đúng lúc này
+    if (lanDau && choPhat) gui("playVideo");
     khiDoi({ giay, tong, dangPhat, tatTieng });
   };
 
@@ -146,8 +156,14 @@ export function taoDieuKhienYouTube(
 
   return {
     sanSang: () => daNhan,
-    phat: () => gui("playVideo"),
-    dung: () => gui("pauseVideo"),
+    phat: () => {
+      choPhat = true;
+      gui("playVideo");
+    },
+    dung: () => {
+      choPhat = false;
+      gui("pauseVideo");
+    },
     tua: (d) => {
       if (tong <= 0) {
         gui("seekTo", [Math.max(0, giay + d), true]);

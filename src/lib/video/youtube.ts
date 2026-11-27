@@ -38,6 +38,15 @@ export interface DieuKhienYouTube {
   toi: (tiLe: number) => void;
   /** Tua theo tỉ lệ nhưng CHỈ cập nhật giao diện — dùng khi đang kéo thanh (xem `toi`). */
   xemTruoc: (tiLe: number) => void;
+  /**
+   * Đổi tốc độ phát (0,5–2). Gửi `setPlaybackRate` qua postMessage — **có tác dụng thật** (đo
+   * 27/11/2026: 1 → 1,5 và `infoDelivery.playbackRate` báo 1,5).
+   *
+   * Khác hẳn chất lượng: Google đã bỏ khả năng chọn chất lượng từ 24/10/2019 — `setPlaybackQuality`
+   * là lệnh rỗng (no-op), `getAvailableQualityLevels` không còn. Vì thế menu của NOOI chỉ có tốc
+   * độ; chọn chất lượng phải mở chính player YouTube.
+   */
+  tocDo: (heSo: number) => void;
   /** tat = true → tắt tiếng. */
   tieng: (tat: boolean) => void;
   huy: () => void;
@@ -63,7 +72,9 @@ export function taoDieuKhienYouTube(
    * Vì sao cần: người xem có thể bấm/kéo thanh tiến trình TRƯỚC khi YouTube kịp trả `infoDelivery`;
    * không có tổng thì không quy đổi được tỉ lệ ra giây và cú bấm rơi vào khoảng không.
    */
-  tongDuPhong = 0
+  tongDuPhong = 0,
+  /** Tốc độ phát người xem đã chọn trước đó (nhớ qua localStorage) — áp lại cho khung mới. */
+  tocDoBanDau = 1
 ): DieuKhienYouTube {
   // Mã phiên riêng: nhiều khung cùng trang thì mỗi khung một mã.
   const ma = `nooi-${Math.random().toString(36).slice(2, 9)}`;
@@ -91,6 +102,8 @@ export function taoDieuKhienYouTube(
    * `controls=0` — không còn nút phát nào của YouTube để bấm lại.
    */
   let choPhat = false;
+  /** Tốc độ người xem đã chọn; gửi lại sau khi trình phát sẵn sàng (lệnh sớm bị bỏ). */
+  let tocDoMong = tocDoBanDau;
 
   const chao = () => {
     try {
@@ -130,6 +143,7 @@ export function taoDieuKhienYouTube(
     daNhan = true;
     // Người xem đã bấm phát trong lúc YouTube chưa sẵn sàng → gửi lại đúng lúc này
     if (lanDau && choPhat) gui("playVideo");
+    if (lanDau && Math.abs(tocDoMong - 1) > 0.001) gui("setPlaybackRate", [tocDoMong]);
     khiDoi({ giay, tong, dangPhat, tatTieng });
   };
 
@@ -194,6 +208,10 @@ export function taoDieuKhienYouTube(
       if (tong <= 0) return;
       giay = Math.max(0, Math.min(tong - 0.5, tiLe * tong));
       baoTrangThai();
+    },
+    tocDo: (heSo) => {
+      tocDoMong = heSo;
+      gui("setPlaybackRate", [heSo]);
     },
     tieng: (tat) => {
       gui(tat ? "mute" : "unMute");

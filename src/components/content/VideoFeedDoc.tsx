@@ -430,8 +430,9 @@ export function VideoFeedDoc({
           if (keoRef.current) return;
           setThoiGian({ giay: t.giay, tong: t.tong });
           setTienTrinh(t.tong > 0 ? Math.min(100, (t.giay / t.tong) * 100) : 0);
-        // Thời lượng dự phòng: bấm/kéo thanh trước khi YouTube kịp trả lời vẫn quy đổi được ra giây
-        }, videosRef.current[i]?.duration ?? 0);
+        // Thời lượng dự phòng: bấm/kéo thanh trước khi YouTube kịp trả lời vẫn quy đổi được ra giây;
+        // tốc độ người xem đã chọn (0,5–2×) được áp lại cho khung mới
+        }, videosRef.current[i]?.duration ?? 0, tocDoRef.current);
         return;
       }
 
@@ -705,6 +706,13 @@ export function VideoFeedDoc({
     async (i: number) => {
       const v = videos[i];
       if (!v) return;
+      // YouTube: không hỏi máy chủ làm gì — API của Google đã bỏ chọn chất lượng từ 2019, danh sách
+      // mức chất lượng không tồn tại. Menu chỉ hiện lời giải thích + đường mở YouTube.
+      if (nguonRef.current[i]?.youtubeId) {
+        setDsChatLuong([]);
+        setDsCuaBai(v.id);
+        return;
+      }
       if (dsCuaBai === v.id && dsChatLuong) return; // đã có sẵn cho đúng bài này
       setDsChatLuong(null);
       try {
@@ -755,6 +763,8 @@ export function VideoFeedDoc({
     }
     const el = videoRef.current[iRef.current];
     if (el) el.playbackRate = t;
+    // YouTube: cùng một tốc độ, nhưng đi qua postMessage `setPlaybackRate`
+    ytRef.current[iRef.current]?.tocDo(t);
   }, []);
 
   const doiTieng = useCallback(() => {
@@ -1105,7 +1115,7 @@ export function VideoFeedDoc({
                     hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
                   )}
                 >
-                  {!khoa && n.kieu === "video" && (
+                  {!khoa && (n.kieu === "video" || !!n.youtubeId) && (
                     <button
                       type="button"
                       onClick={() => {
@@ -1352,6 +1362,26 @@ export function VideoFeedDoc({
             </div>
 
             <p className="mb-1.5 text-xs text-white/60">Chất lượng</p>
+            {nguon[iDangXem]?.youtubeId ? (
+              <div className="space-y-1.5">
+                <p className="text-[11px] leading-relaxed text-white/60">
+                  YouTube tự chọn chất lượng theo băng thông và kích thước khung hình. Google đã bỏ
+                  khả năng chọn chất lượng từ bên ngoài từ 2019, nên muốn chọn tay phải mở chính
+                  YouTube — mở đúng chỗ đang xem.
+                </p>
+                <a
+                  href={`https://www.youtube.com/watch?v=${nguon[iDangXem]?.youtubeId}${
+                    thoiGian.giay > 3 ? `&t=${Math.floor(thoiGian.giay)}` : ""
+                  }`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-2.5 py-1 text-xs font-medium hover:bg-white/20"
+                >
+                  Mở trên YouTube để chọn chất lượng ↗
+                </a>
+              </div>
+            ) : (
+              <>
             <div className="flex flex-wrap gap-1.5">
               {dsChatLuong === null ? (
                 <span className="text-xs text-white/50">Đang hỏi máy chủ…</span>
@@ -1381,6 +1411,8 @@ export function VideoFeedDoc({
               <p className="mt-1 text-[10px] text-white/45">
                 Bài này chưa lấy được danh sách mức chất lượng — đang phát mức mặc định.
               </p>
+            )}
+              </>
             )}
 
             <p className="mb-1.5 mt-3 text-xs text-white/60">Tốc độ phát</p>

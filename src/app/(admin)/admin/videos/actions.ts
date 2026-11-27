@@ -254,6 +254,26 @@ export async function boThuTu(danhMuc: string): Promise<KetQua> {
  */
 const DAU_THUNG_RAC = "__thung-rac";
 
+/**
+ * SỔ GHI XOÁ — ghi lại từng lần xoá/khôi phục ra một tệp trên máy chủ.
+ *
+ * Ngày 27/11/2026 có 4 video biến mất trong lúc thử mà KHÔNG truy được nguyên nhân, vì cơ sở dữ
+ * liệu không có sổ ghi và mã nguồn chỉ có hai đường xoá đều lọc theo mã bài. Từ nay mỗi thao tác
+ * xoá đều để lại một dòng: ai làm, lúc nào, bài nào, xoá mềm hay vĩnh viễn, có xoá Bunny không.
+ * Ghi lỗi thì bỏ qua — sổ ghi không được phép làm hỏng thao tác chính.
+ */
+async function ghiSo(muc: Record<string, unknown>) {
+  try {
+    const fs = await import("node:fs/promises");
+    const os = await import("node:os");
+    const path = `${os.homedir()}/hermes-notes/dev/nooi.net/admin-video/nhat-ky-xoa.jsonl`;
+    await fs.mkdir(path.slice(0, path.lastIndexOf("/")), { recursive: true });
+    await fs.appendFile(path, JSON.stringify({ luc: new Date().toISOString(), ...muc }) + "\n");
+  } catch {
+    /* bỏ qua */
+  }
+}
+
 function ghiDauThungRac(status: string | null, danhMuc: string | null) {
   return `${DAU_THUNG_RAC}|${status ?? "ready"}|${danhMuc ?? ""}`;
 }
@@ -307,6 +327,7 @@ export async function xoaNhieu(
     if (!error) daXoa += 1;
   }
 
+  await ghiSo({ viec: "vao-thung-rac", boi: qt.email, ids, daXoa });
   lamMoi();
   revalidatePath("/admin/videos/sap-xep");
   return { ok: true, daXoa };
@@ -339,6 +360,7 @@ export async function khoiPhucNhieu(ids: string[]): Promise<KetQua & { daKhoiPhu
     if (!error) daKhoiPhuc += 1;
   }
 
+  await ghiSo({ viec: "khoi-phuc", boi: qt.email, ids, daKhoiPhuc });
   lamMoi();
   revalidatePath("/admin/videos/sap-xep");
   return { ok: true, daKhoiPhuc };
@@ -395,6 +417,7 @@ export async function xoaVinhVienNhieu(
     else daXoa += 1;
   }
 
+  await ghiSo({ viec: "xoa-vinh-vien", boi: qt.email, ids, daXoa, bunny, loi, xoaBunny });
   lamMoi();
   revalidatePath("/admin/videos/sap-xep");
   if (!daXoa && loi.length) return { error: loi[0] };

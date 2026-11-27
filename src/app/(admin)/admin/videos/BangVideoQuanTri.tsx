@@ -89,7 +89,8 @@ export function BangVideoQuanTri({
   const [daChon, setDaChon] = useState<string[]>([]);
   const [xemThu, setXemThu] = useState<MucVideo | null>(null);
   const [moXoa, setMoXoa] = useState(false);
-  const [xoaBunny, setXoaBunny] = useState(true);
+  // Mặc định KHÔNG xoá tệp gốc: giữ tệp trên Bunny là đường lùi cuối cùng nếu lỡ tay
+  const [xoaBunny, setXoaBunny] = useState(false);
   const [dangXoa, batDau] = useTransition();
   const [loi, setLoi] = useState("");
   const [ketQua, setKetQua] = useState("");

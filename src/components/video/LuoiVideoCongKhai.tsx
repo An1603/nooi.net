@@ -346,34 +346,58 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
           </div>
         </div>
 
-        {/* ── Thanh danh mục NẰM NGAY DƯỚI ô tìm kiếm: bấm một cái là lọc, không phải mở “Lọc”.
-            Số trong ngoặc là số bài THẬT của danh mục theo điều kiện đang xem — “AI Cảnh Báo(2)”.
-            Máy nhỏ thì hàng này cuộn ngang (thanh cuộn ẩn) chứ không xuống dòng cho rối. */}
-        {soDanhMuc > 1 && (
-          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <button
-              type="button"
-              onClick={() => setLoc(TAT_CA)}
-              aria-pressed={loc === TAT_CA}
-              className={`${NUT} shrink-0 whitespace-nowrap ${loc === TAT_CA ? NUT_CHON : NUT_THUONG}`}
-            >
-              Tất cả<span className="tabular-nums opacity-70">({tongNhom})</span>
-            </button>
-            {nhomHien.map((n) => (
+        {/* ── Một hàng: danh mục bên trái, “Đang hiện …” bên phải — máy rộng thì chung dòng,
+            máy hẹp mới tự xuống dòng. Bấm danh mục một cái là lọc, không phải mở “Lọc”.
+            Số trong ngoặc là số bài THẬT của danh mục theo điều kiện đang xem — “AI Cảnh Báo(2)”. */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {soDanhMuc > 1 && (
+            <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:w-auto sm:flex-1">
               <button
-                key={n.slug}
                 type="button"
-                onClick={() => setLoc(n.slug)}
-                aria-pressed={loc === n.slug}
-                title={`${n.ten} — ${n.so} video`}
-                className={`${NUT} shrink-0 whitespace-nowrap ${loc === n.slug ? NUT_CHON : NUT_THUONG}`}
+                onClick={() => setLoc(TAT_CA)}
+                aria-pressed={loc === TAT_CA}
+                className={`${NUT} shrink-0 whitespace-nowrap ${loc === TAT_CA ? NUT_CHON : NUT_THUONG}`}
               >
-                {n.ten}
-                <span className="tabular-nums opacity-70">({n.so})</span>
+                Tất cả<span className="tabular-nums opacity-70">({tongNhom})</span>
               </button>
-            ))}
+              {nhomHien.map((n) => (
+                <button
+                  key={n.slug}
+                  type="button"
+                  onClick={() => setLoc(n.slug)}
+                  aria-pressed={loc === n.slug}
+                  title={`${n.ten} — ${n.so} video`}
+                  className={`${NUT} shrink-0 whitespace-nowrap ${loc === n.slug ? NUT_CHON : NUT_THUONG}`}
+                >
+                  {n.ten}
+                  <span className="tabular-nums opacity-70">({n.so})</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex w-full items-center justify-between gap-2 px-1 text-[11px] text-muted-foreground sm:w-auto sm:shrink-0 sm:justify-end sm:px-0">
+            <span className="whitespace-nowrap">
+              Đang hiện <b className="text-foreground">{ketQua.length}</b>/{videos.length} bài
+              {soKhoa > 0 && (
+                <>
+                  {" · "}
+                  <Lock size={10} className="inline text-primary" /> {soKhoa} bài cần quyền
+                </>
+              )}
+            </span>
+            {dangLoc && (
+              <button
+                type="button"
+                onClick={xoaLoc}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 hover:text-foreground"
+              >
+                <RotateCcw size={10} />
+                Xoá lọc
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Bảng lọc — chỉ mở khi cần, để danh sách video được ưu tiên chỗ */}
         {moLoc && (

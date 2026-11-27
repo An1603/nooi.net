@@ -8,6 +8,7 @@ import {
   Loader2,
   Play,
   Plus,
+  RotateCcw,
   Search,
   Trash2,
   Users,
@@ -17,7 +18,7 @@ import {
 import { VideoPlayer } from "@/components/content/VideoPlayer";
 import { tenDanhMuc } from "@/lib/video/danh-muc";
 import { NutXoa } from "./NutXoa";
-import { xoaNhieu } from "./actions";
+import { khoiPhucNhieu, xoaNhieu, xoaVinhVienNhieu } from "./actions";
 
 export interface MucVideo {
   id: string;
@@ -76,12 +77,14 @@ export function BangVideoQuanTri({
   q,
   danhSach,
   tong,
+  thungRac = false,
 }: {
   videos: MucVideo[];
   dm: string;
   q: string;
   danhSach: MucChon[];
   tong: number;
+  thungRac?: boolean;
 }) {
   const [daChon, setDaChon] = useState<string[]>([]);
   const [xemThu, setXemThu] = useState<MucVideo | null>(null);
@@ -118,7 +121,10 @@ export function BangVideoQuanTri({
     setLoi("");
     setKetQua("");
     batDau(async () => {
-      const kq = await xoaNhieu(daChon, coBunny && xoaBunny);
+      // Ở thùng rác thì đây là XOÁ VĨNH VIỄN; ở danh sách thường chỉ là chuyển vào thùng rác
+      const kq = thungRac
+        ? await xoaVinhVienNhieu(daChon, coBunny && xoaBunny)
+        : await xoaNhieu(daChon, false);
       if (kq && "error" in kq) {
         setLoi(kq.error);
         return;
@@ -126,10 +132,39 @@ export function BangVideoQuanTri({
       const phan: string[] = [];
       if (kq && "daXoa" in kq) {
         phan.push(`Đã xoá ${kq.daXoa ?? 0} video`);
-        if (kq.bunny) phan.push(`${kq.bunny} tệp trên Bunny`);
+        const soBunny = "bunny" in kq ? (kq.bunny ?? 0) : 0;
+        if (soBunny) phan.push(`${soBunny} tệp trên Bunny`);
         if (kq.loi?.length) phan.push(`${kq.loi.length} bài lỗi: ${kq.loi[0]}`);
+        if (thungRac) phan[0] = `Đã xoá vĩnh viễn ${kq.daXoa ?? 0} video`;
       }
       setKetQua(phan.join(" · "));
+      setMoXoa(false);
+      window.location.reload();
+    });
+  }
+
+  /** Lấy lại MỘT video từ thùng rác (nút trên dòng). */
+  function khoiPhucMot(id: string) {
+    setLoi("");
+    batDau(async () => {
+      const kq = await khoiPhucNhieu([id]);
+      if (kq && "error" in kq) {
+        setLoi(kq.error);
+        return;
+      }
+      window.location.reload();
+    });
+  }
+
+  /** Lấy lại video đã chọn từ thùng rác. */
+  function khoiPhuc() {
+    setLoi("");
+    batDau(async () => {
+      const kq = await khoiPhucNhieu(daChon);
+      if (kq && "error" in kq) {
+        setLoi(kq.error);
+        return;
+      }
       setMoXoa(false);
       window.location.reload();
     });
@@ -197,13 +232,34 @@ export function BangVideoQuanTri({
           <span className="text-sm">
             Đã chọn <strong>{daChon.length}</strong> video
           </span>
-          <button
-            type="button"
-            onClick={() => setMoXoa(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white"
-          >
-            <Trash2 size={14} /> Xoá đã chọn
-          </button>
+          {thungRac ? (
+            <>
+              <button
+                type="button"
+                onClick={khoiPhuc}
+                disabled={dangXoa}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+              >
+                {dangXoa ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                Khôi phục
+              </button>
+              <button
+                type="button"
+                onClick={() => setMoXoa(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white"
+              >
+                <Trash2 size={14} /> Xoá vĩnh viễn
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMoXoa(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white"
+            >
+              <Trash2 size={14} /> Chuyển vào thùng rác
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setDaChon([])}
@@ -350,7 +406,29 @@ export function BangVideoQuanTri({
                           >
                             Sửa
                           </Link>
-                          <NutXoa id={v.id} tieuDe={v.title} laBunny={v.kenh_phat === "bunny"} />
+                          {thungRac ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => khoiPhucMot(v.id)}
+                                className="rounded-md border border-emerald-500/40 px-2 py-1 text-[11px] text-emerald-400 hover:bg-emerald-500/10"
+                              >
+                                Khôi phục
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDaChon([v.id]);
+                                  setMoXoa(true);
+                                }}
+                                className="rounded-md border border-red-500/40 px-2 py-1 text-[11px] text-red-400 hover:bg-red-500/10"
+                              >
+                                Xoá hẳn
+                              </button>
+                            </>
+                          ) : (
+                            <NutXoa id={v.id} tieuDe={v.title} laBunny={v.kenh_phat === "bunny"} />
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -418,7 +496,11 @@ export function BangVideoQuanTri({
           aria-label="Xác nhận xoá nhiều video"
         >
           <div className="w-full max-w-md rounded-xl border border-border/50 bg-[#0d0d0d] p-5">
-            <h2 className="text-sm font-semibold">Xoá {daChon.length} video đã chọn?</h2>
+            <h2 className="text-sm font-semibold">
+              {thungRac
+                ? `Xoá VĨNH VIỄN ${daChon.length} video?`
+                : `Chuyển ${daChon.length} video vào thùng rác?`}
+            </h2>
             <ul className="mt-3 max-h-40 space-y-1 overflow-auto text-xs text-muted-foreground">
               {videos
                 .filter((v) => daChon.includes(v.id))
@@ -448,7 +530,9 @@ export function BangVideoQuanTri({
             )}
 
             <p className="mt-3 text-[11px] text-muted-foreground">
-              Xoá khỏi cơ sở dữ liệu là không khôi phục được.
+              {thungRac
+                ? "Xoá khỏi cơ sở dữ liệu là KHÔNG khôi phục được."
+                : "Video sẽ nằm trong thùng rác — lấy lại được bất cứ lúc nào."}
             </p>
 
             {loi && (
@@ -472,7 +556,7 @@ export function BangVideoQuanTri({
                 className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
               >
                 {dangXoa ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                Xoá {daChon.length} video
+                {thungRac ? "Xoá vĩnh viễn" : "Chuyển vào thùng rác"}
               </button>
             </div>
           </div>

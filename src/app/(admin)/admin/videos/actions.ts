@@ -123,41 +123,28 @@ export async function suaVideo(id: string, formData: FormData): Promise<KetQua> 
  */
 export async function xoaVideo(
   id: string,
-  xoaTrenBunny: boolean
-): Promise<KetQua & { bunny?: string }> {
-  const qt = await phaiQuanTri();
-  if ("error" in qt) return qt;
-  if (qt.role !== "super_admin" && qt.role !== "admin") {
-    return { error: "Chỉ quản trị cấp admin trở lên được xoá video." };
-  }
+  _xoaTrenBunny?: boolean
+): Promise<KetQua> {
+  // KHÔNG xoá thẳng nữa: chỉ chuyển vào thùng rác (xem chú thích TRANG_THAI_XOA).
+  const kq = await xoaNhieu([id], false);
+  if (kq && "error" in kq) return { error: kq.error };
+  return { ok: true };
+}
 
-  const admin = createAdminClient();
-  const { data: video, error: loiDoc } = await admin
-    .from("videos")
-    .select("id, url, kenh_phat")
-    .eq("id", id)
-    .maybeSingle();
-  if (loiDoc) return { error: loiDoc.message };
-  if (!video) return { error: "Không tìm thấy video." };
-
-  let bunny = "";
-  if (xoaTrenBunny && video.kenh_phat === "bunny") {
-    bunny = await xoaBunny(video.url);
-    if (bunny.startsWith("LỖI")) return { error: bunny };
-  }
-
-  const { error } = await admin.from("videos").delete().eq("id", id);
-  if (error) return { error: error.message };
-
-  lamMoi();
-  return { ok: true, bunny: bunny || undefined };
+/**
+ * XOÁ VĨNH VIỄN một bài (dùng cho nút trong thùng rác) — chỉ xoá được bài đã ở thùng rác.
+ */
+export async function xoaVinhVien(id: string, xoaBunny: boolean): Promise<KetQua> {
+  const kq = await xoaVinhVienNhieu([id], xoaBunny);
+  if (kq && "error" in kq) return { error: kq.error };
+  return { ok: true };
 }
 
 /**
  * Gọi API Bunny Stream để xoá một video. Trả về câu mô tả kết quả (hiện lại cho người quản trị),
  * hoặc chuỗi bắt đầu bằng "LỖI" khi thất bại.
  */
-async function xoaBunny(url: string | null): Promise<string> {
+async function xoaBunnyMotTep(url: string | null): Promise<string> {
   const khoa = process.env.BUNNY_STREAM_API_KEY;
   if (!khoa) return "LỖI: thiếu BUNNY_STREAM_API_KEY trên máy chủ.";
 
@@ -250,16 +237,25 @@ export async function boThuTu(danhMuc: string): Promise<KetQua> {
 }
 
 /**
- * XOÁ NHIỀU video một lúc (chọn ô ở bảng).
+ * TRẠNG THÁI "ĐÃ XOÁ" = nằm trong THÙNG RÁC.
  *
- * Chạy từng bài và GOM lỗi lại thay vì dừng ở bài lỗi đầu tiên — người quản trị chọn 10 bài thì
- * phải xoá được 9 bài còn tốt, không phải làm lại từ đầu. Trả về câu tổng kết để hiện ngay trên
- * bảng: đã xoá bao nhiêu, Bunny xoá được mấy tệp, bài nào lỗi.
+ * Ngài An 27/11/2026: “cần cho chọn nhiều video để xoá một lúc”. Xoá hàng loạt bằng một cú bấm là
+ * thao tác không thể lấy lại — mà đã có lần dữ liệu biến mất trong lúc thử (3 bài, không tìm ra
+ * nguyên nhân vì cơ sở dữ liệu không có sổ ghi). Nên từ đây: XOÁ = chuyển vào thùng rác (giữ nguyên
+ * hàng dữ liệu, chỉ đổi `status`), còn xoá thật chỉ làm từ trong thùng rác.
+ *
+ * `status = "deleted"` là an toàn vì mọi danh sách công khai và khu thành viên đều lọc
+ * `status = "published"`, nên bài trong thùng rác không lọt ra ngoài.
+ */
+const TRANG_THAI_XOA = "deleted";
+
+/**
+ * CHUYỂN NHIỀU VIDEO VÀO THÙNG RÁC (không xoá khỏi cơ sở dữ liệu, không đụng tới Bunny).
  */
 export async function xoaNhieu(
   ids: string[],
-  xoaTrenBunny: boolean
-): Promise<KetQua & { daXoa?: number; bunny?: number; loi?: string[] }> {
+  _xoaTrenBunny?: boolean
+): Promise<KetQua & { daXoa?: number; loi?: string[] }> {
   const qt = await phaiQuanTri();
   if ("error" in qt) return qt;
   if (qt.role !== "super_admin" && qt.role !== "admin") {
@@ -268,9 +264,55 @@ export async function xoaNhieu(
   if (!ids.length) return { error: "Chưa chọn video nào." };
 
   const admin = createAdminClient();
+  const { error, count } = await admin
+    .from("videos")
+    .update({ status: TRANG_THAI_XOA, cong_khai: false }, { count: "exact" })
+    .in("id", ids);
+  if (error) return { error: error.message };
+
+  lamMoi();
+  return { ok: true, daXoa: count ?? ids.length };
+}
+
+/** LẤY LẠI video từ thùng rác về trạng thái "Sẵn sàng" (đăng lại thì sửa tiếp trong biểu mẫu). */
+export async function khoiPhucNhieu(ids: string[]): Promise<KetQua & { daKhoiPhuc?: number }> {
+  const qt = await phaiQuanTri();
+  if ("error" in qt) return qt;
+  if (qt.role !== "super_admin" && qt.role !== "admin") {
+    return { error: "Chỉ quản trị cấp admin trở lên được khôi phục video." };
+  }
+  if (!ids.length) return { error: "Chưa chọn video nào." };
+
+  const admin = createAdminClient();
+  const { error, count } = await admin
+    .from("videos")
+    .update({ status: "ready" }, { count: "exact" })
+    .in("id", ids);
+  if (error) return { error: error.message };
+
+  lamMoi();
+  return { ok: true, daKhoiPhuc: count ?? ids.length };
+}
+
+/**
+ * XOÁ VĨNH VIỄN — chỉ gọi từ trong thùng rác, sau khi người quản trị đã xem lại danh sách.
+ * Xoá tệp Bunny TRƯỚC rồi mới xoá hàng: ngược lại là mất đường dẫn để biết tệp nào cần xoá.
+ */
+export async function xoaVinhVienNhieu(
+  ids: string[],
+  xoaBunny: boolean
+): Promise<KetQua & { daXoa?: number; bunny?: number; loi?: string[] }> {
+  const qt = await phaiQuanTri();
+  if ("error" in qt) return qt;
+  if (qt.role !== "super_admin" && qt.role !== "admin") {
+    return { error: "Chỉ quản trị cấp admin trở lên được xoá vĩnh viễn." };
+  }
+  if (!ids.length) return { error: "Chưa chọn video nào." };
+
+  const admin = createAdminClient();
   const { data, error: loiDoc } = await admin
     .from("videos")
-    .select("id, title, url, kenh_phat")
+    .select("id, title, url, kenh_phat, status")
     .in("id", ids);
   if (loiDoc) return { error: loiDoc.message };
 
@@ -278,12 +320,23 @@ export async function xoaNhieu(
   let bunny = 0;
   const loi: string[] = [];
 
-  for (const v of (data ?? []) as { id: string; title: string; url: string | null; kenh_phat: string }[]) {
-    if (xoaTrenBunny && v.kenh_phat === "bunny") {
-      const kqBunny = await xoaBunny(v.url);
+  for (const v of (data ?? []) as {
+    id: string;
+    title: string;
+    url: string | null;
+    kenh_phat: string;
+    status: string | null;
+  }[]) {
+    // Chỉ xoá thật những bài ĐANG ở trong thùng rác — chặn mọi đường gọi nhầm
+    if (v.status !== TRANG_THAI_XOA) {
+      loi.push(`${v.title}: chưa nằm trong thùng rác`);
+      continue;
+    }
+    if (xoaBunny && v.kenh_phat === "bunny") {
+      const kqBunny = await xoaBunnyMotTep(v.url);
       if (kqBunny.startsWith("LỖI")) {
         loi.push(`${v.title}: ${kqBunny}`);
-        continue; // giữ nguyên hàng trong cơ sở dữ liệu để còn xử lý tiếp
+        continue;
       }
       if (kqBunny.startsWith("Bunny: đã xoá")) bunny += 1;
     }
@@ -293,6 +346,7 @@ export async function xoaNhieu(
   }
 
   lamMoi();
+  revalidatePath("/admin/videos/sap-xep");
   if (!daXoa && loi.length) return { error: loi[0] };
   return { ok: true, daXoa, bunny, loi: loi.length ? loi : undefined };
 }

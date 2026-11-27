@@ -23,9 +23,15 @@ export default async function AdminVideosPage({
   const { dm = "", q = "" } = await searchParams;
   const supabase = createAdminClient();
 
+  const laThungRac = dm === "__thung-rac";
   let truyVan = supabase.from("videos").select("*").limit(300);
-  if (dm === "__chua-xep") truyVan = truyVan.is("danh_muc", null);
-  else if (dm) truyVan = truyVan.eq("danh_muc", dm);
+  if (laThungRac) truyVan = truyVan.eq("status", "deleted");
+  else {
+    // Bài trong thùng rác không hiện ở danh sách thường
+    truyVan = truyVan.neq("status", "deleted");
+    if (dm === "__chua-xep") truyVan = truyVan.is("danh_muc", null);
+    else if (dm) truyVan = truyVan.eq("danh_muc", dm);
+  }
   if (q.trim()) truyVan = truyVan.ilike("title", `%${q.trim()}%`);
   truyVan = truyVan.order("thu_tu", { ascending: false }).order("created_at", { ascending: false });
 
@@ -33,9 +39,14 @@ export default async function AdminVideosPage({
   const ds = (videos ?? []) as Record<string, unknown>[];
 
   // Đếm theo danh mục trên TOÀN kho (không theo bộ lọc) để ô chọn danh mục biết số lượng
-  const { data: demRaw } = await supabase.from("videos").select("danh_muc");
+  const { data: demRaw } = await supabase.from("videos").select("danh_muc, status");
   const dem = new Map<string, number>();
-  for (const v of (demRaw ?? []) as { danh_muc: string | null }[]) {
+  let soThungRac = 0;
+  for (const v of (demRaw ?? []) as { danh_muc: string | null; status: string | null }[]) {
+    if (v.status === "deleted") {
+      soThungRac += 1;
+      continue;
+    }
     const k = v.danh_muc ?? "__chua-xep";
     dem.set(k, (dem.get(k) ?? 0) + 1);
   }
@@ -47,6 +58,7 @@ export default async function AdminVideosPage({
       .filter((k) => k && k !== "__chua-xep" && !DANH_MUC.some((d) => d.slug === k))
       .map((k) => ({ slug: k, ten: tenDanhMuc(k), so: dem.get(k) ?? 0 })),
     { slug: "__chua-xep", ten: "Chưa xếp danh mục", so: dem.get("__chua-xep") ?? 0 },
+    { slug: "__thung-rac", ten: "Thùng rác", so: soThungRac },
   ];
 
   // Tên người đăng (không join được vì thiếu khoá ngoại — giữ cách cũ)
@@ -80,8 +92,8 @@ export default async function AdminVideosPage({
       <div>
         <h1 className="text-xl font-bold tracking-tight">Kho video</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Xem thử · thêm · sửa · xoá (tick nhiều dòng để xoá một lúc) · đặt thứ tự mặc định trong
-          danh mục.
+          Xem thử · thêm · sửa · chuyển vào thùng rác (tick nhiều dòng để làm một lúc) · đặt thứ tự
+          mặc định trong danh mục.
           {dm || q ? ` Đang lọc: ${muc.length}/${tong} bài.` : ` Tổng: ${muc.length} bài.`}
         </p>
       </div>
@@ -92,7 +104,14 @@ export default async function AdminVideosPage({
         </div>
       )}
 
-      <BangVideoQuanTri videos={muc} dm={dm} q={q} danhSach={danhSach} tong={tong} />
+      <BangVideoQuanTri
+        videos={muc}
+        dm={dm}
+        q={q}
+        danhSach={danhSach}
+        tong={tong}
+        thungRac={laThungRac}
+      />
 
       <p className="text-[11px] text-muted-foreground">
         Bảng xếp đúng như lưới xem: số <strong>thu_tu</strong> lớn đứng trước, chưa đặt thì bài mới

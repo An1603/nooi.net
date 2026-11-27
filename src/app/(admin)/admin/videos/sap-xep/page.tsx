@@ -22,7 +22,7 @@ export default async function SapXepVideoPage({
   const supabase = createAdminClient();
 
   // Đếm theo danh mục để chọn sẵn danh mục có nhiều bài nhất khi người quản trị chưa chọn
-  const { data: demRaw } = await supabase.from("videos").select("danh_muc");
+  const { data: demRaw } = await supabase.from("videos").select("danh_muc").neq("status", "deleted");
   const dem = new Map<string, number>();
   for (const v of (demRaw ?? []) as { danh_muc: string | null }[]) {
     const k = v.danh_muc ?? "";
@@ -46,7 +46,8 @@ export default async function SapXepVideoPage({
     .select("id, title, thumbnail_url, kenh_phat, khung_hinh, thu_tu, duration, created_at")
     .order("thu_tu", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(300);
+    .limit(300)
+    .neq("status", "deleted"); // bài trong thùng rác không nằm trong thứ tự hiển thị
 
   truyVan = dangChon === "__chua-xep" ? truyVan.is("danh_muc", null) : truyVan.eq("danh_muc", dangChon);
 

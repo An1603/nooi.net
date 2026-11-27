@@ -42,7 +42,12 @@ export function VideoFormQuanTri({ banDau = {} }: { banDau?: DuLieuVideo }) {
     batDau(async () => {
       const kq = sua ? await suaVideo(banDau.id!, formData) : await taoVideo(formData);
       if (kq && "error" in kq) setLoi(kq.error);
-      else router.push("/admin/videos");
+      else {
+        router.push("/admin/videos");
+        // Bỏ bộ đệm điều hướng: không có bước này danh sách vừa lưu vẫn hiện bản CŨ
+        // (revalidatePath ở máy chủ chỉ có tác dụng khi máy khách thật sự hỏi lại).
+        router.refresh();
+      }
     });
   }
 

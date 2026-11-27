@@ -3,8 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowDown, ArrowUp, Loader2, RotateCcw, Save } from "lucide-react";
-import { doiThuTu, boThuTu } from "../actions";
+import { ArrowDown, ArrowUp, GripVertical, Loader2, RotateCcw, Save } from "lucide-react";
+import { doiThuTu, boThuTu, luuThuTu } from "../actions";
 
 export interface MucSapXep {
   id: string;
@@ -29,6 +29,9 @@ export function BangSapXep({ danhMuc, muc }: { danhMuc: string; muc: MucSapXep[]
   const [dangChay, batDau] = useTransition();
   const [dongDangDoi, setDongDangDoi] = useState<string | null>(null);
   const [loi, setLoi] = useState("");
+  /** Vị trí đang kéo và vị trí đang rê lên — chỉ để vẽ phản hồi trên màn hình */
+  const [dangKeo, setDangKeo] = useState<number | null>(null);
+  const [trenDiem, setTrenDiem] = useState<number | null>(null);
 
   // Máy chủ trả danh sách mới sau khi ghi → đồng bộ lại (giữ đúng thứ tự thật trong cơ sở dữ liệu)
   useEffect(() => setDs(muc), [muc]);
@@ -62,6 +65,36 @@ export function BangSapXep({ danhMuc, muc }: { danhMuc: string; muc: MucSapXep[]
     });
   }
 
+  /**
+   * KÉO–THẢ: thả xuống vị trí nào thì chèn bài đang kéo vào vị trí đó, rồi LƯU cả danh mục.
+   *
+   * Lưu cả danh sách (chứ không chỉ đổi hai số) vì thứ tự sau khi kéo là một DÃY mới — ghi lại toàn
+   * bộ thì lần kéo sau luôn tính từ đúng thứ tự đang thấy, không bị lệch dần.
+   */
+  function tha(viTriTha: number) {
+    if (dangKeo === null || dangKeo === viTriTha) {
+      setDangKeo(null);
+      setTrenDiem(null);
+      return;
+    }
+    const truoc = ds;
+    const moi = [...ds];
+    const [mucKeo] = moi.splice(dangKeo, 1);
+    moi.splice(viTriTha, 0, mucKeo);
+    setDs(moi);
+    setDangKeo(null);
+    setTrenDiem(null);
+    setLoi("");
+
+    batDau(async () => {
+      const kq = await luuThuTu(danhMuc, moi.map((x) => x.id));
+      if (kq && "error" in kq) {
+        setLoi(kq.error);
+        setDs(truoc); // máy chủ từ chối thì trả về thứ tự cũ
+      }
+    });
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -86,7 +119,34 @@ export function BangSapXep({ danhMuc, muc }: { danhMuc: string; muc: MucSapXep[]
 
       <ol className="divide-y divide-border/10 overflow-hidden rounded-xl border border-border/50 bg-[#0d0d0d]">
         {ds.map((v, i) => (
-          <li key={v.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.02]">
+          <li
+            key={v.id}
+            draggable
+            onDragStart={() => setDangKeo(i)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setTrenDiem(i);
+            }}
+            onDragLeave={() => setTrenDiem((x) => (x === i ? null : x))}
+            onDrop={(e) => {
+              e.preventDefault();
+              tha(i);
+            }}
+            onDragEnd={() => {
+              setDangKeo(null);
+              setTrenDiem(null);
+            }}
+            className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+              dangKeo === i ? "opacity-40" : "hover:bg-white/[0.02]"
+            } ${trenDiem === i && dangKeo !== null && dangKeo !== i ? "border-t-2 border-primary" : ""}`}
+          >
+            <span
+              className="cursor-grab text-muted-foreground active:cursor-grabbing"
+              title="Kéo để đổi thứ tự"
+              aria-hidden
+            >
+              <GripVertical size={14} />
+            </span>
             <span className="w-6 shrink-0 text-center text-xs font-mono text-muted-foreground">
               {i + 1}
             </span>
@@ -146,7 +206,8 @@ export function BangSapXep({ danhMuc, muc }: { danhMuc: string; muc: MucSapXep[]
       </ol>
 
       <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <Save size={12} /> Mỗi lần bấm là lưu ngay — không cần bấm thêm nút nào.
+        <Save size={12} /> KÉO–THẢ dòng để đổi thứ tự, hoặc bấm ↑ ↓ — mỗi lần đổi là lưu ngay, không
+        cần bấm thêm nút nào.
       </p>
     </div>
   );

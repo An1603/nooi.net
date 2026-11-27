@@ -248,3 +248,78 @@ export async function boThuTu(danhMuc: string): Promise<KetQua> {
   revalidatePath("/admin/videos/sap-xep");
   return { ok: true };
 }
+
+/**
+ * XOÁ NHIỀU video một lúc (chọn ô ở bảng).
+ *
+ * Chạy từng bài và GOM lỗi lại thay vì dừng ở bài lỗi đầu tiên — người quản trị chọn 10 bài thì
+ * phải xoá được 9 bài còn tốt, không phải làm lại từ đầu. Trả về câu tổng kết để hiện ngay trên
+ * bảng: đã xoá bao nhiêu, Bunny xoá được mấy tệp, bài nào lỗi.
+ */
+export async function xoaNhieu(
+  ids: string[],
+  xoaTrenBunny: boolean
+): Promise<KetQua & { daXoa?: number; bunny?: number; loi?: string[] }> {
+  const qt = await phaiQuanTri();
+  if ("error" in qt) return qt;
+  if (qt.role !== "super_admin" && qt.role !== "admin") {
+    return { error: "Chỉ quản trị cấp admin trở lên được xoá video." };
+  }
+  if (!ids.length) return { error: "Chưa chọn video nào." };
+
+  const admin = createAdminClient();
+  const { data, error: loiDoc } = await admin
+    .from("videos")
+    .select("id, title, url, kenh_phat")
+    .in("id", ids);
+  if (loiDoc) return { error: loiDoc.message };
+
+  let daXoa = 0;
+  let bunny = 0;
+  const loi: string[] = [];
+
+  for (const v of (data ?? []) as { id: string; title: string; url: string | null; kenh_phat: string }[]) {
+    if (xoaTrenBunny && v.kenh_phat === "bunny") {
+      const kqBunny = await xoaBunny(v.url);
+      if (kqBunny.startsWith("LỖI")) {
+        loi.push(`${v.title}: ${kqBunny}`);
+        continue; // giữ nguyên hàng trong cơ sở dữ liệu để còn xử lý tiếp
+      }
+      if (kqBunny.startsWith("Bunny: đã xoá")) bunny += 1;
+    }
+    const { error } = await admin.from("videos").delete().eq("id", v.id);
+    if (error) loi.push(`${v.title}: ${error.message}`);
+    else daXoa += 1;
+  }
+
+  lamMoi();
+  if (!daXoa && loi.length) return { error: loi[0] };
+  return { ok: true, daXoa, bunny, loi: loi.length ? loi : undefined };
+}
+
+/**
+ * LƯU THỨ TỰ sau khi KÉO–THẢ ở trang sắp xếp: nhận danh sách mã theo đúng thứ tự mới rồi ghi
+ * `thu_tu` cho cả danh mục, y như `doiThuTu` (số lớn đứng trước, cách nhau 10).
+ */
+export async function luuThuTu(danhMuc: string, ids: string[]): Promise<KetQua> {
+  const qt = await phaiQuanTri();
+  if ("error" in qt) return qt;
+  if (!ids.length) return { ok: true };
+
+  const admin = createAdminClient();
+  const tong = ids.length;
+  for (let k = 0; k < tong; k++) {
+    // Chỉ ghi cho đúng bài thuộc danh mục đang sắp — tránh ghi nhầm khi danh sách trên màn hình cũ
+    let truyVan = admin
+      .from("videos")
+      .update({ thu_tu: (tong - k) * 10 })
+      .eq("id", ids[k]);
+    truyVan = danhMuc ? truyVan.eq("danh_muc", danhMuc) : truyVan.is("danh_muc", null);
+    const { error } = await truyVan;
+    if (error) return { error: error.message };
+  }
+
+  lamMoi();
+  revalidatePath("/admin/videos/sap-xep");
+  return { ok: true };
+}

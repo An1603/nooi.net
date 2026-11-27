@@ -1383,7 +1383,9 @@ const AN_CHROME_SAU = 1000;
                       />
                     </div>
                   )}
-                  <div className="bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-5 pt-8">
+                  {/* pt-2 (8px) chứ không pt-8: thanh tua dí sát tiêu đề, khối đáy thấp lại
+                      ⇒ chừa thêm ~24px cho khung video (Ngài An chỉnh 27/11/2026). */}
+                  <div className="bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-5 pt-2">
                   {!moThongTin ? (
                     <div className="flex items-end gap-2 pr-12">
                       <button

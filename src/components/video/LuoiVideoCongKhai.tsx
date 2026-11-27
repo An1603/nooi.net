@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ListFilter, Lock, Play, RotateCcw, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { tenDanhMuc } from "@/lib/video/danh-muc";
+import { DANH_MUC, tenDanhMuc } from "@/lib/video/danh-muc";
 import { anhBia, anhBiaSrcSet } from "@/lib/video/anh-bia";
 import { xetQuyenXem, type NguoiXem, type VideoCongKhai } from "@/lib/video/quyen-xem";
 import { HopDangNhap } from "@/components/video/HopDangNhap";
@@ -154,15 +154,41 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
     window.history.replaceState(null, "", duong);
   }, [thamSo]);
 
-  /** Các danh mục đang thật sự có bài (kèm số lượng) */
+  /*
+   * Danh mục + SỐ BÀI của từng danh mục, đếm theo ĐÚNG điều kiện đang xem (từ khoá, khổ, quyền)
+   * nhưng BỎ QUA chính bộ lọc danh mục — nhờ vậy con số trên chip luôn khớp số bài hiện ra khi
+   * bấm vào. Thứ tự theo khai báo trong DANH_MUC để thanh danh mục không nhảy chỗ giữa các lần lọc.
+   */
   const nhom = useMemo(() => {
     const dem = new Map<string, number>();
+    const tk = boDau(tuKhoa.trim());
     videos.forEach((v) => {
+      if (locKhung !== TAT_CA && (v.khung_hinh || "") !== locKhung) return;
+      const kq = xetQuyenXem(v, nguoi);
+      if (locQuyen === "cong-khai" && !kq.mo) return;
+      if (locQuyen === "can-dang-nhap" && kq.mo) return;
+      if (tk && !boDau(`${v.title} ${v.description || ""}`).includes(tk)) return;
       const k = v.danh_muc || "";
       dem.set(k, (dem.get(k) || 0) + 1);
     });
-    return [...dem.entries()].map(([slug, so]) => ({ slug, so, ten: tenDanhMuc(slug) || "Khác" }));
-  }, [videos]);
+    const thuTu = (slug: string) => {
+      const i = DANH_MUC.findIndex((d) => d.slug === slug);
+      return i === -1 ? DANH_MUC.length : i;
+    };
+    return [...dem.entries()]
+      .map(([slug, so]) => ({ slug, so, ten: tenDanhMuc(slug) || "Khác" }))
+      .sort((a, b) => thuTu(a.slug) - thuTu(b.slug) || b.so - a.so);
+  }, [videos, tuKhoa, locKhung, locQuyen, nguoi]);
+
+  /** Kho có nhiều hơn một danh mục thì thanh danh mục mới đáng hiện. */
+  const soDanhMuc = useMemo(() => new Set(videos.map((v) => v.danh_muc || "")).size, [videos]);
+  /** Tổng bài khớp điều kiện (chưa tính bộ lọc danh mục) — con số của chip “Tất cả”. */
+  const tongNhom = nhom.reduce((t, n) => t + n.so, 0);
+  /**
+   * Danh mục đang chọn LUÔN hiện, kể cả khi đang tìm từ khoá mà danh mục đó ra 0 bài —
+   * không thì chip biến mất và người xem tưởng mất lựa chọn.
+   */
+  const nhomHien = nhom.filter((n) => n.so > 0 || n.slug === loc);
 
   const ketQua = useMemo(() => {
     const tk = boDau(tuKhoa.trim());
@@ -313,31 +339,38 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
           </div>
         </div>
 
+        {/* ── Thanh danh mục NẰM NGAY DƯỚI ô tìm kiếm: bấm một cái là lọc, không phải mở “Lọc”.
+            Số trong ngoặc là số bài THẬT của danh mục theo điều kiện đang xem — “AI Cảnh Báo(2)”.
+            Máy nhỏ thì hàng này cuộn ngang (thanh cuộn ẩn) chứ không xuống dòng cho rối. */}
+        {soDanhMuc > 1 && (
+          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <button
+              type="button"
+              onClick={() => setLoc(TAT_CA)}
+              aria-pressed={loc === TAT_CA}
+              className={`${NUT} shrink-0 whitespace-nowrap ${loc === TAT_CA ? NUT_CHON : NUT_THUONG}`}
+            >
+              Tất cả<span className="tabular-nums opacity-70">({tongNhom})</span>
+            </button>
+            {nhomHien.map((n) => (
+              <button
+                key={n.slug}
+                type="button"
+                onClick={() => setLoc(n.slug)}
+                aria-pressed={loc === n.slug}
+                title={`${n.ten} — ${n.so} video`}
+                className={`${NUT} shrink-0 whitespace-nowrap ${loc === n.slug ? NUT_CHON : NUT_THUONG}`}
+              >
+                {n.ten}
+                <span className="tabular-nums opacity-70">({n.so})</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Bảng lọc — chỉ mở khi cần, để danh sách video được ưu tiên chỗ */}
         {moLoc && (
           <div className="mt-2 space-y-2 border-t border-border pt-2">
-            {nhom.length > 1 && (
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setLoc(TAT_CA)}
-                  className={`${NUT} ${loc === TAT_CA ? NUT_CHON : NUT_THUONG}`}
-                >
-                  Mọi danh mục · {videos.length}
-                </button>
-                {nhom.map((n) => (
-                  <button
-                    key={n.slug}
-                    type="button"
-                    onClick={() => setLoc(n.slug)}
-                    className={`${NUT} ${loc === n.slug ? NUT_CHON : NUT_THUONG}`}
-                  >
-                    {n.ten} · {n.so}
-                  </button>
-                ))}
-              </div>
-            )}
-
             <div className="flex flex-wrap items-center gap-1.5">
               {LOC_KHUNG.map((k) => (
                 <button

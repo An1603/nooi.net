@@ -162,6 +162,13 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
   const nhom = useMemo(() => {
     const dem = new Map<string, number>();
     const tk = boDau(tuKhoa.trim());
+    // Khởi tạo đủ danh mục có trong kho (đếm 0) để danh mục đang chọn KHÔNG biến mất khi bộ lọc
+    // làm nó về 0 bài — mất chip là người xem kẹt ở màn hình trống mà không biết vì sao.
+    videos.forEach((v) => {
+      const k = v.danh_muc || "";
+      if (!dem.has(k)) dem.set(k, 0);
+    });
+    if (loc && loc !== TAT_CA && !dem.has(loc)) dem.set(loc, 0);
     videos.forEach((v) => {
       if (locKhung !== TAT_CA && (v.khung_hinh || "") !== locKhung) return;
       const kq = xetQuyenXem(v, nguoi);
@@ -178,7 +185,7 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
     return [...dem.entries()]
       .map(([slug, so]) => ({ slug, so, ten: tenDanhMuc(slug) || "Khác" }))
       .sort((a, b) => thuTu(a.slug) - thuTu(b.slug) || b.so - a.so);
-  }, [videos, tuKhoa, locKhung, locQuyen, nguoi]);
+  }, [videos, tuKhoa, locKhung, locQuyen, nguoi, loc]);
 
   /** Kho có nhiều hơn một danh mục thì thanh danh mục mới đáng hiện. */
   const soDanhMuc = useMemo(() => new Set(videos.map((v) => v.danh_muc || "")).size, [videos]);

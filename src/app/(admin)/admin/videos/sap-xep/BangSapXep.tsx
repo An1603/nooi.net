@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowDown, ArrowUp, GripVertical, Loader2, RotateCcw, Save } from "lucide-react";
@@ -31,6 +31,11 @@ export function BangSapXep({ danhMuc, muc }: { danhMuc: string; muc: MucSapXep[]
   const [loi, setLoi] = useState("");
   /** Vị trí đang kéo và vị trí đang rê lên — chỉ để vẽ phản hồi trên màn hình */
   const [dangKeo, setDangKeo] = useState<number | null>(null);
+  /**
+   * Bản ghi vị trí đang kéo bằng ref: `drop` có thể xảy ra NGAY sau `dragstart` (chuột kéo nhanh,
+   * hoặc trình duyệt tự động), khi đó state chưa kịp cập nhật và thao tác thả sẽ bị bỏ qua.
+   */
+  const dangKeoRef = useRef<number | null>(null);
   const [trenDiem, setTrenDiem] = useState<number | null>(null);
 
   // Máy chủ trả danh sách mới sau khi ghi → đồng bộ lại (giữ đúng thứ tự thật trong cơ sở dữ liệu)
@@ -72,16 +77,19 @@ export function BangSapXep({ danhMuc, muc }: { danhMuc: string; muc: MucSapXep[]
    * bộ thì lần kéo sau luôn tính từ đúng thứ tự đang thấy, không bị lệch dần.
    */
   function tha(viTriTha: number) {
-    if (dangKeo === null || dangKeo === viTriTha) {
+    const tu = dangKeoRef.current;
+    if (tu === null || tu === viTriTha) {
+      dangKeoRef.current = null;
       setDangKeo(null);
       setTrenDiem(null);
       return;
     }
     const truoc = ds;
     const moi = [...ds];
-    const [mucKeo] = moi.splice(dangKeo, 1);
+    const [mucKeo] = moi.splice(tu, 1);
     moi.splice(viTriTha, 0, mucKeo);
     setDs(moi);
+    dangKeoRef.current = null;
     setDangKeo(null);
     setTrenDiem(null);
     setLoi("");
@@ -122,7 +130,10 @@ export function BangSapXep({ danhMuc, muc }: { danhMuc: string; muc: MucSapXep[]
           <li
             key={v.id}
             draggable
-            onDragStart={() => setDangKeo(i)}
+            onDragStart={() => {
+              dangKeoRef.current = i;
+              setDangKeo(i);
+            }}
             onDragOver={(e) => {
               e.preventDefault();
               setTrenDiem(i);
@@ -133,6 +144,7 @@ export function BangSapXep({ danhMuc, muc }: { danhMuc: string; muc: MucSapXep[]
               tha(i);
             }}
             onDragEnd={() => {
+              dangKeoRef.current = null;
               setDangKeo(null);
               setTrenDiem(null);
             }}

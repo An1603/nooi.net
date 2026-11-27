@@ -55,12 +55,14 @@ interface Props {
   batDauId?: string;
 }
 
-/** 95 → "1:35" — hiện trên thanh tiến trình. */
+/** 95 → "1:35", 3857 → "1:04:17" — hiện trên thanh tiến trình và trong thẻ video. */
 function phutGiay(giay?: number | null): string {
   if (giay === null || giay === undefined || !Number.isFinite(giay) || giay < 0) return "0:00";
-  const m = Math.floor(giay / 60);
-  const s = Math.floor(giay % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
+  const tong = Math.floor(giay);
+  const hai = (n: number) => String(n).padStart(2, "0");
+  const h = Math.floor(tong / 3600);
+  if (h > 0) return `${h}:${hai(Math.floor((tong % 3600) / 60))}:${hai(tong % 60)}`;
+  return `${Math.floor(tong / 60)}:${hai(tong % 60)}`;
 }
 
 /**
@@ -1278,8 +1280,7 @@ export function VideoFeedDoc({
                         </span>
                         {v.duration ? (
                           <span className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium">
-                            {Math.floor(v.duration / 60)}:
-                            {String(v.duration % 60).padStart(2, "0")}
+                            {phutGiay(v.duration)}
                           </span>
                         ) : null}
                         <span className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium">

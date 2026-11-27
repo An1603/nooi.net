@@ -31,6 +31,11 @@ export const DANH_MUC: DanhMuc[] = [
     ten: "Bài giảng",
     moTa: "Bài giảng, chia sẻ nội bộ của NOOI.",
   },
+  {
+    slug: "ai-canh-bao",
+    ten: "AI Cảnh Báo",
+    moTa: "Cảnh báo của giới nghiên cứu về trí tuệ nhân tạo: nguy cơ mất việc, an toàn AI, hệ quả xã hội — tư liệu để NOOI tham chiếu và phản biện.",
+  },
 ];
 
 export function laDanhMuc(slug: string): DanhMuc | undefined {

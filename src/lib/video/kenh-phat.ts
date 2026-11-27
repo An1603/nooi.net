@@ -113,7 +113,7 @@ export const DUONG_DAN_NHUNG = {
    * của luồng xem (gọi `playVideo` qua postMessage) là đường phát.
    */
   youtubeNgang: (id: string) =>
-    `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1&autoplay=1&controls=0`,
+    `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1&autoplay=1&controls=0&modestbranding=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0`,
 
   /** Dạng dọc cho luồng vuốt: tự phát, tắt tiếng, lặp lại, giấu bớt chrome của YouTube. */
   youtubeDoc: (id: string) =>

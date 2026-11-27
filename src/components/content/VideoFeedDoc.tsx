@@ -935,8 +935,18 @@ export function VideoFeedDoc({
         // Ngài An chốt 27/11/2026: đang xem video, bấm Esc / Backspace / Delete là QUAY VỀ DANH MỤC
         // (cùng đích với nút ←). Chặn mặc định của trình duyệt để Backspace không tự lùi trang
         // theo kiểu cũ và Delete không kích hoạt gì khác.
+        //
+        // Đang TOÀN MÀN HÌNH thì Esc chỉ THOÁT toàn màn hình — không thoát luôn khỏi trang, vì
+        // người xem bấm Esc để thu nhỏ chứ không phải để rời video.
         case "Escape":
         case "Esc":
+          if (document.fullscreenElement) {
+            void document.exitFullscreen().catch(() => {});
+            break;
+          }
+          e.preventDefault();
+          quayVe();
+          break;
         case "Backspace":
         case "Delete":
           e.preventDefault();

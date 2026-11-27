@@ -80,7 +80,7 @@ export function thuocBaiHoc(danhMuc?: string | null): boolean {
  * Cổng gác duy nhất `xetQuyenXem` đọc danh sách này, nên lưới công khai, trang xem và luồng xem
  * đều theo cùng một luật.
  */
-export const DANH_MUC_CONG_KHAI = ["mang-den", "quy-hoach"];
+export const DANH_MUC_CONG_KHAI = ["mang-den", "quy-hoach", "ai-canh-bao"];
 
 /** Danh mục này có mở công khai (không cần đăng nhập) không? */
 export function danhMucCongKhai(slug?: string | null): boolean {

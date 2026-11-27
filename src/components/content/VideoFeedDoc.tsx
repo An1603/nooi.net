@@ -16,6 +16,7 @@ import {
   type VideoDoc,
 } from "@/lib/video/kenh-phat";
 import { docTimeUpdate, taoPlayer, type PlayerGiaoDien } from "@/lib/video/playerjs";
+import { taoDieuKhienYouTube, type DieuKhienYouTube, type TrangThaiYouTube } from "@/lib/video/youtube";
 import { DauChimNooi } from "@/components/content/DauChimNooi";
 import { HopDangNhap } from "@/components/video/HopDangNhap";
 import { NutChiaSe } from "@/components/video/nut-chia-se";
@@ -110,6 +111,14 @@ export function VideoFeedDoc({
   const mucRef = useRef<(HTMLElement | null)[]>([]);
   const videoRef = useRef<(HTMLVideoElement | null)[]>([]);
   const playerRef = useRef<(PlayerGiaoDien | null)[]>([]);
+  /** Bộ điều khiển iframe YouTube (postMessage) — xem `src/lib/video/youtube.ts` */
+  const ytRef = useRef<(DieuKhienYouTube | null)[]>([]);
+  /**
+   * Nguồn phát mới nhất, để hàm gắn iframe (được đệm theo khung) đọc được giá trị hiện tại
+   * thay vì giá trị của lần dựng đầu tiên.
+   */
+  const nguonRef = useRef(nguon);
+  nguonRef.current = nguon;
   const iRef = useRef(iBatDau);
   const tiengRef = useRef(true);
 
@@ -127,6 +136,12 @@ export function VideoFeedDoc({
   );
   const [tatTieng, setTatTieng] = useState(true);
   const [dangPhat, setDangPhat] = useState(true);
+  /**
+   * Khung nào đã "nói chuyện" được với iframe YouTube (đã nhận `infoDelivery`).
+   * Chỉ khi đó mới dựng thanh tua / nút loa của mình — chưa nói chuyện được thì để nguyên
+   * nút của YouTube, KHÔNG dựng nút vô tác dụng (pitfall 53 của skill nooi-kho-video).
+   */
+  const [ytSong, setYtSong] = useState<Record<number, boolean>>({});
   const [tienTrinh, setTienTrinh] = useState(0);
   /** Thông tin đang mở hay thu gọn (mặc định thu gọn cho thoáng màn hình) */
   const [moThongTin, setMoThongTin] = useState(!thuGon);
@@ -216,6 +231,11 @@ export function VideoFeedDoc({
         void v.play().catch(() => setDangPhat(false));
         return;
       }
+      const yt = ytRef.current[i];
+      if (yt) {
+        yt.phat();
+        return;
+      }
       const p = playerRef.current[i];
       if (p) {
         if (tiengRef.current) p.mute();
@@ -230,6 +250,11 @@ export function VideoFeedDoc({
     const v = videoRef.current[i];
     if (v) {
       v.pause();
+      return;
+    }
+    const yt = ytRef.current[i];
+    if (yt) {
+      yt.dung();
       return;
     }
     playerRef.current[i]?.pause();
@@ -379,13 +404,39 @@ export function VideoFeedDoc({
     return () => su.forEach((k) => window.removeEventListener(k, bat, true));
   }, [phat, doTieng]);
 
-  /** Gắn iframe Bunny: tạo đối tượng điều khiển ngay khi iframe vào DOM. */
+  /** Gắn iframe: YouTube → bộ điều khiển postMessage; Bunny → đối tượng điều khiển của player.js. */
   const ganIframe = useCallback(
     (i: number) => (el: HTMLIFrameElement | null) => {
+      // Gỡ khung (hoặc gắn lại): huỷ bộ điều khiển cũ trước, tránh nghe trùng sự kiện
+      ytRef.current[i]?.huy();
+      ytRef.current[i] = null;
       if (!el) {
         playerRef.current[i] = null;
+        setYtSong((x) => {
+          if (!x[i]) return x;
+          const y = { ...x };
+          delete y[i];
+          return y;
+        });
         return;
       }
+
+      // ── YouTube: điều khiển bằng postMessage (phát/dừng, tua, tiếng) ──
+      const ytId = nguonRef.current[i]?.youtubeId;
+      if (ytId) {
+        ytRef.current[i] = taoDieuKhienYouTube(el, (t: TrangThaiYouTube) => {
+          if (i !== iRef.current) return;
+          // Chỉ bật nút của mình khi YouTube đã trả lời — chưa trả lời thì để nút của YouTube
+          setYtSong((x) => (x[i] ? x : { ...x, [i]: true }));
+          setThoiGian({ giay: t.giay, tong: t.tong });
+          setTienTrinh(t.tong > 0 ? Math.min(100, (t.giay / t.tong) * 100) : 0);
+          setDangPhat(t.dangPhat);
+          setTatTieng(t.tatTieng);
+          tiengRef.current = t.tatTieng;
+        });
+        return;
+      }
+
       const p = taoPlayer(el);
       if (!p) return;
       playerRef.current[i] = p;
@@ -545,7 +596,7 @@ export function VideoFeedDoc({
         if (v) setVideoXinQuyen({ v, moTa: q?.moTa ?? "Video này dành cho thành viên NOOI." });
         return;
       }
-      if (!nguon[i]?.dieuKhien) return;
+      if (!nguon[i]?.dieuKhien && !ytRef.current[i]) return;
       // Người dùng đã chủ động bấm: khoá luôn vòng thử tự phát, đừng để nó bật lại video
       soLanThu.current = 5;
       if (dangPhat) {
@@ -571,15 +622,19 @@ export function VideoFeedDoc({
   /** Đặt vị trí phát theo tỉ lệ 0–1 (bấm trên thanh tiến trình). */
   const datViTri = useCallback((tiLe: number) => {
     const el = videoRef.current[iRef.current];
-    if (!el || !el.duration || !Number.isFinite(el.duration)) return;
-    const giay = tiLe * el.duration;
-    try {
-      el.currentTime = giay;
-    } catch {
-      /* tệp chưa tải đủ phần đó — trình duyệt tự bỏ qua */
+    if (el && el.duration && Number.isFinite(el.duration)) {
+      const giay = tiLe * el.duration;
+      try {
+        el.currentTime = giay;
+      } catch {
+        /* tệp chưa tải đủ phần đó — trình duyệt tự bỏ qua */
+      }
+      setTienTrinh(tiLe * 100);
+      setThoiGian((x) => ({ ...x, giay }));
+      return;
     }
-    setTienTrinh(tiLe * 100);
-    setThoiGian((x) => ({ ...x, giay }));
+    // iframe YouTube: kéo thanh tiến trình = lệnh seekTo qua postMessage
+    ytRef.current[iRef.current]?.toi(tiLe);
   }, []);
 
   const batDauKeo = useCallback(
@@ -612,14 +667,19 @@ export function VideoFeedDoc({
     }
   }, []);
 
-  /** Tua tới/lui một số giây (phím ← →). Không vượt quá đầu/cuối tệp. */
+  /** Tua tới/lui một số giây (phím ← →). Không vượt quá đầu/cuối video. */
   const tua = useCallback((giay: number) => {
     const el = videoRef.current[iRef.current];
-    if (!el || !el.duration || !Number.isFinite(el.duration)) return;
-    const moi = Math.min(el.duration - 0.3, Math.max(0, el.currentTime + giay));
-    el.currentTime = moi;
-    setTienTrinh((moi / el.duration) * 100);
-    setThoiGian((x) => ({ ...x, giay: moi }));
+    if (el && el.duration && Number.isFinite(el.duration)) {
+      const moi = Math.min(el.duration - 0.3, Math.max(0, el.currentTime + giay));
+      el.currentTime = moi;
+      setTienTrinh((moi / el.duration) * 100);
+      setThoiGian((x) => ({ ...x, giay: moi }));
+      return;
+    }
+    // iframe YouTube: tua qua postMessage — không đọc được `currentTime` của iframe từ mã,
+    // nên bộ điều khiển tự nhớ vị trí nó nhận được từ `infoDelivery` (xem `youtube.ts`).
+    ytRef.current[iRef.current]?.tua(giay);
   }, []);
 
   /* ───────── Cài đặt: chất lượng & tốc độ ───────── */
@@ -682,14 +742,25 @@ export function VideoFeedDoc({
   }, []);
 
   const doiTieng = useCallback(() => {
+    const i = iRef.current;
+    // iframe YouTube: tiếng do iframe quyết định, ta gửi mute/unMute qua postMessage.
+    // Trạng thái thật lấy từ `infoDelivery` (đổ vào `tatTieng`), không đoán.
+    const yt = ytRef.current[i];
+    if (!videoRef.current[i] && yt) {
+      const moi = !tatTieng;
+      tiengRef.current = moi;
+      setTatTieng(moi);
+      yt.tieng(moi);
+      return;
+    }
     // Lấy trạng thái từ CHÍNH thẻ video (sự thật), không suy từ biến trạng thái — tránh trường hợp
     // nút và thẻ lệch nhau rồi bấm một lần hoá ra lệnh ngược.
-    const el = videoRef.current[iRef.current];
+    const el = videoRef.current[i];
     const moi = el ? !(el.muted || el.volume === 0) : !tatTieng;
     tiengRef.current = moi;
     choMoTieng.current = false; // người xem đã tự quyết định tiếng -> đừng mở tiếng hộ nữa
     setTatTieng(moi);
-    doTieng(iRef.current, moi);
+    doTieng(i, moi);
   }, [tatTieng, doTieng]);
 
   // Bàn phím dùng được ở MỌI NƠI trên trang, không phải bấm vào khung trước.
@@ -974,8 +1045,10 @@ export function VideoFeedDoc({
                     - Trên máy CẢM ỨNG: luôn phủ, vì cần cho thao tác vuốt.
                     - Trên MÁY TÍNH: phủ khi là TỆP VIDEO CỦA MÌNH (không có nút điều khiển gốc nên
                       không phủ thì bấm chuột chẳng có gì xảy ra); KHÔNG phủ với iframe YouTube —
-                      phủ là nuốt mất cú bấm vào nút của nền tảng. */}
-                {(coCham || n.kieu === "video") && !khoa && (
+                      phủ là nuốt mất cú bấm vào nút của nền tảng.
+                    - iframe YouTube CHƯA kết nối được (chưa có `infoDelivery`): cũng không phủ, để
+                      người xem bấm được nút phát của YouTube thay vì một lớp phủ không làm gì. */}
+                {(n.kieu === "video" || (coCham && (n.kieu !== "iframe" || !!ytSong[i]))) && !khoa && (
                   <button
                     type="button"
                     onClick={() => bamVao(i)}
@@ -1002,7 +1075,7 @@ export function VideoFeedDoc({
 
                 {/* Chưa phát thì hiện nút ▶ TO ở giữa — LUÔN bấm được (kể cả khi nền tảng không
                     cho điều khiển từ mã, hoặc trình phát chưa sẵn sàng). */}
-                {i === iDangXem && !dangPhat && loiPhat !== i && !khoa && (
+                {i === iDangXem && !dangPhat && loiPhat !== i && !khoa && (n.kieu === "video" || !!ytSong[i]) && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -1048,7 +1121,7 @@ export function VideoFeedDoc({
                     co={16}
                     className="size-9 rounded-full border border-white/20 bg-black/40 backdrop-blur hover:bg-black/60"
                   />
-                  {!khoa && (
+                  {!khoa && (n.kieu === "video" || !!ytSong[i]) && (
                     <button
                       type="button"
                       onClick={doiTieng}
@@ -1189,9 +1262,9 @@ export function VideoFeedDoc({
                 </div>
 
                 {/* Thanh tiến trình: BẤM hoặc KÉO để tua đúng chỗ.
-                    Chỉ gắn cho tệp video của mình (điều khiển được). Với iframe của nền tảng thì
-                    không tua được từ mã nên giữ thanh mảnh — không làm ra nút bấm mà không có tác dụng. */}
-                {n.kieu === "video" && !khoa ? (
+                    Có với tệp video của mình VÀ với iframe YouTube đã kết nối được (postMessage).
+                    Chưa kết nối thì giữ thanh mảnh — không làm ra nút bấm mà không có tác dụng. */}
+                {(n.kieu === "video" || (n.kieu === "iframe" && !!ytSong[i])) && !khoa ? (
                   <div
                     ref={i === iDangXem ? thanhRef : undefined}
                     onPointerDown={i === iDangXem ? batDauKeo : undefined}

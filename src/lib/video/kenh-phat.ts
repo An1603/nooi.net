@@ -99,11 +99,22 @@ export const DUONG_DAN_NHUNG = {
    * để hạn chế cookie theo dõi của Google trên nooi.net.
    */
   youtube: (id: string) =>
-    `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi`,
+    `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1`,
+
+  /**
+   * Video NGANG nhúng trong luồng xem: KHÔNG tắt tiếng, KHÔNG lặp.
+   *
+   * Vì sao tách khỏi dạng dọc: khung ngang là video dài (tin tức, phỏng vấn) — người xem mở ra
+   * là muốn nghe. Dạng dọc dùng cho luồng vuốt nên phải tự phát (buộc tắt tiếng); còn ở đây
+   * `autoplay=1` không kèm `mute` nên máy nào cho phép thì phát luôn CÓ TIẾNG, máy chặn thì
+   * YouTube hiện nút phát — bấm là nghe được (Ngài An báo 27/11/2026: "bấm xem mà tiếng chưa mở").
+   */
+  youtubeNgang: (id: string) =>
+    `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1&autoplay=1`,
 
   /** Dạng dọc cho luồng vuốt: tự phát, tắt tiếng, lặp lại, giấu bớt chrome của YouTube. */
   youtubeDoc: (id: string) =>
-    `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&rel=0&playsinline=1&cc_lang_pref=vi`,
+    `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&rel=0&playsinline=1&cc_lang_pref=vi&enablejsapi=1`,
 
   /**
    * Trình phát nhúng của Bunny. GIỮ LẠI chỉ để làm đường lui "Mở bằng trình phát Bunny" —
@@ -188,6 +199,11 @@ export interface NguonDoc {
   kieu: "iframe" | "video" | "khong";
   src: string;
   /**
+   * Mã video YouTube — có mã này thì luồng xem gắn bộ điều khiển qua `postMessage`
+   * (`src/lib/video/youtube.ts`): phát/dừng, tua bằng phím ← →, mở tiếng.
+   */
+  youtubeId?: string;
+  /**
    * Mã video Bunny — cần để ĐỔI MỨC CHẤT LƯỢNG ngay trong luồng xem (`play_<mức>.mp4`).
    * Không phải thông tin bí mật: mã này vốn nằm sẵn trong địa chỉ tệp CDN mà trình duyệt đang phát.
    */
@@ -229,11 +245,16 @@ export function nguonPhatDoc(video: VideoDoc): NguonDoc {
   if (kenh === "youtube") {
     const id = layYoutubeId(video.url);
     if (id) {
+      // Khổ DỌC: giữ kiểu TikTok (tự phát, tắt tiếng, lặp) cho thao tác vuốt.
+      // Khổ NGANG: KHÔNG tắt tiếng, KHÔNG lặp — video dài, mở ra là để nghe.
+      const doc = video.khung_hinh === "doc";
       return {
         kieu: "iframe",
-        src: DUONG_DAN_NHUNG.youtubeDoc(id),
+        src: doc ? DUONG_DAN_NHUNG.youtubeDoc(id) : DUONG_DAN_NHUNG.youtubeNgang(id),
+        youtubeId: id,
+        // Điều khiển được qua postMessage, nhưng chỉ khi YouTube trả lời handshake —
+        // luồng xem bật nút tua/tiếng khi nhận được tín hiệu đầu tiên (xem `youtube.ts`).
         dieuKhien: false,
-        canhBao: "Video YouTube: chạm không tạm dừng được, dùng nút của YouTube",
       };
     }
   }

@@ -119,6 +119,9 @@ export function VideoFeedDoc({
    */
   const nguonRef = useRef(nguon);
   nguonRef.current = nguon;
+  /** Danh sách bài hiện tại — hàm gắn iframe đọc thời lượng dự phòng từ đây. */
+  const videosRef = useRef(videos);
+  videosRef.current = videos;
   const iRef = useRef(iBatDau);
   const tiengRef = useRef(true);
 
@@ -426,14 +429,15 @@ export function VideoFeedDoc({
       if (ytId) {
         ytRef.current[i] = taoDieuKhienYouTube(el, (t: TrangThaiYouTube) => {
           if (i !== iRef.current) return;
-          // Chỉ bật nút của mình khi YouTube đã trả lời — chưa trả lời thì để nút của YouTube
+          // Chỉ bật nút loa của mình khi YouTube đã trả lời — chưa trả lời thì để nút của YouTube
           setYtSong((x) => (x[i] ? x : { ...x, [i]: true }));
           setThoiGian({ giay: t.giay, tong: t.tong });
           setTienTrinh(t.tong > 0 ? Math.min(100, (t.giay / t.tong) * 100) : 0);
           setDangPhat(t.dangPhat);
           setTatTieng(t.tatTieng);
           tiengRef.current = t.tatTieng;
-        });
+        // Thời lượng dự phòng: bấm/kéo thanh trước khi YouTube kịp trả lời vẫn quy đổi được ra giây
+        }, videosRef.current[i]?.duration ?? 0);
         return;
       }
 
@@ -619,8 +623,18 @@ export function VideoFeedDoc({
     return Math.min(1, Math.max(0, (clientX - r.left) / r.width));
   }, []);
 
-  /** Đặt vị trí phát theo tỉ lệ 0–1 (bấm trên thanh tiến trình). */
-  const datViTri = useCallback((tiLe: number) => {
+  /** Vị trí cuối cùng người xem kéo tới (chưa gửi lệnh) — gửi khi thả tay. */
+  const tiLeKeoRef = useRef(0);
+
+  /**
+   * Đặt vị trí phát theo tỉ lệ 0–1.
+   *
+   * `guiNgay = false` dùng khi ĐANG KÉO: chỉ cập nhật giao diện, để lệnh seekTo đi đúng một lần
+   * lúc thả tay. Với iframe YouTube, gửi lệnh theo từng điểm di chuột thì lệnh sau đè lệnh trước
+   * và thanh nhảy loạn (Ngài An báo 27/11/2026: “kéo thanh chưa tua được”).
+   */
+  const datViTri = useCallback((tiLe: number, guiNgay = true) => {
+    tiLeKeoRef.current = tiLe;
     const el = videoRef.current[iRef.current];
     if (el && el.duration && Number.isFinite(el.duration)) {
       const giay = tiLe * el.duration;
@@ -633,8 +647,10 @@ export function VideoFeedDoc({
       setThoiGian((x) => ({ ...x, giay }));
       return;
     }
-    // iframe YouTube: kéo thanh tiến trình = lệnh seekTo qua postMessage
-    ytRef.current[iRef.current]?.toi(tiLe);
+    const yt = ytRef.current[iRef.current];
+    if (!yt) return;
+    if (guiNgay) yt.toi(tiLe);
+    else yt.xemTruoc(tiLe);
   }, []);
 
   const batDauKeo = useCallback(
@@ -652,7 +668,8 @@ export function VideoFeedDoc({
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (!keoRef.current) return;
       e.stopPropagation();
-      datViTri(tiLeTheoX(e.clientX));
+      // Kéo: chỉ chạy thanh theo tay. Lệnh seek được gửi đúng một lần khi thả (xem `thoiKeo`).
+      datViTri(tiLeTheoX(e.clientX), false);
     },
     [datViTri, tiLeTheoX]
   );
@@ -665,6 +682,9 @@ export function VideoFeedDoc({
     } catch {
       /* con trỏ đã được nhả */
     }
+    // Thả tay: gửi lệnh tua cuối cùng cho iframe YouTube (tệp video đã seek ngay lúc kéo)
+    const yt = ytRef.current[iRef.current];
+    if (yt && !videoRef.current[iRef.current]) yt.toi(tiLeKeoRef.current);
   }, []);
 
   /** Tua tới/lui một số giây (phím ← →). Không vượt quá đầu/cuối video. */
@@ -1262,9 +1282,10 @@ export function VideoFeedDoc({
                 </div>
 
                 {/* Thanh tiến trình: BẤM hoặc KÉO để tua đúng chỗ.
-                    Có với tệp video của mình VÀ với iframe YouTube đã kết nối được (postMessage).
-                    Chưa kết nối thì giữ thanh mảnh — không làm ra nút bấm mà không có tác dụng. */}
-                {(n.kieu === "video" || (n.kieu === "iframe" && !!ytSong[i])) && !khoa ? (
+                    Có với tệp video của mình VÀ với mọi video YouTube (điều khiển qua postMessage).
+                    Với YouTube, thời lượng dự phòng lấy từ bản ghi nên bấm được ngay cả trước khi
+                    khung YouTube kịp trả lời; thanh chỉ đọc (không bấm) khi bài bị khoá. */}
+                {(n.kieu === "video" || !!n.youtubeId) && !khoa ? (
                   <div
                     ref={i === iDangXem ? thanhRef : undefined}
                     onPointerDown={i === iDangXem ? batDauKeo : undefined}
@@ -1274,26 +1295,28 @@ export function VideoFeedDoc({
                     role="slider"
                     tabIndex={-1}
                     aria-label="Thanh tiến trình video — bấm hoặc kéo để tua"
+                    title="Bấm hoặc kéo để tua"
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-valuenow={Math.round(i === iDangXem ? tienTrinh : 0)}
                     className={cn(
-                      "group absolute inset-x-0 bottom-0 z-40 h-7 touch-none select-none",
+                      // Vùng nhận thao tác cao 40px (ngón tay vẫn trúng), nhưng chỉ vẽ vạch 4px
+                      "group absolute inset-x-0 bottom-0 z-40 h-10 touch-none select-none",
                       i === iDangXem ? "cursor-pointer" : "pointer-events-none"
                     )}
                   >
-                    <div className="absolute inset-x-0 bottom-0 h-[3px] bg-white/25 transition-[height] duration-150 group-hover:h-[6px]">
+                    <div className="absolute inset-x-0 bottom-0 h-[4px] bg-white/25 transition-[height] duration-150 group-hover:h-2">
                       <div
                         className="h-full bg-accent"
                         style={{ width: `${i === iDangXem ? tienTrinh : 0}%` }}
                       />
                     </div>
                     <span
-                      className="absolute bottom-[3px] size-2.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent opacity-0 shadow transition-opacity group-hover:opacity-100"
+                      className="absolute bottom-[4px] size-3.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent opacity-0 shadow transition-opacity group-hover:opacity-100"
                       style={{ left: `${i === iDangXem ? tienTrinh : 0}%` }}
                     />
                     {i === iDangXem && thoiGian.tong > 0 && (
-                      <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-[10px] font-medium tabular-nums opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+                      <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-[10px] font-medium tabular-nums opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
                         {phutGiay(thoiGian.giay)} · {phutGiay(thoiGian.tong)}
                       </span>
                     )}

@@ -28,14 +28,16 @@ export interface TrangThaiYouTube {
 }
 
 export interface DieuKhienYouTube {
-  /** YouTube đã trả lời ít nhất một `infoDelivery` chưa (chưa thì đừng dựng nút của mình). */
+  /** YouTube đã trả lời ít nhất một `infoDelivery` chưa (chưa thì đừng dựng nút loa của mình). */
   sanSang: () => boolean;
   phat: () => void;
   dung: () => void;
   /** Tua tương đối (giây âm = lùi). Không vượt quá đầu/cuối video. */
   tua: (giay: number) => void;
-  /** Tua theo tỉ lệ 0–1 (bấm/kéo thanh tiến trình). */
+  /** Tua theo tỉ lệ 0–1 và GỬI lệnh ngay (bấm thanh tiến trình). */
   toi: (tiLe: number) => void;
+  /** Tua theo tỉ lệ nhưng CHỈ cập nhật giao diện — dùng khi đang kéo thanh (xem `toi`). */
+  xemTruoc: (tiLe: number) => void;
   /** tat = true → tắt tiếng. */
   tieng: (tat: boolean) => void;
   huy: () => void;
@@ -55,12 +57,18 @@ const MIEN_YOUTUBE = /^https:\/\/www\.youtube(-nocookie)?\.com$/;
 
 export function taoDieuKhienYouTube(
   iframe: HTMLIFrameElement,
-  khiDoi: (t: TrangThaiYouTube) => void
+  khiDoi: (t: TrangThaiYouTube) => void,
+  /**
+   * Thời lượng dự phòng (lấy từ bản ghi `videos.duration`).
+   * Vì sao cần: người xem có thể bấm/kéo thanh tiến trình TRƯỚC khi YouTube kịp trả `infoDelivery`;
+   * không có tổng thì không quy đổi được tỉ lệ ra giây và cú bấm rơi vào khoảng không.
+   */
+  tongDuPhong = 0
 ): DieuKhienYouTube {
   // Mã phiên riêng: nhiều khung cùng trang thì mỗi khung một mã.
   const ma = `nooi-${Math.random().toString(36).slice(2, 9)}`;
   let giay = 0;
-  let tong = 0;
+  let tong = tongDuPhong > 0 ? tongDuPhong : 0;
   let dangPhat = false;
   let tatTieng = false;
   let daNhan = false;
@@ -112,16 +120,21 @@ export function taoDieuKhienYouTube(
   window.addEventListener("message", nghe);
 
   // Chào ngay, rồi chào lại vài nhịp: iframe vừa vào DOM thì khung bên trong chưa sẵn sàng,
-  // lệnh gửi quá sớm bị bỏ im lặng (không có lỗi để bắt).
+  // lệnh gửi quá sớm bị bỏ im lặng (không có lỗi để bắt). Chào đủ lâu cho mạng chậm (60 giây),
+  // sau đó vẫn chào nhắc lại để giữ kết nối nếu trình phát tự khởi động lại.
   chao();
   let soLanChao = 0;
   const nhac = window.setInterval(() => {
-    if (daHuy || daNhan || ++soLanChao > 8) {
+    if (daHuy) {
+      window.clearInterval(nhac);
+      return;
+    }
+    if (!daNhan && ++soLanChao > 60) {
       window.clearInterval(nhac);
       return;
     }
     chao();
-  }, 600);
+  }, 1000);
 
   const baoTrangThai = () => khiDoi({ giay, tong, dangPhat, tatTieng });
 
@@ -144,6 +157,17 @@ export function taoDieuKhienYouTube(
       const moi = Math.max(0, Math.min(tong - 0.5, tiLe * tong));
       gui("seekTo", [moi, true]);
       giay = moi;
+      baoTrangThai();
+    },
+    /**
+     * Chỉ cập nhật giao diện khi ĐANG KÉO thanh. Lý do: kéo trên máy tính phát ra hàng chục sự kiện
+     * mỗi giây; gửi `seekTo` cho từng sự kiện thì YouTube xử lý không kịp, lệnh sau đè lệnh trước và
+     * người xem thấy thanh nhảy loạn. Kéo xong (thả tay) mới gửi đúng một lệnh — xem `thoiKeo` trong
+     * `VideoFeedDoc`.
+     */
+    xemTruoc: (tiLe) => {
+      if (tong <= 0) return;
+      giay = Math.max(0, Math.min(tong - 0.5, tiLe * tong));
       baoTrangThai();
     },
     tieng: (tat) => {

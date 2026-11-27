@@ -1314,13 +1314,65 @@ export function VideoFeedDoc({
                   )}
                 </div>
 
-                {/* Thanh dưới: THU GỌN 1 dòng, chạm để mở chi tiết */}
-                <div
-                  className={cn(
-                    "absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-5 pt-10 transition-opacity duration-300",
-                    hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
+                {/* Khối đáy: THANH TIẾN TRÌNH nằm TRÊN chữ và các nút, chữ ở dưới.
+                    Vì sao đổi thứ tự (Ngài An báo 27/11/2026): thanh tua có vùng nhận thao tác cao
+                    40 px sát đáy nên nuốt mất cú chạm vào tiêu đề / “chạm để xem chi tiết”. Tách ra
+                    hai lớp xếp dọc: thanh tua luôn hiện ở trên, khối chữ mờ đi khi đang phát. */}
+                <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col">
+                  {/* Thanh tiến trình: BẤM hoặc KÉO để tua đúng chỗ.
+                      Có với tệp video của mình VÀ với mọi video YouTube (điều khiển qua postMessage).
+                      Với YouTube, thời lượng dự phòng lấy từ bản ghi nên bấm được ngay cả trước khi
+                      khung YouTube kịp trả lời; thanh chỉ đọc (không bấm) khi bài bị khoá. */}
+                  {(n.kieu === "video" || !!n.youtubeId) && !khoa && !(n.youtubeId && ytDayDu[i]) ? (
+                    <div
+                      ref={i === iDangXem ? thanhRef : undefined}
+                      onPointerDown={i === iDangXem ? batDauKeo : undefined}
+                      onPointerMove={i === iDangXem ? dangKeo : undefined}
+                      onPointerUp={i === iDangXem ? thoiKeo : undefined}
+                      onPointerCancel={i === iDangXem ? thoiKeo : undefined}
+                      role="slider"
+                      tabIndex={-1}
+                      aria-label="Thanh tiến trình video — bấm hoặc kéo để tua"
+                      title="Bấm hoặc kéo để tua"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(i === iDangXem ? tienTrinh : 0)}
+                      className={cn(
+                        // Vùng nhận thao tác cao 40px (ngón tay vẫn trúng), nhưng chỉ vẽ vạch 4px
+                        "group relative h-10 w-full shrink-0 touch-none select-none",
+                        i === iDangXem ? "cursor-pointer" : "pointer-events-none"
+                      )}
+                    >
+                      <div className="absolute inset-x-0 bottom-0 h-[4px] bg-white/25 transition-[height] duration-150 group-hover:h-2">
+                        <div
+                          className="h-full bg-accent"
+                          style={{ width: `${i === iDangXem ? tienTrinh : 0}%` }}
+                        />
+                      </div>
+                      <span
+                        className="absolute bottom-[4px] size-3.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent opacity-0 shadow transition-opacity group-hover:opacity-100"
+                        style={{ left: `${i === iDangXem ? tienTrinh : 0}%` }}
+                      />
+                      {i === iDangXem && thoiGian.tong > 0 && (
+                        <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-[10px] font-medium tabular-nums opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+                          {phutGiay(thoiGian.giay)} · {phutGiay(thoiGian.tong)}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="relative h-[3px] w-full shrink-0 bg-white/20">
+                      <div
+                        className="h-full bg-accent transition-[width] duration-200"
+                        style={{ width: `${i === iDangXem ? tienTrinh : 0}%` }}
+                      />
+                    </div>
                   )}
-                >
+                  <div
+                    className={cn(
+                      "bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-5 pt-8 transition-opacity duration-300",
+                      hienChrome ? "opacity-100" : "pointer-events-none opacity-0"
+                    )}
+                  >
                   {!moThongTin ? (
                     <div className="flex items-end gap-2 pr-12">
                       <button
@@ -1404,55 +1456,8 @@ export function VideoFeedDoc({
                   )}
 
                 </div>
+                </div>
 
-                {/* Thanh tiến trình: BẤM hoặc KÉO để tua đúng chỗ.
-                    Có với tệp video của mình VÀ với mọi video YouTube (điều khiển qua postMessage).
-                    Với YouTube, thời lượng dự phòng lấy từ bản ghi nên bấm được ngay cả trước khi
-                    khung YouTube kịp trả lời; thanh chỉ đọc (không bấm) khi bài bị khoá. */}
-                {(n.kieu === "video" || !!n.youtubeId) && !khoa && !(n.youtubeId && ytDayDu[i]) ? (
-                  <div
-                    ref={i === iDangXem ? thanhRef : undefined}
-                    onPointerDown={i === iDangXem ? batDauKeo : undefined}
-                    onPointerMove={i === iDangXem ? dangKeo : undefined}
-                    onPointerUp={i === iDangXem ? thoiKeo : undefined}
-                    onPointerCancel={i === iDangXem ? thoiKeo : undefined}
-                    role="slider"
-                    tabIndex={-1}
-                    aria-label="Thanh tiến trình video — bấm hoặc kéo để tua"
-                    title="Bấm hoặc kéo để tua"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={Math.round(i === iDangXem ? tienTrinh : 0)}
-                    className={cn(
-                      // Vùng nhận thao tác cao 40px (ngón tay vẫn trúng), nhưng chỉ vẽ vạch 4px
-                      "group absolute inset-x-0 bottom-0 z-40 h-10 touch-none select-none",
-                      i === iDangXem ? "cursor-pointer" : "pointer-events-none"
-                    )}
-                  >
-                    <div className="absolute inset-x-0 bottom-0 h-[4px] bg-white/25 transition-[height] duration-150 group-hover:h-2">
-                      <div
-                        className="h-full bg-accent"
-                        style={{ width: `${i === iDangXem ? tienTrinh : 0}%` }}
-                      />
-                    </div>
-                    <span
-                      className="absolute bottom-[4px] size-3.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent opacity-0 shadow transition-opacity group-hover:opacity-100"
-                      style={{ left: `${i === iDangXem ? tienTrinh : 0}%` }}
-                    />
-                    {i === iDangXem && thoiGian.tong > 0 && (
-                      <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-0.5 text-[10px] font-medium tabular-nums opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
-                        {phutGiay(thoiGian.giay)} · {phutGiay(thoiGian.tong)}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="absolute inset-x-0 bottom-0 z-40 h-[3px] bg-white/20">
-                    <div
-                      className="h-full bg-accent transition-[width] duration-200"
-                      style={{ width: `${i === iDangXem ? tienTrinh : 0}%` }}
-                    />
-                  </div>
-                )}
               </div>
             </section>
           );

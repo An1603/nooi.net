@@ -437,27 +437,6 @@ export function LuoiVideoCongKhai({ videos, nguoi }: Props) {
           </div>
         )}
 
-        <div className="mt-1.5 flex items-center justify-between gap-2 px-1 text-[11px] text-muted-foreground">
-          <span>
-            Đang hiện <b className="text-foreground">{ketQua.length}</b>/{videos.length} bài
-            {soKhoa > 0 && (
-              <>
-                {" · "}
-                <Lock size={10} className="inline text-primary" /> {soKhoa} bài cần quyền
-              </>
-            )}
-          </span>
-          {dangLoc && (
-            <button
-              type="button"
-              onClick={xoaLoc}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 hover:text-foreground"
-            >
-              <RotateCcw size={10} />
-              Xoá lọc
-            </button>
-          )}
-        </div>
       </div>
 
       {/* ── Lưới kiểu khối xây: chiều cao mỗi ô theo đúng tỉ lệ ảnh bìa ── */}

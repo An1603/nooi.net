@@ -987,17 +987,28 @@ export function VideoFeedDoc({
     return () => document.removeEventListener("fullscreenchange", doi);
   }, []);
 
+  /**
+   * Vỏ ngoài của luồng xem — dùng làm phần tử TOÀN MÀN HÌNH.
+   *
+   * Vì sao phải là vỏ ngoài chứ không phải khung cuộn: khi một phần tử vào toàn màn hình, trình
+   * duyệt chỉ vẽ phần tử đó và CON CHÁU của nó. Bảng Cài đặt (chất lượng · tốc độ) là **anh em**
+   * của khung cuộn, nên nếu cho khung cuộn vào toàn màn hình thì bấm ⚙ sẽ mở bảng mà không thấy gì
+   * (Ngài An báo 27/11/2026). Cho vỏ ngoài vào toàn màn hình thì bảng, thanh trên, cột nút đều nằm
+   * trong — hiện đủ.
+   */
+  const vo = useRef<HTMLDivElement | null>(null);
+
   const batTatToanManHinh = useCallback(async () => {
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
-      else await (khung.current ?? document.documentElement).requestFullscreen({ navigationUI: "hide" });
+      else await (vo.current ?? document.documentElement).requestFullscreen({ navigationUI: "hide" });
     } catch {
       // Trình duyệt từ chối (thường là chính sách của máy) — im lặng, đừng làm phiền người xem
     }
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black text-white" data-feed-doc>
+    <div ref={vo} className="fixed inset-0 z-[80] bg-black text-white" data-feed-doc>
       {/* Đầu luồng: nút QUAY VỀ (góc trái-trên) + tên luồng / số lượng.
           Tự mờ đi khi video đang phát để màn hình dành trọn cho video. */}
       <div

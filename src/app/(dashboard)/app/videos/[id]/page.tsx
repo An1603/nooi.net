@@ -9,7 +9,11 @@ import type { VideoDoc } from "@/lib/video/kenh-phat";
 export const dynamic = "force-dynamic";
 
 /** Video trong luồng — có đường phát, kèm `cong_khai` để cổng gác xét quyền + ngày tạo để sắp xếp. */
-type VideoLuong = VideoDoc & { cong_khai?: boolean | null; created_at?: string | null };
+type VideoLuong = VideoDoc & {
+  cong_khai?: boolean | null;
+  created_at?: string | null;
+  thu_tu?: number | null;
+};
 
 /**
  * XEM VIDEO TRONG KHU THÀNH VIÊN `/app/videos/<mã>`.
@@ -32,7 +36,8 @@ export default async function XemVideoTrongAppPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const COT = "id, title, description, url, kenh_phat, thumbnail_url, duration, khung_hinh, danh_muc, cong_khai, created_at";
+  const COT =
+    "id, title, description, url, kenh_phat, thumbnail_url, duration, khung_hinh, danh_muc, cong_khai, created_at, thu_tu";
 
   const [nguoi, { data: xuatBan }, { data: cuaToi }] = await Promise.all([
     nguoiDangXem(),
@@ -40,12 +45,14 @@ export default async function XemVideoTrongAppPage({
       .from("videos")
       .select(COT)
       .eq("status", "published")
+      .order("thu_tu", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(200),
     supabase
       .from("videos")
       .select(COT)
       .eq("user_id", user?.id ?? "")
+      .order("thu_tu", { ascending: false })
       .order("created_at", { ascending: false }),
   ]);
 
@@ -53,8 +60,11 @@ export default async function XemVideoTrongAppPage({
   for (const v of (xuatBan ?? []) as unknown as VideoLuong[]) theoMa.set(v.id, v);
   for (const v of (cuaToi ?? []) as unknown as VideoLuong[]) theoMa.set(v.id, v);
 
-  const tatCa = [...theoMa.values()].sort((a, b) =>
-    (b.created_at || "").localeCompare(a.created_at || "")
+  // Gộp hai nguồn rồi xếp lại: ưu tiên `thu_tu` (số lớn trước), hoà thì bài mới nhất trước —
+  // đúng thứ tự lưới để vuốt / phím ← → không lệch.
+  const tatCa = [...theoMa.values()].sort(
+    (a, b) =>
+      (b.thu_tu ?? 0) - (a.thu_tu ?? 0) || (b.created_at || "").localeCompare(a.created_at || "")
   );
   if (!tatCa.some((v) => v.id === id)) notFound();
 

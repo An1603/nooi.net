@@ -9,7 +9,7 @@ import type { VideoDoc } from "@/lib/video/kenh-phat";
 export const dynamic = "force-dynamic";
 
 /** Video trong luồng — có đường phát, kèm `cong_khai` để cổng gác xét quyền. */
-type VideoLuong = VideoDoc & { cong_khai?: boolean | null };
+type VideoLuong = VideoDoc & { cong_khai?: boolean | null; thu_tu?: number | null };
 
 async function layMotVideo(id: string): Promise<VideoLuong | null> {
   const admin = createAdminClient();
@@ -59,9 +59,13 @@ export default async function XemVideoCongKhaiPage({ params }: { params: Promise
   const { data } = await admin
     .from("videos")
     .select(
-      "id, title, description, url, kenh_phat, thumbnail_url, duration, khung_hinh, danh_muc, cong_khai, created_at"
+      "id, title, description, url, kenh_phat, thumbnail_url, duration, khung_hinh, danh_muc, cong_khai, created_at, thu_tu"
     )
     .eq("status", "published")
+    // THỨ TỰ LUỒNG = thứ tự người quản trị đã xếp (`thu_tu`, số lớn trước); chưa xếp thì bài mới
+    // nhất trước. Nhờ vậy vuốt và phím ← → đi đúng thứ tự khán giả thấy trong lưới, không nhảy
+    // lung tung theo ngày đăng.
+    .order("thu_tu", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(200);
 

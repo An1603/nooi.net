@@ -1333,9 +1333,10 @@ export function VideoFeedDoc({
       </div>
 
       {/* Bảng cài đặt: CHẤT LƯỢNG · TỐC ĐỘ PHÁT.
-          Chỉ mở với tệp video của mình (iframe nền tảng không điều khiển được nên không làm ra
-          nút bấm vô tác dụng). Danh sách chất lượng hỏi máy chủ để chỉ hiện mức CÓ THẬT. */}
-      {moCaiDat && nguon[iDangXem]?.kieu === "video" && (
+          Mở cho cả tệp video của mình VÀ video YouTube: tốc độ điều khiển được bằng postMessage
+          `setPlaybackRate` (đo thật 1 → 1,5). Riêng chất lượng, YouTube không cho chọn từ ngoài
+          từ 2019 nên bảng chỉ giải thích + đưa đường mở YouTube đúng giây đang xem. */}
+      {moCaiDat && (nguon[iDangXem]?.kieu === "video" || !!nguon[iDangXem]?.youtubeId) && (
         <div
           className="absolute inset-0 z-[90] flex items-end justify-end bg-black/40 p-3 sm:p-4"
           onClick={() => setMoCaiDat(false)}

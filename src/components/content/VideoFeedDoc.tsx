@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, BookOpen, Check, ChevronDown, ChevronUp, Gauge, Info, Lock, Maximize2, Minimize2, Play, Settings, Volume2, VolumeX, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { thuocBaiHoc } from "@/lib/video/danh-muc";
@@ -92,6 +93,7 @@ export function VideoFeedDoc({
   quayLaiDangNhap = "/app",
   batDauId,
 }: Props) {
+  const router = useRouter();
   const nguon = useMemo(() => videos.map((v) => nguonPhatDoc(v)), [videos]);
 
   /** Cổng gác quyền từng video — chỉ tính khi trang công khai có truyền người đang xem */
@@ -853,6 +855,19 @@ export function VideoFeedDoc({
     doTieng(i, moi);
   }, [tatTieng, doTieng]);
 
+  /**
+   * Quay về DANH MỤC (kho video) — dùng cho nút ← và cho phím Esc / Backspace / Delete.
+   *
+   * Ưu tiên LÙI LẠI đúng trang trước khi trang trước thuộc chính tab này (bấm từ lưới đang lọc
+   * `?dm=…` thì quay về đúng danh sách đang xem). Mở thẳng bằng liên kết (không có lịch sử) thì đi
+   * tới đường dẫn danh mục — `router.back()` lúc đó sẽ đá người xem ra khỏi trang.
+   */
+  const quayVe = useCallback(() => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx;
+    if (typeof idx === "number" && idx > 0) router.back();
+    else router.push(duongDanDong);
+  }, [router, duongDanDong]);
+
   // Bàn phím dùng được ở MỌI NƠI trên trang, không phải bấm vào khung trước.
   // Vì sao đổi từ `onKeyDown` của khung sang nghe ở cửa sổ: người xem mở trang rồi bấm phím cách
   // luôn, chứ không ai nghĩ phải bấm vào khung trước — trước đây phím cách vì thế mà "không ăn".
@@ -917,11 +932,21 @@ export function VideoFeedDoc({
         case "I":
           setMoThongTin((x) => !x);
           break;
+        // Ngài An chốt 27/11/2026: đang xem video, bấm Esc / Backspace / Delete là QUAY VỀ DANH MỤC
+        // (cùng đích với nút ←). Chặn mặc định của trình duyệt để Backspace không tự lùi trang
+        // theo kiểu cũ và Delete không kích hoạt gì khác.
+        case "Escape":
+        case "Esc":
+        case "Backspace":
+        case "Delete":
+          e.preventDefault();
+          quayVe();
+          break;
       }
     };
     window.addEventListener("keydown", nghe);
     return () => window.removeEventListener("keydown", nghe);
-  }, [cuon, bamVao, doiTieng, videoXinQuyen, tua, moCaiDat]);
+  }, [cuon, bamVao, doiTieng, videoXinQuyen, tua, moCaiDat, quayVe]);
 
   /** Khung hình tự khớp tỉ lệ với màn hình — xem giải thích ở đầu tệp. */
   const kieuKhung = (v: VideoDoc): React.CSSProperties =>

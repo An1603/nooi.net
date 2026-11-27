@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { DANH_MUC } from "@/lib/video/danh-muc";
 import { taoVideo, suaVideo } from "./actions";
@@ -33,7 +32,6 @@ const NHAN = "block text-xs font-medium text-muted-foreground mb-1.5";
  */
 export function VideoFormQuanTri({ banDau = {} }: { banDau?: DuLieuVideo }) {
   const sua = !!banDau.id;
-  const router = useRouter();
   const [dangLuu, batDau] = useTransition();
   const [loi, setLoi] = useState("");
 
@@ -41,13 +39,14 @@ export function VideoFormQuanTri({ banDau = {} }: { banDau?: DuLieuVideo }) {
     setLoi("");
     batDau(async () => {
       const kq = sua ? await suaVideo(banDau.id!, formData) : await taoVideo(formData);
-      if (kq && "error" in kq) setLoi(kq.error);
-      else {
-        router.push("/admin/videos");
-        // Bỏ bộ đệm điều hướng: không có bước này danh sách vừa lưu vẫn hiện bản CŨ
-        // (revalidatePath ở máy chủ chỉ có tác dụng khi máy khách thật sự hỏi lại).
-        router.refresh();
+      if (kq && "error" in kq) {
+        setLoi(kq.error);
+        return;
       }
+      // Điều hướng CỨNG về danh sách: `router.push` + `router.refresh()` vẫn có lúc dùng lại gói
+      // dữ liệu đã đệm của trang danh sách nên video vừa lưu không hiện ra (đã gặp 27/11/2026).
+      // Tải lại cả trang là chắc chắn đúng — khu quản trị không cần chuyển trang mượt.
+      window.location.assign("/admin/videos");
     });
   }
 
